@@ -1,6 +1,6 @@
 ---
 title: "Reflection of Templates"
-document: P3420R0
+document: P3420R1
 date: today
 audience: EWG
 author:
@@ -14,6 +14,16 @@ toc: true
 tag: reflection
 hackmd: true
 ---
+
+<div lang="en">
+
+# Revision History
+
+Since [@P3420R0]:
+
+- replaced API that returns portions of a function declaration as a token sequence with a functional-style API that takes a declaration and returns a modified declaration
+- for implementation friendliness, removed metafunctions returning code that potentially contains a mix of dependent and non-dependent identifiers as token sequences
+- consequently, no need for the "as-if" rule for compiler-returned token sequences
 
 # Motivation
 
@@ -67,51 +77,42 @@ While an exact copy of a type is not particularly interesting&mdash;and although
 - `reflect_invoke`
 -->
 
-In order to reflect on nontrivial C++ code and splice it back with controlled modifications, it is necessary to reflect all templates&mdash;class templates and specializations thereof, function templates, variable templates, and alias templates. This is not an easy task; templates pose unique challenges to a reflection engine because, by their nature, they are only partially analyzed semantically; for example, neither parameter types nor the return type of a function template can be represented as reflections of types because some of those types are often not known until the template is instantiated. The same thinking goes for a variety of declarations that can be found inside a class template; C++ templates are more akin to patterns by which code is to be generated than to standalone, semantically verified code. For that reason, the reflection facilities proposed in P2996 intended for non-templated declarations are not readily applicable to templates.
+In order to reflect on nontrivial C++ code and splice it back with controlled modifications, it is necessary to reflect all templates&mdash;class templates and specializations thereof, function templates, variable templates, and alias templates. This is not an easy task; templates pose unique challenges to a reflection engine because, by their nature, they are only partially analyzed semantically. For example, neither parameter types nor the return type of a function template can be represented as reflections of types because dependent types are not known until the template is instantiated. The same thinking goes for a variety of declarations that can be found inside a class template; C++ templates are more akin to patterns by which code is to be generated than to standalone, semantically verified code. For that reason, the reflection facilities proposed in P2996 intended for non-templated declarations are not readily applicable to templates.
 
 Conversely, reflection code would be seriously hamstrung if it lacked the ability to reflect on template code (and subsequently manipulate and generate related code), especially because templates are ubiquitous in today's C++ codebases. Furthermore, limiting reflection to instantiations of class templates (which would fit the charter of P2996) does not suffice because class templates commonly define inner function templates (e.g., every instantiation of `std::vector` defines several constructor templates and other function templates such as `insert` and `emplace_back`). Therefore, to the extent reflection of C++ declarations is deemed useful, reflection of templates is essential.
 
-Given that many elements of a template cannot be semantically analyzed early (at template definition time), this proposal adopts a consistent strategy for reflecting components of template declarations: each element of a template declaration&mdash;such as the parameter list, constraints, and template argument list&mdash;is represented as a *token sequence*, as proposed in [@P3294R2]. We consider token sequences a key enabler of the ability to introspect templates as proposed in this paper. Though operating with token sequences is a departure from P2996's *modus operandi*, we paid special attention to ensure seamless interoperation with it.
+Given that many elements of a template cannot be semantically analyzed early (at template definition time), this proposal adopts a two-pronged strategy for reflecting components of template declarations:
 
-As lightly structured representations of components of template declarations, token sequences have several important advantages:
+- template parameter names and function parameter names can be reflected as *token sequences*, as proposed in [@P3294R2];
+- the other elements of a template declaration&mdash;constraints, predicate in the `noexcept` or `explicit` specifiers, default template arguments, and default function arguments&mdash;are kept together with the template declaration;
+- new declarations are obtained from existing declarations in a functional manner, and the "deltas" are expressed as token sequences.
 
-- *Simplicity:* C++ template declarations and the rules for substitution and looking up symbols are quite complex. Adding new language elements dedicated to handling, for example, reflection of dependent types would complicate the language immensely. In contrast, token sequences are a simple, uniform, and effective means to represent any part of a template declaration because they fundamentally are created from, and consist of, C++ source code.
-- *Interoperation:* Token sequences will seamlessly interoperate with, and take advantage of, all primitives and facilities introduced in P3294 related to token sequences.
-- *Code generation ability:* A key aspect of reflection is the ability to "hook into" code by generating new code that copies existing functionality and adds elements such as code instrumentation, logging, or tracing. Generating instrumented templates from components of existing template declarations is simple and straightforward&mdash;as simple as any use of token sequences for code generation.
-- *Implementation friendliness:* Token sequences do not require heavy infrastructure or a specific implementation design. In addition, this proposal grants important freedom and latitude to compilers, as detailed in the next section.
+The initial proposal [@P3420R0] allowed accessing all parts of a template definition as token sequences. However, for some implementations it was difficult to perform such extrication, and also made it difficult to define how names are looked up after splicing.
 
-## The "As-If" Rule for Token Sequences Returned by Reflection Metafunctions
-
-Most metafunctions proposed in this paper return token sequences. Some implementations may not preserve the exact tokens as initially present in source code for a variety of reasons. First, it is possible that an implementation "normalizes" code that may have different forms in source, for example replacing `template<class T>` with the equivalent `template<typename T>` or vice versa. Second, a compiler may run some simple front-end processing during tokenization, replacing e.g. `+1` or `01` with `1`. Third, compilers may look up some types early and replace them with the internal representation thereof, which is fully constant-folded and with all default arguments substituted&mdash;again, making it tenuous to return looked-up types exactly in the form originally present in source code. Fourth, some implementations are known to parse templates eagerly and drop the tokens early in the processing pipeline. For such a compiler, producing the tokens would be difficult and inefficient.
-
-Given these realities of current compiler implementations, demanding that the compiler returns the exact tokens present in the initial source code may entail unnecessary burden on some implementations. We therefore stipulate that metafunctions that return token sequences are bound by the following minimal requirements:
-
-- Metafunctions that return token sequences originating from existing code must return code that, when spliced back into source, compiles and runs with the same semantics as the original source code.
-- Implementations are allowed to return token sequences that contain nonstandard code (including handles into compiler-internal data structure), again as long as the result of splicing has the same semantics as the original source code.
-- Returning empty token sequences is always observed.
-- There is no other guaranteed assumption about metafunctions that return tokens.
-
-In particular, user code should not assume token sequences returned by implementation-defined metafunctions compare equal with tokens assumed to be equivalent. The only guarantee is that splicing the tokens back has the same effect.
-
-Producing a printable token stream on demand remains important for debugging purposes. We consider it a quality of implementation matter.
+We paid special attention to preserve the spirit and design style of [@P2996R7] and to ensure seamless interoperation with it.
 
 ## Example: Logging and Forwarding
 
 As a conceptual stylized example, consider the matter of creating a function template `logged::func` for any free function template `func` in such a way that `logged::func` has the same signature and semantics as `func`, with the added behavior that it logs the call and its parameters prior to execution. We illustrate the matter for function templates because it is more difficult (and more complete) than the case of simple functions.
 
 ```cpp
+struct S {};
+
 template <typename T>
 requires std::is_copy_constructible_v<T>
-void fun(const T& value) { ... }
+void fun(const T& value, S&) { ... }
+
+template <typename... Ts>
+void logger(const Ts&.. values);
 
 consteval void make_logged(std::meta::info f) {
     queue_injection(^^{
         namespace logged {
-            \tokens(copy_signature(f, name_of(f))) {
-                logger("Calling " + name_of(f) + " with arguments: ", \tokens(params_of(f)));
-                return \tokens(make_fwd_call(f));
+            [:\(prototype_of(f)):] {
+                logger("Calling " + name_of(f) + "(", \tokens(parameter_list(f)), ")");
+                return [:f:]<\tokens(template_parameters_of(f))>(\tokens(forward_parameter_list(f)));
             }
-        }  // end manespace logged
+        }  // end namespace logged
     });
 }
 
@@ -123,22 +124,71 @@ consteval {
 // namespace logged {
 //     template <typename T>
 //     requires std::is_copy_constructible_v<T>
-//     void fun(const T& value) {
-//         logger("Call to ", "fun", " with arguments: ", value);
-//         return fun<T>(std::forward<T>(value));
+//     void fun(const T& value, const ::S& __p0) {
+//         logger("Call to ", "fun", "(", value, __p0, ")");
+//         return fun<T>(std::forward<T>(value), std::forward<T>(__p0));
 //     }
 // }
 ```
 
-We identify a few high-level metafunctions that facilitate such manipulation of template declarations. `copy_signature(info f, std::string_view name)` produces the token sequence corresponding to the signature of the function template reflected by `f`, under a new name. (The example above uses the same name in a distinct namespace.) The template parameters, `requires` clause, function parameters, and return type are all part of the copied tokens. (In the general case, we do want to have separate access to each element for customization purposes, so `copy_signature` would combine more fine-grained primitives.) Next, `params_of(f)` produces a comma-separated list of the parameters of `f`, with pack expansion suffix where applicable. Finally, `make_fwd_call` creates the tokens of a call to the function reflected by `f` with the appropriate insertion of calls to `std::forward`, again with pack expansion suffix where appropriate.
+We identify a few high-level metafunctions that facilitate such manipulation of template declarations. `prototype_of(info f)` produces a reflection handle corresponding to the prototype of the function template reflected by `f`. The template parameters, `requires` clause, function parameters, and return type are all part of the copied prototype. All non-dependent names are looked up; thus, even it namespace `logged` defines a type called `S`, the prototype uses the same `S` as the original declaration (which is why we used `::S` in the comment representing equivalent code).  Next, `parameter_list(f)` produces a comma-separated list of the parameters of `f`, with pack expansion suffix where applicable. Finally, `forward_parameter_list(f)` creates the tokens of a call to the function reflected by `f` with the appropriate insertion of calls to `std::forward`, again with pack expansion suffix where appropriate.
 
-In order to be able to define metafunctions such as `copy_signature`, `params_of`, and `make_fwd_call`, we need access to the lower-level components of a template declaration.
+Note that whether or not a parameter has a name in the user-authored declaration, reflection supplies a name for it (stylized in our example as `__p0`; the actual name is implementation-defined). The same approach is applied to template parameters. This is in order to allow user code to refer to all template parameters with metafunctions such as `template_parameter_list`, `parameter_list`, and `forward_parameter_list`.
+
+## Example: `logging_vector`
+
+Consider a more elaborate example that defines class template `logging_vector`, which defines a functional equivalent of `std::vector` but that uses a function `logger` to log all calls to its member functions. Here, we need to iterate the public members of `std::vector` and insert appropriate copies of declarations.
+
+```cpp
+template <typename T, typename A = std::allocator<T>>
+class logging_vector {
+private:
+  std::vector<T, A> data;
+  using namespace std::meta;
+public:
+  consteval {
+    template for (constexpr auto r : get_public_members(^^std::vector<T, A>)) {
+      if (is_type_alias(r) || is_class_type(r)) {
+        queue_injection(^^{ using \id(name_of(r)) = [:\(r):]; });
+      } else if (is_function(r)) {
+        queue_injection(^^{
+          [:\(prototype_of(r)):] {
+            logger("Calling ", name_of(^^std::vector<T, A>), "::",
+              name_of(r), "(", \tokens(parameter_list(r)), ")");
+            return data.[:r:](forward_param_list_of(r));
+          }
+        });
+      } else if (is_function_template(r)) {
+        queue_injection(^^{
+          [:\(prototype_of(r)):] {
+            logger("Calling ", name_of(^^std::vector<T, A>), "::",
+              name_of(r), "(", \tokens(parameter_list(r)), ")");
+            return data.template [:r:]<\tokens(template_parameter_list(r))>(\tokens(forward_parameters_list(r)));
+          }
+        });
+      } else {
+        error("Don't know how to copy reflection.");
+      }
+    }
+  }
+};
+```
+
+(Refer to [@P2996R7] for metafunctions `get_public_members`, `is_type_alias`, `is_class_type`, `is_function`, and `is_function_template`, of which semantics should be intuitive as we discuss the context.) Here, as the code iterates declarations in class `std::vector<T, A>` (an instance, not the template class itself, which simplifies a few aspects of the example), it takes action depending on the nature of the declaration found. For `typedef` (or equivalent `using`) declarations and for nested class declaration, a `using` declaration of the form `using name = std::vector<T, A>::name;` is issued for each corresponding `name` found in `std::vector<T, A>`.
+
+If the iterated declaration introduces a function (queried with `std::meta::is_function`), a new function is defined with the same signature. The definition issues a call to `logger` passing the parameters list, followed by a forwarding action to the original function for the `data` member.
+
+Finally, if the iterated declaration is that of a function template (queried with `std::meta::is_function_template`), the code synthesizes a function template. Although the the template declaration has considerably more elements, the same `prototype_of` metafunction primitive is used. In the synthesized declaration, all names are already looked up in the context of the `std::vector<T, A>` instantiation; for example, `begin()` returns type `std::vector<T, A>::iterator` and not `logging_vector<T, A>::iterator` (even if that name has been declared as an alias).
+
+For seeing how variadic parameters are handled, consider the function `emplace` that is declared as a variadic function template with the signature `template<class... A> iterator emplace(const_iterator, A&&...);`. For the reflection of `emplace`, calling `template_parameter_list` returns the token sequence `^^{ _T0... }` (exact name chosen by the implementation), which is suitable for passing to the instantiation of another template. Correspondingly, `parameter_list` returns the token sequence `^^{ __p0, __p1... }`. This token sequence can be expanded anywhere the arguments of the called function are needed.
+
+It is worth noting that the forwarding call syntaxes `data.[:r:](...)` (for regular functions) and `data.template [:r:]<...>(...)` (for function templates) are already defined with the expected semantics in [@P2996R7], and work properly in the prototype implementations. The only added elements are the metafunctions `template_parameter_list`, `parameter_list`, and `forward_parameter_list`, which ensure proper passing down of parameter names from the synthesized function to to the corresponding member function.
 
 # Metafunctions for Template Declarations
 
 All template declarations (whether a class template or specialization thereof, a function template, an alias template, or a variable template), have some common elements: a template parameter list, an optional list of attributes, and an optional template-level `requires` clause.
 
-If our goal were simply to splice a template declaration back in its entirety&mdash;possibly with a different name and/or with normalized parameter names&mdash;the introspection metafunction `copy_signature(^^X, "Y")` showcased above could be defined as an implementation-defined primitive that simply splices the entire declaration of template `X` to declare a new template `Y` that is (save for the name) identical to `X`. However, most often code generation needs to tweak elements of the declaration&mdash;for example, adding a conjunction to the `requires` clause or eliminating the `deprecated` attribute. Simply returning an opaque token sequence of the entire declaration and leaving it to user-level code to painstakingly parse it once again is self-defeating; therefore, we aim to identify structural components of the declaration and define primitives that return each in turn. That way, we offer unbounded customization opportunities by allowing users to mix and match elements of the original declaration with custom code. Once we have all components of the template declaration, implementing `copy_signature` as a shorthand for assembling them together is trivially easy.
+If our goal were simply to splice a template declaration back in its entirety&mdash;possibly with a different name and/or with normalized parameter names&mdash;the introspection metafunction `prototype_of(f)` may seem sufficient. However, most often code generation needs to tweak elements of the declaration&mdash;for example, adding a conjunction to the `requires` clause or eliminating the `deprecated` attribute. Therefore, we aim to identify structural components of the declaration and define primitives that manipulate each in turn. That way, we offer unbounded customization opportunities by allowing users to amend the original declaration with custom code.
 
 In addition to template parameters, `requires` clause, and attributes, certain template declarations have additional elements as follows:
 
@@ -166,28 +216,28 @@ The declarations below summarize the metafunctions proposed, with full explanati
 
 ```cpp
 namespace std::meta {
+    // Returns the reflection of the prototype of a function template
+    consteval auto prototype_of(info) -> info;
+    // Returns given function prototype with a changed name
+    consteval auto set_name(info) -> info;
     //  Multiple explicit specializations and/or partial specializations
     consteval auto template_alternatives_of(info) -> vector<info>;
-    // Template parameter normalization prefix
-    constexpr string_view template_parameter_prefix;
-    // Template parameter list
+    // Template parameters vector
     consteval auto template_parameters_of(info) -> vector<info>;
+    // Comma-separated template parameter list
+    consteval auto template_parameter_list(info) -> info;
     // Attributes - extension of semantics in P3385
     consteval auto attributes_of(info) -> vector<info>;
+    consteval auto add_attribute(info) -> info;
+    consteval auto remove_attribute(info) -> info;
     // Template-level requires clause
-    consteval auto template_requires_clause_of(info) -> info;
+    consteval auto set_requires_clause(info, info) -> info;
+    consteval auto add_requires_clause_conjunction(info, info) -> info;
+    consteval auto add_requires_clause_disjunction(info, info) -> info;
     // Is this the reflection of the primary template declaration?
     consteval auto is_primary_template(info) -> bool;
-    // Arguments of an explicit specialization or partial specialization
-    consteval auto specialization_arguments_of(info) -> vector<info>;
-    // Bases of a class template
-    consteval auto template_bases_of(info) -> vector<info>;
-    // Type of a data member in a class template or of a variable template
-    consteval auto template_data_type(info);
-    // Type of a data member in a class template
-    consteval auto template_data_initializer(info) -> info;
-    // Declarator part of an alias template
-    consteval auto alias_template_declarator(info) -> info;
+    // Overloads of a given function name
+    consteval auto overloads_of(info) -> vector<info>;
     // Inline specifier present?
     consteval auto is_inline(info) -> bool;
     // cvref qualifiers and others - extensions of semantics in P2996
@@ -200,25 +250,63 @@ namespace std::meta {
     consteval auto has_static_linkage(info) -> bool;
     consteval auto is_noexcept(info) -> bool;
     // predicate for `noexcept`
-    consteval auto noexcept_of(info) -> info;
+    consteval auto set_noexcept_clause(info, info) -> info;
+    consteval auto add_noexcept_clause_conjunction(info, info) -> info;
+    consteval auto add_noexcept_clause_disjunction(info, info) -> info;
     // `explicit` present? - extension of P2996
     // predicate for `explicit`
-    consteval auto explicit_specifier_of(info) -> info;
+    consteval auto set_explicit_clause(info, info) -> info;
+    consteval auto add_explicit_clause_conjunction(info, info) -> info;
+    consteval auto add_explicit_clause_disjunction(info, info) -> info;
     // `constexpr` present?
     consteval auto is_declared_constexpr(info) -> bool;
     // `consteval` present?
     consteval auto is_declared_consteval(info) -> bool;
-    // Function template return type
-    consteval auto template_return_type_of(info) -> info;
-    // Function template parameter normalization prefix
-    constexpr string_view function_parameter_prefix;
-    // Function parameters
-    consteval auto template_function_parameters_of(info) -> vector<info>;
-    // Trailing `requires`
-    consteval auto trailing_requires_clause_of(info) -> info;
-    // Function template body
-    consteval auto body_of(info) -> info;
+    // Function template parameters
+    consteval auto parameters_of(info) -> vector<info>;
+    consteval auto parameter_list(info) -> vector<info>;
+    consteval auto forward_parameter_list(info) -> vector<info>;
+    //
+    consteval auto set_trailing_requires_clause(info, info) -> info;
+    consteval auto add_trailing_requires_clause_conjunction(info, info) -> info;
+    consteval auto add_trailing_requires_clause_disjunction(info, info) -> info;
 }
+```
+
+### `prototype_of`
+
+```cpp
+consteval auto prototype_of(info) -> info;
+```
+
+Returns the reflection of the prototype of a function template. Subsequently that reflection can be inserted as part of a token sequence. Typical uses first call `prototype_of` and then compute a slightly modified prototype before splicing.
+
+### `set_name`
+
+```cpp
+info set_name(info, string_view new_name);
+```
+
+Given a reflection, returns a reflection that is identical except for the name which is `new_name`. Example:
+
+```cpp
+template <typename T>
+void fun(const T& value) { ... }
+
+consteval {
+  auto f = ^^fun;
+  queue_injection(^^{
+    [:\(set_name(prototype_of(f), "my_fun")):] {
+      return [:f:]<\tokens(template_parameters_of(f))>(\tokens(forward_parameter_list(f)));
+    }
+  });
+}
+
+// Equivalent code:
+// template <typename T>
+// void my_fun(const T& value) {
+//   return fun<T>(value);
+// }
 ```
 
 ### `template_alternatives_of`
@@ -238,7 +326,7 @@ template <> class C<int, std::allocator, 42> {};
 template <typename T> class C<T, std::allocator, 100> {};
 ```
 
-Each specialization must be accessible for reflection in separation from the others; in particular, there should be a mechanism to iterate `^^C` to reveal `info` handles for the three available variants (the primary declaration, the explicit specialization, and the partial specialization). Each specialization may contain the same syntactic elements as the primary template declaration. In addition to those, explicit specializations and partial specializations also contain the specialization's template arguments (in the code above: `<int, std::allocator, 42>` and `<T, std::allocator, 100>`, respectively), which we also set out to be accessible through reflection.
+Each specialization must be accessible for reflection in separation from the others; in particular, there should be a mechanism to iterate `^^C` in the example above to reveal `info` handles for the three available variants (the primary declaration, the explicit specialization, and the partial specialization). Each specialization may contain the same syntactic elements as the primary template declaration. In addition to those, explicit specializations and partial specializations also contain the specialization's template arguments (in the code above: `<int, std::allocator, 42>` and `<T, std::allocator, 100>`, respectively), which we also set out to be accessible through reflection.
 
 Given the reflection of a class template or variable template, `template_alternatives_of` returns the reflections of all explicit specializations and all partial specializations thereof (including the primary declaration). Declarations are returned in syntactic order. This is important because a specialization may depend on a previous one, as shown below:
 
@@ -266,39 +354,13 @@ static_assert(r.size() == 3);
 static_assert(r[0] == ^^C);
 ```
 
-### `template_parameters_of`, `template_parameter_prefix`
+### `template_parameters_of`
 
 ```cpp
 vector<info> template_parameters_of(info);
-constexpr string_view template_parameter_prefix = $unspecified$;
 ```
 
-Given the reflection of a template, `template_parameters_of` returns an array of token sequences containing the template's parameters (a parameter pack counts as one parameter). Template parameter names are normalized by naming them the concatenation of `std::meta::template_parameter_prefix` and an integral counter starting at 0 and incremented with each parameter introduction, left to right. For example, `template_parameters_of(^^A)` yields the token sequences `^^{typename _T0}`, `^^{_T0 _T1}`, and `^^{auto... _T2}`. Note that the second parameter has been described as `_T0 _T1` (renaming the dependent name correctly). The template parameter prefix `std::meta::template_parameter_prefix` is an implementation-reserved name such as `"_T"` or `"__t"`. (Our examples use `"_T"`.)
-
-For example:
-
-```cpp
-template <typename T, T x, auto... f> class A;
-
-static_assert(template_parameters_of(^^A).size() == 3);
-// r0 is ^^{typename _T0}
-constexpr auto r0 = template_parameters_of(^^A)[0];
-// r1 is ^^{_T0 x}
-constexpr auto r1 = template_parameters_of(^^A)[1];
-// r2 is ^^{auto... _T0}
-constexpr auto r2 = template_parameters_of(^^A)[2];
-```
-
-As noted above, an implementation may return token sequences equivalent to those in the source code, e.g. `^^{class _T0}` instead of `^^{typename _T0}`.
-
-Defaulted parameters, if any, are included in the token sequences returned. For example:
-
-```cpp
-template <typename U = int> class A;
-
-// r is ^^{typename _T0 = int}
-constexpr auto r = template_parameters_of(^^A)[0];
-```
+Given the reflection of a template, `template_parameters_of` returns an array of token sequences containing the template's parameter names (a parameter pack counts as one parameter and is followed by `...`). To avoid name clashes, the implementation chooses unique names. (Our examples use `"_T"` followed by a number.) For function templates, it is guaranteed that `prototype_of` and `template_parameters_of` will use the same names. For example, `template_parameters_of(^^A)` may yield the token sequences `^^{_T0}`, `^^{_T1}`, and `^^{_T2...}`.
 
 For explicit specializations of class templates, `template_parameters_of` returns an empty vector:
 
@@ -307,67 +369,79 @@ template <typename T> class A;
 template <> class A<int>;
 
 // r refers to A<int>
-constexpr auto r = template_alternatives_of(^^A)[1];  // definition below
+constexpr auto r = template_alternatives_of(^^A)[1];  // pick specialization
 static_assert(template_parameters_of(r).empty());
 ```
 
-If a non-type template parameter has a non-dependent type, the tokens returned for that parameter include the fully looked-up name. For example:
+For partial specializations of class templates, `template_parameters_of` returns the parameters of the partial specialization (not those of the primary template). For example:
 
 ```cpp
-namespace Lib {
-    struct S {};
-    template <S s> class C { ... };
-}
-struct S {};  // illustrates a potential ambiguity
-
-// r is ^^{::Lib::S _T0}, not ^^{S _T0}
-constexpr auto r = template_parameters_of(^^Lib::C)[1];
+template <typename T> class A;
+template <typename T, typename U> class A<std::tuple<T, U>>;
+constexpr auto r = template_alternatives_of(^^A)[1];  // pick specialization
+static_assert(template_parameters_of(r).size() == 2);
 ```
-Given a class template `A` that has explicit instantiations and/or partial specializations declared, the call `template_parameters_of(^^A)` is not ambiguous&mdash;it refers to the primary declaration of the template.
+
+Given a class template `A` that has explicit instantiations and/or partial specializations declared, referring the template by name in the call `template_parameters_of(^^A)` is not ambiguous&mdash;it refers to the primary declaration of the template.
 
 Calling `template_parameters_of` against a non-template entity, as in `template_parameters_of(^^int)` or `template_parameters_of(^^std::vector<int>)`, fails to evaluate to a constant expression.
 
-### `attributes_of`
+### `template_parameter_list`
+
+```cpp
+consteval auto template_parameter_list(info) -> info;
+```
+
+Returns the result of `template_parameters_of` as a comma-separated list in a token sequence. Variadics, if any, are followed by `...`.
+
+### `attributes_of`, `add_attribute`, `remove_attribute`
 
 ```cpp
 vector<info> attributes_of(info);
+info add_attribute(info, info);
+info remove_attribute(info, info);
 ```
 
-Returns all attributes associated with `info`. The intent is to extend the functionality of `attributes_of` as defined in [P3385](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3385r0.html) to template declarations. We defer details and particulars to that proposal.
+`attributes_of` returns all attributes associated with `info`. The intent is to extend the functionality of `attributes_of` as defined in [@P3385R0] to template declarations.
 
-### `template_requires_clause_of`
+`add_attribute(r, attr)` returns a reflection that adds the attribute `attr` to the given reflection `r`. If `r` already had the attribute, it is returned.
+
+`remove_attribute` returns a reflection that removes the attribute `attr` from the given reflection `r`. If `r` did now have the attribute, it is returned.
+
+We defer details and particulars to [@P3385R0].
+
+### `set_requires_clause`, `add_requires_clause_conjunction`, `add_requires_clause_disjunction`
 
 ```cpp
-info template_requires_clause_of(info);
+info set_requires_clause(info, info);
+info add_requires_clause_conjunction(info, info);
+info add_requires_clause_disjunction(info, info);
 ```
 
-Given the reflection of a template, returns the template-level `requires` clause as a token sequence. The names of template parameters found in the `requires` clause are normalized. Non-dependent identifiers are returned in fully-qualified form. For example:
+Given the reflection of a template, `set_requires_clause` returns a reflection of an identical template but with the `requires` clause replaced by the token sequence given in the second parameter. The existing `requires` clause in the template, if any, is ignored. Example:
 
 ```cpp
-struct X { ... };
 template <typename T>
-requires (sizeof(X) > 256 && std::is_default_constructible_v<T>)
-class A;
+requires (sizeof(T) > 64)
+void fun(const T& value) { ... }
 
-// Returns `^^{(sizeof(::X) > 1 && ::std::is_default_constructible_v<_T0>)}`
-constexpr auto r1 = template_requires_clause_of(^^A);
+consteval {
+  auto f = ^^fun;
+  queue_injection(^^{
+    [:\(set_requires_clause(set_name(prototype_of(f), "my_fun")),
+      ^^{ sizeof(\tokens(template_parameters_of(f)[0])) == 128 }):];
+  });
+}
 
-template <typename T>
-requires (sizeof(T) > 1 && std::is_default_constructible_v<T>)
-using V = std::vector<T>;
-
-// Returns `^^{(sizeof(_T0) > 1 && ::std::is_default_constructible_v<_T0>)}`
-constexpr auto r2 = template_requires_clause_of(^^V);
-
-template <class T>
-requires (std::is_convertible_v<int, T>)
-auto zero = T(0);
-
-// Returns `^^{(::std::is_convertible_v<int, _T0>)}`
-constexpr auto r3 = template_requires_clause_of(^^zero);
+// Equivalent code:
+// template <typename T>
+// requires (sizeof(T) == 128)
+// void my_fun(const T& value);
 ```
 
-Calling `template_requires_clause_of` against a template that has no such clause returns an empty token sequence. Calling `template_requires_clause_of` against a non-template, as in `template_requires_clause_of(^^int)` or `template_requires_clause_of(^^std::vector<int>)`, fails to evaluate to a constant expression.
+The functions `add_requires_clause_conjunction` and `add_requires_clause_disjunction` compose the given token sequence with the existing `requires` clause. (If no such clause exists, it is assumed to be the expression `true`.) The `add_requires_clause_conjunction` metafunction performs a conjunction (logical "and") between the clause given in the token sequence and the existing token sequence. The `add_requires_clause_disjunction` metafunction performs a disjunction (logical "or") between the clause given in the token sequence and the existing token sequence.
+
+Calling `set_requires_clause`, `add_requires_clause_conjunction`, or `add_requires_clause_disjunction` against a non-template, as in `set_requires_clause(^^int, ^^{true})`, fails to evaluate to a constant expression.
 
 ### `is_primary_template`
 
@@ -386,167 +460,13 @@ static_assert(!is_primary_template(template_alternatives_of(^^A)[1]));
 static_assert(!is_primary_template(^^int));
 ```
 
-### `specialization_arguments_of`
-
-```cpp
-vector<info> specialization_arguments_of(info);
-```
-
-For an explicit specialization or a partial specialization of a class template or variable template, returns that specialization's arguments. For example:
-
-```cpp
-template <typename T> class A;
-template <> class A<int>;
-template <typename T> class A<std::tuple<int, T>>;
-// Get the reflection of the first explicit specialization
-constexpr auto r1 = template_alternatives_of(^^A)[1];
-// Get the argument of that specialization, i.e. ^^{int}
-constexpr auto r11 = specialization_arguments_of(r1)[0];
-// Get the reflection of the second explicit specialization
-constexpr auto r2 = template_alternatives_of(^^A)[2];
-// Get the arguments of that specialization, i.e. ^^{std::tuple<int, T>}
-constexpr auto r21 = specialization_arguments_of(r2)[0];
-```
-
-If an explicit specialization uses default arguments, those will be made part of the return of `specialization_arguments_of`, even if they are not syntactically present in the source code:
-
-```cpp
-template <typename T = int> class A;
-// Explicitly specialize A<int>.
-template <> class A<>;
-// Get the explicit specialization
-constexpr auto r = template_alternatives_of(^^A)[1];
-// r1 will be ^^{int}
-constexpr auto r1 = specialization_arguments_of(r)[0];
-```
-
-Note that `specialization_arguments_of` may return an empty vector. For example:
-
-```cpp
-template <typename... Ts> class A;
-template <> class A<>;
-constexpr auto r = template_alternatives_of(^^A)[1];
-// No specialization arguments present
-static_assert(specialization_arguments_of(r).empty());
-```
-
-The metafunction `specialization_arguments_of` has a similar role but is qualitatively different from `template_arguments_of` in P2996 because the latter returns resolved entities (types, values, or template names), whereas the former returns token sequences of the arguments.
-
-Non-dependent types returned are always returned in fully namespace-qualified form. Example:
-
-```cpp
-namespace N {
-    struct S {};
-    template <typename T> class A;
-    // Explicitly specialize A<int>.
-    template <> class A<S>;
-}
-struct S {};  // to illustrate a possible ambiguity
-
-// Get the explicit specialization
-constexpr auto r = template_alternatives_of(^^N::A)[1];
-// r1 will be ^^{::N::S}, not ^^{S}
-constexpr auto r1 = specialization_arguments_of(r)[0];
-```
-
-If `specialization_arguments_of` is called with an `info` that is not an explicit template specialization, the call fails to resolve to a constant expression.
-
-
-### `template_bases_of`
-
-```cpp
-vector<info> template_bases_of(info);
-```
-
-Returns the bases of a class template, in declaration order, as token sequences. Access specifiers are part of the returned tokens in such a way that reassembling the result of `template_bases_of` as a comma-separated list produces a valid base classes specifier. Example:
-
-```cpp
-class B1 { ... };
-template <typename T> class B2 { ... };
-template <typename T> class C : public B1, public B2<T> { ... };
-
-// Contains ^^{public ::B1}
-constexpr auto r1 = template_bases_of(^^C)[0];
-// Contains ^^{public ::B2<_T0>}
-constexpr auto r2 = template_bases_of(^^C)[1];
-```
-
-### `template_data_type`
-
-```cpp
-info template_data_type(info);
-```
-
-Given the reflection of a data member of a class template or of a variable template, returns the type of the member as a token sequence. Returning a type reflection, as is the case for P2996's `type_of`, is not possible in most cases. Example:
-
-```cpp
-template <typename T>
-struct A {
-    const T& x;
-};
-template <class T>
-auto zero = T(0);
-
-// Call P2996's nonstatic_data_members_of extended for templates
-// r1 contains ^^{_T0 const&}
-constexpr auto r1 = template_data_type(nonstatic_data_members_of(^^C)[0]);
-// r2 contains ^^{_T0(0)}
-constexpr auto r2 = template_data_type(^^zero);
-```
-
-### `template_data_initializer`
-
-```cpp
-info template_data_initializer(info);
-```
-
-Returns the initializer part of a data member of a class template or of a variable template declaration, as a token sequence. Example:
-
-```cpp
-template <class T>
-struct S {
-    T x = T("hello");
-    T y;
-}
-
-template <class T>
-auto zero = T(0);
-
-// r1 contains `^^{_T0("hello")}`
-constexpr auto r1 = template_data_initializer(nonstatic_data_members_of(^^S)[0]);
-// r2 contains `^^{}`
-constexpr auto r2 = template_data_initializer(nonstatic_data_members_of(^^S)[1]);
-// r3 contains `^^{_T0(0)}`
-constexpr auto r3 = template_data_initializer(^^zero);
-
-```
-
-If `template_data_initializer` is called with an `info` that is not an alias template, the call fails to resolve to a constant expression.
-
-### `alias_template_declarator`
-
-```cpp
-info alias_template_declarator(info);
-```
-
-Returns the declarator part of an alias template declaration, as a token sequence. Example:
-
-```cpp
-template <typename T> using V = std::vector<T>;
-
-// Returns `^^{::std::vector<_T0, ::std::allocator<_T0>>}`
-constexpr auto r = alias_template_declarator(^^V);
-```
-
-If `alias_template_declarator` is called with an `info` that is not an alias template, the call fails to resolve to a constant expression.
-
 ### `overloads_of`
 
 ```cpp
 vector<info> overloads_of(info);
 ```
 
-Returns an array of all overloads of a given function, usually passed in as a reflection of an identifier (e.g., `^^func`). All overloads are included, template and nontemplate. To distinguish functions from function templates, `is_function_template` (P2996) can be used. Example:
+Returns an array of all overloads of a given function, usually passed in as a reflection of an identifier (e.g., `^^func`). All overloads are included, template and nontemplate. To distinguish functions from function templates, `is_function_template` ([@P2996R7]) can be used. Example:
 
 ```cpp
 void f();
@@ -585,30 +505,56 @@ bool has_static_linkage(info)
 bool is_noexcept(info);
 ```
 
-Extends the homonym metafunctions defined by P2996 to function templates.
+Extends the homonym metafunctions defined by [@P2996R7] to function templates.
 
 For `is_noexcept` and `is_explicit`, `true` is returned if the `noexcept` and `explicit` clause, respectively, is predicated.
 
-### `noexcept_of`
+### `set_noexcept_clause`, `add_noexcept_clause_conjunction`, `add_noexcept_clause_disjunction`
 
 ```cpp
-info noexcept_of(info);
+info set_noexcept_clause(info, info);
+info add_noexcept_clause_conjunction(info, info);
+info add_noexcept_clause_disjunction(info, info);
 ```
 
-Returns the `noexcept` clause of a function or function template, if any, as a token sequence, as follows:
-
-- if no `noexcept` clause is present, returns the empty token sequence;
-- if `noexcept` is unconditional, returns the token sequence `^^{noexcept}`;
-- if `noexcept` is conditional (e.g., `noexcept(expression)`), returns the conditional noexcept in tokenized form;
-- if `noexcept` would not be applicable (e.g., `noexcept(^^int)`), the call fails to evaluate to a constant expression.
-
-### `explicit_specifier_of`
+Given the reflection of a template, `set_noexcept_clause` returns a reflection of an identical template but with the `noexcept` clause replaced by the token sequence given in the second parameter. The existing `noexcept` clause in the template, if any, is ignored. Example:
 
 ```cpp
-info explicit_specifier_of(info);
+template <typename T>
+noexcept (sizeof(T) > 64)
+void fun(const T& value) { ... }
+
+consteval {
+  auto f = ^^fun;
+  queue_injection(^^{
+    [:\(set_noexcept_clause(set_name(prototype_of(f), "my_fun")),
+      ^^{ sizeof(\tokens(template_parameters_of(f)[0])) == 128 }):];
+  });
+}
+
+// Equivalent code:
+// template <typename T>
+// noexcept (sizeof(T) == 128)
+// void my_fun(const T& value);
 ```
 
-Returns the `explicit` specifier of the given `info` of a constructor. If the constructor has no explicit specifier, returns the empty sequence. If the constructor has an unconditional `explicit` specifier, returns the token sequence `^^{explicit}`. If the constructor has a predicated `explicit(constant-expression)`, returns the token sequence `^^{explicit(constant-expression)}`. All nondependent identifier in the token sequence are fully namespace-qualified.
+The functions `add_noexcept_clause_conjunction` and `add_noexcept_clause_disjunction` compose the given token sequence with the existing `noexcept` clause. (If no such clause exists, it is assumed to be the expression `true`.) The `add_noexcept_clause_conjunction` metafunction performs a conjunction (logical "and") between the clause given in the token sequence and the existing token sequence. The `add_noexcept_clause_disjunction` metafunction performs a disjunction (logical "or") between the clause given in the token sequence and the existing token sequence.
+
+Calling `set_noexcept_clause`, `add_noexcept_clause_conjunction`, or `add_noexcept_clause_disjunction` against a non-template, as in `set_noexcept_clause(^^int, ^^{true})`, fails to evaluate to a constant expression.
+
+### `set_explicit_clause`, `add_explicit_clause_conjunction`, `add_explicit_clause_disjunction`
+
+```cpp
+info set_explicit_clause(info, info);
+info add_explicit_clause_conjunction(info, info);
+info add_explicit_clause_disjunction(info, info);
+```
+
+Given the reflection of a template, `set_explicit_clause` returns a reflection of an identical template but with the `explicit` clause replaced by the token sequence given in the second parameter. The existing `explicit` specifier in the template, if any, is ignored.
+
+The functions `add_explicit_clause_conjunction` and `add_explicit_clause_disjunction` compose the given token sequence with the existing `explicit` clause. (If no such clause exists, it is assumed to be the expression `true`.) The `add_explicit_clause_conjunction` metafunction performs a conjunction (logical "and") between the clause given in the token sequence and the existing token sequence. The `add_explicit_clause_disjunction` metafunction performs a disjunction (logical "or") between the clause given in the token sequence and the existing token sequence.
+
+Calling `set_explicit_clause`, `add_explicit_clause_conjunction`, or `add_explicit_clause_disjunction` against a non-template, as in `set_explicit_clause(^^int, ^^{true})`, fails to evaluate to a constant expression.
 
 ### `is_declared_constexpr`, `is_declared_consteval`
 
@@ -619,63 +565,68 @@ bool is_declared_consteval(info);
 
 Returns `true` if and only if `info` refers to a declaration that is `constexpr` or `consteval`, respectively. In all other cases, returns `false`.
 
-### `template_return_type_of`
+### `parameters_of`
 
 ```cpp
-info template_return_type_of(info);
+vector<info> parameters_of(info);
 ```
 
-Returns the return type of the function template represented by `info`. This function is similar with `return_type_of` in P3096. However, one key difference is that `return_type_of` returns the reflection of a type, whereas `template_return_type_of` returns the token sequence of the return type (given that the type is often not known before instantiation or may be `auto&` etc).
+Returns an array of token sequences containing the parameter names of the function template represented by `info`. Parameter names are chosen by the implementation. It is guaranteed that the nmes returned by `parameters_of(f)` are consistent with the names returned by `parameters_of(f)` for any reflection `f` of a function template.
 
-### `template_function_parameters_of`, `function_parameter_prefix`
+This function bears similarities with `parameters_of` in [@P3096R3]. However, one key difference is that `parameters_of` returns reflection of types, whereas `template_return_type_of` returns the token sequence of the return type (given that the type is often not known before instantiation or may be `auto&` etc).
+
+### `parameter_list`
 
 ```cpp
-vector<info> template_function_parameters_of(info);
-constexpr string_view function_parameter_prefix;
+info parameter_list(info);
 ```
 
-Returns an array of parameters (type and name for each) of the function template represented by `info`, as token sequences. Parameter names are normalized by naming them the concatenation of `std::meta::function_parameter_prefix` and an integral counter starting at 0 and incremented with each parameter introduction, left to right. Normalizing parameter names makes it easy for splicing code to generate forwarding argument lists such as the metafunctions `params_of` and `make_fwd_call` in the opening example.
+Convenience function that returns the parameters returned by `parameters_of` in the form of a comma-separated list. The result is returned as a token sequence.
 
-This function bears similarities with `parameters_of` in P3096. However, one key difference is that `parameters_of` returns reflection of types, whereas `template_return_type_of` returns the token sequence of the return type (given that the type is often not known before instantiation or may be `auto&` etc).
-
-### `trailing_requires_clause_of`
+### `forward_parameter_list`
 
 ```cpp
-info trailing_requires_clause_of(info);
+info forward_parameter_list(info);
 ```
 
-Given the `info` of a function template, returns the trailing `requires` clause of the declaration as a token sequence. Example:
+Convenience function that returns the parameters returned by `parameters_of` in the form of a comma-separated list, each passed to `std::forward` appropriately. The result is returned as a token sequence and can be spliced in a call to foward all parameters to another function.
+
+### `set_trailing_requires_clause`, `add_trailing_requires_clause_conjunction`, `add_trailing_requires_clause_disjunction`
+
+```cpp
+info set_trailing_requires_clause(info, info);
+info add_trailing_requires_clause_conjunction(info, info);
+info add_trailing_requires_clause_disjunction(info, info);
+```
+
+Given the reflection of a template, `set_trailing_requires_clause` returns a reflection of an identical template but with the `requires` clause replaced by the token sequence given in the second parameter. The existing `requires` clause in the template, if any, is ignored. Example:
 
 ```cpp
 template <typename T>
-requires (sizeof(T) > 8)
-void f() requires (sizeof(T) < 64);
+requires (sizeof(T) > 64)
+void fun(const T& value) { ... }
 
-// Will contain ^^{ (sizeof(T) < 64) }
-constexpr auto r = trailing_requires_clause_of(^^f);
-```
-
-### `body_of`
-
-```cpp
-info body_of(info);
-```
-
-Given the `info` of a function template, returns the function's body as a token sequence, without the top-level braces (which can be added with ease if needed). All parameter names are normalized and all non-dependent identifiers are fully qualified. Example:
-
-```cpp
-template <typename T>
-void f(T x) {
-    return x < 0 ? -x : x;
+consteval {
+  auto f = ^^fun;
+  queue_injection(^^{
+    [:\(set_trailing_requires_clause(set_name(prototype_of(f), "my_fun")),
+      ^^{ sizeof(\tokens(template_parameters_of(f)[0])) == 128 }):];
+  });
 }
 
-// Will contain ^^{ return _p0 < 0 ? -_p0 : _p0; }
-constexpr auto r = body_of(^^f);
+// Equivalent code:
+// template <typename T>
+// requires (sizeof(T) == 128)
+// void my_fun(const T& value);
 ```
+
+The functions `add_trailing_requires_clause_conjunction` and `add_trailing_requires_clause_disjunction` compose the given token sequence with the existing `requires` clause. (If no such clause exists, it is assumed to be the expression `true`.) The `add_trailing_requires_clause_conjunction` metafunction performs a conjunction (logical "and") between the clause given in the token sequence and the existing token sequence. The `add_trailing_requires_clause_disjunction` metafunction performs a disjunction (logical "or") between the clause given in the token sequence and the existing token sequence.
+
+Calling `set_trailing_requires_clause`, `add_trailing_requires_clause_conjunction`, or `add_trailing_requires_clause_disjunction` against a non-template, as in `set_trailing_requires_clause(^^int, ^^{true})`, fails to evaluate to a constant expression.
 
 # Metafunctions for Iterating Members of Class Templates
 
-The metafunctions described above need to be complemented with metafunctions that enumerate the contents of a class template. Fortunately, P2996 already defines number of metafunctions for doing so: `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `nonstatic_data_members_of`, `enumerators_of`, `subobjects_of`. To these, P2996 adds access-aware metafunctions `accessible_members_of`, `accessible_bases_of`, `accessible_static_data_members_of`, `accessible_nonstatic_data_members_of`, and `accessible_subobjects_of`. Here, we propose that these functions are extended in semantics to also support `info` representing class templates. The reflections of members of class templates, however, are not the same as the reflection of corresponding members of regular classes;
+The metafunctions described above need to be complemented with metafunctions that enumerate the contents of a class template. Fortunately, [@P2996R7] already defines number of metafunctions for doing so: `members_of`, `static_data_members_of`, `nonstatic_data_members_of`, `nonstatic_data_members_of`, `enumerators_of`, `subobjects_of`. To these, P2996 adds access-aware metafunctions `accessible_members_of`, `accessible_bases_of`, `accessible_static_data_members_of`, `accessible_nonstatic_data_members_of`, and `accessible_subobjects_of`. Here, we propose that these functions are extended in semantics to also support `info` representing class templates. The reflections of members of class templates, however, are not the same as the reflection of corresponding members of regular classes;
 
 One important addendum to P2996 that is crucial for code generation is that when applied to members, these discovery metafunctions return members in lexical order. Otherwise, attempts to implement `identity` will fail for class templates. Consider:
 
@@ -687,13 +638,11 @@ struct Container {
 }
 ```
 
-The reflections of template components returned by `members_of` and others can be inspected with template-specific primitives, not the primitives defined in P2996. For example, the data members returned by `nonstatic_data_members_of` can be inspected with `template_data_type` and `template_data_initializer`, but not with `offset_of`, `size_of`, `alignment_of`, or `bit_size_of` because at the template definition time the layout has not been created.
-
 # Future Work
 
-This proposal is designed to interoperate with [@P2996R7], [@P3157R1], [@P3294R2], and [@P3385R0]. Changes in these proposals may influence this proposal. Also, certain metafunctions proposed herein (such as `is_inline`) may migrate to these proposals.
+Like [@P2996R7], this proposal is designed to grow by accretion. Future revisions will add more primitives that complement the existing ones and improve the comprehensiveness of the reflection facility for templates.
 
-The normalization scheme for template parameters and function parameters is rigid. We plan to refine it in future revisions of this document.
+This proposal is designed to interoperate with [@P2996R7], [@P3157R1], [@P3294R2], and [@P3385R0]. Changes in these proposals may influence this proposal. Also, certain metafunctions proposed herein (such as `is_inline`) may migrate to these proposals.
 
 ---
 references:
