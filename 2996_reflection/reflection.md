@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R8
+document: D2996R9
 date: today
 audience: CWG, LEWG, LWG
 author:
@@ -25,6 +25,12 @@ tag: reflection
 ---
 
 # Revision History
+
+Since [@P2996R8]:
+
+* ensure `value_of` and `extract` are usable with reflections of local variables in consteval functions
+* specifically state that `define_aggregate` cannot be used for a class currently being defined
+* `members_of($closure-type$)` returns an unspecified sequence of reflections
 
 Since [@P2996R7]:
 
@@ -6280,9 +6286,9 @@ consteval info type_of(info r);
 consteval info object_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing either an object or a variable denoting an object with static storage duration ([expr.const]).
+[#]{.pnum} *Constant When*: `r` represents either an object with static storage duration ([basic.stc.general]), or a variable associated with, or referring to, such an object.
 
-[#]{.pnum} *Returns*: If `r` is a reflection of a variable, then a reflection of the object denoted by the variable. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` represents a variable, then a reflection of the object associated with, or referred to by, the variable. Otherwise, `r`.
 
 ::: example
 ```cpp
@@ -6302,9 +6308,9 @@ consteval info value_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing
 
-* [#.#]{.pnum} either an object or variable, usable in constant expressions from some point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]),
+* [#.#]{.pnum} a value,
 * [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} a value.
+* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type, and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began in the manifestly constant-evaluated expression currently under evaluation ([expr.const]), ([temp.type]).
 
 [#]{.pnum} *Returns*:
 
@@ -6388,23 +6394,34 @@ consteval vector<info> members_of(info r);
 
 [#]{.pnum} *Constant When*: `r` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
 
-[#]{.pnum} A member of a class or namespace `$E$` is _members-of-representable_ if it is either
+[#]{.pnum} A member of either
 
-* a class that is not a closure type,
-* a type alias,
-* a primary class template, function template, primary variable template, alias template, or concept,
-* a variable or reference,
-* a function whose constraints (if any) are satisfied unless it is a prospective destructor that is not a selected destructor ([class.dtor]),
-* a non-static data member or unnamed bit-field, other than members of an anonymous union that is directly or indirectly members-of-representable,
-* a namespace, or
-* a namespace alias.
+* [#.#]{.pnum} a class that is not a closure type, or
+* [#.#]{.pnum} a namespace
 
-[Counterexamples of members-of-representable members include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
+is _members-of-representable_ if it is
+
+* [#.#]{.pnum} a class that is not a closure type,
+* [#.#]{.pnum} a type alias,
+* [#.#]{.pnum} a primary class template, function template, primary variable template, alias template, or concept,
+* [#.#]{.pnum} a variable or reference,
+* [#.#]{.pnum} a function whose constraints (if any) are satisfied unless it is a prospective destructor that is not a selected destructor ([class.dtor]),
+* [#.#]{.pnum} a non-static data member or unnamed bit-field, other than members of an anonymous union that is directly or indirectly members-of-representable,
+* [#.#]{.pnum} a namespace, or
+* [#.#]{.pnum} a namespace alias.
+
+A member of a closure type is members-of-representable if it is
+
+* [#.#]{.pnum} a function call operator or function call operator template,
+* [#.#]{.pnum} a conversion function or conversion function template, or
+* [#.#]{.pnum} a non-static data member corresponding to an entity captured by copy.
+
+[Counterexamples of members-of-representable members include: injected class names, partial template specializations, friend declarations, static assertions, and non-static data members of closure types that correspond to entities captured by reference.]{.note}
 
 [#]{.pnum} A member `$M$` of a class or namespace is _members-of-reachable_ from a point `$P$` if there exists a declaration `$D$` of `$M$` that is reachable from `$P$`, and either `$M$` is not TU-local or `$D$` is declared in the translation unit containing `$P$`.
 
 [#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-reachable from some point in the evaluation context ([expr.const]).
-If `$E$` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
+If `r` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Class members and unnamed bit-fields are indexed in the order in which they are declared, but the order of namespace members is unspecified.
 [Base classes are not members. Implicitly-declared special members appear after any user-declared members.]{.note}
 
@@ -6772,7 +6789,8 @@ consteval bool is_data_member_spec(info r);
 
 [#]{.pnum} *Constant When*: Letting `$C$` be the class represented by `class_type` and `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-- [#.#]{.pnum} If `$C$` is a complete type from some point in the evaluation context, then
+- [#.#]{.pnum} `$C$` is not a class being defined,
+- [#.#]{.pnum} if `$C$` is a complete type from some point in the evaluation context, then
   - the reachable definition of `$C$` is an injected declaration produced by an evaluation of `define_aggregate`,
   - `$C$` has as many data members as `mdescrs` has elements, and
   - each `$K$`^th^ reflection value in `mdescrs` describes a data member with all of the same properties as the `$K$`^th^ data member of `$C$`.
