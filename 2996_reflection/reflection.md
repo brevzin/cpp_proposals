@@ -6288,7 +6288,7 @@ consteval info object_of(info r);
 
 [#]{.pnum} *Constant When*: `r` represents either an object with static storage duration ([basic.stc.general]), or a variable associated with, or referring to, such an object.
 
-[#]{.pnum} *Returns*: If `r` represents a variable, then a reflection of the object associated with, or referred to, by the variable. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` represents a variable, then a reflection of the object associated with, or referred to by, the variable. Otherwise, `r`.
 
 ::: example
 ```cpp
