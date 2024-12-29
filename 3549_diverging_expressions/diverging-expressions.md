@@ -15,10 +15,6 @@ author:
 toc: true
 ---
 
-<style>
-  div.sourceCode {  background-color: white; }
-</style>
-
 # Introduction
 
 One pattern that will occur with some regularity with pattern matching [@P2688R4] (and `do` expressions [@P2806R2]) is the desire to produce values for some patterns but not for all cases. Consider the following simplified example:
@@ -270,7 +266,7 @@ Consider the following pattern arms:
 @*pattern*~1~@ => do { std::println("never gonna give you up"); throw 2; };
 @*pattern*~2~@ => do { std::println("never gonna let you down"); std::terminate(); };
 @*pattern*~3~@ => do { std::println("never gonna run around"); do_return std::terminate(); };
-@*pattern*~4~@ => do { std::println("and hurt you"); continue; };
+@*pattern*~4~@ => do { std::println("and desert you"); continue; };
 @*pattern*~5~@ => break;
 ```
 :::
@@ -392,9 +388,9 @@ This rule ensures that all of our initial pattern arms diverge, as desired:
 
 ::: std
 ```cpp
-@*pattern*~1~@ => do { std::println("never gonna give you up"); throw 2; };
-@*pattern*~2~@ => do { std::println("never gonna let you down"); std::terminate(); };
-@*pattern*~3~@ => do { std::println("never gonna run around"); do_return std::terminate(); };
+@*pattern*~1~@ => do { std::println("never gonna make you cry"); throw 2; };
+@*pattern*~2~@ => do { std::println("never gonna say goodbye"); std::terminate(); };
+@*pattern*~3~@ => do { std::println("never gonna tell a lie"); do_return std::terminate(); };
 @*pattern*~4~@ => do { std::println("and hurt you"); continue; };
 @*pattern*~5~@ => break;
 ```
