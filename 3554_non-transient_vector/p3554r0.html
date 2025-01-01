@@ -697,7 +697,7 @@ of ergonomic value.</p>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// data is a span&lt;string_view const&gt;</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> data <span class="op">=</span> define_static_array<span class="op">(</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  strings<span class="op">()</span> <span class="op">|</span> std<span class="op">::</span>views<span class="op">::</span>transform<span class="op">([&amp;](</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> str<span class="op">){</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> define_static_string<span class="op">(</span>str<span class="op">)</span>;</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> std<span class="op">::</span>string_view<span class="op">(</span>define_static_string<span class="op">(</span>str<span class="op">))</span>;</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span></span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="op">)</span>;</span></code></pre></div>
 
@@ -729,9 +729,8 @@ we’d want a little bit more help.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>The current rule is that any allocation within a constant expression
 <code class="sourceCode cpp">E</code> <em>must</em> be deallocated
-within <code class="sourceCode cpp">E</code>. This is expression
-<span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/10 via the
-rules:</p>
+within <code class="sourceCode cpp">E</code>. That rule can be found in
+<span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/10:</p>
 <div class="std">
 <blockquote>
 <ul>

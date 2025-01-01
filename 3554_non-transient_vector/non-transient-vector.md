@@ -52,7 +52,7 @@ constexpr auto strs() -> std::vector<std::string>;
 // data is a span<string_view const>
 constexpr auto data = define_static_array(
   strings() | std::views::transform([&](auto&& str){
-    return define_static_string(str);
+    return std::string_view(define_static_string(str));
   })
 );
 ```
@@ -72,7 +72,7 @@ But there are plenty of places where you might want persistent constexpr allocat
 
 # Proposal
 
-The current rule is that any allocation within a constant expression `E` _must_ be deallocated within `E`. This is expression [expr.const]{.sref}/10 via the rules:
+The current rule is that any allocation within a constant expression `E` _must_ be deallocated within `E`. That rule can be found in [expr.const]{.sref}/10:
 
 ::: std
 * [10.18]{.pnum} a *new-expression*, unless either:
