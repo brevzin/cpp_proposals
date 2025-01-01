@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-12-20" />
+  <meta name="dcterms.date" content="2025-01-01" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -448,6 +448,9 @@ background-color: white;
 td > div.sourceCode {
 background-color: inherit;
 }
+td > div > div.sourceCode {
+background-color: inherit;
+}
 table {
 border-collapse: collapse;
 }
@@ -565,7 +568,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-12-20</td>
+    <td>2025-01-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -749,10 +752,10 @@ definitions<span></span></a></li>
 <li><a href="#lex.phases-phases-of-translation" id="toc-lex.phases-phases-of-translation"><span>5.2
 <span>[lex.phases]</span></span> Phases of
 translation<span></span></a></li>
-<li><a href="#lex.pptoken-preprocessing-tokens" id="toc-lex.pptoken-preprocessing-tokens"><span>5.4
+<li><a href="#lex.pptoken-preprocessing-tokens" id="toc-lex.pptoken-preprocessing-tokens"><span>5.5
 <span>[lex.pptoken]</span></span> Preprocessing
 tokens<span></span></a></li>
-<li><a href="#lex.operators-operators-and-punctuators" id="toc-lex.operators-operators-and-punctuators"><span>5.12
+<li><a href="#lex.operators-operators-and-punctuators" id="toc-lex.operators-operators-and-punctuators"><span>5.8
 <span>[lex.operators]</span></span> Operators and
 punctuators<span></span></a></li>
 <li><a href="#basic.pre-preamble" id="toc-basic.pre-preamble"><span>6.1
@@ -791,15 +794,15 @@ dependence<span></span></a></li>
 <li><a href="#expr.prim-primary-expressions" id="toc-expr.prim-primary-expressions"><span>7.5
 <span>[expr.prim]</span></span> Primary
 expressions<span></span></a></li>
-<li><a href="#expr.prim.id.general-general" id="toc-expr.prim.id.general-general"><span>7.5.4.1
+<li><a href="#expr.prim.id.general-general" id="toc-expr.prim.id.general-general"><span>7.5.5.1
 <span>[expr.prim.id.general]</span></span> General<span></span></a></li>
-<li><a href="#expr.prim.id.unqual-unqualified-names" id="toc-expr.prim.id.unqual-unqualified-names"><span>7.5.4.2
+<li><a href="#expr.prim.id.unqual-unqualified-names" id="toc-expr.prim.id.unqual-unqualified-names"><span>7.5.5.2
 <span>[expr.prim.id.unqual]</span></span> Unqualified
 names<span></span></a></li>
-<li><a href="#expr.prim.id.qual-qualified-names" id="toc-expr.prim.id.qual-qualified-names"><span>7.5.4.3
+<li><a href="#expr.prim.id.qual-qualified-names" id="toc-expr.prim.id.qual-qualified-names"><span>7.5.5.3
 <span>[expr.prim.id.qual]</span></span> Qualified
 names<span></span></a></li>
-<li><a href="#expr.prim.lambda.capture-captures" id="toc-expr.prim.lambda.capture-captures"><span>7.5.5.3
+<li><a href="#expr.prim.lambda.capture-captures" id="toc-expr.prim.lambda.capture-captures"><span>7.5.6.3
 <span>[expr.prim.lambda.capture]</span></span>
 Captures<span></span></a></li>
 <li><a href="#expr.prim.splice-expression-splicing" id="toc-expr.prim.splice-expression-splicing">7.5.8* [expr.prim.splice]
@@ -1016,7 +1019,7 @@ Other transformations<span></span></a></li>
 <li><a href="#meta.reflection.tuple.variant-tuple-and-variant-queries" id="toc-meta.reflection.tuple.variant-tuple-and-variant-queries">[meta.reflection.tuple.variant],
 Tuple and Variant Queries<span></span></a></li>
 </ul></li>
-<li><a href="#bit.cast-function-template-bit_cast" id="toc-bit.cast-function-template-bit_cast"><span>22.15.3
+<li><a href="#bit.cast-function-template-bit_cast" id="toc-bit.cast-function-template-bit_cast"><span>22.11.3
 <span>[bit.cast]</span></span> Function template
 <code class="sourceCode cpp">bit_cast</code><span></span></a></li>
 </ul></li>
@@ -5164,7 +5167,7 @@ follows:</p>
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">7-8</a></span>
 Whitespace characters separating tokens are no longer significant. Each
-preprocessing token is converted into a token (<span>5.6 <a href="https://wg21.link/lex.token">[lex.token]</a></span>). The
+preprocessing token is converted into a token (<span>5.10 <a href="https://wg21.link/lex.token">[lex.token]</a></span>). The
 resulting tokens constitute a translation unit and are syntactically and
 semantically analyzed and translated.</p>
 <p><span class="note3"><span>[ <em>Note 3:</em> </span>The process of
@@ -5277,7 +5280,7 @@ note</em> ]</span></span></span></p>
 All external entity references are resolved. […]</p>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="lex.pptoken-preprocessing-tokens"><span>5.4
+<h3 class="unnumbered" id="lex.pptoken-preprocessing-tokens"><span>5.5
 <a href="https://wg21.link/lex.pptoken">[lex.pptoken]</a></span>
 Preprocessing tokens<a href="#lex.pptoken-preprocessing-tokens" class="self-link"></a></h3>
 <p>Add a bullet after bullet (4.2):</p>
@@ -5323,11 +5326,11 @@ note</em> ]</span></span></span></p></li>
 </ul>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="lex.operators-operators-and-punctuators"><span>5.12 <a href="https://wg21.link/lex.operators">[lex.operators]</a></span>
+<h3 class="unnumbered" id="lex.operators-operators-and-punctuators"><span>5.8 <a href="https://wg21.link/lex.operators">[lex.operators]</a></span>
 Operators and punctuators<a href="#lex.operators-operators-and-punctuators" class="self-link"></a></h3>
 <p>Change the grammar for
 <code class="sourceCode cpp"><em>operator-or-punctuator</em></code> in
-paragraph 1 of <span>5.12 <a href="https://wg21.link/lex.operators">[lex.operators]</a></span> to
+paragraph 1 of <span>5.8 <a href="https://wg21.link/lex.operators">[lex.operators]</a></span> to
 include the reflection operator and the
 <code class="sourceCode cpp"><em>splice-specifier</em></code>
 delimiters:</p>
@@ -5507,7 +5510,7 @@ follows:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(3.1)</a></span>
 If <code class="sourceCode cpp"><em>E</em></code> is an
-<code class="sourceCode cpp"><em>id-expression</em></code> (<span>7.5.4
+<code class="sourceCode cpp"><em>id-expression</em></code> (<span>7.5.5
 <a href="https://wg21.link/expr.prim.id">[expr.prim.id]</a></span>)
 <span class="addu">or a
 <code class="sourceCode cpp"><em>splice-expression</em></code>
@@ -6207,7 +6210,7 @@ the grammar for
 </div>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.id.general-general"><span>7.5.4.1
+<h3 class="unnumbered" id="expr.prim.id.general-general"><span>7.5.5.1
 <a href="https://wg21.link/expr.prim.id.general">[expr.prim.id.general]</a></span>
 General<a href="#expr.prim.id.general-general" class="self-link"></a></h3>
 <p>Modify paragraph 2 to avoid transforming non-static members into
@@ -6219,7 +6222,7 @@ implicit member accesses when named as operands to
 If an <code class="sourceCode cpp"><em>id-expression</em></code>
 <code class="sourceCode cpp"><em>E</em></code> denotes a non-static
 non-type member of some class <code class="sourceCode cpp">C</code> at a
-point where the current class (<span>7.5.2 <a href="https://wg21.link/expr.prim.this">[expr.prim.this]</a></span>) is
+point where the current class (<span>7.5.3 <a href="https://wg21.link/expr.prim.this">[expr.prim.this]</a></span>) is
 <code class="sourceCode cpp">X</code> and</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_88" id="pnum_88">(2.1)</a></span>
@@ -6249,7 +6252,7 @@ transformed into a class member access expression using <code class="sourceCode 
 as the object expression.</p>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.id.unqual-unqualified-names"><span>7.5.4.2 <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>
+<h3 class="unnumbered" id="expr.prim.id.unqual-unqualified-names"><span>7.5.5.2 <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>
 Unqualified names<a href="#expr.prim.id.unqual-unqualified-names" class="self-link"></a></h3>
 <p>Modify paragraph 4 to allow
 <code class="sourceCode cpp"><em>splice-expression</em></code>s to be
@@ -6299,7 +6302,7 @@ the <code class="sourceCode cpp"><em>throw-expression</em></code>.</li>
 </ul>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.id.qual-qualified-names"><span>7.5.4.3 <a href="https://wg21.link/expr.prim.id.qual">[expr.prim.id.qual]</a></span>
+<h3 class="unnumbered" id="expr.prim.id.qual-qualified-names"><span>7.5.5.3 <a href="https://wg21.link/expr.prim.id.qual">[expr.prim.id.qual]</a></span>
 Qualified names<a href="#expr.prim.id.qual-qualified-names" class="self-link"></a></h3>
 <p>Extend the grammar for
 <code class="sourceCode cpp"><em>nested-name-specifier</em></code> as
@@ -6481,7 +6484,7 @@ not declarative, the entity shall not be a template.</li>
 </ul>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="expr.prim.lambda.capture-captures"><span>7.5.5.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>
+<h3 class="unnumbered" id="expr.prim.lambda.capture-captures"><span>7.5.6.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>
 Captures<a href="#expr.prim.lambda.capture-captures" class="self-link"></a></h3>
 <p>Modify bullet 7.1 as follows:</p>
 <div class="std">
@@ -6571,7 +6574,7 @@ splices:</p>
 <h3 class="unnumbered" id="expr.prim.splice-expression-splicing">7.5.8*
 [expr.prim.splice] Expression splicing<a href="#expr.prim.splice-expression-splicing" class="self-link"></a></h3>
 <p>Add a new subsection of <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span> following
-<span>7.5.7 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span></p>
+<span>7.5.8 <a href="https://wg21.link/expr.prim.req">[expr.prim.req]</a></span></p>
 <div class="std">
 <blockquote>
 <div class="addu">
@@ -6713,7 +6716,7 @@ designates a non-static data member and it appears in an unevaluated
 operand.</li>
 </ul>
 <p><span class="note"><span>[ <em>Note 3:</em> </span>The implicit
-transformation (<span>7.5.4 <a href="https://wg21.link/expr.prim.id">[expr.prim.id]</a></span>) whereby
+transformation (<span>7.5.5 <a href="https://wg21.link/expr.prim.id">[expr.prim.id]</a></span>) whereby
 an <code class="sourceCode cpp"><em>id-expression</em></code> denoting a
 non-static member becomes a class member access does not apply to a
 <code class="sourceCode cpp"><em>splice-expression</em></code>.<span>
@@ -8690,7 +8693,7 @@ augmented by the addition of an implied function argument as in a
 qualified function call. If the current class is, or is derived from,
 <code class="sourceCode cpp">T</code>, and the keyword
 <code class="sourceCode cpp"><span class="kw">this</span></code>
-(<span>7.5.2 <a href="https://wg21.link/expr.prim.this">[expr.prim.this]</a></span>)
+(<span>7.5.3 <a href="https://wg21.link/expr.prim.this">[expr.prim.this]</a></span>)
 refers to it, then the implied object argument is <code class="sourceCode cpp"><span class="op">(*</span><span class="kw">this</span><span class="op">)</span></code>.
 Otherwise, a contrived object of type
 <code class="sourceCode cpp">T</code> becomes the implied object
@@ -11043,7 +11046,7 @@ a variable associated with, or referring to, such an object.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_436" id="pnum_436">36</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">r</code> represents a
 variable, then a reflection of the object associated with, or referred
-to, by the variable. Otherwise,
+to by, the variable. Otherwise,
 <code class="sourceCode cpp">r</code>.</p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
@@ -12449,11 +12452,11 @@ as defined in <span>22.4 <a href="https://wg21.link/tuple">[tuple]</a></span> or
 </div>
 </blockquote>
 </div>
-<h3 class="unnumbered" id="bit.cast-function-template-bit_cast"><span>22.15.3 <a href="https://wg21.link/bit.cast">[bit.cast]</a></span> Function
+<h3 class="unnumbered" id="bit.cast-function-template-bit_cast"><span>22.11.3 <a href="https://wg21.link/bit.cast">[bit.cast]</a></span> Function
 template <code class="sourceCode cpp">bit_cast</code><a href="#bit.cast-function-template-bit_cast" class="self-link"></a></h3>
 <p>And we have adjust the requirements of <code class="sourceCode cpp">std<span class="op">::</span>bit_cast</code> to
 not allow casting to or from <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
-as a constant, in <span>22.15.3 <a href="https://wg21.link/bit.cast">[bit.cast]</a></span>/3:</p>
+as a constant, in <span>22.11.3 <a href="https://wg21.link/bit.cast">[bit.cast]</a></span>/3:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_617" id="pnum_617">3</a></span>
@@ -12603,7 +12606,7 @@ C++26. <a href="https://wg21.link/p2996r7"><div class="csl-block">https://wg21.l
 </div>
 <div id="ref-P2996R8" class="csl-entry" role="doc-biblioentry">
 [P2996R8] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
-Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-12-16. Reflection for
+Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-12-17. Reflection for
 C++26. <a href="https://wg21.link/p2996r8"><div class="csl-block">https://wg21.link/p2996r8</div></a>
 </div>
 <div id="ref-P3068R1" class="csl-entry" role="doc-biblioentry">
