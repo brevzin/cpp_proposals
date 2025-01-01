@@ -1,5 +1,5 @@
 ---
-title: "Diverging Expressions with `[[noreturn]]"
+title: "Diverging Expressions"
 document: P3549R0
 date: today
 audience: EWG
@@ -62,7 +62,7 @@ void h(int i) {
 
 In all of these cases, the desire is that if `i == 0` then we initialize `j` to the value `0`, otherwise we `std::terminate()`. Given that `std::terminate` does in fact, as the name suggests, terminate, we don't actually have to worry about producing a value in that case. These examples are all equivalent — or at least, they should be. But C++ does not currently recognize them as such (with one exception that we'll get to later).
 
-The rule for pattern matching by default is that the type of the match expression is deduced from each arm and each arm has to match. In the above examples, the first arm always has type `int`. But for `f()` and `g()`, the second arm has type `void`. In order to type check, we have to wrap our call to `std::terminate` in an expression that actually has type `int`. The `do` expression in `h()` is one such way.
+The rule for pattern matching by default is that the type of the match expression is deduced from each arm and each arm has to have the same type. The same rule we have for `auto` deduction in functions and lambdas. In the above examples, the first arm always has type `int`. But for `f()` and `g()`, the second arm has type `void`. In order to type check, we have to wrap our call to `std::terminate` in an expression that actually has type `int`. The `do` expression in `h()` is one such way.
 
 The extra `-> int` does solve the problem, but it's also misleading. We're not actually ever producing an `int` here, we're just writing a type annotation to hammer the compiler into submission. That's just not a great place to be.
 
@@ -82,7 +82,15 @@ do { std::terminate(); }
 ```
 :::
 
-as both diverging expressions in order to facilitate code evolution. It would be annoying if a naked call to `std::terminate` worked but once you wrap it in a `do` expression that does so much as add a single log statement that it suddenly doesn't. We want to properly recognize divergence, not just the most trivial of cases.
+and
+
+::: std
+```cpp
+do { log::error("hasta la vista"); std::terminate(); }
+```
+:::
+
+as all being diverging expressions in order to facilitate code evolution. It would be annoying if a naked call to `std::terminate` worked but once you wrap it in a `do` expression that does so much as add a single log statement that it suddenly doesn't. We want to properly recognize divergence, not just the most trivial of cases.
 
 # Diverging Expressions
 
@@ -347,22 +355,25 @@ But we're concerned that the mixing and matching of explicit and implicit yields
 So if we don't want to use implicit last value, how else can we deduce divergence? We suggest the following, simple rule, inspired by implicit last value:
 
 ::: std
-A `$statement$` is a diverging statement if it is:
+[1]{.pnum} A `$statement$` is a *diverging statement* if it is:
 
-* [1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
-* [2]{.pnum} an `$escaping-statement$`,
-* [3]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
-* [4]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
-* [5]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
+* [1.1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
+* [1.2]{.pnum} an `$escaping-statement$`,
+* [1.3]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
+* [1.4]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
+* [1.5]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
 
-A `$do-expression$` is a diverging expression if:
+[2]{.pnum} The type of a `$do-expression$` is determined as follows.
 
-* [1]{.pnum} it has a `$trailing-return-type$` of `noreturn_t`,
-* [2]{.pnum} its return type is deduced as `noreturn_t`, or
-* [3]{.pnum} its return type is deduced as `void` and the last `$statement$` is a diverging statement.
+* [2.1]{.pnum} If there is a `$trailing-return-type$` that is not a placeholder, that type.
+* [2.2]{.pnum} Otherwise, let `T` be the type deduced from the non-discarded `do_return` statements, if any, within the body of the `$do-expression$`. If the type deduced is not the same in each deduction, the program is ill-formed.
+    * [2.2.1]{.pnum} If `T` is `void` and the last `$statement$` is a diverging statement, then type of the `$do-expression$` is `noreturn_t`.
+    * [2.2.2]{.pnum} Otherwise, the type is `T`.
+
+[3]{.pnum} An expression is a *diverging expression* if its type is `noreturn_t`.
 :::
 
-The first two bullets handle simple cases like `do -> noreturn_t { /* ... */ }` and `do { do_return std::terminate(); }`. The third case is the more complicated one. We need to deduce `void` because if there are any `do_return`s that yield a value, then the expression does not diverge. Then, in the `void`-returning cases, we need to see which ones of those actually diverge. Which is non-trivial because we need to handle things like:
+We need to deduce `void` because if there are any `do_return`s that yield a value, then the expression does not diverge. Then, in the `void`-returning cases, we need to see which ones of those actually diverge. Which is non-trivial because we need to handle things like:
 
 ::: std
 ```cpp
@@ -395,3 +406,46 @@ This rule ensures that all of our initial pattern arms diverge, as desired:
 @*pattern*~5~@ => break;
 ```
 :::
+
+## Alternative with `[[noreturn]]`
+
+The advantage of the approach described with `noreturn_t` is that diverging expressions can appear in the type system. This obsoletes `[[noreturn]]`, providing a better way to express the issue — in a way that can further generalize to other scenarios. We can have a `std::function<std::noreturn_t()>`, we can have `std::expected<T, std::noreturn_t>` (a specialization that would not require additional storage for the error type or the discriminant, since it would always be a value), etc.
+
+But an alternative approach would be to avoid changing any of the existing functions (like `std::abort()`, `std::terminate()`, etc.) or changing the type of a `$throw-expression$`, and instead recognize `[[noreturn]]` more explicitly.
+
+The rule we lay out above would instead become:
+
+::: std
+[1]{.pnum} A `$statement$` is a *diverging statement* if it is:
+
+* [1.1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
+* [1.2]{.pnum} an `$escaping-statement$`,
+* [1.3]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
+* [1.4]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
+* [1.5]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
+
+[2]{.pnum} An expression is a *diverging expression* if:
+
+* [2.1]{.pnum} it is an invocation of a `[[noreturn]]` function,
+* [2.2]{.pnum} it is a `$throw-expression$`, or
+* [2.3]{.pnum} it is a `$do-expression$` whose type is `void` and whose last statement is a diverging statement.
+:::
+
+This is a simpler change. It doesn't involve introducing a new language/library type or changing existing standard library functions or the meanings of some code — although we doubt too many people are relying on `decltype(throw 1)` being `void`. However, it doesn't compose. `[[noreturn]]` isn't deduced, so wrapping becomes challenging.
+
+Although in order to making wrapping work, we'd have to further change deduction rules so that `[]{ std::abort(); }` returns `noreturn_t` in the same way that `do { std::abort(); }` does. But without `noreturn_t`, you'd have to write `[][[noreturn]]{ std::abort(); }`.
+
+Leaning on `[[noreturn]]` also means that we end up leaning on `void` even harder to mean two completely different things: `void f() { }` is a function that returns a value, while `[[noreturn]] void g() { std::exit(-1); }` is a function that doesn't.
+
+# Proposal
+
+We propose to:
+
+* to introduce a new type `std::noreturn_t` which represents an expression with no value, that unconditionally diverges.
+  * `std::noreturn_t` is convertible to any type
+  * `std::noreturn_t` is not constructible, and you cannot `reinterpret_cast` into it.
+  * `std::noreturn_t(*)(Args...)` is convertible to `R(*)(Args...)` for all `R`.
+* change all the standard library functions that are currently `[[noreturn]] void f()` to instead be `std::noreturn_t f()`
+* change the type of `$throw-expression$` to `std::noreturn_t` and remove the current... uh... exception for exceptions in the conditional operator (it will be subsumed by the usual convertibility rule).
+* change function deduction rules to recognize diverging statements and to deduce `std::noreturn_t` in cases where they currently deduce `void`
+* adopt the same rules for `do` expressions [@P2806R2].
