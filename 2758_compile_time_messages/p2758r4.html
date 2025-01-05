@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-23" />
+  <meta name="dcterms.date" content="2025-01-05" />
   <title>Emitting messages at compile time</title>
   <style>
       code{white-space: pre-wrap;}
@@ -448,6 +448,9 @@ background-color: white;
 td > div.sourceCode {
 background-color: inherit;
 }
+td > div > div.sourceCode {
+background-color: inherit;
+}
 table {
 border-collapse: collapse;
 }
@@ -566,7 +569,7 @@ time</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-23</td>
+    <td>2025-01-05</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -575,7 +578,7 @@ time</h1>
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      EWG<br>
+      CWG, LEWG<br>
     </td>
   </tr>
   <tr>
@@ -622,14 +625,18 @@ Restrictions<span></span></a></li>
 interfaces<span></span></a></li>
 </ul></li>
 </ul></li>
-<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">5</span> Proposal<span></span></a></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">5</span> Proposal<span></span></a>
+<ul>
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">5.1</span> Implementation
+Experience<span></span></a></li>
+</ul></li>
 <li><a href="#wording" id="toc-wording"><span class="toc-section-number">6</span> Wording<span></span></a></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>For R4: wording.</p>
+<p>For R4: wording. Re-targeting towards CWG and LEWG.</p>
 <p>For <span class="citation" data-cites="P2758R3">[<a href="https://wg21.link/p2758r3" role="doc-biblioref">P2758R3</a>]</span>: Clean-up the paper to account
 for other papers (<span class="citation" data-cites="P2741R3">[<a href="https://wg21.link/p2741r3" role="doc-biblioref">P2741R3</a>]</span> and <span class="citation" data-cites="P2738R1">[<a href="https://wg21.link/p2738r1" role="doc-biblioref">P2738R1</a>]</span>) being adopted. More discussion
 of tags, which are added to every API. Expanding wording.</p>
@@ -1364,6 +1371,26 @@ which would then allow us to extend the above API with
 <code class="sourceCode cpp">std<span class="op">::</span>format</code>-friendly
 alternatives.</p></li>
 </ol>
+<h2 data-number="5.1" id="implementation-experience"><span class="header-section-number">5.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>Hana Dusíková has a partial implementation of this paper in clang.
+Specifically, <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str</code>
+and a simplified version of <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code>
+that does not include a tag. This program fails compilation as
+desired:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> a<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>a <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;can&#39;t call with a == 0&quot;</span><span class="op">)</span>;</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> a;</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> a <span class="op">=</span> foo<span class="op">(</span><span class="dv">2</span><span class="op">)</span>; <span class="co">// OK</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> b <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">)</span>; <span class="co">// error: custom constexpr error: &#39;can&#39;t call with a == 0&#39;</span></span></code></pre></div>
+</blockquote>
+</div>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">6</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>We don’t quite have <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format</code>
 yet (although with the addition of <span class="citation" data-cites="P2738R1">[<a href="https://wg21.link/p2738r1" role="doc-biblioref">P2738R1</a>]</span> we’re probably nearly the whole
@@ -1373,48 +1400,96 @@ the understanding that a separate paper will materialize to produce a
 and then another separate paper will add <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print</code>
 and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error</code>
 (the nicer names, with the more user-friendly semantics).</p>
-<p>Add to [intro.compliance.general]:</p>
+<p>Alter how static initialization works to ensure there’s no fallback
+to runtime initialization in some cases, in <span>6.9.3.2 <a href="https://wg21.link/basic.start.static">[basic.start.static]</a></span>:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span>
-[…] Furthermore, a conforming implementation shall not accept:</p>
+<em>Constant initialization</em> is performed if a variable with static
+or thread storage duration is constant-initialized ([expr.const]). <span class="addu">If the full-expression of the initialization of the
+variable is a constexpr-erroneous expression ([expr.const]), the program
+is ill-formed. Otherwise, if</span> <span class="rm" style="color: #bf0303"><del>If</del></span> constant initialization is
+not performed, a variable with static storage duration
+([basic.stc.static]) or thread storage duration ([basic.stc.thread]) is
+zero-initialized ([dcl.init]).</p>
+</blockquote>
+</div>
+<p>Introduce the notion of constexpr-erroneous in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">x</a></span>
+An expression <code class="sourceCode cpp"><em>E</em></code> has
+<em>constexpr-erroneous value</em> if it invokes <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code>
+([meta.const.eval]). It is implementation-defined whether an invocation
+of <code class="sourceCode cpp">std<span class="op">::</span>constexpr_warning_str</code>
+has a constexpr-erroneous value. <span class="draftnote" style="color: #01796F">[ Drafting note: I suspect that we will
+eventually make more things produce constexpr-erroneous values, like
+maybe calls to <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code>,
+<code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code>,
+maybe any <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>
+function, etc. ]</span></p>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">10</a></span>
+An expression <code class="sourceCode cpp"><em>E</em></code> is a
+<em>core constant expression</em> unless the evaluation of
+<code class="sourceCode cpp"><em>E</em></code> following the rules of
+the abstract machine ([intro.execution]), would evaluate one of the
+following:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(2.4)</a></span>
-a preprocessing translation unit containing a
-<code class="sourceCode cpp"><span class="pp">#error</span></code>
-preprocessing directive ([cpp.error]) <span class="rm" style="color: #bf0303"><del>or</del></span> <span class="addu">,</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(2.5)</a></span>
-a translation unit with a
-<code class="sourceCode cpp"><em>static_assert-declaration</em></code>
-that fails ([dcl.pre]) <span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">,
-or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.*)</a></span>
-<span class="addu">a translation unit which evaluated a call to <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code>
-([meta.const.msg]) during constant evaluation.</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(10.1)</a></span>
+[…]</li>
+<li>[…]</li>
 </ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(10.x)</a></span>
+an expression with constexpr-erroneous value.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">y</a></span>
+An expression <code class="sourceCode cpp"><em>E</em></code> is a
+<em>constexpr-erroneous expression</em> if evaluation of
+<code class="sourceCode cpp"><em>E</em></code> is not a core constant
+expression due to evaluation of an expression with constexpr-erroneous
+value.</p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> a<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>a <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;reject-zero&quot;</span>, <span class="st">&quot;can&#39;t call with a == 0&quot;</span><span class="op">)</span>;</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> a;</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> foo<span class="op">(</span><span class="dv">2</span><span class="op">)</span>; <span class="co">// OK, constant-intiialized</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> y <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">)</span>; <span class="co">// error: the initialization of y is a constexpr-erroneous expression</span></span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+</div>
 </blockquote>
 </div>
 <p>Add to <span>21.3.3 <a href="https://wg21.link/meta.type.synop">[meta.type.synop]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>// all freestanding</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  // ...</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  // [meta.const.eval], constant evaluation context</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  consteval bool is_within_lifetime(const auto*) noexcept;</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.const.msg], emitting messages at compile time</span></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct <em>tag-string</em>; // exposition-only</span></span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(string_view) noexcept;</span></span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, string_view) noexcept;</span></span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, string_view) noexcept;</span></span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, string_view) noexcept;</span></span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>// all freestanding</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  // [meta.const.eval], constant evaluation context</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  consteval bool is_within_lifetime(const auto*) noexcept;</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.const.msg], emitting messages at compile time</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct <em>tag-string</em>; // exposition-only</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(string_view) noexcept;</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1423,10 +1498,10 @@ named “Emitting messages at compile time”:</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">1</a></span>
 The facilities in this subclause are used to emit messages at compile
 time.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">2</a></span>
 A call to any of the functions defined in this subclause may produce a
 diagnostic message during constant evaluation. The text from a
 <code class="sourceCode cpp">string_view</code>,
@@ -1434,57 +1509,57 @@ diagnostic message during constant evaluation. The text from a
 sequence of <code class="sourceCode cpp"><em>M</em><span class="op">.</span>size<span class="op">()</span></code>
 code units, starting at <code class="sourceCode cpp"><em>M</em><span class="op">.</span>data<span class="op">()</span></code>,
 of the ordinary literal encoding ([lex.charset]).</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>struct <em>tag-string</em> { // exposition-only</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>private:</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  string_view <em>str</em>;  // exposition-only</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>public:</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>};</span></code></pre></div>
-<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">3</a></span>
+<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>struct <em>tag-string</em> { // exposition-only</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>private:</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  string_view <em>str</em>;  // exposition-only</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>public:</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">3</a></span>
 <em>Constraints</em>: <code class="sourceCode cpp"><span class="kw">const</span> T<span class="op">&amp;</span></code>
 models <code class="sourceCode cpp">convertible_to<span class="op">&lt;</span>string_view<span class="op">&gt;</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">4</a></span>
 <em>Effects</em>: Direct-non-list-initializes
 <code class="sourceCode cpp"><em>str</em></code> with
 <code class="sourceCode cpp">s</code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">5</a></span>
 <em>Remarks</em>: A call to this function is not a core constant
 expression unless every character in
 <code class="sourceCode cpp"><em>str</em></code> is either a
 <code class="sourceCode cpp"><em>nondigit</em></code>, a
 <code class="sourceCode cpp"><em>digit</em></code>, or a
 <code class="sourceCode cpp"><span class="op">-</span></code>.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(string_view msg) noexcept;</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">6</a></span>
+<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(string_view msg) noexcept;</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">6</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
 issued including the text of <code class="sourceCode cpp">msg</code>.
 Otherwise, no effect.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">7</a></span>
 <em>Recommended practice</em>: Implementations should include the text
 of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>,
 if provided, in the diagnostic.</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">8</a></span>
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">8</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
 issued including the text of <code class="sourceCode cpp">msg</code>.
 Otherwise, no effect.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">9</a></span>
 <em>Recommended practice</em>: Implementations should issue a warning in
 such cases and provide a mechanism allowing users to either opt in or
 opt out of such warnings based on the value of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>.</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">10</a></span>
+<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">10</a></span>
 <em>Effects</em>: During constant evaluation, the program is ill-formed,
 a diagnostic message is issued including the text of
 <code class="sourceCode cpp">msg</code>, and the evaluation of this call
 is not a <em>core constant expression</em> ([expr.const]). Otherwise, no
 effect.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">11</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">11</a></span>
 <em>Recommended practice</em>: Implementations should include the text
 of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>

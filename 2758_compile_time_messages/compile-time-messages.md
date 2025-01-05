@@ -2,7 +2,7 @@
 title: "Emitting messages at compile time"
 document: P2758R4
 date: today
-audience: EWG
+audience: CWG, LEWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -12,7 +12,7 @@ tag: constexpr
 
 # Revision History
 
-For R4: wording.
+For R4: wording. Re-targeting towards CWG and LEWG.
 
 For [@P2758R3]: Clean-up the paper to account for other papers ([@P2741R3] and [@P2738R1]) being adopted. More discussion of tags, which are added to every API. Expanding wording.
 
@@ -482,18 +482,70 @@ This paper proposes the following:
 
 4. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with `std::format`-friendly alternatives.
 
+## Implementation Experience
+
+Hana Dusíková has a partial implementation of this paper in clang. Specifically, `std::constexpr_print_str` and a simplified version of `std::constexpr_error_str` that does not include a tag. This program fails compilation as desired:
+
+::: std
+```cpp
+constexpr int foo(int a) {
+  if (a == 0) {
+    std::constexpr_error_str("can't call with a == 0");
+  }
+
+  return a;
+}
+
+int a = foo(2); // OK
+int b = foo(0); // error: custom constexpr error: 'can't call with a == 0'
+```
+:::
+
+
+
 # Wording
 
 We don't quite have `constexpr std::format` yet (although with the addition of [@P2738R1] we're probably nearly the whole way there), so the wording here only includes (1) and (2) above - with the understanding that a separate paper will materialize to produce a `constexpr std::format` and then another separate paper will add `std::constexpr_print` and `std::constexpr_error` (the nicer names, with the more user-friendly semantics).
 
-Add to [intro.compliance.general]:
+Alter how static initialization works to ensure there's no fallback to runtime initialization in some cases, in [basic.start.static]{.sref}:
 
 ::: std
-[2]{.pnum} [...] Furthermore, a conforming implementation shall not accept:
+[2]{.pnum} *Constant initialization* is performed if a variable with static or thread storage duration is constant-initialized ([expr.const]). [If the full-expression of the initialization of the variable is a constexpr-erroneous expression ([expr.const]), the program is ill-formed. Otherwise, if]{.addu} [If]{.rm} constant initialization is not performed, a variable with static storage duration ([basic.stc.static]) or thread storage duration ([basic.stc.thread]) is zero-initialized ([dcl.init]).
+:::
 
-* [2.4]{.pnum} a preprocessing translation unit containing a `#error` preprocessing directive ([cpp.error]) [or]{.rm} [,]{.addu}
-* [2.5]{.pnum} a translation unit with a `$static_assert-declaration$` that fails ([dcl.pre]) [.]{.rm} [, or]{.addu}
-* [2.*]{.pnum} [a translation unit which evaluated a call to `std::constexpr_error_str` ([meta.const.msg]) during constant evaluation.]{.addu}
+Introduce the notion of constexpr-erroneous in [expr.const]{.sref}:
+
+::: std
+::: addu
+[x]{.pnum} An expression `$E$` has *constexpr-erroneous value* if it invokes `std::constexpr_error_str` ([meta.const.eval]). It is implementation-defined whether an invocation of `std::constexpr_warning_str` has a constexpr-erroneous value. [I suspect that we will eventually make more things produce constexpr-erroneous values, like maybe calls to `std::terminate()`, `std::unreachable()`, maybe any `[[noreturn]]` function, etc.]{.draftnote}
+:::
+
+[10]{.pnum} An expression `$E$` is a *core constant expression* unless the evaluation of `$E$` following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
+
+* [10.1]{.pnum} [...]
+* [...]
+
+::: addu
+* [10.x]{.pnum} an expression with constexpr-erroneous value.
+
+[y]{.pnum} An expression `$E$` is a *constexpr-erroneous expression* if evaluation of `$E$` is not a core constant expression due to evaluation of an expression with constexpr-erroneous value.
+
+::: example
+```cpp
+constexpr int foo(int a) {
+  if (a == 0) {
+    std::constexpr_error_str("reject-zero", "can't call with a == 0");
+  }
+
+  return a;
+}
+
+int x = foo(2); // OK, constant-intiialized
+int y = foo(0); // error: the initialization of y is a constexpr-erroneous expression
+```
+:::
+
+:::
 :::
 
 Add to [meta.type.synop]{.sref}:
