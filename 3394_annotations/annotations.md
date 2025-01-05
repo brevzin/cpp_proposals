@@ -3,7 +3,7 @@ title: Annotations for Reflection
 tag: reflection
 document: P3394R1
 date: today
-audience: EWG
+audience: EWG, LEWG
 hackmd: true
 author:
     - name: Wyatt Childers
