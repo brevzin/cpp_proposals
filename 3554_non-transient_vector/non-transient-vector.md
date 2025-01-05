@@ -86,10 +86,11 @@ We instead propose introducing the concept of eligible for persistence:
 
 ::: std
 ::: addu
-An allocation `A` that occurs within the evaluation of a core constant expression `E` is _eligible for persistence_ if:
+An allocation `A` that occurs within the evaluation of a core constant expression `E` is _constexpr-persistent_ if:
 
-* `E` is used to initialize an object `O` that is potentially usable in constant expressions, and
-* the destruction of `O` deallocates `A` within a call to destructor of an object whose type is a specialization of either `std::vector` or `std::basic_string`.
+* `E` is used to initialize an object `O` that is potentially usable in constant expressions,
+* `A` is not deallocated within `E`, and
+* `A` is _eligible for constexpr-persistence_.
 :::
 :::
 
@@ -97,8 +98,45 @@ And adjusting the wording as appropriate:
 
 ::: std
 * [10.18]{.pnum} a *new-expression*, unless either:
-    * [10.18.1]{.pnum} the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is [either eligible for persistence or]{.addu} deallocated within the evaluation of `E`, or
+    * [10.18.1]{.pnum} the selected allocation function is a replaceable global allocation function ([new.delete.single], [new.delete.array]) and the allocated storage is [either constexpr-persistent or]{.addu} is deallocated within the evaluation of `E`, or
     * [10.18.2]{.pnum} [...]
 * [10.19]{.pnum} a *delete-expression*, unless [...]
-* [10.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is [either eligible for persistence]{.addu} or deallocated within the evaluation of `E`;
+* [10.20]{.pnum} a call to an instance of `std​::​allocator<T>​::​allocate` ([allocator.members]), unless the allocated storage is [either constexpr-persistent or]{.addu} is deallocated within the evaluation of `E`;
 :::
+
+Mark `vector` allocations as eligible for constexpr-persistence in [vector]{.sref}:
+
+::: std
+[2]{.pnum} A vector meets all of the requirements of a container ([container.reqmts]), of a reversible container ([container.rev.reqmts]), of an allocator-aware container ([container.alloc.reqmts]), of a sequence container, including most of the optional sequence container requirements ([sequence.reqmts]), and, for an element type other than bool, of a contiguous container.
+The exceptions are the push_front, prepend_range, pop_front, and emplace_front member functions, which are not provided.
+Descriptions are provided here only for operations on vector that are not described in one of these tables or for operations where there is additional semantic information.
+
+::: addu
+[x]{.pnum} Any storage allocated within a member function of a specialization of the `vector` primary template is eligible for constexpr-persistence ([expr.const]).
+:::
+
+:::
+
+And the same in [vector.bool]{.sref}:
+
+::: std
+[1]{.pnum} To optimize space allocation, a partial specialization of vector for bool elements is provided:
+
+::: addu
+[2]{.pnum} Any storage allocated within a member function of the partial specialization defined in this subclause is eligible for constexpr-persistence ([expr.const]).
+:::
+:::
+
+
+
+Mark `basic_string` allocations as eligible for constexpr-persistence in [basic.string.general]{.sref}:
+
+::: std
+[2]{.pnum} A specialization of `basic_string` is a contiguous container ([container.reqmts]).
+
+::: addu
+[x]{.pnum} Any storage allocated within a member function of a specialization of the `basic_string` primary template is eligible for constexpr-persistence ([expr.const]).
+:::
+
+:::
+
