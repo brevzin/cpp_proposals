@@ -70,6 +70,8 @@ While with a single layer of wrapping, having to add an extra call to `define_st
 
 But there are plenty of places where you might want persistent constexpr allocation — template arguments, the initializer in an expansion statement [@P1306R2], etc. Having to perform the correct wrapping in all of these places would get old really fast. So we think that even with the addition of `std::define_static_array` and `std::define_static_string`, we'd want a little bit more help.
 
+Additionally, this avoids the awkward issue today where whether a `std::string` is allowed to persist depends on the small string optimization strategy of the given implementation. With this proposal, it would simply always be allowed to persist.
+
 # Proposal
 
 The current rule is that any allocation within a constant expression `E` _must_ be deallocated within `E`. That rule can be found in [expr.const]{.sref}/10:

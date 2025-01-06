@@ -726,6 +726,11 @@ correct wrapping in all of these places would get old really fast. So we
 think that even with the addition of <code class="sourceCode cpp">std<span class="op">::</span>define_static_array</code>
 and <code class="sourceCode cpp">std<span class="op">::</span>define_static_string</code>,
 we’d want a little bit more help.</p>
+<p>Additionally, this avoids the awkward issue today where whether a
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>
+is allowed to persist depends on the small string optimization strategy
+of the given implementation. With this proposal, it would simply always
+be allowed to persist.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>The current rule is that any allocation within a constant expression
 <code class="sourceCode cpp">E</code> <em>must</em> be deallocated
