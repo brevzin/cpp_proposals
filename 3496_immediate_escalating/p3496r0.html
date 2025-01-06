@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-11-12" />
+  <meta name="dcterms.date" content="2025-01-05" />
   <title>Immediate-Escalating Expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -448,6 +448,9 @@ background-color: white;
 td > div.sourceCode {
 background-color: inherit;
 }
+td > div > div.sourceCode {
+background-color: inherit;
+}
 table {
 border-collapse: collapse;
 }
@@ -566,7 +569,7 @@ Expressions</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-11-12</td>
+    <td>2025-01-05</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -611,7 +614,7 @@ Acknowledgements<span></span></a></li>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>This paper splits off part of <span class="citation" data-cites="P3032R2">[<a href="https://wg21.link/p3032r2" role="doc-biblioref">P3032R2</a>]</span>. The goal of this paper is to
-allow this example from that paper to be valid (based also on <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>):</p>
+allow this example from that paper to be valid (based also on <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span>):</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> E <span class="op">{</span> a1, a2, a3 <span class="op">}</span>;</span>
@@ -756,7 +759,7 @@ is not) and the full initializer is also not a constant expression.</p>
 is a constant expression — both initializations are valid.</p>
 <h2 data-number="2.2" id="wording"><span class="header-section-number">2.2</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>Replace the wording in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/17-18 (note
-that <em>consteval-only</em> will be extended by <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> to include consteval-only types
+that <em>consteval-only</em> will be extended by <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span> to include consteval-only types
 and conversions to and from them):</p>
 <div class="std">
 <blockquote>
@@ -783,41 +786,52 @@ subexpression of an immediate invocation.</li>
 </div>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">17</a></span>
-An expression is <em>consteval-only</em> if:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(17.1)</a></span>
-it names ([basic.def.odr]) an immediate function or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(17.2)</a></span>
-one of its immediate subexpressions ([intro.execution]) is
-consteval-only.</li>
-</ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">18</a></span>
+An expression is <em>consteval-only</em> if it directly names
+([basic.def.odr]) an immediate function.</p>
+<div class="draftnote" style="color: #01796F">
+<p>[ Drafting note: The intent of this wording is that given:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i; <span class="op">}</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> g<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> i <span class="op">+</span> <span class="dv">1</span>; <span class="op">}</span>;</span></code></pre></div>
+<p>in the expression <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span> <span class="op">+</span> g<span class="op">(</span>y<span class="op">)</span></code>,
+the subexpressions <code class="sourceCode cpp">f<span class="op">(</span>x<span class="op">)</span></code>
+and <code class="sourceCode cpp">g<span class="op">(</span>y<span class="op">)</span></code>
+are consteval-only (they directly name
+<code class="sourceCode cpp">f</code> and
+<code class="sourceCode cpp">g</code>, respectively) but the whole
+expression is not. If this wording doesn’t accomplish that, we’ll have
+to come up with something more specific. But the idea is we identify
+which kernels are consteval-only, then start bubbling up until we find
+an immediate invocation or an immediate-escalating function.</p>
+<p>Also regardless, we need to introduce a term here because with <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span>, we’ll add consteval-only types
+to the mixture. ]</p>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">18</a></span>
 An expression is an <em>immediate invocation</em> if:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(18.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(18.1)</a></span>
 it is a constant expression,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(18.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(18.2)</a></span>
 it is not in an immediate function context, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(18.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(18.3)</a></span>
 one of its immediate subexpressions is a consteval-only expression that
 is not a constant expression.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">18+</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">18+</a></span>
 An expression is <em>immediate-escalating</em> if it is a consteval-only
 expression that is not a subexpression of an immediate invocation.</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">19</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">19</a></span>
 An <em>immediate-escalating</em> function is</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(19.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(19.1)</a></span>
 the call operator of a lambda that is not declared with the
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 specifier,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(19.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(19.2)</a></span>
 a defaulted special member function that is not declared with the
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 specifier, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(19.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(19.3)</a></span>
 a function that results from the instantiation of a templated entity
 defined with the
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>specifier.</li>
@@ -832,35 +846,35 @@ immediate-escalating function</p>
 <div class="example9">
 <span>[ <em>Example 9:</em> </span>
 <div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>  struct A {</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    int x;</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    int y = id(x);</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  };</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  constexpr int k(int) {          // k&lt;int&gt; is not an immediate function because A(42) is a</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    return A(42).y;               // constant expression and thus not immediate-escalating</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct unique_ptr {</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="va">+    int* p;</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="va">+    constexpr unique_ptr(int i) : p(new int(i)) { }</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="va">+    constexpr ~unique_ptr() { delete p; }</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="va">+    constexpr int deref() const { return *p; }</span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="va">+ };</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval unique_ptr make_unique(int i) {</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="va">+     return unique_ptr(i);</span></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr int overly_complicated() {</span></span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="va">+   return make_unique(121).deref(); // OK, make_unique(121) is consteval-only but it is not</span></span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="va">+                                    //     immediate-escalating because make_unique(121).deref()</span></span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="va">+                                    //     is a constant expression and thus an immediate invocation.</span></span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="va">+ static_assert(overly_complicated() == 121);</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>  struct A {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    int x;</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    int y = id(x);</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  constexpr int k(int) {          // k&lt;int&gt; is not an immediate function because A(42) is a</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    return A(42).y;               // constant expression and thus not immediate-escalating</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct unique_ptr {</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="va">+    int* p;</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="va">+    constexpr unique_ptr(int i) : p(new int(i)) { }</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="va">+    constexpr ~unique_ptr() { delete p; }</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="va">+    constexpr int deref() const { return *p; }</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="va">+ };</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval unique_ptr make_unique(int i) {</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="va">+     return unique_ptr(i);</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr int overly_complicated() {</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="va">+   return make_unique(121).deref(); // OK, make_unique(121) is consteval-only but it is not</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="va">+                                    //     immediate-escalating because make_unique(121).deref()</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="va">+                                    //     is a constant expression and thus an immediate invocation.</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="va">+ static_assert(overly_complicated() == 121);</span></span></code></pre></div>
 </div>
 <span> — <em>end example</em> ]</span>
 </div>
@@ -872,8 +886,8 @@ immediate-escalating function</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202211L</span></span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202211L</span></span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -888,10 +902,10 @@ References<a href="#bibliography" class="self-link"></a></h1>
 <div id="ref-P2564R3" class="csl-entry" role="doc-biblioentry">
 [P2564R3] Barry Revzin. 2022-11-11. consteval needs to propagate up. <a href="https://wg21.link/p2564r3"><div class="csl-block">https://wg21.link/p2564r3</div></a>
 </div>
-<div id="ref-P2996R7" class="csl-entry" role="doc-biblioentry">
-[P2996R7] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
-Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-10-13. Reflection for
-C++26. <a href="https://wg21.link/p2996r7"><div class="csl-block">https://wg21.link/p2996r7</div></a>
+<div id="ref-P2996R8" class="csl-entry" role="doc-biblioentry">
+[P2996R8] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-12-17. Reflection for
+C++26. <a href="https://wg21.link/p2996r8"><div class="csl-block">https://wg21.link/p2996r8</div></a>
 </div>
 <div id="ref-P3032R2" class="csl-entry" role="doc-biblioentry">
 [P3032R2] Barry Revzin. 2024-04-16. Less transient constexpr allocation.

@@ -12,7 +12,7 @@ tag: constexpr
 
 # Introduction
 
-This paper splits off part of [@P3032R2]. The goal of this paper is to allow this example from that paper to be valid (based also on [@P2996R7]):
+This paper splits off part of [@P3032R2]. The goal of this paper is to allow this example from that paper to be valid (based also on [@P2996R8]):
 
 ::: std
 ```cpp
@@ -121,7 +121,7 @@ But with this proposal, because `f(1)(2)` is a constant expression — both init
 
 ## Wording
 
-Replace the wording in [expr.const]{.sref}/17-18 (note that *consteval-only* will be extended by [@P2996R7] to include consteval-only types and conversions to and from them):
+Replace the wording in [expr.const]{.sref}/17-18 (note that *consteval-only* will be extended by [@P2996R8] to include consteval-only types and conversions to and from them):
 
 ::: std
 ::: rm
@@ -135,10 +135,18 @@ An aggregate initialization is an immediate invocation if it evaluates a default
 :::
 
 ::: addu
-[17]{.pnum} An expression is *consteval-only* if:
+[17]{.pnum} An expression is *consteval-only* if it directly names ([basic.def.odr]) an immediate function.
 
-* [#.#]{.pnum} it names ([basic.def.odr]) an immediate function or
-* [#.#]{.pnum} one of its immediate subexpressions ([intro.execution]) is consteval-only.
+::: draftnote
+The intent of this wording is that given:
+```cpp
+consteval int f(int i) { return i; }
+consteval int g(int i) { return i + 1; };
+```
+in the expression `f(x) + g(y)`, the subexpressions `f(x)` and `g(y)` are consteval-only (they directly name `f` and `g`, respectively) but the whole expression is not. If this wording doesn't accomplish that, we'll have to come up with something more specific. But the idea is we identify which kernels are consteval-only, then start bubbling up until we find an immediate invocation or an immediate-escalating function.
+
+Also regardless, we need to introduce a term here because with [@P2996R8], we'll add consteval-only types to the mixture.
+:::
 
 [18]{.pnum} An expression is an *immediate invocation* if:
 
