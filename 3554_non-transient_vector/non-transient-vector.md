@@ -22,9 +22,7 @@ During discussion of the latter paper (which only talked about persisting `const
 |-|-|-|-|-|
 |4|9|8|3|0|
 
-As of this writing (January 2025), we do not yet have consensus for a general design for non-transient allocation. We have ideas (see above papers), and we have a promising library workaround ([@P3491R0]). But we know that regardless of what the general solution will end up being, `std::vector<T>` and `std::basic_string<Char, Traits, std::allocator<Char>>` will work and allow their allocations to persist. These are the most common dynamic containers. And while `define_static_array` gets us some of the way there, simply allowing these two containers to persist has a lot of ergonomic value.
-
-In the below comparison, assume the existence of:
+As of this writing (January 2025), we do not yet have consensus for a general design for non-transient allocation. We have ideas (see above papers), and we have a promising library workaround ([@P3491R0]). But we know that regardless of what the general solution will end up being, `std::vector<T>` and `std::basic_string<Char, Traits, std::allocator<Char>>` will work and allow their allocations to persist. These are the most common dynamic containers. And while `define_static_array` gets us some of the way there, simply allowing these two containers to persist has a lot of ergonomic value:
 
 ::: cmptable
 
