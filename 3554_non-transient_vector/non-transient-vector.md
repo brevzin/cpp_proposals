@@ -112,7 +112,7 @@ The exceptions are the push_front, prepend_range, pop_front, and emplace_front m
 Descriptions are provided here only for operations on vector that are not described in one of these tables or for operations where there is additional semantic information.
 
 ::: addu
-[x]{.pnum} Any storage allocated within a member function of a specialization of the `vector` primary template is eligible for constexpr-persistence ([expr.const]).
+[x]{.pnum} Any storage allocated for the elements of a specialization of the `vector` primary template is eligible for constexpr-persistence ([expr.const]).
 :::
 
 :::
@@ -123,7 +123,7 @@ And the same in [vector.bool]{.sref}:
 [1]{.pnum} To optimize space allocation, a partial specialization of vector for bool elements is provided:
 
 ::: addu
-[2]{.pnum} Any storage allocated within a member function of the partial specialization defined in this subclause is eligible for constexpr-persistence ([expr.const]).
+[2]{.pnum} Any storage allocated for the elements of the partial specialization defined in this subclause is eligible for constexpr-persistence ([expr.const]).
 :::
 :::
 
@@ -135,7 +135,7 @@ Mark `basic_string` allocations as eligible for constexpr-persistence in [basic.
 [2]{.pnum} A specialization of `basic_string` is a contiguous container ([container.reqmts]).
 
 ::: addu
-[x]{.pnum} Any storage allocated within a member function of a specialization of the `basic_string` primary template is eligible for constexpr-persistence ([expr.const]).
+[x]{.pnum} Any storage allocated for the elements of a specialization of the `basic_string` primary template is eligible for constexpr-persistence ([expr.const]).
 :::
 
 :::
