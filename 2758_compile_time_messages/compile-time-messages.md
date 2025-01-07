@@ -12,7 +12,7 @@ tag: constexpr
 
 # Revision History
 
-For R4: wording. Re-targeting towards CWG and LEWG.
+For R4: wording. Re-targeting towards CWG and LEWG. Introduced concept of constexpr-erroneous both for proper wording and to handle an escalating issue.
 
 For [@P2758R3]: Clean-up the paper to account for other papers ([@P2741R3] and [@P2738R1]) being adopted. More discussion of tags, which are added to every API. Expanding wording.
 
@@ -465,6 +465,126 @@ My opening bid is that (and I am obviously not a text guy): a tag is only allowe
 
 [@P2758R2] only introduced a `tag` parameter for `warning` but not for `print` or `error`. SG-16 suggested that each of the interfaces should also accept a tag that could be used to either suppress diagnostics or elevate to an error. This revision adds those parameters as well (for `print`, optionally, for `warning` and `error`, mandatory).
 
+## Constexpr-Erroneous Values
+
+One of the things that came up during Core review is that we need a way to specify how exactly `std::constexpr_error_str` induces failure. The suggestion that Jason Merrill made was that a call to `std::constexpr_error_str` would produce a _constexpr-erroneous value_. Doing so makes the entire expression _constexpr-erroneous_.
+
+We can use that idea to address the example of static initialization [earlier](#predictability-of-errors). Right now, for static storage duration variables, we try to perform constant initialization. If that succeeds, great. If it doesn't, we fallback to performing dynamic initialization (at runtime). But not all constant initialization failures are the same. Some are simply because initialization could not be done (e.g. calling a non-`constexpr` function, attempting to read some non-`constexpr` variable, etc.) but some are actual bugs that were caught at compile time (e.g. a call to `std::constexpr_error_str`).
+
+We can say that if constant-initialization fails because the initialization was constexpr-erroneous, then the program is ill-formed. That would let us make sure that we can catch errors at compile-time instead of unintentionally turning them into runtime failures.
+
+There are two other interesting things to bring up on this topic: escalation and exceptions.
+
+### Immediate Escalation
+
+In [@P2564R3], we introduced the notion of immediate escalation. That is, a call to a `consteval` function that isn't constant might lead to the function it is in getting itself turned into a `consteval` function. This is an important fix to ensure that it is actually possible to run a wide variety of code at compile time.
+
+But the rule is overly broad right now. Consider this reduction from a bug that Jonathan Wakely and I happened to be discussing while I was working on this paper:
+
+::: std
+```cpp
+#include <print>
+
+template <typename... Args>
+void echo(Args&&... args) {
+    #ifdef LAMBDA
+    [&]{ std::print("{}", args...); }();
+    #else
+    std::print("{}", args...);
+    #endif
+}
+
+int main() {
+    echo();
+}
+```
+:::
+
+Here, we're basically calling `std::print("{}")`, which is ill-formed because we're providing one replacement field but not arguments to format. The mechanism by which this happens it that `"{}"` is used to initialize an object of type `std::format_string<>`, which has a `consteval` constructor, but will fail to be a constant expression. So the intent is that this is an error right here.
+
+However.
+
+What this actually means is that the construction of the `std::format_string<>` is immediate-escalating. And that causes outer functions to become `consteval`, if possible. That's not what we actually want to happen here. `consteval` propagation solves the problem of widening the bubble of what is being constant-evaluated, so that more things become constant, so that constant evaluation can succeed. The typical example here is reading function parameters — they are not constant expressions, so they cause the function to become `consteval` so that they don't have to be. But in this case, we didn't fail because our expression was insufficiently constant — we failed because our expression was *wrong*!
+
+The result of immediate-escalation here is that the compiler ends up doing more work to produce more confusing error messages. In this case, with the direct function template we still get a reasonable error:
+
+::: std
+```
+<source>:8:16: error: call to consteval function 'std::basic_format_string<char>("{}")' is not a constant expression
+    8 |     std::print("{}", args...);
+      |                ^~~~
+In file included from /opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/print:43,
+                 from <source>:1:
+<source>:8:16:   in 'constexpr' expansion of 'std::basic_format_string<char>("{}")'
+/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:4377:19:   in 'constexpr' expansion of '__scanner.std::__format::_Checking_scanner<char>::std::__format::_Scanner<char>.std::__format::_Scanner<char>::_M_scan()'
+/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:4032:37:   in 'constexpr' expansion of '((std::__format::_Scanner<char>*)this)->std::__format::_Scanner<char>::_M_pc.std::__format::_Scanner<char>::_Parse_context::std::basic_format_parse_context<char>.std::basic_format_parse_context<char>::next_arg_id()'
+/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:278:56: error: call to non-'constexpr' function 'void std::__format::__invalid_arg_id_in_format_string()'
+  278 |             __format::__invalid_arg_id_in_format_string();
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:224:3: note: 'void std::__format::__invalid_arg_id_in_format_string()' declared here
+  224 |   __invalid_arg_id_in_format_string()
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+:::
+
+But wrap it in a lambda and the error ceases to make sense to most people:
+
+::: std
+```
+<source>:6:38: error: call to consteval function '<lambda closure object>echo<>()::<lambda()>().echo<>()::<lambda()>()' is not a constant expression
+    6 |     [&]{ std::print("{}", args...); }();
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+<source>:6:38: error: 'echo<>()::<lambda()>' called in a constant expression
+<source>:6:5: note: 'echo<>()::<lambda()>' is not usable as a 'constexpr' function because:
+    6 |     [&]{ std::print("{}", args...); }();
+      |     ^
+<source>:6:20: error: call to non-'constexpr' function 'void std::print(format_string<_Args ...>, _Args&& ...) [with _Args = {}; format_string<_Args ...> = basic_format_string<char>]'
+    6 |     [&]{ std::print("{}", args...); }();
+      |          ~~~~~~~~~~^~~~~~~~~~~~~~~
+In file included from <source>:1:
+/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/print:117:5: note: 'void std::print(format_string<_Args ...>, _Args&& ...) [with _Args = {}; format_string<_Args ...> = basic_format_string<char>]' declared here
+  117 |     print(format_string<_Args...> __fmt, _Args&&... __args)
+      |     ^~~~~
+<source>:6:21: note: 'echo<>()::<lambda()>' was promoted to an immediate function because its body contains an immediate-escalating expression 'std::basic_format_string<char>("{}")'
+    6 |     [&]{ std::print("{}", args...); }();
+      |                     ^~~~
+```
+:::
+
+The solution here is the same: we ensure that the only kinds of expressions that are immediate-escalating are those that are not constexpr-erroneous.
+
+### Exceptions
+
+The next question becomes exactly what kinds of expressions should produce constexpr-erroneous values. Obviously `std::constexpr_print_str`, that's the point of the paper. I think in the future we'll want to tackle things like `std::abort()`, `std::terminate()`, possibly even any `[[noreturn]]` function.
+
+But what about escaped exceptions? Consider this example:
+
+::: std
+```cpp
+constexpr std::array<int, 3> data = {1, 2, 3};
+
+int v1 = data.at(5);
+
+void f() {
+  try {
+    static int v2 = data.at(6);
+  } catch (...) {
+
+  }
+}
+
+int main() {
+  f();
+}
+```
+:::
+
+Here, we have two variables with static storage duration whose constant initialization fails due to an uncaught exception. `v1` gets elevated into a runtime failure. `v2`, though, isn't any kind of failure at all — we catch the exception at compile time. We have a choice to make: do we consider uncaught exceptions to be erroneous or not? Doing so would catch the initialization failure of `v1` at compile time, but it would _also_ mean that the initialization of `v2` becomes a compile time error as well.
+
+While it's certainly possible to have static initialization fail with a caught exception at runtime, I think it's exceedingly unlikely to have a meaningful case of static initialization failure _that could be constant_ fail in this way. It'd be one thing if instead of the `6` above, the index was a (non-constant) parameter of `f`, where potentially one call to `f` could fail but the next might succeed. If the expression is otherwise constant, _every_ call will fail. That seems like strange code to me.
+
+This paper proposes that uncaught exceptions are constexpr-erroneous as well.
+
 # Proposal
 
 This paper proposes the following:
@@ -517,16 +637,27 @@ Introduce the notion of constexpr-erroneous in [expr.const]{.sref}:
 
 ::: std
 ::: addu
-[x]{.pnum} An expression `$E$` has *constexpr-erroneous value* if it invokes `std::constexpr_error_str` ([meta.const.eval]). It is implementation-defined whether an invocation of `std::constexpr_warning_str` has a constexpr-erroneous value. [I suspect that we will eventually make more things produce constexpr-erroneous values, like maybe calls to `std::terminate()`, `std::unreachable()`, maybe any `[[noreturn]]` function, etc.]{.draftnote}
+[x]{.pnum} An expression `$E$` has *constexpr-erroneous value* it evaluates one of the following:
+
+* an invocation of `std::constexpr_error_str` ([meta.const.eval]); or
+* a construction of an exception object, unless the exception object and all of its implicit copies created by invocations of `std​::​current_exception` or `std​::​rethrow_exception` ([propagation]) are destroyed within the evaluation of `$E$`.
+
+It is implementation-defined whether an invocation of `std::constexpr_warning_str` has a constexpr-erroneous value. [I suspect that we will eventually make more things produce constexpr-erroneous values, like maybe calls to `std::terminate()`, `std::unreachable()`, maybe any `[[noreturn]]` function, etc.]{.draftnote}
 :::
 
 [10]{.pnum} An expression `$E$` is a *core constant expression* unless the evaluation of `$E$` following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
 
 * [10.1]{.pnum} [...]
+* [10.2]{.pnum} [...]
+
+::: rm
+* [10.16]{.pnum} a construction of an exception object, unless the exception object and all of its implicit copies created by invocations of `std​::​current_exception` or `std​::​rethrow_exception` ([propagation]) are destroyed within the evaluation of `$E$`.
+:::
+
 * [...]
 
 ::: addu
-* [10.x]{.pnum} an expression with constexpr-erroneous value.
+* [10.32]{.pnum} an expression with constexpr-erroneous value.
 
 [y]{.pnum} An expression `$E$` is a *constexpr-erroneous expression* if evaluation of `$E$` is not a core constant expression due to evaluation of an expression with constexpr-erroneous value.
 
@@ -546,6 +677,27 @@ int y = foo(0); // error: the initialization of y is a constexpr-erroneous expre
 :::
 
 :::
+:::
+
+Make constexpr-erroneous immediate expressions hard errors, so they don't escalate:
+
+::: std
+[25]{.pnum} An expression or conversion is _immediate-escalating_ if it is not initially in an immediate function context and it is either
+
+* [25.#]{.pnum} a potentially-evaluated _id-expression_ that denotes an immediate function that is not a subexpression of an immediate invocation, or
+* [25.#]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
+
+::: addu
+[z]{.pnum} An immediate invocation shall not be a constexpr-erroneous expression.
+:::
+
+[26]{.pnum} An _immediate-escalating_ function is:
+
+* [26.#]{.pnum} the call operator of a lambda that is not declared with the consteval specifier,
+* [26.#]{.pnum} a defaulted special member function that is not declared with the consteval specifier, or
+* [26.#]{.pnum} a function that results from the instantiation of a templated entity defined with the constexpr specifier.
+
+An immediate-escalating expression shall appear only in an immediate-escalating function.
 :::
 
 Add to [meta.type.synop]{.sref}:
