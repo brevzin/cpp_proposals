@@ -1494,33 +1494,37 @@ definition, is:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> throw_up<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">throw</span> <span class="dv">42</span>;</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> recover<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> <span class="op">{</span></span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    throw_up<span class="op">()</span>;</span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span> <span class="cf">catch</span> <span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// some consteval-only type</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">throw</span> std<span class="op">::</span>meta<span class="op">::</span>exception<span class="op">(...)</span>;</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> attempt_to<span class="op">(</span>F f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    f<span class="op">()</span>;</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span> <span class="cf">catch</span> <span class="op">(...)</span> <span class="op">{</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">false</span>;</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>attempt_to<span class="op">([]{</span> throw_up<span class="op">()</span>; <span class="op">}))</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Currently,
 <code class="sourceCode cpp">throw_up<span class="op">()</span></code>
-is immediate-escalating, causing
-<code class="sourceCode cpp">recover</code> to become
+is immediate-escalating, causing the appropriate specialization of
+<code class="sourceCode cpp">attempt_to</code> to become
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>.
-And at that point, <code class="sourceCode cpp">recover<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
-is actually a constant expression (that returns
-<code class="sourceCode cpp"><span class="dv">42</span></code>). If we
+And at that point, that specialization is actually a constant expression
+(that returns
+<code class="sourceCode cpp"><span class="kw">true</span></code>). If we
 labelled
 <code class="sourceCode cpp">throw_up<span class="op">()</span></code>
 as erroneous (because of the uncaught exception),
-<code class="sourceCode cpp">recover<span class="op">()</span></code>
-wouldn’t be able to recover. But since it can, I’m going to leave
-exceptions alone for now.</p>
+<code class="sourceCode cpp">attempt_to<span class="op">()</span></code>
+wouldn’t be able to recover. But since it can, I don’t think we can
+label escaped exceptions as constexpr-erroneous.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes the following:</p>
 <ol type="1">
@@ -1809,11 +1813,11 @@ opt out of such warnings based on the value of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>.</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">10</a></span>
-<em>Effects</em>: During constant evaluation, the program is ill-formed,
-a diagnostic message is issued including the text of
-<code class="sourceCode cpp">msg</code>, and the evaluation of this call
-is not a <em>core constant expression</em> ([expr.const]). Otherwise, no
-effect.</p>
+<em>Effects</em>: During constant evaluation, a diagnostic message is
+issued including the text of <code class="sourceCode cpp">msg</code>
+<span class="note"><span>[ <em>Note 1:</em> </span>evaluation of such a
+call is constexpr-erroneous ([expr.const])<span> — <em>end
+note</em> ]</span></span>. Otherwise, no effect.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">11</a></span>
 <em>Recommended practice</em>: Implementations should include the text
 of

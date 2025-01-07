@@ -588,21 +588,25 @@ The problem is, the idea I have for constexpr-erroneous is that a constexpr-erro
 ::: std
 ```cpp
 consteval void throw_up() {
-  throw 42;
+  // some consteval-only type
+  throw std::meta::exception(...);
 }
 
-template <class T>
-constexpr int recover() {
+template <class F>
+constexpr bool attempt_to(F f) {
   try {
-    throw_up();
-  } catch (int i) {
-    return i;
+    f();
+    return true;
+  } catch (...) {
+    return false;
   }
 }
+
+static_assert(attempt_to([]{ throw_up(); }));
 ```
 :::
 
-Currently, `throw_up()` is immediate-escalating, causing `recover` to become `consteval`. And at that point, `recover<T>` is actually a constant expression (that returns `42`). If we labelled `throw_up()` as erroneous (because of the uncaught exception), `recover()` wouldn't be able to recover. But since it can, I'm going to leave exceptions alone for now.
+Currently, `throw_up()` is immediate-escalating, causing the appropriate specialization of `attempt_to` to become `consteval`. And at that point, that specialization is actually a constant expression (that returns `true`). If we labelled `throw_up()` as erroneous (because of the uncaught exception), `attempt_to()` wouldn't be able to recover. But since it can, I don't think we can label escaped exceptions as constexpr-erroneous.
 
 # Proposal
 
@@ -780,7 +784,7 @@ constexpr void constexpr_warning_str($tag-string$ tag, string_view msg) noexcept
 ```
 constexpr void constexpr_error_str($tag-string$ tag, string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, the program is ill-formed, a diagnostic message is issued including the text of `msg`, and the evaluation of this call is not a _core constant expression_ ([expr.const]). Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg` [evaluation of such a call is constexpr-erroneous ([expr.const])]{.note}. Otherwise, no effect.
 
 [#]{.pnum} *Recommended practice*: Implementations should include the text of `$tag$.$str$` in the diagnostic.
 :::
