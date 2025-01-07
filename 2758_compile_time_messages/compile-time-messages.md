@@ -583,7 +583,26 @@ Here, we have two variables with static storage duration whose constant initiali
 
 While it's certainly possible to have static initialization fail with a caught exception at runtime, I think it's exceedingly unlikely to have a meaningful case of static initialization failure _that could be constant_ fail in this way. It'd be one thing if instead of the `6` above, the index was a (non-constant) parameter of `f`, where potentially one call to `f` could fail but the next might succeed. If the expression is otherwise constant, _every_ call will fail. That seems like strange code to me.
 
-This paper proposes that uncaught exceptions are constexpr-erroneous as well.
+The problem is, the idea I have for constexpr-erroneous is that a constexpr-erroneous expression isn't recoverable. But an exception, by definition, is:
+
+::: std
+```cpp
+consteval void throw_up() {
+  throw 42;
+}
+
+template <class T>
+constexpr int recover() {
+  try {
+    throw_up();
+  } catch (int i) {
+    return i;
+  }
+}
+```
+:::
+
+Currently, `throw_up()` is immediate-escalating, causing `recover` to become `consteval`. And at that point, `recover<T>` is actually a constant expression (that returns `42`). If we labelled `throw_up()` as erroneous (because of the uncaught exception), `recover()` wouldn't be able to recover. But since it can, I'm going to leave exceptions alone for now.
 
 # Proposal
 
@@ -601,6 +620,8 @@ This paper proposes the following:
 3. Introduce a new compile time warning API that only has effect if manifestly constant evaluated: `std::constexpr_warning_str(tag, msg)`. This will emit a warning containing the provided message under the provided tag, which can be used in an implementation-defined way to control whether the diagnostic is emitted.
 
 4. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with `std::format`-friendly alternatives.
+
+5. Introduce the concept of constexpr-erroneous expressions to help word this.
 
 ## Implementation Experience
 
@@ -637,23 +658,12 @@ Introduce the notion of constexpr-erroneous in [expr.const]{.sref}:
 
 ::: std
 ::: addu
-[x]{.pnum} An expression `$E$` has *constexpr-erroneous value* it evaluates one of the following:
-
-* an invocation of `std::constexpr_error_str` ([meta.const.eval]); or
-* a construction of an exception object, unless the exception object and all of its implicit copies created by invocations of `std​::​current_exception` or `std​::​rethrow_exception` ([propagation]) are destroyed within the evaluation of `$E$`.
-
-It is implementation-defined whether an invocation of `std::constexpr_warning_str` has a constexpr-erroneous value. [I suspect that we will eventually make more things produce constexpr-erroneous values, like maybe calls to `std::terminate()`, `std::unreachable()`, maybe any `[[noreturn]]` function, etc.]{.draftnote}
+[x]{.pnum} An expression `$E$` has *constexpr-erroneous value* it evaluates an invocation of `std::constexpr_error_str` ([meta.const.eval]). It is implementation-defined whether an invocation of `std::constexpr_warning_str` has a constexpr-erroneous value. [I suspect that we will eventually make more things produce constexpr-erroneous values, like maybe calls to `std::terminate()`, `std::unreachable()`, maybe any `[[noreturn]]` function, etc.]{.draftnote}
 :::
 
 [10]{.pnum} An expression `$E$` is a *core constant expression* unless the evaluation of `$E$` following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
 
 * [10.1]{.pnum} [...]
-* [10.2]{.pnum} [...]
-
-::: rm
-* [10.16]{.pnum} a construction of an exception object, unless the exception object and all of its implicit copies created by invocations of `std​::​current_exception` or `std​::​rethrow_exception` ([propagation]) are destroyed within the evaluation of `$E$`.
-:::
-
 * [...]
 
 ::: addu
@@ -688,7 +698,7 @@ Make constexpr-erroneous immediate expressions hard errors, so they don't escala
 * [25.#]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
 
 ::: addu
-[z]{.pnum} An immediate invocation shall not be a constexpr-erroneous expression.
+[z]{.pnum} An immediate-escalating expression shall not be constexpr-erroneous.
 :::
 
 [26]{.pnum} An _immediate-escalating_ function is:
