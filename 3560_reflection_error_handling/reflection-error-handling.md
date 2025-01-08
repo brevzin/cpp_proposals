@@ -457,4 +457,38 @@ consteval info substitute(info templ, R&& arguments);
 
 ## [meta.reflection.result]
 
-...
+Replace the error handling in this subclause:
+
+::: std
+```cpp
+template <typename T>
+  consteval info reflect_value(const T& expr);
+```
+
+[#]{.pnum} *Mandates*: `T` is a structural type that is neither a reference type nor an array type.
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless any]{.addu} [Any]{.rm} value computed by `expr` having pointer type, or every subobject of the value computed by `expr` having pointer or reference type, is the address of or refers to an object or function that
+
+  - [#.#]{.pnum} is a permitted result of a constant expression ([expr.const]),
+  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
+  - [#.#]{.pnum} is not a string literal object ([lex.string]),
+  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
+  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
+:::
+
+::: std
+```cpp
+template <typename T>
+  consteval info reflect_object(T& expr);
+```
+
+[#]{.pnum} *Mandates*: `T` is not a function type.
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `expr` designates an object or function that
+
+  - [#.#]{.pnum} is a permitted result of a constant expression ([expr.const]),
+  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
+  - [#.#]{.pnum} is not a string literal object ([lex.string]),
+  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
+  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
+:::
