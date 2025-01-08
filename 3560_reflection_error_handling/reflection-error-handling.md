@@ -218,7 +218,18 @@ consteval u8string_view u8symbol_of(operators op);
 
 ## [meta.reflection.names]
 
-...
+Replace the error handling in this subclause:
+
+::: std
+```cpp
+consteval string_view identifier_of(info r);
+consteval u8string_view u8identifier_of(info r);
+```
+
+[#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary literal encoding.
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `has_identifier(r)` is `true` and the identifier that would be returned (see below) is representable by `$E$`.
+:::
 
 ## [meta.reflection.queries]
 
