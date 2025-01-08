@@ -436,7 +436,24 @@ template <class T>
 
 ## [meta.reflection.substitute]
 
-...
+Replace the error handling in this subclause:
+
+::: std
+```cpp
+template <reflection_range R = initializer_list<info>>
+consteval bool can_substitute(info templ, R&& arguments);
+```
+[1]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `templ` represents a template and every reflection in `arguments` represents a construct usable as a template argument ([temp.arg]).
+:::
+
+::: std
+```cpp
+template <reflection_range R = initializer_list<info>>
+consteval info substitute(info templ, R&& arguments);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `can_substitute(templ, arguments)` is `true`.
+:::
 
 ## [meta.reflection.result]
 
