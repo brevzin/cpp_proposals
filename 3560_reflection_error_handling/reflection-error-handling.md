@@ -281,7 +281,79 @@ consteval vector<info> template_arguments_of(info r);
 
 ## [meta.reflection.member.queries]
 
-...
+Replace the error handling in this subclause:
+
+::: std
+```cpp
+consteval vector<info> members_of(info r);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
+:::
+
+::: std
+```cpp
+consteval vector<info> bases_of(info type);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` is a reflection representing a complete class type.
+:::
+
+::: std
+```cpp
+consteval vector<info> static_data_members_of(info type);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
+:::
+
+::: std
+```cpp
+consteval vector<info> nonstatic_data_members_of(info type);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
+:::
+
+::: std
+```cpp
+consteval vector<info> enumerators_of(info type_enum);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type_enum)` represents an enumeration type and `has_complete_definition(dealias(type_enum))` is `true`.
+:::
+
+::: std
+```cpp
+consteval vector<info> get_public_members(info type);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
+:::
+
+::: std
+```cpp
+consteval vector<info> get_public_bases(info type);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
+:::
+
+::: std
+```cpp
+consteval vector<info> get_public_static_data_members(info type);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
+:::
+
+::: std
+```cpp
+consteval vector<info> get_public_nonstatic_data_members(info type);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
+:::
 
 ## [meta.reflection.layout]
 
