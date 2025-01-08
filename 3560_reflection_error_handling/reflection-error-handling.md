@@ -492,3 +492,27 @@ template <typename T>
   - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
   - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
 :::
+
+## [meta.reflection.define.aggregate]
+
+Replace the error handling in this subclause:
+
+::: std
+```cpp
+consteval info data_member_spec(info type,
+                                data_member_options options);
+```
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless the following conditions are met:]{.addu}
+
+- [#.#]{.pnum} `dealias(type)` represents a type `cv $T$` where `$T$` is either an object type or a reference type;
+- [#.#]{.pnum} if `options.name` contains a value, then:
+  - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier when interpreted with UTF-8, or
+  - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier when interpreted with the ordinary literal encoding;
+- [#.#]{.pnum} otherwise, if `options.name` does not contain a value, then `options.bit_width` contains a value;
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`; and
+- [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
+  - [#.#.#]{.pnum} `is_integral_type(type) || is_enumeration_type(type)` is `true`,
+  - [#.#.#]{.pnum} `options.alignment` does not contain a value,
+  - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
+  - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value.
+:::
