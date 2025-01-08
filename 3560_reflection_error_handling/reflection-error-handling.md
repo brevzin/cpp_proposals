@@ -98,12 +98,12 @@ consteval auto user_fn(info type, source_location where = source_location::curre
 
 # Recoverable or Unrecoverable
 
-We went through the proposed API in [@P2996R8] and we think that all of the library functions should be recoverable — that is failing to meet the requirements of the function should be an exception rather than constant evaluation failure. All of them except for two:
+We went through the proposed API in [@P2996R8] and we think that all of the library functions should be recoverable — that is failing to meet the requirements of the function should be an exception rather than constant evaluation failure — with a single exception, `std::meta::define_aggregate`.
 
-* `std::meta::data_member_spec`
-* `std::meta::define_aggregate`
+`define_aggregate` isn't likely to be used from a context from which recovery is meaningful, and even if it were, for meaningful recovery we would have to guarantee that the partial effects of a failure have been rolled back (as a definition containing some of the members may already have been produced at the point where the error is detected.)
+We don't believe that imposing this requirement is warranted or worth the cost.
 
-These are exceedingly unlikely to be used in a context in which recovering is meaningful, and we think it makes the most sense for those to remain hard errors. But many of the rest are more generic or straightforwardly fallible, so the ability to recover from them is desirable.
+The rest of the library functions are straightforwardly fallible, so the ability to recover from them is desirable.
 
 # Proposed Wording
 
