@@ -357,7 +357,39 @@ consteval vector<info> get_public_nonstatic_data_members(info type);
 
 ## [meta.reflection.layout]
 
-...
+Replace the error handling in this subclause:
+
+::: std
+```cpp
+consteval member_offset offset_of(info r);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a non-static data member, unnamed bit-field, or direct base class relationship other than a virtual base class of an abstract class.
+:::
+
+::: std
+```cpp
+consteval size_t size_of(info r);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+:::
+
+::: std
+```cpp
+consteval size_t alignment_of(info r);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+:::
+
+::: std
+```cpp
+consteval size_t bit_size_of(info r);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, unnamed bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+:::
 
 ## [meta.reflection.extract]
 
