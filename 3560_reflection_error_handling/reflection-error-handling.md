@@ -393,7 +393,46 @@ consteval size_t bit_size_of(info r);
 
 ## [meta.reflection.extract]
 
-...
+Replace the error handling in this subclause:
+
+::: std
+```cpp
+template <class T>
+  consteval T $extract-ref$(info r); // exposition only
+```
+
+[#]{.pnum} [`T` is a reference type.]{.note}
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a variable or object of type `U` that is usable in constant expressions from some point in the evaluation context and `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`.
+:::
+
+::: std
+```cpp
+template <class T>
+  consteval T $extract-member-or-function$(info r); // exposition only
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless the following conditions are met:]{.addu}
+
+- [#.#]{.pnum} If `r` represents a non-static data member of a class `C` with type `X`, [then when]{.rm} `T` is `X C::*` and `r` does not represent a bit-field.
+- [#.#]{.pnum} Otherwise, if `r` represents an implicit object member function of class `C` with type `F` or `F noexcept`, [then when]{.rm} `T` is `F C::*`.
+- [#.#]{.pnum} Otherwise, `r` represents a function, static member function, or explicit object member function of function type `F` or `F noexcept`, [then when]{.rm} [and]{.addu} `T` is `F*`.
+:::
+
+::: std
+```cpp
+template <class T>
+  consteval T $extract-val$(info r); // exposition only
+```
+
+[#]{.pnum} Let `U` be the type of the value that `r` represents.
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless the following conditions are met:]{.addu}
+
+  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
+  - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
+  - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value that `r` represents is convertible to `T`.
+:::
 
 ## [meta.reflection.substitute]
 
