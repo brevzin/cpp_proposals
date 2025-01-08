@@ -233,7 +233,51 @@ consteval u8string_view u8identifier_of(info r);
 
 ## [meta.reflection.queries]
 
-...
+Replace the error handling in this subclause:
+
+::: std
+```cpp
+consteval info type_of(info r);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, direct base class relationship, or data member description.
+:::
+
+::: std
+```cpp
+consteval info object_of(info r);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents either an object with static storage duration ([basic.stc.general]), or a variable associated with, or referring to, such an object.
+:::
+
+::: std
+```cpp
+consteval info value_of(info r);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` is a reflection representing
+
+* [#.#]{.pnum} a value,
+* [#.#]{.pnum} an enumerator, or
+* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type, and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began in the manifestly constant-evaluated expression currently under evaluation ([expr.const]), ([temp.type]).
+:::
+
+::: std
+```cpp
+consteval info parent_of(info r);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias (other than `::`), type alias, or direct base class relationship.
+:::
+
+::: std
+```cpp
+consteval info template_of(info r);
+consteval vector<info> template_arguments_of(info r);
+```
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `has_template_arguments(r)` is `true`.
+:::
 
 ## [meta.reflection.member.queries]
 
