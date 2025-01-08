@@ -96,7 +96,7 @@ consteval auto user_fn(info type, source_location where = source_location::curre
 ```
 :::
 
-## Recoverable or Unrecoverable
+# Recoverable or Unrecoverable
 
 We went through the proposed API in [@P2996R8] and we think that all of the library functions should be recoverable — that is failing to meet the requirements of the function should be an exception rather than constant evaluation failure. All of them except for two:
 
