@@ -571,7 +571,7 @@ Add to [version.syn]{.sref}:
 ::: bq
 ::: addu
 ```
-#define __cpp_lib_define_static 2024XX // freestanding, also in <meta>
+#define __cpp_lib_define_static 2025XX // freestanding, also in <meta>
 ```
 :::
 :::
