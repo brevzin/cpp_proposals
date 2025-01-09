@@ -139,6 +139,19 @@ Change [basic.def]{.sref}/2:
 * [2.16]{.pnum} [...]
 :::
 
+Change the wording for plainly constant-evaluated to only allow a `consteval` block instead of a `static_assert` declaration:
+
+::: std
+
+[21]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is not in a complete-class context ([class.mem.general]{.sref}) and is either
+
+* [21.#]{.pnum} [the `$constant-expression$` of a `$static_assert-declaration$`]{.rm} [the evaluating expression of a `$consteval-block-declaration$`]{.addu}  ([dcl.pre]{.sref}), or
+* [21.#]{.pnum} an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable.
+
+[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below) and happens exactly once ([lex.phases]{.sref}). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
+
+:::
+
 Change [dcl.pre]{.sref}:
 
 ::: std
@@ -188,11 +201,11 @@ And then after [dcl.pre]{.sref}/13 [This wording relies on terms introduced in [
 [13]{.pnum} *Recommended practice*: When a `$static_assert-declaration$` fails, [...]
 
 ::: addu
-[*]{.pnum} If a `$consteval-block-declaration$` is within a template definition, it has no effect. Otherwise, let `$E$` be
+[*]{.pnum} If a `$consteval-block-declaration$` is within a template definition, it has no effect. The evaluating expression of a `$consteval-block-declaration$` is
 ```cpp
 []() -> void consteval $compound-statement$ ()
 ```
-`$E$` is plainly constant-evaluated ([expr.const]).
+[This expression is plainly constant-evaluated ([expr.const]).]{.note}
 :::
 
 [14]{.pnum} An `$empty-declaration$` has no effect.

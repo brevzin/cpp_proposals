@@ -793,6 +793,44 @@ it is an
 </ul>
 </blockquote>
 </div>
+<p>Change the wording for plainly constant-evaluated to only allow a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+block instead of a <code class="sourceCode cpp"><span class="kw">static_assert</span></code>
+declaration:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">21</a></span>
+A non-dependent expression or conversion is <em>plainly
+constant-evaluated</em> if it is not in a complete-class context
+(<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>)
+and is either</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(21.1)</a></span>
+<span class="rm" style="color: #bf0303"><del>the
+<span><code class="sourceCode default"><em>constant-expression</em></code></span>
+of a
+<span><code class="sourceCode default"><em>static_assert-declaration</em></code></span></del></span>
+<span class="addu">the evaluating expression of a
+<code class="sourceCode cpp"><em>consteval-block-declaration</em></code></span>
+(<span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>),
+or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(21.2)</a></span>
+an initializer of a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+(<span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>) or
+<code class="sourceCode cpp"><span class="kw">constinit</span></code>
+(<span>9.2.7 <a href="https://wg21.link/dcl.constinit">[dcl.constinit]</a></span>)
+variable.</li>
+</ul>
+<p><span class="note"><span>[ <em>Note 1:</em> </span>The evaluation of
+a plainly constant-evaluated expression
+<code class="sourceCode cpp"><em>E</em></code> can produce injected
+declarations (see below) and happens exactly once (<span>5.2 <a href="https://wg21.link/lex.phases">[lex.phases]</a></span>). Any such
+declarations are reachable from a point that follows immediately after
+<code class="sourceCode cpp"><em>E</em></code>.<span> — <em>end
+note</em> ]</span></span></p>
+</blockquote>
+</div>
 <p>Change <span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span>:</p>
 <div class="std">
 <blockquote>
@@ -840,21 +878,24 @@ it is an
 relies on terms introduced in <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> ]</span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">13</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">13</a></span>
 <em>Recommended practice</em>: When a
 <code class="sourceCode cpp"><em>static_assert-declaration</em></code>
 fails, […]</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">*</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">*</a></span>
 If a
 <code class="sourceCode cpp"><em>consteval-block-declaration</em></code>
-is within a template definition, it has no effect. Otherwise, let
-<code class="sourceCode cpp"><em>E</em></code> be</p>
+is within a template definition, it has no effect. The evaluating
+expression of a
+<code class="sourceCode cpp"><em>consteval-block-declaration</em></code>
+is</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">[]()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="kw">consteval</span> <em>compound-statement</em> <span class="op">()</span></span></code></pre></div>
-<p><code class="sourceCode cpp"><em>E</em></code> is plainly
-constant-evaluated ([expr.const]).</p>
+<p><span class="note"><span>[ <em>Note 2:</em> </span>This expression is
+plainly constant-evaluated ([expr.const]).<span> — <em>end
+note</em> ]</span></span></p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">14</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">14</a></span>
 An <code class="sourceCode cpp"><em>empty-declaration</em></code> has no
 effect.</p>
 </blockquote>
@@ -879,24 +920,24 @@ and the rule in p3:</p>
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <em>opaque-enum-declaration</em></span>
 <span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>empty-declaration</em></span></span></code></pre></div>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">3</a></span>
 A <code class="sourceCode cpp"><em>member-declaration</em></code> does
 not declare new members of the class if it is</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(3.1)</a></span>
 a friend declaration ([class.friend]),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(3.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(3.2)</a></span>
 a <code class="sourceCode cpp"><em>deduction-guide</em></code>
 ([temp.deduct.guide]),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(3.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(3.3)</a></span>
 a <code class="sourceCode cpp"><em>template-declaration</em></code>
 whose declaration is one of the above,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(3.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(3.4)</a></span>
 a <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>static_assert-declaration</em></code></span>,</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(3.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(3.5)</a></span>
 a <code class="sourceCode cpp"><em>using-declaration</em></code>
 ([namespace.udecl]) , or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(3.6)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(3.6)</a></span>
 <span class="rm" style="color: #bf0303"><del>an
 <span><code class="sourceCode default"><em>empty-declaration</em></code></span>.</del></span>
 <span class="addu">a
@@ -912,7 +953,7 @@ an anonymous union, which is kind of a consistency drive by with other
 classes. ]</span></p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">1</a></span>
 […] Each <code class="sourceCode cpp"><em>member-declaration</em></code>
 in the <code class="sourceCode cpp"><em>member-specification</em></code>
 of an anonymous union shall either define one or more public non-static
