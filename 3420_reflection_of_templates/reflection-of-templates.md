@@ -8,6 +8,8 @@ author:
       email: <barry.revzin@gmail.com>
     - name: Andrei Alexandrescu, NVIDIA
       email: <andrei@nvidia.com>
+    - name: Daveed Vandevoorde, EDG
+      email: <daveed@edg.com>
     - name: Michael Garland, NVIDIA
       email: <mgarland@nvidia.com>
 toc: true
