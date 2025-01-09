@@ -114,7 +114,8 @@ def std(elem, doc):
 def soft_break(elem, doc):
     if isinstance(elem, pf.Str):
         if '&sbr;' in elem.text:
-            # Replace all instances of '&cacados;' with the desired HTML span
+            # Replace all instances of '&sbr;' with a soft break without spacing or hyphenation
+            # (akin to a zero-width space)
             replaced_text = elem.text.replace(
                 '&sbr;',
                 '''<span style="hyphenate-character: '';">&shy;</span>'''
