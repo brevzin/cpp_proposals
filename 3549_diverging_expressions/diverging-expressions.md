@@ -236,7 +236,10 @@ Several languages have a notion of a bottom type (`⊥`) for diverging expressio
 Let's imagine what it would look like if C++ also had such a type. We'll call it `noreturn_t`. It would some interesting properties:
 
 * You cannot produce an instance of such a type. It wouldn't be very divergent otherwise! In this case, it's not just that this type isn't constructible, but we would also have to eliminate all of C++'s other clever ways of producing a value (like `reinterpret_cast`, `std::bit_cast`, etc.).
-* On the other hand, `noreturn_t` is convertible to any other type (including reference types). This is currently impossible to emulate in C++ today, since you cannot make a type that is both convertible to `T` and `T&` for all `T`. This also would include function pointer conversions — `auto(*)(T) -> noreturn_t` is convertible to `auto(*)(T) -> U` for all `U`. This makes sense from a type-theoretic perspective and makes a lot of other uses just work.
+* On the other hand, `noreturn_t` is convertible to any other type (including reference types). This is currently impossible to emulate in C++ today, since you cannot make a type that is both convertible to `T` and `T&` for all `T`.
+* Function pointer conversions are more interesting. From a type theory perspective, `auto(*)(T) -> noreturn_t` is convertible to `auto(*)(T) -> U` for all `U`. For the same reason Haskell has the [`absurd` function](https://hackage.haskell.org/package/void-0.7/docs/Data-Void.html). But this doesn't quite work out in C++ because of calling convention reasons. Nevertheless, a function pointer that is a constant expression of type `auto(*)(Args...) -> noreturn_t` can be converted to an `auto(*)(Args...) -> U`. As if this conversion were `consteval`.
+
+This makes sense from a type-theoretic perspective and makes a lot of other uses just work.
 
 We would then change the type of a `$throw-expression$` to be `noreturn_t` (instead of `void`). This change, coupled with the conversion rule above, means we'd no longer need the special case in conditional expressions. Consider:
 
@@ -478,7 +481,7 @@ We propose to:
 * to introduce a new type `std::noreturn_t` which represents an expression with no value, that unconditionally diverges.
   * `std::noreturn_t` is convertible to any type (include reference types)
   * `std::noreturn_t` is not constructible, and you cannot `reinterpret_cast` into it, `std::bit_cast` into it, `static_cast` into it, etc.
-  * `std::noreturn_t(*)(Args...)` is convertible to `R(*)(Args...)` for all `R` (again, including reference types).
+  * `std::noreturn_t(*)(Args...)` is convertible to `R(*)(Args...)` for all `R` (again, including reference types), but only if the source function pointer is a constant expression (i.e. this conversion behaves as if it is a `consteval` function).
 * change all the standard library functions that are currently `[[noreturn]] void f()` to instead be `std::noreturn_t f()`
 * change the type of `$throw-expression$` to `std::noreturn_t` and remove the current... uh... exception for exceptions in the conditional operator (it will be subsumed by the usual convertibility rule).
 * adopt the same rules for `do` expressions [@P2806R2].

@@ -938,12 +938,21 @@ convertible to any other type (including reference types). This is
 currently impossible to emulate in C++ today, since you cannot make a
 type that is both convertible to <code class="sourceCode cpp">T</code>
 and <code class="sourceCode cpp">T<span class="op">&amp;</span></code>
-for all <code class="sourceCode cpp">T</code>. This also would include
-function pointer conversions — <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(*)(</span>T<span class="op">)</span> <span class="op">-&gt;</span> noreturn_t</code>
+for all <code class="sourceCode cpp">T</code>.</li>
+<li>Function pointer conversions are more interesting. From a type
+theory perspective, <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(*)(</span>T<span class="op">)</span> <span class="op">-&gt;</span> noreturn_t</code>
 is convertible to <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(*)(</span>T<span class="op">)</span> <span class="op">-&gt;</span> U</code>
-for all <code class="sourceCode cpp">U</code>. This makes sense from a
-type-theoretic perspective and makes a lot of other uses just work.</li>
+for all <code class="sourceCode cpp">U</code>. For the same reason
+Haskell has the <a href="https://hackage.haskell.org/package/void-0.7/docs/Data-Void.html"><code class="sourceCode cpp">absurd</code>
+function</a>. But this doesn’t quite work out in C++ because of calling
+convention reasons. Nevertheless, a function pointer that is a constant
+expression of type <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(*)(</span>Args<span class="op">...)</span> <span class="op">-&gt;</span> noreturn_t</code>
+can be converted to an <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(*)(</span>Args<span class="op">...)</span> <span class="op">-&gt;</span> U</code>.
+As if this conversion were
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>.</li>
 </ul>
+<p>This makes sense from a type-theoretic perspective and makes a lot of
+other uses just work.</p>
 <p>We would then change the type of a
 <code class="sourceCode cpp"><em>throw-expression</em></code> to be
 <code class="sourceCode cpp">noreturn_t</code> (instead of
@@ -1437,7 +1446,10 @@ into it, etc.</li>
 <li><code class="sourceCode cpp">std<span class="op">::</span>noreturn_t<span class="op">(*)(</span>Args<span class="op">...)</span></code>
 is convertible to <code class="sourceCode cpp">R<span class="op">(*)(</span>Args<span class="op">...)</span></code>
 for all <code class="sourceCode cpp">R</code> (again, including
-reference types).</li>
+reference types), but only if the source function pointer is a constant
+expression (i.e. this conversion behaves as if it is a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+function).</li>
 </ul></li>
 <li>change all the standard library functions that are currently <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span> <span class="dt">void</span> f<span class="op">()</span></code>
 to instead be <code class="sourceCode cpp">std<span class="op">::</span>noreturn_t f<span class="op">()</span></code></li>
