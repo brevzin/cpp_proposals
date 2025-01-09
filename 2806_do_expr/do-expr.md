@@ -899,7 +899,7 @@ $do-expression$:
 * [#.#]{.pnum} Otherwise, if `$DO-TYPE$` is an lvalue reference type `$T$&&`, then the `$do-expression$` is an xvalue of type `$T$`.
 * [#.#]{.pnum} Otherwise, the `$do-expression$` is an prvalue of type `$DO-TYPE$`.
 
-[#]{.pnum} If the `$do-expression$`'s type is not `$cv$ void`, it contains a non-discarded `do_return` statement, and the last `$statement$` in the `$compound-statement$` of the `$do-expression$` is not a diverging statement, the program is ill-formed. [See [@P3549R0] for more details.]{.draftnote} [Flowing off the end of a `$do-expression$` whose type is not `$cv$ void` is ill-formed.]{.note}
+[#]{.pnum} If the `$do-expression$`'s type is not `$cv$ void`, it contains a non-discarded `do_return` statement, and the last `$statement$` in the `$compound-statement$` of the `$do-expression$` is neither a diverging statement nor a `do_return` statement, the program is ill-formed. [See [@P3549R0] for more details.]{.draftnote} [Flowing off the end of a `$do-expression$` whose type is not `$cv$ void` is ill-formed.]{.note}
 
 ::: example
 ```cpp
@@ -942,7 +942,7 @@ void f(bool cond) {
 ```
 :::
 
-[#]{.pnum} The value of a `$do-expression$` is the operand of the executed `do_return` statement, if any.
+[#]{.pnum} The value of a `$do-expression$` whose type is not `$cv$ void` is the operand of the executed `do_return` statement, if any.
 :::
 :::
 
