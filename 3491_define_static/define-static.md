@@ -1,6 +1,6 @@
 ---
 title: "`define_static_{string,object,array}`"
-document: P3491R0
+document: P3491R1
 date: today
 audience: LEWG
 author:
@@ -8,8 +8,6 @@ author:
       email: <wcc@edg.com>
     - name: Peter Dimov
       email: <pdimov@gmail.com>
-    - name: Dan Katz
-      email: <dkatz85@bloomberg.net>
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
     - name: Daveed Vandevoorde
