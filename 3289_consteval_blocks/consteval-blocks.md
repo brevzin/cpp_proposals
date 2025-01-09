@@ -6,6 +6,8 @@ audience: EWG
 author:
     - name: Wyatt Childers
       email: <wcc@edg.com>
+    - name: Dan Katz
+      email: <dkatz85@bloomberg.net>
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
     - name: Daveed Vandevoorde
@@ -190,7 +192,7 @@ And then after [dcl.pre]{.sref}/13 [This wording relies on terms introduced in [
 ```cpp
 []() -> void consteval $compound-statement$ ()
 ```
-`$E$` is plainly constant-evaluated ([expr.const]), and its syntactic endpoint is the `}` of the `$compound-statement$`.
+`$E$` is plainly constant-evaluated ([expr.const]).
 :::
 
 [14]{.pnum} An `$empty-declaration$` has no effect.
@@ -239,7 +241,7 @@ Add to the table in [cpp.predefined]{.sref}:
 ::: std
 ```diff
   __cpp_consteval       202211L
-+ __cpp_consteval_block 2024XXL
++ __cpp_consteval_block 2025XXL
   __cpp_constinit       201907L
 ```
 :::
