@@ -216,7 +216,7 @@ should ideally not change any properties of the expression. Both diverge, one ju
 
 One question we have to answer is: What is the `decltype` of such an expression?
 
-Right now, `decltype(throw 42)` is defined as `void` [explicitly](https://eel.is/c++draft/expr.throw#1). For some reason. `decltype(std::terminate())` is more obviously `void` simply because that's how the function is defined — it is a `void()` (although a `[[noreturn]]` one). So there's certainly something to be said for going ahead and wanting to define `decltype(do { throw 42; })` as `void` as well.
+Right now, `decltype(throw 42)` is defined as `void`, [explicitly](https://eel.is/c++draft/expr.throw#1). For some reason. `decltype(std::terminate())` is more obviously `void` simply because that's how the function is defined — it is a `void()` (although a `[[noreturn]]` one). So there's certainly something to be said for going ahead and wanting to define `decltype(do { throw 42; })` as `void` as well.
 
 This approach leads to the following pair of rules:
 
@@ -224,6 +224,8 @@ This approach leads to the following pair of rules:
     * the _trailing-return-type_, if one is explicitly provided, or
     * the type that is `do_return`-ed consistently (same as the lambda rule except with `do_return` instead of `return`).
 2. A `do` expression is said to _diverge_ if every control flow path leads to executing a diverging expression (i.e. a `$throw-expression$`, a call to a `[[noreturn]]` function, or evaluating another such diverging expression).
+
+This effectively means that we keep adding properties to expressions: an expression would have a type, a value category, whether it's a bit-field, and now also whether it diverges.
 
 There is another approach though.
 
@@ -233,8 +235,8 @@ Several languages have a notion of a bottom type (`⊥`) for diverging expressio
 
 Let's imagine what it would look like if C++ also had such a type. We'll call it `noreturn_t`. It would some interesting properties:
 
-* You cannot produce an instance of such a type. It wouldn't be very divergent otherwise! In this case, it's not just that this type isn't constructible, but we would also have to eliminate all of C++'s other clever ways of producing a value (like `reinterpret_cast`).
-* On the other hand, `noreturn_t` is convertible to any other type (including reference types). This also would include function pointer conversions — `auto(*)(T) -> noreturn_t` is convertible to `auto(*)(T) -> U` for all `U`. This makes sense from a type-theoretic perspective and makes a lot of other uses just work.
+* You cannot produce an instance of such a type. It wouldn't be very divergent otherwise! In this case, it's not just that this type isn't constructible, but we would also have to eliminate all of C++'s other clever ways of producing a value (like `reinterpret_cast`, `std::bit_cast`, etc.).
+* On the other hand, `noreturn_t` is convertible to any other type (including reference types). This is currently impossible to emulate in C++ today, since you cannot make a type that is both convertible to `T` and `T&` for all `T`. This also would include function pointer conversions — `auto(*)(T) -> noreturn_t` is convertible to `auto(*)(T) -> U` for all `U`. This makes sense from a type-theoretic perspective and makes a lot of other uses just work.
 
 We would then change the type of a `$throw-expression$` to be `noreturn_t` (instead of `void`). This change, coupled with the conversion rule above, means we'd no longer need the special case in conditional expressions. Consider:
 
@@ -264,6 +266,40 @@ Which would likewise allow for the desired conditional with `std::terminate()` t
 $condition$ ? 42 : std::terminate()
 ```
 :::
+
+
+We're approaching `std::noreturn_t` from the perspective of wanting to detect diverging expressions and statements. But there are other reasons to want to have a bottom type in the type system. Consider...
+
+### `std::function<std::noreturn_t()>`
+
+How do you have a callback that signals that it must not terminate? Well, you can't really. Because that's not something you can signal in the type system today. But with a bottom type it can be, and the type `std::function<std::noreturn_t()>` becomes meaningful.
+
+### `std::expected<T, std::noreturn_t>`
+
+One is its use in sum types. Consider the type `std::expected<T, std::noreturn_t>`. What are its properties? Well, in general, a `std::expected<T, E>` is holding either a `T` in its valid state or an `E` in its error state, and so it's storage is something like a `bool` and a `union { T; E; }`. But if `E` is `std::noreturn_t`, then we know that there _cannot be_ an error state. You cannot form a value of type `std::noreturn_t`, so we don't even need to store it at all. The layout of `std::expected<T, std::noreturn_t>` can simply be `struct { T; }`. Likewise for `std::expected<std::noreturn_t, E>`, which can only ever be in the error state.
+
+This is a useful thing to be able to express in the type system, since you might have an API whose contract is that it returns some kind of `expected<T, E>` — but this particular implementation of that API might simply never fail (or always fail). So we can return an `expected<T, noreturn_t>` to conform to the expected shape of the return type while also having all the state checks trivially optimize away (since its `operator bool() const` is trivially just `return true;`). Moreover, a lot of code that expects a particular `E` will continue to work fine since `noreturn_t` is convertible to `E`.
+
+### Valueless Ranges
+
+By some coincidence, Barry just ran into this issue (again) while we were writing the initial revision of this paper.
+
+A Range (in the C++20 sense) has a few associated types. Its `reference` is just `decltype(*it)`, unfortunately named in retrospect since it need not be a reference type. Then, a range has a `value_type` — which is the type you would use if you wanted an independent value. And the range's `value_type` and `reference` have to be related somehow, they need to have a `common_reference`. For most ranges, there isn't much to think about here — `reference` is either `T&` or `T const&` for some object type `T`, `value_type` is `T`, everything just falls out straightforwardly.
+
+But there are few situations where this just doesn't work out:
+
+1. Let's say we have an abstract base class, `Abstract`. We can produce a range whose `reference` is `Abstract&` (let's say we don't want to deal with pointers, since we know none of ours are ever null). But we simply _cannot_ produce a `value_type` of `Abstract`. It's... abstract. There are situations where you can get away with it, but in a lot of ranges code, you just can't. This is [@LWG3864].
+
+2. Let's say we have a type `S` with a trailing flexible array member. We can produce a range whose reference is `S&`. Unlike `Abstract`, it might be valid to form an object of type `S` — it would just be semantically wrong to do so. Moreover, `enumerate`ing such a range would end up producing a `value_type` of `tuple<ptrdiff_t, S>`, which in libstdc++'s layout is `struct { S; ptrdiff_t; }`. That puts the flexible array member in the middle of the struct, and gcc 14 starts rejecting this code.
+
+3. Similar to (2), there are other cases of dynamically sized ranges. For instance, rather than a `span<T>` I might want to produce an `erased_span<Base>` which is a range of `Base&` but whose dynamic type (and size) is chosen at runtime. Any code that attempts to actually produce a `value_type` of `Base` would be logically wrong — even if it might compile.
+
+In all of these cases, what we really want to be able to say is: there _is_ no `value_type`. Any algorithm that attempts to produce one is broken.
+
+A bottom type solves this quite nicely. Adding `using value_type = std::noreturn_t;` meets the other requirements, as long as `std::noreturn_t&` is convertible to `reference`. We get a valid C++20 range and the compile errors we get are actual logic errors — using algorithms that try to actually form a `value_type`.
+
+This, in of itself, isn't a complete solution, since all the invocation concepts in Ranges ([indirectcallable]{.sref}]) still will attempt to invoke the provided callable with `value_type&` (or the projected `value_type&`), and we'd need to do something there too. But simply having a `std::noreturn_t` to use here does solve a lot of the problem.
+
 
 ## Doing Our Due Diligence to Deduce `do` Divergence
 
@@ -352,35 +388,35 @@ do {
 
 But we're concerned that the mixing and matching of explicit and implicit yields would be confusing. It's easy to miss the implicit `do_return` in the presence of explicit ones. Likewise, attempting to turn `if` into an expression this late in C++'s lifetime might be too novel? We would also then have to find a way to turn loops into expressions (or resurface `do_return`, again running into the explicit/implicit issue).
 
-So if we don't want to use implicit last value, how else can we deduce divergence? We suggest the following, simple rule, inspired by implicit last value:
+So if we don't want to use implicit last value, how else can we deduce divergence? We suggest the following rule, inspired by implicit last value:
 
 ::: std
-[1]{.pnum} A `$statement$` is a *diverging statement* if it is:
+[1]{.pnum} An expression is a *diverging expression* if its type is `noreturn_t`.
 
-* [1.1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
-* [1.2]{.pnum} an `$escaping-statement$`,
-* [1.3]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
-* [1.4]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
-* [1.5]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
+[2]{.pnum} A `$statement$` is a *diverging statement* if it is:
 
-[2]{.pnum} The type of a `$do-expression$` is determined as follows.
+* [2.1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
+* [2.2]{.pnum} an `$escaping-statement$`,
+* [2.3]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
+* [2.4]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
+* [2.5]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
 
-* [2.1]{.pnum} If there is a `$trailing-return-type$` that is not a placeholder, that type.
-* [2.2]{.pnum} Otherwise, let `T` be the type deduced from the non-discarded `do_return` statements, if any, within the body of the `$do-expression$`. If the type deduced is not the same in each deduction, the program is ill-formed.
-    * [2.2.1]{.pnum} If `T` is `void` and the last `$statement$` is a diverging statement, then type of the `$do-expression$` is `noreturn_t`.
-    * [2.2.2]{.pnum} Otherwise, the type is `T`.
+[3]{.pnum} The type of a `$do-expression$` is determined as follows.
 
-[3]{.pnum} An expression is a *diverging expression* if its type is `noreturn_t`.
+* [3.1]{.pnum} If there is a `$trailing-return-type$` that is not a placeholder, that type.
+* [3.2]{.pnum} Otherwise, if there are any non-discard `do_return` statements within the body of the `$do-expression$`, let `T` be the type deduced from them. If the type deduced is not the same in each deduction, the program is ill-formed. Otherwise, the type is `T`.
+* [3.3]{.pnum} Otherwise, if the last `$statement$` is a diverging statement, then `noreturn_t`.
+* [3.4]{.pnum} Otherwise, `void`.
 :::
 
-We need to deduce `void` because if there are any `do_return`s that yield a value, then the expression does not diverge. Then, in the `void`-returning cases, we need to see which ones of those actually diverge. Which is non-trivial because we need to handle things like:
+If there are any `do_return` statements, then the `do` expression doesn't diverge. It might produce a value. Maybe that `do_return` statement is logically unreachable, but we can't in general determine that. But if there are no `do_return` statements, we need to see if we actually diverge. Which is non-trivial because we need to handle things like:
 
 ::: std
 ```cpp
 // just an escaping-statement
 do { continue; }
 
-// a statement-expression that is a diverging expressoin
+// a statement-expression that is a diverging expression
 do { std::terminate(); }
 
 // an if statement with just an if, this is NOT diverging
@@ -409,7 +445,7 @@ This rule ensures that all of our initial pattern arms diverge, as desired:
 
 ## Alternative with `[[noreturn]]`
 
-The advantage of the approach described with `noreturn_t` is that diverging expressions can appear in the type system. This obsoletes `[[noreturn]]`, providing a better way to express the issue — in a way that can further generalize to other scenarios. We can have a `std::function<std::noreturn_t()>`, we can have `std::expected<T, std::noreturn_t>` (a specialization that would not require additional storage for the error type or the discriminant, since it would always be a value), etc.
+The advantage of the approach described with `noreturn_t` is that diverging expressions can appear in the type system. This provides a better solution than `[[noreturn]]`, in a way that can further generalize to other scenarios (as we showed earlier). We can have a `std::function<std::noreturn_t()>`, we can have `std::expected<T, std::noreturn_t>`, valueless ranges, etc.
 
 But an alternative approach would be to avoid changing any of the existing functions (like `std::abort()`, `std::terminate()`, etc.) or changing the type of a `$throw-expression$`, and instead recognize `[[noreturn]]` more explicitly.
 
@@ -433,8 +469,6 @@ The rule we lay out above would instead become:
 
 This is a simpler change. It doesn't involve introducing a new language/library type or changing existing standard library functions or the meanings of some code — although we doubt too many people are relying on `decltype(throw 1)` being `void`. However, it doesn't compose. `[[noreturn]]` isn't deduced, so wrapping becomes challenging.
 
-Although in order to making wrapping work, we'd have to further change deduction rules so that `[]{ std::abort(); }` returns `noreturn_t` in the same way that `do { std::abort(); }` does. But without `noreturn_t`, you'd have to write `[][[noreturn]]{ std::abort(); }`.
-
 Leaning on `[[noreturn]]` also means that we end up leaning on `void` even harder to mean two completely different things: `void f() { }` is a function that returns a value, while `[[noreturn]] void g() { std::exit(-1); }` is a function that doesn't.
 
 # Proposal
@@ -442,10 +476,9 @@ Leaning on `[[noreturn]]` also means that we end up leaning on `void` even harde
 We propose to:
 
 * to introduce a new type `std::noreturn_t` which represents an expression with no value, that unconditionally diverges.
-  * `std::noreturn_t` is convertible to any type
-  * `std::noreturn_t` is not constructible, and you cannot `reinterpret_cast` into it.
-  * `std::noreturn_t(*)(Args...)` is convertible to `R(*)(Args...)` for all `R`.
+  * `std::noreturn_t` is convertible to any type (include reference types)
+  * `std::noreturn_t` is not constructible, and you cannot `reinterpret_cast` into it, `std::bit_cast` into it, `static_cast` into it, etc.
+  * `std::noreturn_t(*)(Args...)` is convertible to `R(*)(Args...)` for all `R` (again, including reference types).
 * change all the standard library functions that are currently `[[noreturn]] void f()` to instead be `std::noreturn_t f()`
 * change the type of `$throw-expression$` to `std::noreturn_t` and remove the current... uh... exception for exceptions in the conditional operator (it will be subsumed by the usual convertibility rule).
-* change function deduction rules to recognize diverging statements and to deduce `std::noreturn_t` in cases where they currently deduce `void`
 * adopt the same rules for `do` expressions [@P2806R2].

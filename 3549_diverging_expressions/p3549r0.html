@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-01" />
+  <meta name="dcterms.date" content="2025-01-09" />
   <title>Diverging Expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -568,7 +568,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-01</td>
+    <td>2025-01-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -602,8 +602,13 @@ Diverging Expressions<span></span></a>
 <li><a href="#diverging-do-expressions" id="toc-diverging-do-expressions"><span class="toc-section-number">2.1</span> Diverging
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions<span></span></a></li>
-<li><a href="#a-bottom-type" id="toc-a-bottom-type"><span class="toc-section-number">2.2</span> A bottom
-type<span></span></a></li>
+<li><a href="#a-bottom-type" id="toc-a-bottom-type"><span class="toc-section-number">2.2</span> A bottom type<span></span></a>
+<ul>
+<li><a href="#stdfunctionstdnoreturn_t" id="toc-stdfunctionstdnoreturn_t"><span class="toc-section-number">2.2.1</span> <code class="sourceCode cpp">std<span class="op">::</span>function<span class="op">&lt;</span>std<span class="op">::</span>noreturn_t<span class="op">()&gt;</span></code><span></span></a></li>
+<li><a href="#stdexpectedt-stdnoreturn_t" id="toc-stdexpectedt-stdnoreturn_t"><span class="toc-section-number">2.2.2</span> <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, std<span class="op">::</span>noreturn_t<span class="op">&gt;</span></code><span></span></a></li>
+<li><a href="#valueless-ranges" id="toc-valueless-ranges"><span class="toc-section-number">2.2.3</span> Valueless
+Ranges<span></span></a></li>
+</ul></li>
 <li><a href="#doing-our-due-diligence-to-deduce-do-divergence" id="toc-doing-our-due-diligence-to-deduce-do-divergence"><span class="toc-section-number">2.3</span> Doing Our Due Diligence to Deduce
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 Divergence<span></span></a></li>
@@ -870,7 +875,7 @@ diverge, one just additionally adds some logging.</p>
 such an expression?</p>
 <p>Right now, <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span><span class="cf">throw</span> <span class="dv">42</span><span class="op">)</span></code>
 is defined as
-<code class="sourceCode cpp"><span class="dt">void</span></code> <a href="https://eel.is/c++draft/expr.throw#1">explicitly</a>. For some
+<code class="sourceCode cpp"><span class="dt">void</span></code>, <a href="https://eel.is/c++draft/expr.throw#1">explicitly</a>. For some
 reason. <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>std<span class="op">::</span>terminate<span class="op">())</span></code>
 is more obviously
 <code class="sourceCode cpp"><span class="dt">void</span></code> simply
@@ -902,6 +907,9 @@ to executing a diverging expression (i.e. a
 a <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>
 function, or evaluating another such diverging expression).</li>
 </ol>
+<p>This effectively means that we keep adding properties to expressions:
+an expression would have a type, a value category, whether it’s a
+bit-field, and now also whether it diverges.</p>
 <p>There is another approach though.</p>
 <h2 data-number="2.2" id="a-bottom-type"><span class="header-section-number">2.2</span> A bottom type<a href="#a-bottom-type" class="self-link"></a></h2>
 <p>Several languages have a notion of a bottom type
@@ -922,10 +930,16 @@ some interesting properties:</p>
 <li>You cannot produce an instance of such a type. It wouldn’t be very
 divergent otherwise! In this case, it’s not just that this type isn’t
 constructible, but we would also have to eliminate all of C++’s other
-clever ways of producing a value (like <code class="sourceCode cpp"><span class="kw">reinterpret_cast</span></code>).</li>
+clever ways of producing a value (like <code class="sourceCode cpp"><span class="kw">reinterpret_cast</span></code>,
+<code class="sourceCode cpp">std<span class="op">::</span>bit_cast</code>,
+etc.).</li>
 <li>On the other hand, <code class="sourceCode cpp">noreturn_t</code> is
-convertible to any other type (including reference types). This also
-would include function pointer conversions — <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(*)(</span>T<span class="op">)</span> <span class="op">-&gt;</span> noreturn_t</code>
+convertible to any other type (including reference types). This is
+currently impossible to emulate in C++ today, since you cannot make a
+type that is both convertible to <code class="sourceCode cpp">T</code>
+and <code class="sourceCode cpp">T<span class="op">&amp;</span></code>
+for all <code class="sourceCode cpp">T</code>. This also would include
+function pointer conversions — <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(*)(</span>T<span class="op">)</span> <span class="op">-&gt;</span> noreturn_t</code>
 is convertible to <code class="sourceCode cpp"><span class="kw">auto</span><span class="op">(*)(</span>T<span class="op">)</span> <span class="op">-&gt;</span> U</code>
 for all <code class="sourceCode cpp">U</code>. This makes sense from a
 type-theoretic perspective and makes a lot of other uses just work.</li>
@@ -972,6 +986,112 @@ to work for the same reasons as the conditional with
 <div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><em>condition</em> <span class="op">?</span> <span class="dv">42</span> <span class="op">:</span> std<span class="op">::</span>terminate<span class="op">()</span></span></code></pre></div>
 </blockquote>
 </div>
+<p>We’re approaching <code class="sourceCode cpp">std<span class="op">::</span>noreturn_t</code>
+from the perspective of wanting to detect diverging expressions and
+statements. But there are other reasons to want to have a bottom type in
+the type system. Consider…</p>
+<h3 data-number="2.2.1" id="stdfunctionstdnoreturn_t"><span class="header-section-number">2.2.1</span> <code class="sourceCode cpp">std<span class="op">::</span>function<span class="op">&lt;</span>std<span class="op">::</span>noreturn_t<span class="op">()&gt;</span></code><a href="#stdfunctionstdnoreturn_t" class="self-link"></a></h3>
+<p>How do you have a callback that signals that it must not terminate?
+Well, you can’t really. Because that’s not something you can signal in
+the type system today. But with a bottom type it can be, and the type
+<code class="sourceCode cpp">std<span class="op">::</span>function<span class="op">&lt;</span>std<span class="op">::</span>noreturn_t<span class="op">()&gt;</span></code>
+becomes meaningful.</p>
+<h3 data-number="2.2.2" id="stdexpectedt-stdnoreturn_t"><span class="header-section-number">2.2.2</span> <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, std<span class="op">::</span>noreturn_t<span class="op">&gt;</span></code><a href="#stdexpectedt-stdnoreturn_t" class="self-link"></a></h3>
+<p>One is its use in sum types. Consider the type <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, std<span class="op">::</span>noreturn_t<span class="op">&gt;</span></code>.
+What are its properties? Well, in general, a <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code>
+is holding either a <code class="sourceCode cpp">T</code> in its valid
+state or an <code class="sourceCode cpp">E</code> in its error state,
+and so it’s storage is something like a
+<code class="sourceCode cpp"><span class="dt">bool</span></code> and a
+<code class="sourceCode cpp"><span class="kw">union</span> <span class="op">{</span> T; E; <span class="op">}</span></code>.
+But if <code class="sourceCode cpp">E</code> is <code class="sourceCode cpp">std<span class="op">::</span>noreturn_t</code>,
+then we know that there <em>cannot be</em> an error state. You cannot
+form a value of type <code class="sourceCode cpp">std<span class="op">::</span>noreturn_t</code>,
+so we don’t even need to store it at all. The layout of <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, std<span class="op">::</span>noreturn_t<span class="op">&gt;</span></code>
+can simply be <code class="sourceCode cpp"><span class="kw">struct</span> <span class="op">{</span> T; <span class="op">}</span></code>.
+Likewise for <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>noreturn_t, E<span class="op">&gt;</span></code>,
+which can only ever be in the error state.</p>
+<p>This is a useful thing to be able to express in the type system,
+since you might have an API whose contract is that it returns some kind
+of <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span></code>
+— but this particular implementation of that API might simply never fail
+(or always fail). So we can return an <code class="sourceCode cpp">expected<span class="op">&lt;</span>T, noreturn_t<span class="op">&gt;</span></code>
+to conform to the expected shape of the return type while also having
+all the state checks trivially optimize away (since its <code class="sourceCode cpp"><span class="kw">operator</span> <span class="dt">bool</span><span class="op">()</span> <span class="kw">const</span></code>
+is trivially just <code class="sourceCode cpp"><span class="cf">return</span> <span class="kw">true</span>;</code>).
+Moreover, a lot of code that expects a particular
+<code class="sourceCode cpp">E</code> will continue to work fine since
+<code class="sourceCode cpp">noreturn_t</code> is convertible to
+<code class="sourceCode cpp">E</code>.</p>
+<h3 data-number="2.2.3" id="valueless-ranges"><span class="header-section-number">2.2.3</span> Valueless Ranges<a href="#valueless-ranges" class="self-link"></a></h3>
+<p>By some coincidence, Barry just ran into this issue (again) while we
+were writing the initial revision of this paper.</p>
+<p>A Range (in the C++20 sense) has a few associated types. Its
+<code class="sourceCode cpp">reference</code> is just <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(*</span>it<span class="op">)</span></code>,
+unfortunately named in retrospect since it need not be a reference type.
+Then, a range has a <code class="sourceCode cpp">value_type</code> —
+which is the type you would use if you wanted an independent value. And
+the range’s <code class="sourceCode cpp">value_type</code> and
+<code class="sourceCode cpp">reference</code> have to be related
+somehow, they need to have a
+<code class="sourceCode cpp">common_reference</code>. For most ranges,
+there isn’t much to think about here —
+<code class="sourceCode cpp">reference</code> is either
+<code class="sourceCode cpp">T<span class="op">&amp;</span></code> or
+<code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code>
+for some object type <code class="sourceCode cpp">T</code>,
+<code class="sourceCode cpp">value_type</code> is
+<code class="sourceCode cpp">T</code>, everything just falls out
+straightforwardly.</p>
+<p>But there are few situations where this just doesn’t work out:</p>
+<ol type="1">
+<li><p>Let’s say we have an abstract base class,
+<code class="sourceCode cpp">Abstract</code>. We can produce a range
+whose <code class="sourceCode cpp">reference</code> is <code class="sourceCode cpp">Abstract<span class="op">&amp;</span></code>
+(let’s say we don’t want to deal with pointers, since we know none of
+ours are ever null). But we simply <em>cannot</em> produce a
+<code class="sourceCode cpp">value_type</code> of
+<code class="sourceCode cpp">Abstract</code>. It’s… abstract. There are
+situations where you can get away with it, but in a lot of ranges code,
+you just can’t. This is <span class="citation" data-cites="LWG3864">[<a href="https://wg21.link/lwg3864" role="doc-biblioref">LWG3864</a>]</span>.</p></li>
+<li><p>Let’s say we have a type <code class="sourceCode cpp">S</code>
+with a trailing flexible array member. We can produce a range whose
+reference is
+<code class="sourceCode cpp">S<span class="op">&amp;</span></code>.
+Unlike <code class="sourceCode cpp">Abstract</code>, it might be valid
+to form an object of type <code class="sourceCode cpp">S</code> — it
+would just be semantically wrong to do so. Moreover,
+<code class="sourceCode cpp">enumerate</code>ing such a range would end
+up producing a <code class="sourceCode cpp">value_type</code> of <code class="sourceCode cpp">tuple<span class="op">&lt;</span><span class="dt">ptrdiff_t</span>, S<span class="op">&gt;</span></code>,
+which in libstdc++’s layout is <code class="sourceCode cpp"><span class="kw">struct</span> <span class="op">{</span> S; <span class="dt">ptrdiff_t</span>; <span class="op">}</span></code>.
+That puts the flexible array member in the middle of the struct, and gcc
+14 starts rejecting this code.</p></li>
+<li><p>Similar to (2), there are other cases of dynamically sized
+ranges. For instance, rather than a <code class="sourceCode cpp">span<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+I might want to produce an <code class="sourceCode cpp">erased_span<span class="op">&lt;</span>Base<span class="op">&gt;</span></code>
+which is a range of
+<code class="sourceCode cpp">Base<span class="op">&amp;</span></code>
+but whose dynamic type (and size) is chosen at runtime. Any code that
+attempts to actually produce a
+<code class="sourceCode cpp">value_type</code> of
+<code class="sourceCode cpp">Base</code> would be logically wrong — even
+if it might compile.</p></li>
+</ol>
+<p>In all of these cases, what we really want to be able to say is:
+there <em>is</em> no <code class="sourceCode cpp">value_type</code>. Any
+algorithm that attempts to produce one is broken.</p>
+<p>A bottom type solves this quite nicely. Adding <code class="sourceCode cpp"><span class="kw">using</span> value_type <span class="op">=</span> std<span class="op">::</span>noreturn_t;</code>
+meets the other requirements, as long as <code class="sourceCode cpp">std<span class="op">::</span>noreturn_t<span class="op">&amp;</span></code>
+is convertible to <code class="sourceCode cpp">reference</code>. We get
+a valid C++20 range and the compile errors we get are actual logic
+errors — using algorithms that try to actually form a
+<code class="sourceCode cpp">value_type</code>.</p>
+<p>This, in of itself, isn’t a complete solution, since all the
+invocation concepts in Ranges (<span>24.3.6 <a href="https://wg21.link/indirectcallable">[indirectcallable]</a></span>])
+still will attempt to invoke the provided callable with <code class="sourceCode cpp">value_type<span class="op">&amp;</span></code>
+(or the projected <code class="sourceCode cpp">value_type<span class="op">&amp;</span></code>),
+and we’d need to do something there too. But simply having a <code class="sourceCode cpp">std<span class="op">::</span>noreturn_t</code> to
+use here does solve a lot of the problem.</p>
 <h2 data-number="2.3" id="doing-our-due-diligence-to-deduce-do-divergence"><span class="header-section-number">2.3</span> Doing Our Due Diligence to
 Deduce <code class="sourceCode cpp"><span class="cf">do</span></code>
 Divergence<a href="#doing-our-due-diligence-to-deduce-do-divergence" class="self-link"></a></h2>
@@ -1130,79 +1250,80 @@ then have to find a way to turn loops into expressions (or resurface
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>,
 again running into the explicit/implicit issue).</p>
 <p>So if we don’t want to use implicit last value, how else can we
-deduce divergence? We suggest the following, simple rule, inspired by
-implicit last value:</p>
+deduce divergence? We suggest the following rule, inspired by implicit
+last value:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span>
+An expression is a <em>diverging expression</em> if its type is
+<code class="sourceCode cpp">noreturn_t</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span>
 A <code class="sourceCode cpp"><em>statement</em></code> is a
 <em>diverging statement</em> if it is:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(2.1)</a></span>
 A <code class="sourceCode cpp"><em>compound-statement</em></code> where
 the last statement is a diverging statement,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(1.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(2.2)</a></span>
 an <code class="sourceCode cpp"><em>escaping-statement</em></code>,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(1.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(2.3)</a></span>
 a <code class="sourceCode cpp"><em>statement-expression</em></code>
 whose <code class="sourceCode cpp"><em>expression</em></code> is a
 diverging expression, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(1.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(2.4)</a></span>
 an <code class="sourceCode cpp"><span class="cf">if</span></code>
 statement with an
 <code class="sourceCode cpp"><span class="cf">else</span></code> branch,
 where both substatements are diverging statements.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(1.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(2.5)</a></span>
 a constexpr
 <code class="sourceCode cpp"><span class="cf">if</span></code> statement
 where the taken substatement is a diverging statement.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">3</a></span>
 The type of a <code class="sourceCode cpp"><em>do-expression</em></code>
 is determined as follows.</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(3.1)</a></span>
 If there is a
 <code class="sourceCode cpp"><em>trailing-return-type</em></code> that
 is not a placeholder, that type.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(2.2)</a></span>
-Otherwise, let <code class="sourceCode cpp">T</code> be the type deduced
-from the non-discarded
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(3.2)</a></span>
+Otherwise, if there are any non-discard
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statements, if any, within the body of the
-<code class="sourceCode cpp"><em>do-expression</em></code>. If the type
-deduced is not the same in each deduction, the program is ill-formed.
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(2.2.1)</a></span>
-If <code class="sourceCode cpp">T</code> is
-<code class="sourceCode cpp"><span class="dt">void</span></code> and the
-last <code class="sourceCode cpp"><em>statement</em></code> is a
-diverging statement, then type of the
-<code class="sourceCode cpp"><em>do-expression</em></code> is
-<code class="sourceCode cpp">noreturn_t</code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(2.2.2)</a></span>
-Otherwise, the type is <code class="sourceCode cpp">T</code>.</li>
-</ul></li>
+statements within the body of the
+<code class="sourceCode cpp"><em>do-expression</em></code>, let
+<code class="sourceCode cpp">T</code> be the type deduced from them. If
+the type deduced is not the same in each deduction, the program is
+ill-formed. Otherwise, the type is
+<code class="sourceCode cpp">T</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(3.3)</a></span>
+Otherwise, if the last
+<code class="sourceCode cpp"><em>statement</em></code> is a diverging
+statement, then <code class="sourceCode cpp">noreturn_t</code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.4)</a></span>
+Otherwise,
+<code class="sourceCode cpp"><span class="dt">void</span></code>.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">3</a></span>
-An expression is a <em>diverging expression</em> if its type is
-<code class="sourceCode cpp">noreturn_t</code>.</p>
 </blockquote>
 </div>
-<p>We need to deduce
-<code class="sourceCode cpp"><span class="dt">void</span></code> because
-if there are any
-<code class="sourceCode cpp"><span class="kw">do_return</span></code>s
-that yield a value, then the expression does not diverge. Then, in the
-<code class="sourceCode cpp"><span class="dt">void</span></code>-returning
-cases, we need to see which ones of those actually diverge. Which is
-non-trivial because we need to handle things like:</p>
+<p>If there are any
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statements, then the
+<code class="sourceCode cpp"><span class="cf">do</span></code>
+expression doesn’t diverge. It might produce a value. Maybe that
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statement is logically unreachable, but we can’t in general determine
+that. But if there are no
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statements, we need to see if we actually diverge. Which is non-trivial
+because we need to handle things like:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co">// just an escaping-statement</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">{</span> <span class="cf">continue</span>; <span class="op">}</span></span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">// a statement-expression that is a diverging expressoin</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">// a statement-expression that is a diverging expression</span></span>
 <span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">{</span> std<span class="op">::</span>terminate<span class="op">()</span>; <span class="op">}</span></span>
 <span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="co">// an if statement with just an if, this is NOT diverging</span></span>
@@ -1230,13 +1351,12 @@ desired:</p>
 <h2 data-number="2.4" id="alternative-with-noreturn"><span class="header-section-number">2.4</span> Alternative with <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code><a href="#alternative-with-noreturn" class="self-link"></a></h2>
 <p>The advantage of the approach described with
 <code class="sourceCode cpp">noreturn_t</code> is that diverging
-expressions can appear in the type system. This obsoletes <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>,
-providing a better way to express the issue — in a way that can further
-generalize to other scenarios. We can have a <code class="sourceCode cpp">std<span class="op">::</span>function<span class="op">&lt;</span>std<span class="op">::</span>noreturn_t<span class="op">()&gt;</span></code>,
-we can have <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, std<span class="op">::</span>noreturn_t<span class="op">&gt;</span></code>
-(a specialization that would not require additional storage for the
-error type or the discriminant, since it would always be a value),
-etc.</p>
+expressions can appear in the type system. This provides a better
+solution than <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>,
+in a way that can further generalize to other scenarios (as we showed
+earlier). We can have a <code class="sourceCode cpp">std<span class="op">::</span>function<span class="op">&lt;</span>std<span class="op">::</span>noreturn_t<span class="op">()&gt;</span></code>,
+we can have <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T, std<span class="op">::</span>noreturn_t<span class="op">&gt;</span></code>,
+valueless ranges, etc.</p>
 <p>But an alternative approach would be to avoid changing any of the
 existing functions (like <code class="sourceCode cpp">std<span class="op">::</span>abort<span class="op">()</span></code>,
 <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code>,
@@ -1293,12 +1413,6 @@ relying on <code class="sourceCode cpp"><span class="kw">decltype</span><span cl
 being <code class="sourceCode cpp"><span class="dt">void</span></code>.
 However, it doesn’t compose. <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>
 isn’t deduced, so wrapping becomes challenging.</p>
-<p>Although in order to making wrapping work, we’d have to further
-change deduction rules so that <code class="sourceCode cpp"><span class="op">[]{</span> std<span class="op">::</span>abort<span class="op">()</span>; <span class="op">}</span></code>
-returns <code class="sourceCode cpp">noreturn_t</code> in the same way
-that <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> std<span class="op">::</span>abort<span class="op">()</span>; <span class="op">}</span></code>
-does. But without <code class="sourceCode cpp">noreturn_t</code>, you’d
-have to write <code class="sourceCode cpp"><span class="op">[][[</span><span class="at">noreturn</span><span class="op">]]{</span> std<span class="op">::</span>abort<span class="op">()</span>; <span class="op">}</span></code>.</p>
 <p>Leaning on <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>
 also means that we end up leaning on
 <code class="sourceCode cpp"><span class="dt">void</span></code> even
@@ -1313,13 +1427,17 @@ which represents an expression with no value, that unconditionally
 diverges.
 <ul>
 <li><code class="sourceCode cpp">std<span class="op">::</span>noreturn_t</code> is
-convertible to any type</li>
+convertible to any type (include reference types)</li>
 <li><code class="sourceCode cpp">std<span class="op">::</span>noreturn_t</code> is
 not constructible, and you cannot <code class="sourceCode cpp"><span class="kw">reinterpret_cast</span></code>
-into it.</li>
+into it, <code class="sourceCode cpp">std<span class="op">::</span>bit_cast</code> into
+it,
+<code class="sourceCode cpp"><span class="kw">static_cast</span></code>
+into it, etc.</li>
 <li><code class="sourceCode cpp">std<span class="op">::</span>noreturn_t<span class="op">(*)(</span>Args<span class="op">...)</span></code>
 is convertible to <code class="sourceCode cpp">R<span class="op">(*)(</span>Args<span class="op">...)</span></code>
-for all <code class="sourceCode cpp">R</code>.</li>
+for all <code class="sourceCode cpp">R</code> (again, including
+reference types).</li>
 </ul></li>
 <li>change all the standard library functions that are currently <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span> <span class="dt">void</span> f<span class="op">()</span></code>
 to instead be <code class="sourceCode cpp">std<span class="op">::</span>noreturn_t f<span class="op">()</span></code></li>
@@ -1327,10 +1445,6 @@ to instead be <code class="sourceCode cpp">std<span class="op">::</span>noreturn
 <code class="sourceCode cpp"><em>throw-expression</em></code> to <code class="sourceCode cpp">std<span class="op">::</span>noreturn_t</code>
 and remove the current… uh… exception for exceptions in the conditional
 operator (it will be subsumed by the usual convertibility rule).</li>
-<li>change function deduction rules to recognize diverging statements
-and to deduce <code class="sourceCode cpp">std<span class="op">::</span>noreturn_t</code> in
-cases where they currently deduce
-<code class="sourceCode cpp"><span class="dt">void</span></code></li>
 <li>adopt the same rules for
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions <span class="citation" data-cites="P2806R2">[<a href="https://wg21.link/p2806r2" role="doc-biblioref">P2806R2</a>]</span>.</li>
@@ -1338,6 +1452,10 @@ expressions <span class="citation" data-cites="P2806R2">[<a href="https://wg21.l
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-LWG3864" class="csl-entry" role="doc-biblioentry">
+[LWG3864] Barry Revzin. zip over range of reference to an abstract type.
+<a href="https://wg21.link/lwg3864"><div class="csl-block">https://wg21.link/lwg3864</div></a>
+</div>
 <div id="ref-P2688R4" class="csl-entry" role="doc-biblioentry">
 [P2688R4] Michael Park. 2024-12-17. Pattern Matching: `match`
 Expression. <a href="https://wg21.link/p2688r4"><div class="csl-block">https://wg21.link/p2688r4</div></a>
