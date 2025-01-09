@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-07-14" />
+  <meta name="dcterms.date" content="2025-01-09" />
   <title>do expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -448,6 +448,9 @@ background-color: white;
 td > div.sourceCode {
 background-color: inherit;
 }
+td > div > div.sourceCode {
+background-color: inherit;
+}
 table {
 border-collapse: collapse;
 }
@@ -562,11 +565,11 @@ expressions</h1>
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>P2806R2</td>
+    <td>P2806R3 <a href="https://wg21.link/P2806">[Latest]</a> <a href="https://wg21.link/P2806/status">[Status]</a></td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-07-14</td>
+    <td>2025-01-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -641,6 +644,8 @@ expressions appear<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2806R2">[<a href="https://wg21.link/p2806r2" role="doc-biblioref">P2806R2</a>]</span>, wording and referencing a
+longer discussion on divergence in <span class="citation" data-cites="P3549R0">[<a href="https://wg21.link/p3549r0" role="doc-biblioref">P3549R0</a>]</span>.</p>
 <p>Since <span class="citation" data-cites="P2806R1">[<a href="https://wg21.link/p2806r1" role="doc-biblioref">P2806R1</a>]</span>, switched syntax from <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code>
 to <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 to avoid ambiguity. Added section on <a href="#lifetime">lifetime</a>.</p>
@@ -683,9 +688,11 @@ indeed, intended to be immediately invoked.</p>
 <p>This problem surfaces especially brightly in the context of pattern
 matching <span class="citation" data-cites="P1371R3">[<a href="https://wg21.link/p1371r3" role="doc-biblioref">P1371R3</a>]</span>, where the current design is
 built upon a sequence of:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><em>pattern</em> =&gt; <em>expression</em>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>This syntax only allows for a single
 <code class="sourceCode cpp"><em>expression</em></code>, which means
 that pattern matching has to figure out how to deal with the situation
@@ -698,6 +705,7 @@ expression of type
 <code class="sourceCode cpp"><span class="dt">void</span></code>), but
 also limits the ability for pattern matching to support another kind of
 useful syntax: <code class="sourceCode cpp"><span class="op">=&gt;</span> <em>braced-init-list</em></code>:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// this is fine</span></span>
@@ -709,6 +717,7 @@ useful syntax: <code class="sourceCode cpp"><span class="op">=&gt;</span> <em>br
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>There’s no way to make that work, because
 <code class="sourceCode cpp"><span class="op">{</span></code> starts a
 statement. So the choice in that paper lacks orthogonality: we have a
@@ -723,9 +732,11 @@ statement-expressions, this would be a broadly useful facility, so we
 should have an orthogonal language feature that supports
 statement-expressions in a way that would allow pattern matching to
 simplify its grammar to:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><em>pattern</em> =&gt; <em>expr-or-braced-init-list</em>;</span></code></pre></div>
 </blockquote>
+</div>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="do-expressions"><span class="header-section-number">3</span>
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions<a href="#do-expressions" class="self-link"></a></h1>
@@ -733,9 +744,11 @@ expressions<a href="#do-expressions" class="self-link"></a></h1>
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression.</p>
 <p>In its simplest form:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> <span class="dv">42</span>; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>A <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression consists of a sequence of statements, but is still, itself,
 an expression (and thus has a value and a type). There are a lot of
@@ -805,9 +818,11 @@ type deduction works for functions and lambdas.</p>
 <p>An explicit
 <code class="sourceCode cpp"><em>trailing-return-type</em></code> can be
 provided to override this:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">long</span> <span class="op">{</span> <span class="kw">do_return</span> <span class="dv">42</span>; <span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>If no
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement appears in the body of the
@@ -1252,6 +1267,7 @@ A call to <code class="sourceCode cpp">std<span class="op">::</span>abort<span c
 or <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code>
 or <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code>
 escapes control flow, for sure, but today this is just an attribute:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
@@ -1264,6 +1280,7 @@ escapes control flow, for sure, but today this is just an attribute:</p>
 <span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">// insert an implicit &quot;do_return;&quot;</span></span>
 <span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>Pattern Matching has this same problem - it needs to support arms
 that might <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code>
 or are <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code>,
@@ -1272,6 +1289,7 @@ an arm as non-returning: <code class="sourceCode cpp"><span class="op">!{</span>
 Which is… less than ideal.</p>
 <p>However, the rule in <span>9.12.11 <a href="https://wg21.link/dcl.attr.noreturn">[dcl.attr.noreturn]</a></span>/2
 is:</p>
+<div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span>
 If a function <code class="sourceCode cpp">f</code> is called where
@@ -1280,6 +1298,7 @@ If a function <code class="sourceCode cpp">f</code> is called where
 <code class="sourceCode cpp">f</code> eventually returns, the behavior
 is undefined.</p>
 </blockquote>
+</div>
 <p>That is normative wording which we can rely on. The above
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression can only fall off the end if
@@ -1298,11 +1317,13 @@ suggested in <span class="citation" data-cites="P2552R2">[<a href="https://wg21.
 ignore that rule.</p>
 <h3 data-number="3.5.2" id="always-escaping-expressions"><span class="header-section-number">3.5.2</span> Always-escaping expressions<a href="#always-escaping-expressions" class="self-link"></a></h3>
 <p>Consider:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> <span class="dv">42</span>;</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>This is weird, but might end up as a result of template instantiation
 where maybe other control paths (guarded with an <code class="sourceCode cpp"><span class="cf">if</span> <span class="kw">constexpr</span></code>)
 actually had
@@ -1336,7 +1357,8 @@ expressions/statements and the rules for pattern matching, the
 conditional operator,
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions, and arbitrary user-defined libraries just fall out.</p>
-<p>See reflector discussion <a href="https://lists.isocpp.org/ext/2023/05/21202.php">here</a>.</p>
+<p>See reflector discussion <a href="https://lists.isocpp.org/ext/2023/05/21202.php">here</a> and more
+thorough discussion in <span class="citation" data-cites="P3549R0">[<a href="https://wg21.link/p3549r0" role="doc-biblioref">P3549R0</a>]</span>.</p>
 <h3 data-number="3.5.3" id="goto"><span class="header-section-number">3.5.3</span>
 <code class="sourceCode cpp"><span class="cf">goto</span></code><a href="#goto" class="self-link"></a></h3>
 <p>Using
@@ -1360,6 +1382,7 @@ expression is potentially useful though, in the same way that
 <code class="sourceCode cpp"><span class="cf">continue</span></code>,
 and <code class="sourceCode cpp"><span class="cf">return</span></code>
 are:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><em>loop</em><sub>1</sub><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><em>loop</em><sub>2</sub><span class="op">)</span> <span class="op">{</span></span>
@@ -1374,6 +1397,7 @@ are:</p>
 <span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>done<span class="op">:</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>Breaking out of multiple loops is one of the uses of
 <code class="sourceCode cpp"><span class="cf">goto</span></code> that
 has no real substitute today. The above example should be fine. But
@@ -1417,6 +1441,7 @@ problematic):</p>
 <h3 data-number="3.5.4" id="should-falling-off-the-end-be-undefined-behavior"><span class="header-section-number">3.5.4</span> Should falling off the end be
 undefined behavior?<a href="#should-falling-off-the-end-be-undefined-behavior" class="self-link"></a></h3>
 <p>Consider:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
@@ -1424,6 +1449,7 @@ undefined behavior?<a href="#should-falling-off-the-end-be-undefined-behavior" c
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>Is this statement ill-formed (because there is a control path that
 falls off the end of the
 <code class="sourceCode cpp"><span class="cf">do</span></code>
@@ -1439,6 +1465,7 @@ control paths themselves.</p>
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression destroyed?</p>
 <p>Consider the following:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span>;</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span>T<span class="op">)</span> <span class="op">-&gt;</span> U;</span>
@@ -1454,6 +1481,7 @@ expression destroyed?</p>
 <span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> u;</span>
 <span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>The use of <code class="sourceCode cpp"><em>TYPE</em></code> above is
 meant as a placeholder for either <code class="sourceCode cpp">T</code>
 or
@@ -1497,6 +1525,7 @@ move.</p>
 because <code class="sourceCode cpp">result</code> isn’t going to be
 destroyed yet, and we don’t have a dangling reference. Unless we rewrite
 it this way:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span>;</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> U;</span>
@@ -1512,6 +1541,7 @@ it this way:</p>
 <span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> g<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>t<span class="op">))</span>;</span>
 <span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>With (1), in order to avoid dangling, the
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression must return a <code class="sourceCode cpp">T</code>
@@ -1535,6 +1565,7 @@ reference.</p>
 <p>Note that the above example is specifically mentioned in <span class="citation" data-cites="P2561R2">[<a href="https://wg21.link/p2561r2" role="doc-biblioref">P2561R2</a>]</span>’s section on lifetimes, where
 it is quite valuable that the equivalent sugared version does not
 dangle:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span>;</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> U;</span>
@@ -1544,11 +1575,13 @@ dangle:</p>
 <span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> g<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>t<span class="op">))</span>;</span>
 <span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>Choosing (3) allows the control flow operator proposal to be simply a
 lowering into a
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression.</p>
 <p>On the other hand, consider this example:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>lock_guard _<span class="op">(</span>mtx<span class="op">)</span>;</span>
@@ -1558,6 +1591,7 @@ expression.</p>
 <span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">do_return</span> get<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
 <span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>Each <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression is locking the same mutex,
 <code class="sourceCode cpp">mtx</code>. With (1), the two
@@ -1593,6 +1627,7 @@ enclosing loop, etc.), so there is definitely a compelling argument to
 me made that variables belong in that scope as well. But they probably
 need some sort of annotation - something like a reverse lambda
 capture:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>T, E<span class="op">&gt;</span>;</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span>T<span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> U;</span>
@@ -1611,9 +1646,11 @@ capture:</p>
 <span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> g<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>t<span class="op">))</span>;</span>
 <span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <h3 data-number="3.6.1" id="conditional-lifetime-extension"><span class="header-section-number">3.6.1</span> Conditional Lifetime
 Extension<a href="#conditional-lifetime-extension" class="self-link"></a></h3>
 <p>An interesting sub-question on lifetimes is what does this do:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> prvalue<span class="op">()</span> <span class="op">-&gt;</span> T;</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1628,6 +1665,7 @@ Extension<a href="#conditional-lifetime-extension" class="self-link"></a></h3>
 <span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r3 <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="kw">do_return</span> prvalue<span class="op">()</span>; <span class="op">}</span>;</span>
 <span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p><code class="sourceCode cpp">r1</code> is our familiar lifetime
 extension case - a reference is bound to a temporary.
 <code class="sourceCode cpp">r2</code> is definitely dangling. The
@@ -1642,6 +1680,7 @@ expression - so unlike the general callable case, it may actually be
 possible for lifetime extension to work here.</p>
 <p>But as we’re thinking about it, let’s make the example slightly more
 complicated:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> lvalue<span class="op">()</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span>;</span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> prvalue<span class="op">()</span> <span class="op">-&gt;</span> T;</span>
@@ -1665,6 +1704,7 @@ complicated:</p>
 <span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>If <code class="sourceCode cpp">r3</code> doesn’t dangle (and we do
 lifetime extension), does <code class="sourceCode cpp">r4</code>? Well,
 presumably. But here we have a form of runtime-conditional lifetime
@@ -1717,9 +1757,11 @@ then be an expression, so we’re now in an expression-only context.</p>
 context of a
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="cf">return</span> <em>value</em>; <span class="cf">while</span> <span class="op">(</span><em>cond</em><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>This could have been parsed as a <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code>
 statement followed by an infinite loop (that would never be executed
 because we’ve already returned out of the expression) or as a
@@ -1732,9 +1774,11 @@ loop.</p>
 with <code class="sourceCode cpp"><span class="cf">do</span></code> as a
 <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code>
 loop, code like this would not work:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> X<span class="op">{}</span>; <span class="op">}.</span>foo<span class="op">()</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>Such code would also have to be parenthesized to disambiguate, which
 doesn’t seem like a huge burden on the user.</p>
 <h2 data-number="3.9" id="prior-art"><span class="header-section-number">3.9</span> Prior Art<a href="#prior-art" class="self-link"></a></h2>
@@ -1861,10 +1905,12 @@ made easier - which would add more complexity to the design.</p>
 expressions - which are where many of the pattern matching examples come
 from. In Rust, for instance, there is a differentiation based on the
 presence of a semicolon:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> a<span class="op">:</span> <span class="dt">i32</span> <span class="op">=</span> <span class="op">{</span> <span class="dv">1</span><span class="op">;</span> <span class="dv">2</span> <span class="op">};</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> b<span class="op">:</span> () <span class="op">=</span> <span class="op">{</span> <span class="dv">1</span><span class="op">;</span> <span class="dv">2</span><span class="op">;</span> <span class="op">};</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>This is a simple (if silly) example of a block expression in Rust.
 The value of the block is the value of the last expression of the block
 (Rust has both
@@ -1882,10 +1928,12 @@ unit type). This seems like too subtle a distinction, and one that’s
 very easy to get wrong (although typically the types are far enough
 apart such that if you get it wrong it’s a compiler error, rather than a
 runtime one):</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">1</span>; <span class="dv">2</span> <span class="op">}</span>;   <span class="co">// ok, a is an int</span></span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">1</span>; <span class="dv">2</span>; <span class="op">}</span>;  <span class="co">// ill-formed, b would be void (unless Regular Void is adopted)</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>But this would mean that our original example would work, just for a
 very different reason (rather than being
 <code class="sourceCode cpp"><span class="dt">void</span></code>
@@ -1894,6 +1942,7 @@ expressions due to the lack of
 they become
 <code class="sourceCode cpp"><span class="dt">void</span></code>
 expressions due to not having a final expression):</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>x match <span class="op">{</span></span>
 <span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span>; <span class="op">}</span>;</span>
@@ -1901,6 +1950,7 @@ expressions due to not having a final expression):</p>
 <span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    _ <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span>; <span class="op">}</span>;</span>
 <span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
+</div>
 <p>Ultimately, we feel that the simplicity of the proposed design and
 its consistency and uniformity with other parts of the language outweigh
 the added verbosity in the simple (though typical) cases.</p>
@@ -1926,12 +1976,14 @@ expressions appear<a href="#where-can-do-expressions-appear" class="self-link"><
 <p>gcc’s statement-expressions are not usable in all expression
 contexts. Trying to use them at namespace-scope, or in a default member
 initializer, etc, fails:</p>
+<div class="std">
 <blockquote>
 <div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="op">({</span>      <span class="co">// error: statement-expressions are not allowed outside functions</span></span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="dv">2</span>;  <span class="co">//        nor in template-argument lists</span></span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    j;</span>
 <span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="op">})</span>;</span></code></pre></div>
 </blockquote>
+</div>
 <p>In such contexts, there is a much smaller difference than a
 statement-expression and an immediately invoked lambda since you don’t
 have any other interesting control flow that you can do - the expression
@@ -1955,9 +2007,48 @@ rather than a language design detail.</p>
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions should be usable in any expression context.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>This wording is quite incomplete, but is intended at this point to
+<p>This wording definitely imperfect, but is intended at this point to
 simply be a sketch to help understand the contour of the proposal.</p>
+<p>Add a note to <span>6.9.1 <a href="https://wg21.link/intro.execution">[intro.execution]</a></span>:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">5</a></span>
+A <em>full-expression</em> is</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(5.1)</a></span>
+an unevaluated operand,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(5.2)</a></span>
+a constant-expression ([expr.const]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(5.3)</a></span>
+an immediate invocation ([expr.const]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(5.4)</a></span>
+an init-declarator ([dcl.decl]) (including such introduced by a
+structured binding ([dcl.struct.bind])) or a mem-initializer
+([class.base.init]), including the constituent expressions of the
+initializer,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(5.5)</a></span>
+an invocation of a destructor generated at the end of the lifetime of an
+object other than a temporary object ([class.temporary]) whose lifetime
+has not been extended, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(5.6)</a></span>
+an expression that is not a subexpression of another expression and that
+is not otherwise part of a full-expression.</li>
+</ul>
+<div class="note addu">
+<p><span>[ <em>Note 1:</em> </span>An expression
+<code class="sourceCode cpp">E</code> within a
+<code class="sourceCode cpp"><em>do-expression</em></code>
+<code class="sourceCode cpp">D</code> ([expr.do]) can still be a
+full-expression even though the
+<code class="sourceCode cpp"><em>do-expression</em></code> itself is an
+expression because <code class="sourceCode cpp">E</code> is not a
+subexpression of <code class="sourceCode cpp">D</code>.<span> — <em>end
+note</em> ]</span></p>
+</div>
+</blockquote>
+</div>
 <p>Add to <span>7.5 <a href="https://wg21.link/expr.prim">[expr.prim]</a></span>:</p>
+<div class="std">
 <blockquote>
 <div>
 <div class="sourceCode" id="cb42"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><em>primary-expression</em>:</span>
@@ -1971,30 +2062,165 @@ simply be a sketch to help understand the contour of the proposal.</p>
 <span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>do-expression</em></span></span></code></pre></div>
 </div>
 </blockquote>
+</div>
 <p>Add a new clause [expr.prim.do]:</p>
+<div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">1</a></span>
 A <em>do-expression</em> provides a way to combine multiple statements
-into a single expression without introducing a new function scope.</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><em>do-expression</em>:</span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  do <em>trailing-return-type</em><sub>opt</sub> <em>compound-statement</em></span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">2</a></span>
+into a single expression without introducing a new function scope. Jump
+statements can transfer control out of a
+<code class="sourceCode cpp"><em>do-expression</em></code> without
+producing a value.</p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> half <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>i <span class="op">%</span> <span class="dv">2</span> <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="op">-</span><span class="dv">1</span>;</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">do_return</span> i <span class="op">/</span> <span class="dv">2</span>;</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> half;</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">(</span><span class="dv">5</span><span class="op">)</span> <span class="op">==</span> <span class="op">-</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">(</span><span class="dv">4</span><span class="op">)</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><em>do-expression</em>:</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  do <em>trailing-return-type</em><sub>opt</sub> <em>compound-statement</em></span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">2</a></span>
 The <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <em>do-expression</em> is a control-flow-limited statement
 ([stmt.label]).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">3</a></span>
+The type <code class="sourceCode cpp"><em>DO-TYPE</em></code> is
+computed as follows</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.1)</a></span>
+If there is a
+<code class="sourceCode cpp"><em>trailing-return-type</em></code>
+provided that does not contain a placeholder type, then
+<code class="sourceCode cpp"><em>DO-TYPE</em></code> is that type.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(3.2)</a></span>
+Otherwise, a type is deduced from each non-discarded
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statement, if any, in the body fo the
+<code class="sourceCode cpp"><em>do-expression</em></code>.
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(3.2.1)</a></span>
+If there is no such
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statement, then <code class="sourceCode cpp"><em>DO-TYPE</em></code> is
+<code class="sourceCode cpp"><span class="dt">void</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(3.2.2)</a></span>
+If the type is not deduced the same in each deduction, the program is
+ill-formed.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(3.2.3)</a></span>
+Otherwise, <code class="sourceCode cpp"><em>DO-TYPE</em></code> is that
+deduced type.</li>
+</ul></li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">4</a></span>
+The type and value category of the
+<code class="sourceCode cpp"><em>do-expression</em></code> are
+determined from <code class="sourceCode cpp"><em>DO-TYPE</em></code> as
+follows:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(4.1)</a></span>
+If <code class="sourceCode cpp"><em>DO-TYPE</em></code> is an lvalue
+reference type
+<code class="sourceCode cpp"><em>T</em><span class="op">&amp;</span></code>,
+then the <code class="sourceCode cpp"><em>do-expression</em></code> is
+an lvalue of type <code class="sourceCode cpp"><em>T</em></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(4.2)</a></span>
+Otherwise, if <code class="sourceCode cpp"><em>DO-TYPE</em></code> is an
+lvalue reference type <code class="sourceCode cpp"><em>T</em><span class="op">&amp;&amp;</span></code>,
+then the <code class="sourceCode cpp"><em>do-expression</em></code> is
+an xvalue of type <code class="sourceCode cpp"><em>T</em></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(4.3)</a></span>
+Otherwise, the
+<code class="sourceCode cpp"><em>do-expression</em></code> is an prvalue
+of type <code class="sourceCode cpp"><em>DO-TYPE</em></code>.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">5</a></span>
+If the <code class="sourceCode cpp"><em>do-expression</em></code>’s type
+is not
+<code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span></code>,
+it contains a non-discarded
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statement, and the last
+<code class="sourceCode cpp"><em>statement</em></code> in the
+<code class="sourceCode cpp"><em>compound-statement</em></code> of the
+<code class="sourceCode cpp"><em>do-expression</em></code> is not a
+diverging statement, the program is ill-formed. <span class="draftnote" style="color: #01796F">[ Drafting note: See <span class="citation" data-cites="P3549R0">[<a href="https://wg21.link/p3549r0" role="doc-biblioref">P3549R0</a>]</span> for more details. ]</span>
+<span class="note"><span>[ <em>Note 2:</em> </span>Flowing off the end
+of a <code class="sourceCode cpp"><em>do-expression</em></code> whose
+type is not
+<code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span></code>
+is ill-formed.<span> — <em>end note</em> ]</span></span></p>
+<div class="example">
+<span>[ <em>Example 2:</em> </span>
+<div class="sourceCode" id="cb45"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">(</span><span class="dt">bool</span> cond<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span>           <span class="co">// OK, a is an int whose value is either 1 or 2</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">do_return</span> <span class="dv">2</span>;</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span>           <span class="co">// error: inconsistent type deduction</span></span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>            <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a>            <span class="kw">do_return</span> <span class="fl">2.0</span>;</span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> c <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span>           <span class="co">// error: the type is int, but the last statement is</span></span>
+<span id="cb45-19"><a href="#cb45-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> <span class="op">{</span>         <span class="co">// not a diverging statement. execution might flow off the end.</span></span>
+<span id="cb45-20"><a href="#cb45-20" aria-hidden="true" tabindex="-1"></a>            <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb45-21"><a href="#cb45-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb45-22"><a href="#cb45-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb45-23"><a href="#cb45-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-24"><a href="#cb45-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> d <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span>           <span class="co">// OK, last statement diverges. Either d is initialized to 1</span></span>
+<span id="cb45-25"><a href="#cb45-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> <span class="op">{</span>         <span class="co">// or the expression throws.</span></span>
+<span id="cb45-26"><a href="#cb45-26" aria-hidden="true" tabindex="-1"></a>            <span class="kw">do_return</span> <span class="dv">1</span>;</span>
+<span id="cb45-27"><a href="#cb45-27" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb45-28"><a href="#cb45-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> <span class="op">-</span><span class="dv">1</span>;</span>
+<span id="cb45-29"><a href="#cb45-29" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb45-30"><a href="#cb45-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-31"><a href="#cb45-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> e <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span>           <span class="co">// OK, falling off the end but the type is void</span></span>
+<span id="cb45-32"><a href="#cb45-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb45-33"><a href="#cb45-33" aria-hidden="true" tabindex="-1"></a>            <span class="kw">do_return</span>;</span>
+<span id="cb45-34"><a href="#cb45-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb45-35"><a href="#cb45-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb45-36"><a href="#cb45-36" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">6</a></span>
+The value of a
+<code class="sourceCode cpp"><em>do-expression</em></code> is the
+operand of the executed
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statement, if any.</p>
 </div>
 </blockquote>
+</div>
 <p>Change <span>8.3 <a href="https://wg21.link/stmt.expr">[stmt.expr]</a></span> to disambugate
 a <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression from a
 <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code>
 loop:</p>
+<div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">1</a></span>
 Expression statements have the form</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><em>expression-statement</em>:</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <em>expression</em><sub>opt</sub>;</span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><em>expression-statement</em>:</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <em>expression</em><sub>opt</sub>;</span></code></pre></div>
 <p>The expression is a <em>discarded-value</em> expression. All side
 effects from an expression statement are completed before the next
 statement is executed. An expression statement with the expression
@@ -2005,31 +2231,35 @@ assignments or function calls. A null statement is useful to supply a
 null body to an iteration statement such as a while statement
 ([stmt.while]). — end note]</p>
 </blockquote>
+</div>
 <p>Add to <span>8.7.1 <a href="https://wg21.link/stmt.jump.general">[stmt.jump.general]</a></span>:</p>
+<div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">1</a></span>
 Jump statements unconditionally transfer control.</p>
 <div>
-<div class="sourceCode" id="cb45"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><em>jump-statement</em>:</span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  break ;</span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  continue ;</span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ do_return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span></span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <em>coroutine-return-statement</em></span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  goto <em>identifier</em> ;</span></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><em>jump-statement</em>:</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  break ;</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  continue ;</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ do_return <em>expr-or-braced-init-list</em><sub>opt</sub> ;</span></span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <em>coroutine-return-statement</em></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>  goto <em>identifier</em> ;</span></code></pre></div>
 </div>
 </blockquote>
+</div>
 <p>Add a new clause introducing a
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement after <span>8.7.4 <a href="https://wg21.link/stmt.return">[stmt.return]</a></span>:</p>
+<div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">1</a></span>
 The <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression’s value is produced by the
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">2</a></span>
 A <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement shall appear only within the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
@@ -2037,6 +2267,7 @@ statement shall appear only within the
 expression.</p>
 </div>
 </blockquote>
+</div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
@@ -2063,6 +2294,14 @@ attributes. <a href="https://wg21.link/p2552r2"><div class="csl-block">https://w
 <div id="ref-P2806R1" class="csl-entry" role="doc-biblioentry">
 [P2806R1] Barry Revzin, Bruno Cardoso Lopez, Zach Laine, Michael Park.
 2023-03-12. do expressions. <a href="https://wg21.link/p2806r1"><div class="csl-block">https://wg21.link/p2806r1</div></a>
+</div>
+<div id="ref-P2806R2" class="csl-entry" role="doc-biblioentry">
+[P2806R2] Barry Revzin, Bruno Cardoso Lopez, Zach Laine, Michael Park.
+2023-11-16. do expressions. <a href="https://wg21.link/p2806r2"><div class="csl-block">https://wg21.link/p2806r2</div></a>
+</div>
+<div id="ref-P3549R0" class="csl-entry" role="doc-biblioentry">
+[P3549R0] Bruno Cardoso Lopes, Zach Laine, Michael Park, and Barry
+Revzin. 2025-01-09. Diverging Expressions. <a href="https://wg21.link/p3549r0"><div class="csl-block">https://wg21.link/p3549r0</div></a>
 </div>
 </div>
 </div>

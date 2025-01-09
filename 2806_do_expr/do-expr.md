@@ -1,6 +1,6 @@
 ---
 title: "`do` expressions"
-document: P2806R2
+document: P2806R3
 date: today
 audience: EWG
 author:
@@ -16,6 +16,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2806R2], wording and referencing a longer discussion on divergence in [@P3549R0].
 
 Since [@P2806R1], switched syntax from `do return` to `do_return` to avoid ambiguity. Added section on [lifetime](#lifetime).
 
@@ -33,7 +35,7 @@ You also have to deal with the issue that the difference between initializing a 
 
 This problem surfaces especially brightly in the context of pattern matching [@P1371R3], where the current design is built upon a sequence of:
 
-::: bq
+::: std
 ```
 $pattern$ => $expression$;
 ```
@@ -41,7 +43,7 @@ $pattern$ => $expression$;
 
 This syntax only allows for a single `$expression$`, which means that pattern matching has to figure out how to deal with the situation where the user wants to write more than, well, a single expression. The current design is to allow `{ $statement$ }` to be evaluated as an expression of type `void`. This is a hack, which is kind of weird (since such a thing is not actually an expression of type `void`), but also limits the ability for pattern matching to support another kind of useful syntax: `=> $braced-init-list$`:
 
-::: bq
+::: std
 ```cpp
 auto f() -> std::pair<int, int> {
     // this is fine
@@ -59,7 +61,7 @@ There's no way to make that work, because `{` starts a statement. So the choice 
 
 What pattern matching really needs here is a statement-expression syntax. But it's not just pattern matching that has a strong desire for statement-expressions, this would be a broadly useful facility, so we should have an orthogonal language feature that supports statement-expressions in a way that would allow pattern matching to simplify its grammar to:
 
-::: bq
+::: std
 ```
 $pattern$ => $expr-or-braced-init-list$;
 ```
@@ -71,7 +73,7 @@ Our proposal is the addition of a new kind of expression, called a `do` expressi
 
 In its simplest form:
 
-::: bq
+::: std
 ```cpp
 int x = do { do_return 42; };
 ```
@@ -103,7 +105,7 @@ The expression `do { do_return 42; }` is a prvalue of type `int`. We deduce the 
 
 An explicit `$trailing-return-type$` can be provided to override this:
 
-::: bq
+::: std
 ```cpp
 do -> long { do_return 42; }
 ```
@@ -341,7 +343,7 @@ The language currently has several kinds of escaping control flow that it recogn
 
 But there's one kind of escaping control flow that it _does not_ currently recognize: functions marked `[[noreturn]]`. A call to `std::abort()` or `std::terminate()` or `std::unreachable()` escapes control flow, for sure, but today this is just an attribute:
 
-::: bq
+::: std
 ```cpp
 int i = do {
     if ($cond$) {
@@ -360,7 +362,7 @@ Pattern Matching has this same problem - it needs to support arms that might `st
 
 However, the rule in [dcl.attr.noreturn]{.sref}/2 is:
 
-::: bq
+::: std
 [2]{.pnum} If a function `f` is called where `f` was previously declared with the `noreturn` attribute and `f` eventually returns, the behavior is undefined.
 :::
 
@@ -374,7 +376,7 @@ Note that this violates the so-called Second Ignorability Rule suggested in [@P2
 
 Consider:
 
-::: bq
+::: std
 ```cpp
 int i = do -> int {
     throw 42;
@@ -388,7 +390,7 @@ It does lead to an interesting question: what is `decltype(do { return; })`? We 
 
 We could instead introduce a new type, `std::noreturn_t` (as an easier-to-type spelling of `⊥`), change `decltype(throw e)` to be `std::noreturn_t` (since nobody actually writes this - code search results are exclusively in compiler test suites) and treat the return types of `[[noreturn]]` functions as `std::noreturn_t`. Then the type system gains understanding of always-escaping expressions/statements and the rules for pattern matching, the conditional operator, `do` expressions, and arbitrary user-defined libraries just fall out.
 
-See reflector discussion [here](https://lists.isocpp.org/ext/2023/05/21202.php).
+See reflector discussion [here](https://lists.isocpp.org/ext/2023/05/21202.php) and more thorough discussion in [@P3549R0].
 
 ### `goto`
 
@@ -398,7 +400,7 @@ Jumping *within* a `do` expression should follow whatever restrictions we alread
 
 Jumping *out* of a `do` expression is potentially useful though, in the same way that `break`, `continue`, and `return` are:
 
-::: bq
+::: std
 ```cpp
     for (@*loop*~1~@) {
         for (@*loop*~2~@) {
@@ -453,7 +455,7 @@ int main() {
 
 Consider:
 
-::: bq
+::: std
 ```cpp
 int i = do {
     if ($cond$) {
@@ -473,7 +475,7 @@ One important question is: when are local variables declared within a `do` expre
 
 Consider the following:
 
-::: bq
+::: std
 ```cpp
 auto f() -> std::expected<T, E>;
 auto g(T) -> U;
@@ -503,7 +505,7 @@ The consequence of (1) is that `result` is destroyed before we enter the call to
 
 The consequence of (2) is that we *can* yield a `T&&` because `result` isn't going to be destroyed yet, and we don't have a dangling reference. Unless we rewrite it this way:
 
-::: bq
+::: std
 ```cpp
 auto f() -> std::expected<T, E>;
 auto g(T&&) -> U;
@@ -527,7 +529,7 @@ Only with (3) - delaying destroying `result` until the closing of the innermost 
 
 Note that the above example is specifically mentioned in [@P2561R2]'s section on lifetimes, where it is quite valuable that the equivalent sugared version does not dangle:
 
-::: bq
+::: std
 ```cpp
 auto f() -> std::expected<T, E>;
 auto g(T&&) -> U;
@@ -543,7 +545,7 @@ Choosing (3) allows the control flow operator proposal to be simply a lowering i
 
 On the other hand, consider this example:
 
-::: bq
+::: std
 ```cpp
 int i = do {
         std::lock_guard _(mtx);
@@ -563,7 +565,7 @@ That means the choice is between extending the lifetime of variables to avoid da
 
 This does suggest that there needs to be some way to explicitly extend a variable to the outer scope. After all, a `do` expression's control flow behaves as if its in that outer scope (we `return` from the enclosing function, `continue` the enclosing loop, etc.), so there is definitely a compelling argument to me made that variables belong in that scope as well. But they probably need some sort of annotation - something like a reverse lambda capture:
 
-::: bq
+::: std
 ```cpp
 auto f() -> std::expected<T, E>;
 auto g(T&&) -> U;
@@ -588,7 +590,7 @@ auto h() -> std::expected<U, E> {
 
 An interesting sub-question on lifetimes is what does this do:
 
-::: bq
+::: std
 ```cpp
 auto prvalue() -> T;
 
@@ -611,7 +613,7 @@ In this case, we see the entire `do` expression - so unlike the general callable
 
 But as we're thinking about it, let's make the example slightly more complicated:
 
-::: bq
+::: std
 ```cpp
 auto lvalue() -> T const&;
 auto prvalue() -> T;
@@ -660,7 +662,7 @@ In a statement context, a `do` expression is completely pointless - you can just
 
 A previous iteration of the paper used `do return` (with a space), which would lead to an ambiguity in the following in the context of a `do` expression:
 
-::: bq
+::: std
 ```cpp
 do return $value$; while ($cond$);
 ```
@@ -670,7 +672,7 @@ This could have been parsed as a `do return` statement followed by an infinite l
 
 Also because we would unconditionally parse a statement as beginning with `do` as a `do`-`while` loop, code like this would not work:
 
-::: bq
+::: std
 ```cpp
 do { do_return X{}; }.foo();
 ```
@@ -757,7 +759,7 @@ In the simple cases, explicit last value (on the left) will be shorter than an e
 
 There's also the question of `void` expressions - which are where many of the pattern matching examples come from. In Rust, for instance, there is a differentiation based on the presence of a semicolon:
 
-::: bq
+::: std
 ```rust
 let a: i32 = { 1; 2 };
 let b: () = { 1; 2; };
@@ -766,7 +768,7 @@ let b: () = { 1; 2; };
 
 This is a simple (if silly) example of a block expression in Rust. The value of the block is the value of the last expression of the block (Rust has both `if` expressions and `loop` expressions) - in the first case the last example is `2`, so `a` is an `i32`, while in the second example `2;` is a statement, so the last value is the... nothing... after the `;`, which is `()` (Rust's unit type). This seems like too subtle a distinction, and one that's very easy to get wrong (although typically the types are far enough apart such that if you get it wrong it's a compiler error, rather than a runtime one):
 
-::: bq
+::: std
 ```cpp
 auto a = do { 1; 2 };   // ok, a is an int
 auto b = do { 1; 2; };  // ill-formed, b would be void (unless Regular Void is adopted)
@@ -775,7 +777,7 @@ auto b = do { 1; 2; };  // ill-formed, b would be void (unless Regular Void is a
 
 But this would mean that our original example would work, just for a very different reason (rather than being `void` expressions due to the lack of `do_return`, they become `void` expressions due to not having a final expression):
 
-::: bq
+::: std
 ```cpp
 x match {
     0 => do { cout << "got zero"; };
@@ -799,7 +801,7 @@ One example might be, again, the control flow operator proposal in [@P2561R2]. I
 
 gcc's statement-expressions are not usable in all expression contexts. Trying to use them at namespace-scope, or in a default member initializer, etc, fails:
 
-::: bq
+::: std
 ```cpp
 int i = ({      // error: statement-expressions are not allowed outside functions
     int j = 2;  //        nor in template-argument lists
@@ -818,11 +820,28 @@ In short: `do` expressions should be usable in any expression context.
 
 # Wording
 
-This wording is quite incomplete, but is intended at this point to simply be a sketch to help understand the contour of the proposal.
+This wording definitely imperfect, but is intended at this point to simply be a sketch to help understand the contour of the proposal.
+
+Add a note to [intro.execution]{.sref}:
+
+::: std
+[5]{.pnum} A *full-expression* is
+
+* [5.1]{.pnum} an unevaluated operand,
+* [5.2]{.pnum} a constant-expression ([expr.const]),
+* [5.3]{.pnum} an immediate invocation ([expr.const]),
+* [5.4]{.pnum} an init-declarator ([dcl.decl]) (including such introduced by a structured binding ([dcl.struct.bind])) or a mem-initializer ([class.base.init]), including the constituent expressions of the initializer,
+* [5.5]{.pnum} an invocation of a destructor generated at the end of the lifetime of an object other than a temporary object ([class.temporary]) whose lifetime has not been extended, or
+* [5.6]{.pnum} an expression that is not a subexpression of another expression and that is not otherwise part of a full-expression.
+
+::: {.note .addu}
+An expression `E` within a `$do-expression$` `D` ([expr.do]) can still be a full-expression even though the `$do-expression$` itself is an expression because `E` is not a subexpression of `D`.
+:::
+:::
 
 Add to [expr.prim]{.sref}:
 
-::: bq
+::: std
 ```diff
 $primary-expression$:
   $literal$
@@ -838,22 +857,98 @@ $primary-expression$:
 
 Add a new clause [expr.prim.do]:
 
-::: bq
+::: std
 ::: addu
-[1]{.pnum} A *do-expression* provides a way to combine multiple statements into a single expression without introducing a new function scope.
+[1]{.pnum} A *do-expression* provides a way to combine multiple statements into a single expression without introducing a new function scope. Jump statements can transfer control out of a `$do-expression$` without producing a value.
+
+::: example
+```cpp
+constexpr int f(int i) {
+    int half = do {
+        if (i % 2 != 0) {
+            return -1;
+        }
+        do_return i / 2;
+    };
+    return half;
+}
+
+static_assert(f(5) == -1);
+static_assert(f(4) == 2);
+```
+:::
 
 ```
 $do-expression$:
   do $trailing-return-type$@~opt~@ $compound-statement$
 ```
 
-[2]{.pnum} The `$compound-statement$` of a *do-expression* is a control-flow-limited statement ([stmt.label]).
+[#]{.pnum} The `$compound-statement$` of a *do-expression* is a control-flow-limited statement ([stmt.label]).
+
+[#]{.pnum} The type `$DO-TYPE$` is computed as follows
+
+* [#.#]{.pnum} If there is a `$trailing-return-type$` provided that does not contain a placeholder type, then `$DO-TYPE$` is that type.
+* [#.#]{.pnum} Otherwise, a type is deduced from each non-discarded `do_return` statement, if any, in the body fo the `$do-expression$`.
+    * [#.#.#]{.pnum} If there is no such `do_return` statement, then `$DO-TYPE$` is `void`.
+    * [#.#.#]{.pnum} If the type is not deduced the same in each deduction, the program is ill-formed.
+    * [#.#.#]{.pnum} Otherwise, `$DO-TYPE$` is that deduced type.
+
+[#]{.pnum} The type and value category of the `$do-expression$` are determined from `$DO-TYPE$` as follows:
+
+* [#.#]{.pnum} If `$DO-TYPE$` is an lvalue reference type `$T$&`, then the `$do-expression$` is an lvalue of type `$T$`.
+* [#.#]{.pnum} Otherwise, if `$DO-TYPE$` is an lvalue reference type `$T$&&`, then the `$do-expression$` is an xvalue of type `$T$`.
+* [#.#]{.pnum} Otherwise, the `$do-expression$` is an prvalue of type `$DO-TYPE$`.
+
+[#]{.pnum} If the `$do-expression$`'s type is not `$cv$ void`, it contains a non-discarded `do_return` statement, and the last `$statement$` in the `$compound-statement$` of the `$do-expression$` is not a diverging statement, the program is ill-formed. [See [@P3549R0] for more details.]{.draftnote} [Flowing off the end of a `$do-expression$` whose type is not `$cv$ void` is ill-formed.]{.note}
+
+::: example
+```cpp
+void f(bool cond) {
+    auto a = do {           // OK, a is an int whose value is either 1 or 2
+        if (cond) {
+            do_return 1;
+        } else {
+            do_return 2;
+        }
+    };
+
+    auto b = do {           // error: inconsistent type deduction
+        if (cond) {
+            do_return 1;
+        } else {
+            do_return 2.0;
+        }
+    };
+
+    auto c = do {           // error: the type is int, but the last statement is
+        if (cond) {         // not a diverging statement. execution might flow off the end.
+            do_return 1;
+        }
+    };
+
+    auto d = do {           // OK, last statement diverges. Either d is initialized to 1
+        if (cond) {         // or the expression throws.
+            do_return 1;
+        }
+        throw -1;
+    };
+
+    auto e = do {           // OK, falling off the end but the type is void
+        if (cond) {
+            do_return;
+        }
+    };
+}
+```
+:::
+
+[#]{.pnum} The value of a `$do-expression$` is the operand of the executed `do_return` statement, if any.
 :::
 :::
 
 Change [stmt.expr]{.sref} to disambugate a `do` expression from a `do`-`while` loop:
 
-::: bq
+::: std
 [1]{.pnum} Expression statements have the form
 ```
 $expression-statement$:
@@ -866,7 +961,7 @@ The expression is a *discarded-value* expression. All side effects from an expre
 
 Add to [stmt.jump.general]{.sref}:
 
-::: bq
+::: std
 [1]{.pnum} Jump statements unconditionally transfer control.
 
 ```diff
@@ -882,10 +977,27 @@ $jump-statement$:
 
 Add a new clause introducing a `do_return` statement after [stmt.return]{.sref}:
 
-::: bq
+::: std
 ::: addu
 [1]{.pnum} The `do` expression's value is produced by the `do_return` statement.
 
-[2]{.pnum} A `do_return` statement shall appear only within the `$compound-statement$` of a `do` expression.
+[#]{.pnum} A `do_return` statement shall appear only within the `$compound-statement$` of a `do` expression.
 :::
 :::
+
+---
+references:
+  - id: P3549R0
+    citation-label: P3549R0
+    title: "Diverging Expressions"
+    author:
+      - family: Bruno Cardoso Lopes
+      - family: Zach Laine
+      - family: Michael Park
+      - family: Barry Revzin
+    issued:
+      - year: 2025
+        month: 01
+        day: 09
+    URL: https://wg21.link/p3549r0
+---
