@@ -139,14 +139,14 @@ Change [basic.def]{.sref}/2:
 * [2.16]{.pnum} [...]
 :::
 
-Change the wording for plainly constant-evaluated to only allow a `consteval` block instead of a `static_assert` declaration:
+Extend the wording for plainly constant-evaluated to allow a `consteval` block:
 
 ::: std
 
-[21]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is not in a complete-class context ([class.mem.general]{.sref}) and is either
+[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if [it is not in a complete-class context ([class.mem.general]{.sref}) and either]{.addu}
 
-* [21.#]{.pnum} [the `$constant-expression$` of a `$static_assert-declaration$`]{.rm} [the evaluating expression of a `$consteval-block-declaration$`]{.addu}  ([dcl.pre]{.sref}), or
-* [21.#]{.pnum} an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable.
+* [21.#]{.pnum} [it is the evaluating expression of a `$consteval-block-declaration$` ([dcl.pre]{.sref}), or]{.addu}
+* [21.#]{.pnum} it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable [that is not in a complete-class context ([class.mem.general]{.sref})]{.rm}.
 
 [The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below) and happens exactly once ([lex.phases]{.sref}). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
 
