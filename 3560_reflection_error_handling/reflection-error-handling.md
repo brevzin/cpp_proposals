@@ -96,6 +96,144 @@ consteval auto user_fn(info type, source_location where = source_location::curre
 ```
 :::
 
+## Encoding
+
+What encoding should we use for the string describing the error, and what character type?
+
+The encoding is left unspecified in the runtime case (`std::exception::what()`), which is generally regarded as a defect ([@LWG4087]). Since we are designing a new component, we should not repeat that mistake, and specify the encoding of `meta::exception::what()`.
+
+Since the string describing the error can be constructed from components coming from multiple sources, it should use an encoding that can represent any of these substrings. That is, it should use UTF-8.
+
+The principled way to reflect this fact in the type system is to use `u8string_view`. However, there are strong, purely pragmatic, arguments in favor of using `string_view` instead.
+
+`char8_t` has nearly zero support in the standard library, which makes it _very_ inconvenient to use. Suppose, for example, that we are writing a function `member_of(info x, size_t i)` that returns `members_of(x)[i]`:
+
+```cpp
+consteval info member_of(info x, size_t i, source_location where = source_location::current())
+{
+    auto v = members_of(x);
+
+    if( i >= v.size() )
+    {
+        throw meta::exception( u8"invalid member index", ^^member_of, where );
+    }
+
+    return v[i];
+}
+```
+
+Further suppose that we want to provide a more descriptive error string, e.g. `"152 is not a valid member index"`, where 152 is the value of `i`.
+
+There's basically no way to easily do that today. We can't use `std::format` to create a `u8string`, there is no `std::to_u8string`, there is even no equivalent of `to_chars` that would produce a `char8_t` sequence.
+
+In contrast, if the constructor took `std::string_view`, we could have used any of these.
+
+So maybe we should just use `string_view`? But that's not consistent with the current state of [@P2996R8]. It did start out using `string_view` everywhere, and had to be rewritten to supply additional `u8string_view` interfaces, for good reasons.
+
+Consider, for instance, `std::meta::identifier_of(x)`. It can fail for two reasons: if the entity to which `x` refers has no associated identifier, or if it does, but that identifier is not representable in the literal encoding.
+
+We are changing these failures from hard errors (not a constant expression) to throwing `meta::exception`. A sketch implementation of `identifier_of`, then, would look like this:
+
+```cpp
+consteval string_view identifier_of(info x)
+{
+    if( !has_identifier(x) )
+    {
+        throw meta::exception(u8"entity has no identifier", ^^identifier_of, ...);
+    }
+
+    auto id = u8identifier_of(x);
+
+    if( !is_representable(id) )
+    {
+        throw meta::exception(u8"identifier '"s + id + u8"'is not representable", ^^identifier_of, ...);
+    }
+
+    // convert id to the literal encoding and return it
+}
+```
+
+For quality of implementation reasons, we want to include the identifier in the error description string we pass to the exception constructor, so that the subsequent error message will say `"the identifier 'риба' is not representable"` and not just `"identifier not representable"`.
+
+There is no way to do that if we take and return `string_view` from the exception constructor and `what()`. Since the failure is caused by the identifier not being representable in the literal encoding, it trivially follows that we can't put it into an error string that uses the literal encoding.
+
+That is why we believe that the currently proposed interface, taking and returning `u8string_view`, is the path to take in order to maintain consistency with the current design of [@P2996R8], which is the result of extensive discussions in SG16.
+
+(The fact that the standard library doesn't provide adequate support for `char8_t` strings is fixable by... adding that support.)
+
+What if, however, we follow [@P2996R8] even more closely and provide two constructors for `meta::exception`, one taking `u8string_view` and one taking `string_view`?
+
+This is possible, and will allow users to take advantage of present standard library facilities for string manipulation when constructing the exception. We don't propose it here for two reasons. One, it allows writing code that isn't quite correct, even though it would probably work on all tested platforms.
+
+Consider this hypothetical user function:
+
+```cpp
+consteval auto user_fn(info x)
+{
+    // ...
+
+    info y = member_of(x, i);
+
+    if( is_private(y) )
+    {
+        throw meta::exception(std::format("member {} is private", identifier_of(y)), ^^user_fn, ...);
+    }
+
+    // ...
+}
+```
+
+If the identifier of `y` is not representable in the literal encoding, this function will throw an exception that says that the identifier is not representable, instead of the correct one saying that the member is private.
+
+Since in the common case the literal encoding is UTF-8, this mistake is going to go undetected.
+
+Whether this is a problem worth worrying about is up for debate. The principled approach is to only take `u8string_view`, forcing correct user code whether the user likes it or not. A less principled but considerably more pragmatic approach would prefer ease of use over forced (over-)correctness and add the `string_view` constructor.
+
+But the second reason for our not proposing the additional `string_view` constructor is that it's easy to add at a later date.
+
+## Single or Multiple Types
+
+We are proposing a single exception type. The runtime analogy is `std::system_error` as opposed to a hierarchy of exception types.
+
+This in principle makes user code that wishes to inspect the failure reason and do different things depending on it less convenient to write. It would have to look like this
+
+```cpp
+catch( meta::exception const& x )
+{
+    if( x.from() == ^^identifier_of )
+    {
+        // handle errors originating from identifier_of
+    }
+    else if( x.from() == ^^members_of )
+    {
+        // handle errors originating from members_of
+    }
+    // ...
+}
+```
+
+instead of, hypothetically, like this
+
+```cpp
+catch( meta::identifier_exception const& x )
+{
+    // handle errors originating from identifier_of
+}
+catch( meta::members_exception const& x )
+{
+    // handle errors originating from members_of
+}
+// ...
+```
+
+(exception type names are illustrative.)
+
+We don't propose an exception hierarchy here. Designing a proper exception hierarchy is not something we can realistically do in the C++26 timeframe.
+It's not as straightforward as just using an exception per function because functions can fail for multiple reasons, and client code may well wish to distinguish between these.
+
+Furthermore, an exception hierarchy can be designed at a later date, with the functions changed to throw an appropriate type derived from the currently proposed `meta::exception`.
+Code written against this proposal will continue to work unmodified, and new code would be able to use more specific catch clauses.
+
 # Recoverable or Unrecoverable
 
 We went through the proposed API in [@P2996R8] and we think that all of the library functions should be recoverable — that is failing to meet the requirements of the function should be an exception rather than constant evaluation failure — with a single exception, `std::meta::define_aggregate`.
