@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-09" />
+  <meta name="dcterms.date" content="2025-01-10" />
   <title>Error Handling in Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-09</td>
+    <td>2025-01-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -595,7 +595,12 @@ Reflection</h1>
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#exception-type" id="toc-exception-type"><span class="toc-section-number">2</span> Exception Type<span></span></a></li>
+<li><a href="#exception-type" id="toc-exception-type"><span class="toc-section-number">2</span> Exception Type<span></span></a>
+<ul>
+<li><a href="#encoding" id="toc-encoding"><span class="toc-section-number">2.1</span> Encoding<span></span></a></li>
+<li><a href="#single-or-multiple-types" id="toc-single-or-multiple-types"><span class="toc-section-number">2.2</span> Single or Multiple
+Types<span></span></a></li>
+</ul></li>
 <li><a href="#recoverable-or-unrecoverable" id="toc-recoverable-or-unrecoverable"><span class="toc-section-number">3</span> Recoverable or
 Unrecoverable<span></span></a></li>
 <li><a href="#proposed-wording" id="toc-proposed-wording"><span class="toc-section-number">4</span> Proposed Wording<span></span></a>
@@ -752,6 +757,180 @@ to signal errors as follows:</p>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
+<h2 data-number="2.1" id="encoding"><span class="header-section-number">2.1</span> Encoding<a href="#encoding" class="self-link"></a></h2>
+<p>What encoding should we use for the string describing the error, and
+what character type?</p>
+<p>The encoding is left unspecified in the runtime case (<code class="sourceCode cpp">std<span class="op">::</span>exception<span class="op">::</span>what<span class="op">()</span></code>),
+which is generally regarded as a defect (<span class="citation" data-cites="LWG4087">[<a href="https://wg21.link/lwg4087" role="doc-biblioref">LWG4087</a>]</span>). Since we are designing a new
+component, we should not repeat that mistake, and specify the encoding
+of <code class="sourceCode cpp">meta<span class="op">::</span>exception<span class="op">::</span>what<span class="op">()</span></code>.</p>
+<p>Since the string describing the error can be constructed from
+components coming from multiple sources, it should use an encoding that
+can represent any of these substrings. That is, it should use UTF-8.</p>
+<p>The principled way to reflect this fact in the type system is to use
+<code class="sourceCode cpp">u8string_view</code>. However, there are
+strong, purely pragmatic, arguments in favor of using
+<code class="sourceCode cpp">string_view</code> instead.</p>
+<p><code class="sourceCode cpp"><span class="dt">char8_t</span></code>
+has nearly zero support in the standard library, which makes it
+<em>very</em> inconvenient to use. Suppose, for example, that we are
+writing a function <code class="sourceCode cpp">member_of<span class="op">(</span>info x, <span class="dt">size_t</span> i<span class="op">)</span></code>
+that returns <code class="sourceCode cpp">members_of<span class="op">(</span>x<span class="op">)[</span>i<span class="op">]</span></code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info member_of<span class="op">(</span>info x, <span class="dt">size_t</span> i, source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> v <span class="op">=</span> members_of<span class="op">(</span>x<span class="op">)</span>;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> i <span class="op">&gt;=</span> v<span class="op">.</span>size<span class="op">()</span> <span class="op">)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> meta<span class="op">::</span>exception<span class="op">(</span> <span class="st">u8&quot;invalid member index&quot;</span>, <span class="op">^^</span>member_of, where <span class="op">)</span>;</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> v<span class="op">[</span>i<span class="op">]</span>;</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Further suppose that we want to provide a more descriptive error
+string, e.g. <code class="sourceCode cpp"><span class="st">&quot;152 is not a valid member index&quot;</span></code>,
+where 152 is the value of <code class="sourceCode cpp">i</code>.</p>
+<p>There’s basically no way to easily do that today. We can’t use
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+to create a <code class="sourceCode cpp">u8string</code>, there is no
+<code class="sourceCode cpp">std<span class="op">::</span>to_u8string</code>,
+there is even no equivalent of
+<code class="sourceCode cpp">to_chars</code> that would produce a
+<code class="sourceCode cpp"><span class="dt">char8_t</span></code>
+sequence.</p>
+<p>In contrast, if the constructor took <code class="sourceCode cpp">std<span class="op">::</span>string_view</code>,
+we could have used any of these.</p>
+<p>So maybe we should just use
+<code class="sourceCode cpp">string_view</code>? But that’s not
+consistent with the current state of <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span>. It did start out using
+<code class="sourceCode cpp">string_view</code> everywhere, and had to
+be rewritten to supply additional
+<code class="sourceCode cpp">u8string_view</code> interfaces, for good
+reasons.</p>
+<p>Consider, for instance, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>identifier_of<span class="op">(</span>x<span class="op">)</span></code>.
+It can fail for two reasons: if the entity to which
+<code class="sourceCode cpp">x</code> refers has no associated
+identifier, or if it does, but that identifier is not representable in
+the literal encoding.</p>
+<p>We are changing these failures from hard errors (not a constant
+expression) to throwing <code class="sourceCode cpp">meta<span class="op">::</span>exception</code>. A
+sketch implementation of
+<code class="sourceCode cpp">identifier_of</code>, then, would look like
+this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> string_view identifier_of<span class="op">(</span>info x<span class="op">)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> <span class="op">!</span>has_identifier<span class="op">(</span>x<span class="op">)</span> <span class="op">)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> meta<span class="op">::</span>exception<span class="op">(</span><span class="st">u8&quot;entity has no identifier&quot;</span>, <span class="op">^^</span>identifier_of, <span class="op">...)</span>;</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> id <span class="op">=</span> u8identifier_of<span class="op">(</span>x<span class="op">)</span>;</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> <span class="op">!</span>is_representable<span class="op">(</span>id<span class="op">)</span> <span class="op">)</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> meta<span class="op">::</span>exception<span class="op">(</span><span class="st">u8&quot;identifier &#39;&quot;</span><span class="bu">s</span> <span class="op">+</span> id <span class="op">+</span> <span class="st">u8&quot;&#39;is not representable&quot;</span>, <span class="op">^^</span>identifier_of, <span class="op">...)</span>;</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">// convert id to the literal encoding and return it</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>For quality of implementation reasons, we want to include the
+identifier in the error description string we pass to the exception
+constructor, so that the subsequent error message will say <code class="sourceCode cpp"><span class="st">&quot;the identifier &#39;риба&#39; is not representable&quot;</span></code>
+and not just <code class="sourceCode cpp"><span class="st">&quot;identifier not representable&quot;</span></code>.</p>
+<p>There is no way to do that if we take and return
+<code class="sourceCode cpp">string_view</code> from the exception
+constructor and
+<code class="sourceCode cpp">what<span class="op">()</span></code>.
+Since the failure is caused by the identifier not being representable in
+the literal encoding, it trivially follows that we can’t put it into an
+error string that uses the literal encoding.</p>
+<p>That is why we believe that the currently proposed interface, taking
+and returning <code class="sourceCode cpp">u8string_view</code>, is the
+path to take in order to maintain consistency with the current design of
+<span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span>, which is the result of
+extensive discussions in SG16.</p>
+<p>(The fact that the standard library doesn’t provide adequate support
+for <code class="sourceCode cpp"><span class="dt">char8_t</span></code>
+strings is fixable by… adding that support.)</p>
+<p>What if, however, we follow <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span> even more closely and provide
+two constructors for <code class="sourceCode cpp">meta<span class="op">::</span>exception</code>,
+one taking <code class="sourceCode cpp">u8string_view</code> and one
+taking <code class="sourceCode cpp">string_view</code>?</p>
+<p>This is possible, and will allow users to take advantage of present
+standard library facilities for string manipulation when constructing
+the exception. We don’t propose it here for two reasons. One, it allows
+writing code that isn’t quite correct, even though it would probably
+work on all tested platforms.</p>
+<p>Consider this hypothetical user function:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> user_fn<span class="op">(</span>info x<span class="op">)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    info y <span class="op">=</span> member_of<span class="op">(</span>x, i<span class="op">)</span>;</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> is_private<span class="op">(</span>y<span class="op">)</span> <span class="op">)</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> meta<span class="op">::</span>exception<span class="op">(</span>std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;member {} is private&quot;</span>, identifier_of<span class="op">(</span>y<span class="op">))</span>, <span class="op">^^</span>user_fn, <span class="op">...)</span>;</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>If the identifier of <code class="sourceCode cpp">y</code> is not
+representable in the literal encoding, this function will throw an
+exception that says that the identifier is not representable, instead of
+the correct one saying that the member is private.</p>
+<p>Since in the common case the literal encoding is UTF-8, this mistake
+is going to go undetected.</p>
+<p>Whether this is a problem worth worrying about is up for debate. The
+principled approach is to only take
+<code class="sourceCode cpp">u8string_view</code>, forcing correct user
+code whether the user likes it or not. A less principled but
+considerably more pragmatic approach would prefer ease of use over
+forced (over-)correctness and add the
+<code class="sourceCode cpp">string_view</code> constructor.</p>
+<p>But the second reason for our not proposing the additional
+<code class="sourceCode cpp">string_view</code> constructor is that it’s
+easy to add at a later date.</p>
+<h2 data-number="2.2" id="single-or-multiple-types"><span class="header-section-number">2.2</span> Single or Multiple Types<a href="#single-or-multiple-types" class="self-link"></a></h2>
+<p>We are proposing a single exception type. The runtime analogy is
+<code class="sourceCode cpp">std<span class="op">::</span>system_error</code>
+as opposed to a hierarchy of exception types.</p>
+<p>This in principle makes user code that wishes to inspect the failure
+reason and do different things depending on it less convenient to write.
+It would have to look like this</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> x<span class="op">.</span>from<span class="op">()</span> <span class="op">==</span> <span class="op">^^</span>identifier_of <span class="op">)</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">// handle errors originating from identifier_of</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span><span class="op">(</span> x<span class="op">.</span>from<span class="op">()</span> <span class="op">==</span> <span class="op">^^</span>members_of <span class="op">)</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">// handle errors originating from members_of</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>instead of, hypothetically, like this</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>identifier_exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle errors originating from identifier_of</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>members_exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle errors originating from members_of</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">// ...</span></span></code></pre></div>
+<p>(exception type names are illustrative.)</p>
+<p>We don’t propose an exception hierarchy here. Designing a proper
+exception hierarchy is not something we can realistically do in the
+C++26 timeframe. It’s not as straightforward as just using an exception
+per function because functions can fail for multiple reasons, and client
+code may well wish to distinguish between these.</p>
+<p>Furthermore, an exception hierarchy can be designed at a later date,
+with the functions changed to throw an appropriate type derived from the
+currently proposed <code class="sourceCode cpp">meta<span class="op">::</span>exception</code>.
+Code written against this proposal will continue to work unmodified, and
+new code would be able to use more specific catch clauses.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="recoverable-or-unrecoverable"><span class="header-section-number">3</span> Recoverable or Unrecoverable<a href="#recoverable-or-unrecoverable" class="self-link"></a></h1>
 <p>We went through the proposed API in <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span> and we think that all of the
 library functions should be recoverable — that is failing to meet the
@@ -780,14 +959,14 @@ unless <code class="sourceCode cpp"><em>C</em></code>”.</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  using info = decltype(^^::);</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.reflection.exception], class exception</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ class exception;</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  // ...</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  using info = decltype(^^::);</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.reflection.exception], class exception</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ class exception;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -797,33 +976,33 @@ unless <code class="sourceCode cpp"><em>C</em></code>”.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> exception</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  u8string <em>what_</em>;         <span class="co">// exposition only</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  info <em>from_</em>;             <span class="co">// exposition only</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  source_location <em>where_</em>; <span class="co">// exposition only</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> exception<span class="op">(</span>u8string_view what, info from,</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span>;</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  exception<span class="op">(</span>exception <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  exception<span class="op">(</span>exception<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  exception<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>exception <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  exception<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>exception<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> u8string_view what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info from<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> source_location where<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> exception</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  u8string <em>what_</em>;         <span class="co">// exposition only</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  info <em>from_</em>;             <span class="co">// exposition only</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  source_location <em>where_</em>; <span class="co">// exposition only</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> exception<span class="op">(</span>u8string_view what, info from,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span>;</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  exception<span class="op">(</span>exception <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  exception<span class="op">(</span>exception<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  exception<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>exception <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  exception<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>exception<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="cf">default</span>;</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> u8string_view what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info from<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> source_location where<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span>
 Reflection functions throw exceptions of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>exception</code>
 to signal an error. <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>exception</code>
 is a consteval-only type.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> exception<span class="op">(</span>u8string_view what, info from,</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> exception<span class="op">(</span>u8string_view what, info from,</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span>
 <em>Effects</em>: Initializes
 <code class="sourceCode cpp"><em>what_</em></code> with
@@ -832,15 +1011,15 @@ is a consteval-only type.</p>
 <code class="sourceCode cpp">from</code> and
 <code class="sourceCode cpp"><em>where_</em></code> with
 <code class="sourceCode cpp">where</code>.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> u8string_view what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> u8string_view what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><em>what_</em></code>.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info from<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info from<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><em>from_</em></code>.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> source_location where<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> source_location where<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">5</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><em>where_</em></code>.</p>
@@ -851,7 +1030,7 @@ is a consteval-only type.</p>
 <p>Replace the error handling in this subclause:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> operators operator_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> operators operator_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -863,8 +1042,8 @@ operator function or operator function template.</p>
 <code class="sourceCode cpp"><em>operator-function-id</em></code> is the
 unqualified name of the entity represented by
 <code class="sourceCode cpp">r</code>.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> string_view symbol_of<span class="op">(</span>operators op<span class="op">)</span>;</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> u8string_view u8symbol_of<span class="op">(</span>operators op<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> string_view symbol_of<span class="op">(</span>operators op<span class="op">)</span>;</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> u8string_view u8symbol_of<span class="op">(</span>operators op<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">4</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -883,8 +1062,8 @@ ordinary literal encoding or with UTF-8.</p>
 <p>Replace the error handling in this subclause:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> string_view identifier_of<span class="op">(</span>info r<span class="op">)</span>;</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> u8string_view u8identifier_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> string_view identifier_of<span class="op">(</span>info r<span class="op">)</span>;</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> u8string_view u8identifier_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">1</a></span>
 Let <em>E</em> be UTF-8 if returning a
 <code class="sourceCode cpp">u8string_view</code>, and otherwise the
@@ -902,7 +1081,7 @@ the identifier that would be returned (see below) is representable by
 <p>Replace the error handling in this subclause:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">1</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -914,7 +1093,7 @@ relationship, or data member description.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info object_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info object_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">2</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -925,7 +1104,7 @@ associated with, or referring to, such an object.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info value_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info value_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">3</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -951,7 +1130,7 @@ manifestly constant-evaluated expression currently under evaluation
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info parent_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info parent_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">4</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -964,8 +1143,8 @@ alias, or direct base class relationship.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info template_of<span class="op">(</span>info r<span class="op">)</span>;</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> template_arguments_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info template_of<span class="op">(</span>info r<span class="op">)</span>;</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> template_arguments_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">5</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -978,7 +1157,7 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <p>Replace the error handling in this subclause:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> members_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> members_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">1</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -989,7 +1168,7 @@ evaluation context or a namespace.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> bases_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> bases_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">2</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -999,7 +1178,7 @@ is a reflection representing a complete class type.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> static_data_members_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> static_data_members_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">3</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1009,7 +1188,7 @@ represents a complete class type.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> nonstatic_data_members_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> nonstatic_data_members_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">4</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1019,7 +1198,7 @@ represents a complete class type.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> enumerators_of<span class="op">(</span>info type_enum<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> enumerators_of<span class="op">(</span>info type_enum<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">5</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1030,7 +1209,7 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_members<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_members<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">6</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1040,7 +1219,7 @@ represents a complete class type.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_bases<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_bases<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">7</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1050,7 +1229,7 @@ represents a complete class type.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_static_data_members<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_static_data_members<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">8</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1060,7 +1239,7 @@ represents a complete class type.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_nonstatic_data_members<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> get_public_nonstatic_data_members<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">9</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1072,7 +1251,7 @@ represents a complete class type.</p>
 <p>Replace the error handling in this subclause:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> member_offset offset_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> member_offset offset_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">1</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1083,7 +1262,7 @@ relationship other than a virtual base class of an abstract class.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> size_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> size_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">2</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1098,7 +1277,7 @@ is a point within the evaluation context from which
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> alignment_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> alignment_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">3</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1113,7 +1292,7 @@ is a point within the evaluation context from which
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> bit_size_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> bit_size_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">4</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1130,8 +1309,8 @@ is a point within the evaluation context from which
 <p>Replace the error handling in this subclause:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T <em>extract-ref</em><span class="op">(</span>info r<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T <em>extract-ref</em><span class="op">(</span>info r<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">1</a></span>
 <span class="note"><span>[ <em>Note 1:</em>
 </span><code class="sourceCode cpp">T</code> is a reference type.<span>
@@ -1148,8 +1327,8 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T <em>extract-member-or-function</em><span class="op">(</span>info r<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T <em>extract-member-or-function</em><span class="op">(</span>info r<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">3</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1185,8 +1364,8 @@ type <code class="sourceCode cpp">F</code> or
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T <em>extract-val</em><span class="op">(</span>info r<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T <em>extract-val</em><span class="op">(</span>info r<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">4</a></span>
 Let <code class="sourceCode cpp">U</code> be the type of the value that
 <code class="sourceCode cpp">r</code> represents.</p>
@@ -1218,8 +1397,8 @@ convertible to <code class="sourceCode cpp">T</code>.</li>
 <p>Replace the error handling in this subclause:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> can_substitute<span class="op">(</span>info templ, R<span class="op">&amp;&amp;</span> arguments<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> can_substitute<span class="op">(</span>info templ, R<span class="op">&amp;&amp;</span> arguments<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">1</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1231,8 +1410,8 @@ usable as a template argument ([temp.arg]).</p>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info substitute<span class="op">(</span>info templ, R<span class="op">&amp;&amp;</span> arguments<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info substitute<span class="op">(</span>info templ, R<span class="op">&amp;&amp;</span> arguments<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">2</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1244,8 +1423,8 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <p>Replace the error handling in this subclause:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info reflect_value<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> expr<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info reflect_value<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> expr<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">1</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">T</code> is a structural
 type that is neither a reference type nor an array type.</p>
@@ -1277,8 +1456,8 @@ variable ([dcl.fct.def.general]).</li>
 </div>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info reflect_object<span class="op">(</span>T<span class="op">&amp;</span> expr<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info reflect_object<span class="op">(</span>T<span class="op">&amp;</span> expr<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">3</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">T</code> is not a
 function type.</p>
@@ -1310,8 +1489,8 @@ variable ([dcl.fct.def.general]).</li>
 <p>Replace the error handling in this subclause:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info data_member_spec<span class="op">(</span>info type,</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>                                data_member_options options<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info data_member_spec<span class="op">(</span>info type,</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>                                data_member_options options<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">1</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Constant
 When</em></del></span> <span class="addu"><em>Throws</em></span>: <span class="addu"><code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
@@ -1376,6 +1555,10 @@ does not contain a value.</li>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-LWG4087" class="csl-entry" role="doc-biblioentry">
+[LWG4087] Victor Zverovich. Standard exception messages have unspecified
+encoding. <a href="https://wg21.link/lwg4087"><div class="csl-block">https://wg21.link/lwg4087</div></a>
+</div>
 <div id="ref-P2996R8" class="csl-entry" role="doc-biblioentry">
 [P2996R8] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
 Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-12-17. Reflection for
