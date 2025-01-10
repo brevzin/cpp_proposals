@@ -933,11 +933,11 @@ void f(bool cond) {
         throw -1;
     };
 
-    auto e = do {           // OK, falling off the end but the type is void
+    (do {                   // OK, falling off the end but the type is void
         if (cond) {
             do_return;
         }
-    };
+    });
 }
 ```
 :::
@@ -973,6 +973,40 @@ $jump-statement$:
   $coroutine-return-statement$
   goto $identifier$ ;
 ```
+:::
+
+Change [stmt.break]{.sref} to prohibit its use in `do` expressions in confusing places:
+
+::: std
+[1]{.pnum} A `break` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]) or a `switch` statement ([stmt.switch]).
+The `break` statement causes termination of the smallest such enclosing statement; control passes to the statement following the terminated statement, if any.
+
+::: addu
+[2]{.pnum} A `break` statement shall not appear in a `$do-expression$` ([expr.do]) that is a subexpression of:
+
+* [2.#]{.pnum} the `$init-statement$`, `$condition$`, or `$expression$` of a `for` loop,
+* [2.#]{.pnum} the `$condition$` of a `while` loop,
+* [2.#]{.pnum} the `$init-statement$`, `$for-range-declaration$`, or `$for-range-initializer$` of a range-based for loop, or
+* [2.#]{.pnum} the `$init-statement$` or `$condition$` of a `switch` statement
+
+unless the enclosing `$iteration-statement$` or `switch` statement of that `break` statement is also within the same `$do-expression$`.
+:::
+:::
+
+Change [stmt.cont]{.sref} to prohibit the same:
+
+::: std
+[1]{.pnum} A `continue` statement shall be enclosed by ([stmt.pre]) an iteration-statement ([stmt.iter]). [...]
+
+::: addu
+[2]{.pnum} A `continue` statement shall not appear in a `$do-expression$` ([expr.do]) that is a subexpression of:
+
+* [2.#]{.pnum} the `$init-statement$`, `$condition$`, or `$expression$` of a `for` loop,
+* [2.#]{.pnum} the `$condition$` of a `while` loop, or
+* [2.#]{.pnum} the `$init-statement$`, `$for-range-declaration$`, or `$for-range-initializer$` of a range-based for loop
+
+unless the enclosing `$iteration-statement$` of that `continue` statement is also within the same `$do-expression$`.
+:::
 :::
 
 Add a new clause introducing a `do_return` statement after [stmt.return]{.sref}:

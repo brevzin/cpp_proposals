@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-09" />
+  <meta name="dcterms.date" content="2025-01-10" />
   <title>do expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ expressions</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-09</td>
+    <td>2025-01-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -2195,11 +2195,11 @@ is ill-formed.<span> — <em>end note</em> ]</span></span></p>
 <span id="cb45-28"><a href="#cb45-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> <span class="op">-</span><span class="dv">1</span>;</span>
 <span id="cb45-29"><a href="#cb45-29" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
 <span id="cb45-30"><a href="#cb45-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-31"><a href="#cb45-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> e <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span>           <span class="co">// OK, falling off the end but the type is void</span></span>
+<span id="cb45-31"><a href="#cb45-31" aria-hidden="true" tabindex="-1"></a>    <span class="op">(</span><span class="cf">do</span> <span class="op">{</span>                   <span class="co">// OK, falling off the end but the type is void</span></span>
 <span id="cb45-32"><a href="#cb45-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>cond<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb45-33"><a href="#cb45-33" aria-hidden="true" tabindex="-1"></a>            <span class="kw">do_return</span>;</span>
 <span id="cb45-34"><a href="#cb45-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb45-35"><a href="#cb45-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb45-35"><a href="#cb45-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">})</span>;</span>
 <span id="cb45-36"><a href="#cb45-36" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
@@ -2252,18 +2252,112 @@ Jump statements unconditionally transfer control.</p>
 </div>
 </blockquote>
 </div>
+<p>Change <span>8.7.2 <a href="https://wg21.link/stmt.break">[stmt.break]</a></span> to prohibit
+its use in
+<code class="sourceCode cpp"><span class="cf">do</span></code>
+expressions in confusing places:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">1</a></span>
+A <code class="sourceCode cpp"><span class="cf">break</span></code>
+statement shall be enclosed by ([stmt.pre]) an
+<code class="sourceCode cpp"><em>iteration-statement</em></code>
+([stmt.iter]) or a
+<code class="sourceCode cpp"><span class="cf">switch</span></code>
+statement ([stmt.switch]). The
+<code class="sourceCode cpp"><span class="cf">break</span></code>
+statement causes termination of the smallest such enclosing statement;
+control passes to the statement following the terminated statement, if
+any.</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">2</a></span>
+A <code class="sourceCode cpp"><span class="cf">break</span></code>
+statement shall not appear in a
+<code class="sourceCode cpp"><em>do-expression</em></code> ([expr.do])
+that is a subexpression of:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(2.1)</a></span>
+the <code class="sourceCode cpp"><em>init-statement</em></code>,
+<code class="sourceCode cpp"><em>condition</em></code>, or
+<code class="sourceCode cpp"><em>expression</em></code> of a
+<code class="sourceCode cpp"><span class="cf">for</span></code>
+loop,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(2.2)</a></span>
+the <code class="sourceCode cpp"><em>condition</em></code> of a
+<code class="sourceCode cpp"><span class="cf">while</span></code>
+loop,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(2.3)</a></span>
+the <code class="sourceCode cpp"><em>init-statement</em></code>,
+<code class="sourceCode cpp"><em>for-range-declaration</em></code>, or
+<code class="sourceCode cpp"><em>for-range-initializer</em></code> of a
+range-based for loop, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(2.4)</a></span>
+the <code class="sourceCode cpp"><em>init-statement</em></code> or
+<code class="sourceCode cpp"><em>condition</em></code> of a
+<code class="sourceCode cpp"><span class="cf">switch</span></code>
+statement</li>
+</ul>
+<p>unless the enclosing
+<code class="sourceCode cpp"><em>iteration-statement</em></code> or
+<code class="sourceCode cpp"><span class="cf">switch</span></code>
+statement of that
+<code class="sourceCode cpp"><span class="cf">break</span></code>
+statement is also within the same
+<code class="sourceCode cpp"><em>do-expression</em></code>.</p>
+</div>
+</blockquote>
+</div>
+<p>Change <span>8.7.3 <a href="https://wg21.link/stmt.cont">[stmt.cont]</a></span> to prohibit
+the same:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">1</a></span>
+A <code class="sourceCode cpp"><span class="cf">continue</span></code>
+statement shall be enclosed by ([stmt.pre]) an iteration-statement
+([stmt.iter]). […]</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">2</a></span>
+A <code class="sourceCode cpp"><span class="cf">continue</span></code>
+statement shall not appear in a
+<code class="sourceCode cpp"><em>do-expression</em></code> ([expr.do])
+that is a subexpression of:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(2.1)</a></span>
+the <code class="sourceCode cpp"><em>init-statement</em></code>,
+<code class="sourceCode cpp"><em>condition</em></code>, or
+<code class="sourceCode cpp"><em>expression</em></code> of a
+<code class="sourceCode cpp"><span class="cf">for</span></code>
+loop,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(2.2)</a></span>
+the <code class="sourceCode cpp"><em>condition</em></code> of a
+<code class="sourceCode cpp"><span class="cf">while</span></code> loop,
+or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(2.3)</a></span>
+the <code class="sourceCode cpp"><em>init-statement</em></code>,
+<code class="sourceCode cpp"><em>for-range-declaration</em></code>, or
+<code class="sourceCode cpp"><em>for-range-initializer</em></code> of a
+range-based for loop</li>
+</ul>
+<p>unless the enclosing
+<code class="sourceCode cpp"><em>iteration-statement</em></code> of that
+<code class="sourceCode cpp"><span class="cf">continue</span></code>
+statement is also within the same
+<code class="sourceCode cpp"><em>do-expression</em></code>.</p>
+</div>
+</blockquote>
+</div>
 <p>Add a new clause introducing a
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement after <span>8.7.4 <a href="https://wg21.link/stmt.return">[stmt.return]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">1</a></span>
 The <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression’s value is produced by the
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">2</a></span>
 A <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement shall appear only within the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
