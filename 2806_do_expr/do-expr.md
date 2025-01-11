@@ -888,7 +888,7 @@ $do-expression$:
 [#]{.pnum} The type `$DO-TYPE$` is computed as follows
 
 * [#.#]{.pnum} If there is a `$trailing-return-type$` provided that does not contain a placeholder type, then `$DO-TYPE$` is that type.
-* [#.#]{.pnum} Otherwise, a type is deduced from each non-discarded `do_return` statement, if any, in the body fo the `$do-expression$`.
+* [#.#]{.pnum} Otherwise, a type is deduced from each non-discarded `do_return` statement, if any, in the body of the `$do-expression$`.
     * [#.#.#]{.pnum} If there is no such `do_return` statement, then `$DO-TYPE$` is `void`.
     * [#.#.#]{.pnum} If the type is not deduced the same in each deduction, the program is ill-formed.
     * [#.#.#]{.pnum} Otherwise, `$DO-TYPE$` is that deduced type.
