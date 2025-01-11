@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-09" />
+  <meta name="dcterms.date" content="2025-01-10" />
   <title>Reflection of Templates</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-09</td>
+    <td>2025-01-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -684,10 +684,10 @@ token sequences</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="motivation"><span class="header-section-number">2</span>
 Motivation<a href="#motivation" class="self-link"></a></h1>
-<p>A key characteristic that makes a reflection facility powerful is
-<em>completeness</em>, i.e., the ability to reflect the entirety of the
-source language. Current proposals facilitate reflection of certain
-declarations in a namespace or a
+<p>A key trait that makes a reflection facility powerful is
+<em>completeness</em>—the ability to reflect the entire source language.
+Current proposals facilitate reflection of certain declarations in a
+namespace or a
 <code class="sourceCode cpp"><span class="kw">struct</span></code>/<code class="sourceCode cpp"><span class="kw">class</span></code>/<code class="sourceCode cpp"><span class="kw">union</span></code>
 definition. Although <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>’s
 <code class="sourceCode cpp">members_of</code> metafunction includes
@@ -696,7 +696,7 @@ does not offer primitives for reflection of template declarations
 themselves. In this proposal, we aim to define a comprehensive API for
 reflection of C++ templates.</p>
 <p>A powerful archetypal motivator—argued in <span class="citation" data-cites="P3157R1">[<a href="https://wg21.link/p3157r1" role="doc-biblioref">P3157R1</a>]</span> and at length in the CppCon
-2024 talk “Reflection Is Not Contemplation”— is the <em>identity</em>
+2024 talk “Reflection Is Not Contemplation”—is the <em>identity</em>
 metafunction. This function, given a class type, creates a replica of
 it, crucially providing the ability to make minute changes to the copy,
 such as changing its name, adding or removing members, changing the
@@ -762,19 +762,19 @@ applications.</p>
 - `reflect_invoke`
 -->
 <p>In order to reflect on nontrivial C++ code and splice it back with
-controlled modifications, it is necessary to reflect all templates—class
-templates and specializations thereof, function templates, variable
-templates, and alias templates. This is not an easy task; templates pose
-unique challenges to a reflection engine because, by their nature, they
-are only partially analyzed semantically. For example, neither parameter
-types nor the return type of a function template can be represented as
-reflections of types because dependent types are not known until the
-template is instantiated. The same thinking goes for a variety of
-declarations that can be found inside a class template; C++ templates
-are more akin to patterns by which code is to be generated than to
-standalone, semantically verified code. For that reason, the reflection
-facilities proposed in P2996 intended for non-templated declarations are
-not readily applicable to templates.</p>
+controlled modifications, the language must necessarily reflect on all
+templates—class templates and specializations thereof, function
+templates, variable templates, and alias templates. This is not an easy
+task; templates pose unique challenges to a reflection engine because,
+by their nature, they are only partially analyzed semantically. For
+example, neither parameter types nor the return type of a function
+template can be represented as reflections of types because dependent
+types are not known until the template is instantiated. The same
+thinking goes for a variety of declarations that can be found inside a
+class template; C++ templates are more akin to patterns by which code is
+to be generated than to standalone, semantically verified code. For that
+reason, the reflection facilities proposed in P2996 intended for
+non-templated declarations are not readily applicable to templates.</p>
 <p>Conversely, reflection code would be seriously hamstrung if it lacked
 the ability to reflect on template code (and subsequently manipulate and
 generate related code), especially because templates are ubiquitous in
@@ -807,8 +807,9 @@ sequences.</li>
 </ul>
 <p>The initial proposal <span class="citation" data-cites="P3420R0">[<a href="https://wg21.link/p3420r0" role="doc-biblioref">P3420R0</a>]</span> allowed accessing all parts of
 a template definition as token sequences. However, for some
-implementations it was difficult to perform such extrication, and also
-made it difficult to define how names are looked up after splicing.</p>
+implementations performing such extrication was deemed difficult. Also,
+separating parts of a function declaration made it difficult to define
+how names are looked up after splicing.</p>
 <p>We paid special attention to preserve the spirit and design style of
 <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> and to ensure seamless
 interoperation with it.</p>
@@ -827,7 +828,7 @@ the matter for function templates because it is more difficult (and more
 complete) than the case of simple functions.</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> S <span class="op">{}</span>;</span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Widget <span class="op">{}</span>;</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> std<span class="op">::</span>is_copy_constructible_v<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
@@ -836,49 +837,79 @@ complete) than the case of simple functions.</p>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> logger<span class="op">(</span><span class="kw">const</span> Ts<span class="op">&amp;..</span> values<span class="op">)</span>;</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> make_logged<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info f<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    queue_injection<span class="op">(^^{</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">namespace</span> logged <span class="op">{</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>            <span class="op">[:</span>\<span class="op">(</span>prototype_of<span class="op">(</span>f<span class="op">)):]</span> <span class="op">{</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>                logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span> <span class="op">+</span> name_of<span class="op">(</span>f<span class="op">)</span> <span class="op">+</span> <span class="st">&quot;(&quot;</span>, \tokens<span class="op">(</span>parameter_list<span class="op">(</span>f<span class="op">))</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="op">[:</span>f<span class="op">:]&lt;</span>\tokens<span class="op">(</span>template_parameters_of<span class="op">(</span>f<span class="op">))&gt;(</span>\tokens<span class="op">(</span>forward_parameter_list<span class="op">(</span>f<span class="op">)))</span>;</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>  <span class="co">// end namespace logged</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">})</span>;</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    make_logged<span class="op">(^^</span>fun<span class="op">)</span>;</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent hand-written code:</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co">// namespace logged {</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co">//     template &lt;typename T&gt;</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co">//     requires std::is_copy_constructible_v&lt;T&gt;</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co">//     void fun(const T&amp; value, const ::S&amp; __p0) {</span></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">//         logger(&quot;Call to &quot;, &quot;fun&quot;, &quot;(&quot;, value, __p0, &quot;)&quot;);</span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">//         return fun&lt;T&gt;(std::forward&lt;T&gt;(value), std::forward&lt;T&gt;(__p0));</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">//     }</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">// }</span></span></code></pre></div>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Introspection will add declarations here.</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> logged <span class="op">{</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> Widget <span class="op">{}</span>;  <span class="co">// for exposition purposes</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">// Given a function func, create a function logged::func that logs arguments.</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> make_logged<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  namespace_inject<span class="op">(^^::</span>logged, <span class="op">^^{</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>prototype_of<span class="op">(</span>f<span class="op">)):]</span> <span class="op">{</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>      logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span> <span class="op">+</span> name_of<span class="op">(</span>f<span class="op">)</span> <span class="op">+</span> <span class="st">&quot;(&quot;</span>, \tokens<span class="op">(</span>parameter_list<span class="op">(</span>f<span class="op">))</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="op">[:</span>f<span class="op">:]&lt;</span>\tokens<span class="op">(</span>template_parameter_list<span class="op">(</span>f<span class="op">))&gt;(</span>\tokens<span class="op">(</span>forward_parameter_list<span class="op">(</span>f<span class="op">)))</span>;</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>  make_logged<span class="op">(^^</span>fun<span class="op">)</span>;</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent hand-written code:</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">// namespace logged {</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">//     template &lt;typename T&gt;</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">//     requires std::is_copy_constructible_v&lt;T&gt;</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="co">//     void fun(const T&amp; value, const ::Widget&amp; __p0) {</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="co">//         logger(&quot;Call to &quot;, &quot;fun&quot;, &quot;(&quot;, value, __p0, &quot;)&quot;);</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co">//         return fun&lt;T&gt;(std::forward&lt;T&gt;(value), std::forward&lt;T&gt;(__p0));</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="co">//     }</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="co">// }</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>We identify a few high-level metafunctions that facilitate such
-manipulation of template declarations. <code class="sourceCode cpp">prototype_of<span class="op">(</span>info f<span class="op">)</span></code>
-produces a reflection handle corresponding to the prototype of the
-function template reflected by <code class="sourceCode cpp">f</code>.
-The template parameters,
-<code class="sourceCode cpp"><span class="kw">requires</span></code>
-clause, function parameters, and return type are all part of the copied
-prototype. All non-dependent names are looked up; thus, even it
-namespace <code class="sourceCode cpp">logged</code> defines a type
-called <code class="sourceCode cpp">S</code>, the prototype uses the
-same <code class="sourceCode cpp">S</code> as the original declaration
-(which is why we used
-<code class="sourceCode cpp"><span class="op">::</span>S</code> in the
-comment representing equivalent code). Next, <code class="sourceCode cpp">parameter_list<span class="op">(</span>f<span class="op">)</span></code>
+<p>The code uses <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>namespace_inject</code>
+as defined in <span class="citation" data-cites="P3294R1">[<a href="https://wg21.link/p3294r1" role="doc-biblioref">P3294R1</a>]</span> to create a function definition
+from a token sequence in a given namespace, in this case
+<code class="sourceCode cpp">logged</code>. We identify a few high-level
+metafunctions that facilitate such manipulation of template
+declarations. First, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>prototype_of<span class="op">(</span>info f<span class="op">)</span></code>
+returns a reflection handle (i.e. an <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+value) corresponding to the prototype of the function template reflected
+by <code class="sourceCode cpp">f</code>. The template parameters,
+<code class="sourceCode cpp"><span class="kw">requires</span></code> and
+<code class="sourceCode cpp"><span class="kw">noexcept</span></code>
+clauses (if present), function parameters, and return type are all part
+of the returned prototype. Most importantly, the prototype can be
+modified and spliced back into code.</p>
+<p>Name lookup in <code class="sourceCode cpp">prototype_of</code> is
+handled in a hygienic manner that prevents unintended binding. All
+non-dependent names are looked up in the original declaration. Thus,
+even if namespace <code class="sourceCode cpp">logged</code> defines a
+type called <code class="sourceCode cpp">Widget</code>, the prototype
+returned by <code class="sourceCode cpp">prototype_of</code> uses the
+same <code class="sourceCode cpp">Widget</code> as the original
+declaration (which is why we used
+<code class="sourceCode cpp"><span class="op">::</span>Widget</code> in
+the comment representing equivalent code).</p>
+<p>The metafunction <code class="sourceCode cpp">template_parameter_list<span class="op">(</span>f<span class="op">)</span></code>
+returns, for the reflection <code class="sourceCode cpp">f</code> of a
+function template, a token sequence consisting of the comma-separated
+list of that function’s template parameters. That token sequence can be
+spliced in the instantiation of <code class="sourceCode cpp"><span class="op">[:</span>f<span class="op">:]</span></code>
+or a template with similar parameters. The names of the parameters are
+implementation-defined and bear no relationship with the parameter names
+in the declaration of <code class="sourceCode cpp">f</code>; this avoids
+possible ambiguities created by duplicate declarations and also
+sidesteps awkward issues such as handling unnamed parameters. User code
+may assume each parameter name is world-unique, which implies that <code class="sourceCode cpp">template_parameter_list<span class="op">(</span>f<span class="op">)</span></code>
+is meaningful only from within a declaration created with
+<code class="sourceCode cpp">prototype_of</code>.</p>
+<p>Next, <code class="sourceCode cpp">parameter_list<span class="op">(</span>f<span class="op">)</span></code>
 produces a comma-separated list of the parameters of
 <code class="sourceCode cpp">f</code>, with pack expansion suffix where
-applicable. Finally, <code class="sourceCode cpp">forward_parameter_list<span class="op">(</span>f<span class="op">)</span></code>
+applicable.</p>
+<p>Finally, <code class="sourceCode cpp">forward_parameter_list<span class="op">(</span>f<span class="op">)</span></code>
 creates the tokens of a call to the function reflected by
 <code class="sourceCode cpp">f</code> with the appropriate insertion of
 calls to
@@ -1765,6 +1796,10 @@ Reflection in Reflection for C++26. <a href="https://wg21.link/p3096r3"><div cla
 <div id="ref-P3157R1" class="csl-entry" role="doc-biblioentry">
 [P3157R1] Andrei Alexandrescu, Barry Revzin, Bryce Lelbach, Michael
 Garland. 2024-05-22. Generative Extensions for Reflection. <a href="https://wg21.link/p3157r1"><div class="csl-block">https://wg21.link/p3157r1</div></a>
+</div>
+<div id="ref-P3294R1" class="csl-entry" role="doc-biblioentry">
+[P3294R1] Barry Revzin, Andrei Alexandrescu, Daveed Vandevoorde.
+2024-07-16. Code Injection with Token Sequences. <a href="https://wg21.link/p3294r1"><div class="csl-block">https://wg21.link/p3294r1</div></a>
 </div>
 <div id="ref-P3294R2" class="csl-entry" role="doc-biblioentry">
 [P3294R2] Andrei Alexandrescu, Barry Revzin, and Daveed Vandevoorde.
