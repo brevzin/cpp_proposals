@@ -108,6 +108,7 @@ The principled way to reflect this fact in the type system is to use `u8string_v
 
 `char8_t` has nearly zero support in the standard library, which makes it _very_ inconvenient to use. Suppose, for example, that we are writing a function `member_of(info x, size_t i)` that returns `members_of(x)[i]`:
 
+::: std
 ```cpp
 consteval info member_of(info x, size_t i, source_location where = source_location::current())
 {
@@ -121,6 +122,7 @@ consteval info member_of(info x, size_t i, source_location where = source_locati
     return v[i];
 }
 ```
+:::
 
 Further suppose that we want to provide a more descriptive error string, e.g. `"152 is not a valid member index"`, where 152 is the value of `i`.
 
@@ -134,6 +136,7 @@ Consider, for instance, `std::meta::identifier_of(x)`. It can fail for two reaso
 
 We are changing these failures from hard errors (not a constant expression) to throwing `meta::exception`. A sketch implementation of `identifier_of`, then, would look like this:
 
+::: std
 ```cpp
 consteval string_view identifier_of(info x)
 {
@@ -152,6 +155,7 @@ consteval string_view identifier_of(info x)
     // convert id to the literal encoding and return it
 }
 ```
+:::
 
 For quality of implementation reasons, we want to include the identifier in the error description string we pass to the exception constructor, so that the subsequent error message will say `"the identifier 'риба' is not representable"` and not just `"identifier not representable"`.
 
@@ -167,6 +171,7 @@ This is possible, and will allow users to take advantage of present standard lib
 
 Consider this hypothetical user function:
 
+::: std
 ```cpp
 consteval auto user_fn(info x)
 {
@@ -182,6 +187,7 @@ consteval auto user_fn(info x)
     // ...
 }
 ```
+:::
 
 If the identifier of `y` is not representable in the literal encoding, this function will throw an exception that says that the identifier is not representable, instead of the correct one saying that the member is private.
 
@@ -197,6 +203,7 @@ We are proposing a single exception type. The runtime analogy is `std::system_er
 
 This in principle makes user code that wishes to inspect the failure reason and do different things depending on it less convenient to write. It would have to look like this
 
+::: std
 ```cpp
 catch( meta::exception const& x )
 {
@@ -211,9 +218,11 @@ catch( meta::exception const& x )
     // ...
 }
 ```
+:::
 
 instead of, hypothetically, like this
 
+::: std
 ```cpp
 catch( meta::identifier_exception const& x )
 {
@@ -225,6 +234,7 @@ catch( meta::members_exception const& x )
 }
 // ...
 ```
+:::
 
 (exception type names are illustrative.)
 

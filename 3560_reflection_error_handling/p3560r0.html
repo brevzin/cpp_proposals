@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-10" />
+  <meta name="dcterms.date" content="2025-01-11" />
   <title>Error Handling in Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-10</td>
+    <td>2025-01-11</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -776,6 +776,8 @@ has nearly zero support in the standard library, which makes it
 <em>very</em> inconvenient to use. Suppose, for example, that we are
 writing a function <code class="sourceCode cpp">member_of<span class="op">(</span>info x, <span class="dt">size_t</span> i<span class="op">)</span></code>
 that returns <code class="sourceCode cpp">members_of<span class="op">(</span>x<span class="op">)[</span>i<span class="op">]</span></code>:</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info member_of<span class="op">(</span>info x, <span class="dt">size_t</span> i, source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> v <span class="op">=</span> members_of<span class="op">(</span>x<span class="op">)</span>;</span>
@@ -787,6 +789,8 @@ that returns <code class="sourceCode cpp">members_of<span class="op">(</span>x<s
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> v<span class="op">[</span>i<span class="op">]</span>;</span>
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
 <p>Further suppose that we want to provide a more descriptive error
 string, e.g. <code class="sourceCode cpp"><span class="st">&quot;152 is not a valid member index&quot;</span></code>,
 where 152 is the value of <code class="sourceCode cpp">i</code>.</p>
@@ -817,6 +821,8 @@ expression) to throwing <code class="sourceCode cpp">meta<span class="op">::</sp
 sketch implementation of
 <code class="sourceCode cpp">identifier_of</code>, then, would look like
 this:</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> string_view identifier_of<span class="op">(</span>info x<span class="op">)</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> <span class="op">!</span>has_identifier<span class="op">(</span>x<span class="op">)</span> <span class="op">)</span></span>
@@ -833,6 +839,8 @@ this:</p>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">// convert id to the literal encoding and return it</span></span>
 <span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
 <p>For quality of implementation reasons, we want to include the
 identifier in the error description string we pass to the exception
 constructor, so that the subsequent error message will say <code class="sourceCode cpp"><span class="st">&quot;the identifier &#39;риба&#39; is not representable&quot;</span></code>
@@ -862,6 +870,8 @@ the exception. We don’t propose it here for two reasons. One, it allows
 writing code that isn’t quite correct, even though it would probably
 work on all tested platforms.</p>
 <p>Consider this hypothetical user function:</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> user_fn<span class="op">(</span>info x<span class="op">)</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
@@ -875,6 +885,8 @@ work on all tested platforms.</p>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
 <p>If the identifier of <code class="sourceCode cpp">y</code> is not
 representable in the literal encoding, this function will throw an
 exception that says that the identifier is not representable, instead of
@@ -898,6 +910,8 @@ as opposed to a hierarchy of exception types.</p>
 <p>This in principle makes user code that wishes to inspect the failure
 reason and do different things depending on it less convenient to write.
 It would have to look like this</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> x<span class="op">.</span>from<span class="op">()</span> <span class="op">==</span> <span class="op">^^</span>identifier_of <span class="op">)</span></span>
@@ -910,7 +924,11 @@ It would have to look like this</p>
 <span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
 <span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
 <p>instead of, hypothetically, like this</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>identifier_exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle errors originating from identifier_of</span></span>
@@ -920,6 +938,8 @@ It would have to look like this</p>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle errors originating from members_of</span></span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">// ...</span></span></code></pre></div>
+</blockquote>
+</div>
 <p>(exception type names are illustrative.)</p>
 <p>We don’t propose an exception hierarchy here. Designing a proper
 exception hierarchy is not something we can realistically do in the
