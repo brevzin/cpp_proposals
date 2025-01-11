@@ -3182,7 +3182,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
 
-  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). Diagnosable rules ([intro.compliance.general]) that apply to constructs at a program point `$P$` are considered in a context where side-effects ([intro.execution]) of non-dependent plainly constant-evaluated expressions within declarations reachable from `$P$` are complete.]{.addu}
+  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). Constructs at a program point `$P$` are analyzed in a context where every side-effect ([intro.execution]) of each non-dependent plainly constant-evaluated expression within a declaration `$D$` is complete if and only if `$D$` is reachable from `$P$`.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
