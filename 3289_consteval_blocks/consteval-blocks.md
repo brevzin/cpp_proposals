@@ -22,7 +22,7 @@ Since [@P3289R0], updated wording to make a consteval block distinct from a `sta
 
 # Introduction
 
-Several proposals that produce side effects as part of constant evaluation are in flight.  That includes [@P2996R7] (“Reflection for C++26”) and [@P2758R3] (“Emitting messages at compile time”). Such a capability, in turn, quickly gives rise to the desire to evaluate such constant expressions in declarative contexts.
+Several proposals that produce side effects as part of constant evaluation are in flight.  That includes [@P2996R9]{.title} and [@P2758R3]{.title}. Such a capability, in turn, quickly gives rise to the desire to evaluate such constant expressions in declarative contexts.
 
 Currently, this effect can be shoe-horned into `static_assert` declarations, but the result looks arcane. For example, P2996 contains the following code in an example:
 
@@ -108,7 +108,7 @@ template<typename... Ts> struct Tuple {
 ```
 :::
 
-In this example, there is just a single expression statement being evaluated.  However, we are anticipating reflection code where more complex statement sequences will be used (you can see eome examples in previous papers, e.g. [@P1717R0] [@P2237R0]).
+In this example, there is just a single expression statement being evaluated.  However, we are anticipating reflection code where more complex statement sequences will be used (you can see some examples in previous papers, e.g. [@P1717R0]{.title} [@P2237R0]{.title}).
 
 We did consider other syntax variations such as
 
@@ -120,7 +120,7 @@ but found those alternatives less general and not worth the slight improvement i
 
 # Implementation Status
 
-The Lock3 implementation of reflection facilities based on [@P1240R2] (and other papers) includes this feature.  The EDG front end is expected to add this feature shortly as part of its reflection extensions.
+Implemented in both EDG and Clang.
 
 # Wording
 
@@ -139,7 +139,7 @@ Change [basic.def]{.sref}/2:
 * [2.16]{.pnum} [...]
 :::
 
-Extend the wording for plainly constant-evaluated to allow a `consteval` block:
+Extend the wording for plainly constant-evaluated to allow a `consteval` block [this is adjusting wording that is added by [@P2996R9]]{.draftnote}:
 
 ::: std
 
@@ -195,7 +195,7 @@ Change [dcl.pre]{.sref}:
 ```
 :::
 
-And then after [dcl.pre]{.sref}/13 [This wording relies on terms introduced in [@P2996R7]]{.ednote}:
+And then after [dcl.pre]{.sref}/13:
 
 ::: std
 [13]{.pnum} *Recommended practice*: When a `$static_assert-declaration$` fails, [...]
@@ -258,3 +258,23 @@ Add to the table in [cpp.predefined]{.sref}:
   __cpp_constinit       201907L
 ```
 :::
+
+---
+references:
+  - id: P2996R9
+    citation-label: P2996R9
+    title: "Reflection for C++26"
+    author:
+      - family: Wyatt Childers
+      - family: Peter Dimov
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Andrew Sutton
+      - family: Faisal Vali
+      - family: Daveed Vandevoorde
+    issued:
+      - year: 2025
+        month: 1
+        day: 12
+    URL: https://wg21.link/p2996r9
+---
