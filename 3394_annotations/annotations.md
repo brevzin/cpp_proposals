@@ -3,7 +3,7 @@ title: Annotations for Reflection
 tag: reflection
 document: P3394R1
 date: today
-audience: EWG, LEWG
+audience: CWG, LEWG
 hackmd: true
 author:
     - name: Wyatt Childers
@@ -22,7 +22,7 @@ Since [@P3394R0], added wording.
 
 # Introduction
 
-Ever since writing [@P1240R0] ("Scalable Reflection in C++"), but more so since [@P2996R0] ("Reflection for C++26"), we have been requested to add a capability to annotate declarations in a way that reflection can observe. For example, Jeremy Ong presented compelling arguments in a post to the SG7 reflector: https://lists.isocpp.org/sg7/2023/10/0450.php. Corentin Jabot also noticed the need while P1240 was evolving and wrote [@P1887R0] ("Reflection on Attributes"), which proposes syntax not entirely unlike what we present here.
+Ever since writing [@P1240R0]{.title}, but more so since [@P2996R0]{.title}, we have been requested to add a capability to annotate declarations in a way that reflection can observe. For example, Jeremy Ong presented compelling arguments in a post to the [SG7 reflector](https://lists.isocpp.org/sg7/2023/10/0450.php). Corentin Jabot also noticed the need while P1240 was evolving and wrote [@P1887R0]{.title}, which proposes syntax not entirely unlike what we present here.
 
 
 In early versions of P2996 (and P1240 before that), a workaround was to encode properties in the template arguments of alias template specializations:
@@ -37,7 +37,7 @@ struct C {
 };
 ```
 
-It was expected that something like `type_of(^C::a)` would produce a reflection of `Noted<int, 1>` and that can be taken apart with metafunctions like `template_arguments_of` — which both preserves the type as desired (`a` is still an `int`) and allows reflection queries to get at the desired annotations (the `1`, `some`, and `thing` in this case).
+It was expected that something like `type_of(^^C::a)` would produce a reflection of `Noted<int, 1>` and that can be taken apart with metafunctions like `template_arguments_of` — which both preserves the type as desired (`a` is still an `int`) and allows reflection queries to get at the desired annotations (the `1`, `some`, and `thing` in this case).
 
 There are problems with this approach, unfortunately:
 
@@ -352,7 +352,7 @@ What could reflecting on `f` return? Because attributes are ignorable, an implem
 
 But it turns out to be quite helpful to preserve the actual values without requiring libraries to do additional parsing work. Thus, we need to distinguish annotations (whose values we need to preserve and return back to the user) from attributes (whose values we do not). Thus, we looked for a sigil introducing a general expression.
 
-Originally, the plus sign (`+`) was considered (as in P1887), but it is not ideal because a prefix `+` has a meaning for some expressions and not for others, and that would not carry over to the attribute notation.  A prefix `=` was found to be reasonably meaningful in the sense that the annotation "equals" the value on the right, while also being syntactically unambiguous. We also discussed using the reflection operator (`^`) as an introducer (which is attractive because the annotation ultimately comes back to the programmer as a reflection value), but that raised questions about an annotation itself being a reflection value (which is not entirely improbable).
+Originally, the plus sign (`+`) was considered (as in P1887), but it is not ideal because a prefix `+` has a meaning for some expressions and not for others, and that would not carry over to the attribute notation.  A prefix `=` was found to be reasonably meaningful in the sense that the annotation "equals" the value on the right, while also being syntactically unambiguous. We also discussed using the reflection operator (`^^`) as an introducer (which is attractive because the annotation ultimately comes back to the programmer as a reflection value), but that raised questions about an annotation itself being a reflection value (which is not entirely improbable).
 
 As such, this paper proposes annotations as distinct from attributes, introduced with a prefix `=`.
 
@@ -404,7 +404,7 @@ Annotations can be repeated:
 
 ```cpp
 [[=42, =42]] int x;
-static_assert(annotations_of(^x).size() == 2);
+static_assert(annotations_of(^^x).size() == 2);
 ```
 
 Annotations spread over multiple declarations of the same entity accumulate:
@@ -412,7 +412,7 @@ Annotations spread over multiple declarations of the same entity accumulate:
 ```cpp
 [[=42]] int f();
 [[=24]] int f();
-static_assert(annotations_of(^f).size() == 2);
+static_assert(annotations_of(^^f).size() == 2);
 ```
 
 Annotations follow appertainance rules like attributes, but shall not appear in the *attribute-specifier-seq* of a *type-specifier-seq* or an *empty-declaration*:
@@ -461,7 +461,7 @@ struct /* X only for some T */ Sometimes;
 
 Or to really generalize annotations. For instance, in the clap example earlier, our example showed usage with `clap::Short` and `clap::Long`. What if somebody wants to compose these into their own annotation that attaches both `clap::Short` and `clap::Long` to a declaration?
 
-More broadly, there is clear value in having an annotation be able to be invoked by the declaration itself. Doing so allows the two uses above easily enough. An interesting question, though, is whether this callback (syntax to be determined) is invoked at the _beginning_ of the declaration or at the _end_ of the declaration. For annotations on classes, this would be before the class is complete or after the class is complete. Before completeness allows the class to observe the annotation during instantiation. After completeness allows the annotation callback to observe properties of the type. In some sense, Herb Sutter's [@P0707R4] ("Metaclass functions: Generative C++") was adding annotations on classes, invoked on class completeness, that allow mutation of the class.
+More broadly, there is clear value in having an annotation be able to be invoked by the declaration itself. Doing so allows the two uses above easily enough. An interesting question, though, is whether this callback (syntax to be determined) is invoked at the _beginning_ of the declaration or at the _end_ of the declaration. For annotations on classes, this would be before the class is complete or after the class is complete. Before completeness allows the class to observe the annotation during instantiation. After completeness allows the annotation callback to observe properties of the type. In some sense, Herb Sutter's [@P0707R4]{.title} was adding annotations on classes, invoked on class completeness, that allow mutation of the class.
 
 One concrete, simpler example. We can, with this proposal as-is, create a `Debug` annotation that a user can add to their type and a specialization of `std::formatter` for all types that have a `Debug` annotation [as follows](https://godbolt.org/z/bcYE7nY4s):
 
@@ -488,13 +488,13 @@ int main() {
 }
 ```
 
-This *works*, but it's not really the ideal way of doing it. This could still run into potential issues with ambiguous specialization of `std::formatter`. Better would be to allow the `Debug` annotation to, at the point of completion of `Point`, inject an explicit specialization of `std::formatter`. This would rely both on the ability for the annotation to be called back and language support for such injection (see [@P3294R1] ("Code Injection with Token Sequences")).
+This *works*, but it's not really the ideal way of doing it. This could still run into potential issues with ambiguous specialization of `std::formatter`. Better would be to allow the `Debug` annotation to, at the point of completion of `Point`, inject an explicit specialization of `std::formatter`. This would rely both on the ability for the annotation to be called back and language support for such injection (see [@P3294R2]{.title}).
 
 There are still open questions as to how to handle such callbacks. Does an annotation that gets called back merit different syntax from an annotation that doesn't? Can it mutate the entity that it is attached to? How do we name the potential callbacks? Should the callback be registered implicitly (e.g., if an annotation of type `X` with member `X::annotate_declaration(...)` appears, that member is automatically a callback invoked when an entity is first declared with an annotation of type `X`) or explicitly (e.g., calling `annotated_declaration_callback(^^X, X_handler)` would cause `X_handler(...)` to be invoked when an entity is first declared with an annotation of type `X`).
 
 # Wording
 
-The wording is relative to [@P2996R7].
+The wording is relative to [@P2996R9].
 
 ## Language
 
@@ -721,14 +721,14 @@ struct C {
     [[=Option{false}]] int b;
 };
 
-static_assert(annotations_of(^f).size() == 1);
-static_assert(annotations_of(^g).size() == 3);
-static_assert([:annotations_of(^g)[0]:] == 2);
-static_assert([:annotations_of(^g)[1]:] == 3);
-static_assert([:annotations_of(^g)[2]:] == 4);
+static_assert(annotations_of(^^f).size() == 1);
+static_assert(annotations_of(^^g).size() == 3);
+static_assert([:annotations_of(^^g)[0]:] == 2);
+static_assert([:annotations_of(^^g)[1]:] == 3);
+static_assert([:annotations_of(^^g)[2]:] == 4);
 
-static_assert(extract<Option>(annotations_of(^C::a)[0]).value);
-static_assert(!extract<Option>(annotations_of(^C::b)[0]).value);
+static_assert(extract<Option>(annotations_of(^^C::a)[0]).value);
+static_assert(!extract<Option>(annotations_of(^^C::b)[0]).value);
 ```
 :::
 
@@ -747,32 +747,32 @@ template<class T>
   consteval optional<T> annotation_of(info item);
 ```
 
-[#]{.pnum} Let `V` be `annotations_of(item, ^T)`.
+[#]{.pnum} Let `$V$` be `annotations_of(item, ^^T)`.
 
-[#]{.pnum} *Constant When*: `V` is a core constant expression and either:
+[#]{.pnum} *Constant When*: `$V$` is a core constant expression and either:
 
-* [#.#]{.pnum} `V.size() <= 1`, or
-* [#.#]{.pnum} all the values of the reflections in `V` compare equal.
+* [#.#]{.pnum} `$V$.size() <= 1`, or
+* [#.#]{.pnum} all the values of the reflections in `$V$` compare equal.
 
-[#]{.pnum} *Returns*: If `V.empty()`, then `std::nullopt`. Otherwise, `extract<T>(V[0])`.
+[#]{.pnum} *Returns*: If `$V$.empty()`, then `std::nullopt`. Otherwise, `extract<T>($V$[0])`.
 
 ```cpp
 template<class T>
   consteval bool has_annotation(info item);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `return !annotations_of(item, ^T).empty();`
+[#]{.pnum} *Effects*: Equivalent to `return !annotations_of(item, ^^T).empty();`
 
 ```cpp
 template<class T>
   consteval bool has_annotation(info item, T const& value);
 ```
 
-[#]{.pnum} Let `V` be `annotations_of(item, ^T)`.
+[#]{.pnum} Let `$V$` be `annotations_of(item, ^^T)`.
 
-[#]{.pnum} *Constant When*: `V` is a core constant expression.
+[#]{.pnum} *Constant When*: `$V$` is a core constant expression.
 
-[#]{.pnum} *Returns*: `true` if there exists a reflection `r` in `V` such that `value_of(r) == std::meta::reflect_value(value)`. Otherwise, `false` [This checks for template-argument-equivalence, it does not invoke either a built-in or user-provided `operator==`]{.note}.
+[#]{.pnum} *Returns*: `true` if there exists a reflection `r` in `$V$` such that `value_of(r) == std::meta::reflect_value(value)`. Otherwise, `false` [This checks for template-argument-equivalence, it does not invoke either a built-in or user-provided `operator==`]{.note}.
 
 ::: example
 ```cpp
@@ -784,19 +784,39 @@ struct C {
     int z;
 };
 
-static_assert(annotation_of<Option>(^C::x) == 9);
-static_assert(annotation_of<Option>(^C::y) == 17);
-static_assert(!annotation_of<Option>(^C::z));
+static_assert(annotation_of<Option>(^^C::x)->value == 9);
+static_assert(annotation_of<Option>(^^C::y)->value == 17);
+static_assert(!annotation_of<Option>(^^C::z));
 
-static_assert(has_annotation<Option>(^C::x));
-static_assert(has_annotation<Option>(^C::y));
-static_assert(!has_annotation<Option>(^C::z));
+static_assert(has_annotation<Option>(^^C::x));
+static_assert(has_annotation<Option>(^^C::y));
+static_assert(!has_annotation<Option>(^^C::z));
 
-static_assert(has_annotation(^C::x, Option{9}));
-static_assert(!has_annotation(^C::y, Option{9}));
+static_assert(has_annotation(^^C::x, Option{9}));
+static_assert(!has_annotation(^^C::y, Option{9}));
 ```
 :::
 
 
 :::
 :::
+
+---
+references:
+  - id: P2996R9
+    citation-label: P2996R9
+    title: "Reflection for C++26"
+    author:
+      - family: Wyatt Childers
+      - family: Peter Dimov
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Andrew Sutton
+      - family: Faisal Vali
+      - family: Daveed Vandevoorde
+    issued:
+      - year: 2025
+        month: 1
+        day: 12
+    URL: https://wg21.link/p2996r9
+---
