@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-11" />
+  <meta name="dcterms.date" content="2025-01-12" />
   <title>do expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ expressions</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-11</td>
+    <td>2025-01-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -644,12 +644,13 @@ expressions appear<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P2806R2">[<a href="https://wg21.link/p2806r2" role="doc-biblioref">P2806R2</a>]</span>, wording and referencing a
-longer discussion on divergence in <span class="citation" data-cites="P3549R0">[<a href="https://wg21.link/p3549r0" role="doc-biblioref">P3549R0</a>]</span>.</p>
-<p>Since <span class="citation" data-cites="P2806R1">[<a href="https://wg21.link/p2806r1" role="doc-biblioref">P2806R1</a>]</span>, switched syntax from <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code>
+<p>Since <span class="citation" data-cites="P2806R2"><a href="https://wg21.link/p2806r2" role="doc-biblioref">[P2806R2]</a></span>, wording and referencing a
+longer discussion on divergence in <span class="title"><span class="citation" data-cites="P3549R0"><a href="https://wg21.link/p3549r0" role="doc-biblioref">[P3549R0]
+(Diverging Expressions)</a></span></span>.</p>
+<p>Since <span class="citation" data-cites="P2806R1"><a href="https://wg21.link/p2806r1" role="doc-biblioref">[P2806R1]</a></span>, switched syntax from <code class="sourceCode cpp"><span class="cf">do</span> <span class="cf">return</span></code>
 to <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 to avoid ambiguity. Added section on <a href="#lifetime">lifetime</a>.</p>
-<p>Since <span class="citation" data-cites="P2806R0">[<a href="https://wg21.link/p2806r0" role="doc-biblioref">P2806R0</a>]</span>, some more discussion about
+<p>Since <span class="citation" data-cites="P2806R0"><a href="https://wg21.link/p2806r0" role="doc-biblioref">[P2806R0]</a></span>, some more discussion about
 implicit last value vs explicit return, reflection, and a grammar fix to
 the still-incomplete wording.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
@@ -685,9 +686,10 @@ people actually use
 <code class="sourceCode cpp">std<span class="op">::</span>invoke</code>
 in this context, specifically to make it clearer that this lambda is,
 indeed, intended to be immediately invoked.</p>
-<p>This problem surfaces especially brightly in the context of pattern
-matching <span class="citation" data-cites="P1371R3">[<a href="https://wg21.link/p1371r3" role="doc-biblioref">P1371R3</a>]</span>, where the current design is
-built upon a sequence of:</p>
+<p>This problem surfaces especially brightly in the context of <span class="title"><span class="citation" data-cites="P2688R4"><a href="https://wg21.link/p1771r1" role="doc-biblioref">[P2688R4] (Pattern
+Matching: <code class="sourceCode cpp">match</code>
+Expression)</a></span></span>, where the current design is built upon a
+sequence of:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><em>pattern</em> =&gt; <em>expression</em>;</span></code></pre></div>
@@ -842,12 +844,12 @@ if this is incompatible with the type of the
 expression, the expression is ill-formed. This is the one key difference
 with functions: this case is not undefined behavior. This will be
 discussed in more detail later.</p>
-<p>This makes the pattern matching cases <span class="citation" data-cites="P2688R0">[<a href="https://wg21.link/p2688r0" role="doc-biblioref">P2688R0</a>]</span> work pretty naturally:</p>
+<p>This makes the pattern matching cases <span class="citation" data-cites="P2688R4"><a href="https://wg21.link/p1771r1" role="doc-biblioref">[P2688R4]</a></span> work pretty naturally:</p>
 <table>
 <thead>
 <tr class="header">
 <th><div style="text-align:center">
-<strong>P2688R0</strong>
+<strong>P2688R4</strong>
 </div></th>
 <th><div style="text-align:center">
 <strong>Proposed</strong>
@@ -901,7 +903,7 @@ expression just in this one spot.</p>
 <thead>
 <tr class="header">
 <th><div style="text-align:center">
-<strong>P2688R0</strong>
+<strong>P2688R4</strong>
 </div></th>
 <th><div style="text-align:center">
 <strong>Proposed</strong>
@@ -1313,8 +1315,9 @@ can be considering an escaping control flow in exactly the same way that
 <code class="sourceCode cpp"><span class="cf">throw</span></code>, etc.,
 are already.</p>
 <p>Note that this violates the so-called Second Ignorability Rule
-suggested in <span class="citation" data-cites="P2552R2">[<a href="https://wg21.link/p2552r2" role="doc-biblioref">P2552R2</a>]</span>, which is a great reason to
-ignore that rule.</p>
+suggested in <span class="title"><span class="citation" data-cites="P2552R2"><a href="https://wg21.link/p2552r2" role="doc-biblioref">[P2552R2] (On the ignorability of standard
+attributes)</a></span></span>, which is a great reason to ignore that
+rule.</p>
 <h3 data-number="3.5.2" id="always-escaping-expressions"><span class="header-section-number">3.5.2</span> Always-escaping expressions<a href="#always-escaping-expressions" class="self-link"></a></h3>
 <p>Consider:</p>
 <div class="std">
@@ -1358,7 +1361,8 @@ conditional operator,
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions, and arbitrary user-defined libraries just fall out.</p>
 <p>See reflector discussion <a href="https://lists.isocpp.org/ext/2023/05/21202.php">here</a> and more
-thorough discussion in <span class="citation" data-cites="P3549R0">[<a href="https://wg21.link/p3549r0" role="doc-biblioref">P3549R0</a>]</span>.</p>
+thorough discussion in <span class="title"><span class="citation" data-cites="P3549R0"><a href="https://wg21.link/p3549r0" role="doc-biblioref">[P3549R0] (Diverging
+Expressions)</a></span></span>.</p>
 <h3 data-number="3.5.3" id="goto"><span class="header-section-number">3.5.3</span>
 <code class="sourceCode cpp"><span class="cf">goto</span></code><a href="#goto" class="self-link"></a></h3>
 <p>Using
@@ -1411,6 +1415,8 @@ this case, we are referring to a label that is within
 <code class="sourceCode cpp">v</code>’s scope. We’re not jumping to it
 directly, but the ability to jump to it indirectly is still
 problematic):</p>
+<div class="std">
+<blockquote>
 <div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> label <span class="op">{</span></span>
@@ -1438,6 +1444,8 @@ problematic):</p>
 <span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>    label l;</span>
 <span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
 <h3 data-number="3.5.4" id="should-falling-off-the-end-be-undefined-behavior"><span class="header-section-number">3.5.4</span> Should falling off the end be
 undefined behavior?<a href="#should-falling-off-the-end-be-undefined-behavior" class="self-link"></a></h3>
 <p>Consider:</p>
@@ -1562,7 +1570,8 @@ innermost
 non-<code class="sourceCode cpp"><span class="cf">do</span></code>-expression
 scope - is the above valid code that does not lead to any dangling
 reference.</p>
-<p>Note that the above example is specifically mentioned in <span class="citation" data-cites="P2561R2">[<a href="https://wg21.link/p2561r2" role="doc-biblioref">P2561R2</a>]</span>’s section on lifetimes, where
+<p>Note that the above example is specifically mentioned in <span class="title"><span class="citation" data-cites="P2561R2"><a href="https://wg21.link/p2561r2" role="doc-biblioref">[P2561R2] (A
+control flow operator)</a></span></span>’s section on lifetimes, where
 it is quite valuable that the equivalent sugared version does not
 dangle:</p>
 <div class="std">
@@ -1839,7 +1848,8 @@ implicit nature of the yield.</li>
 <code class="sourceCode cpp"><span class="cf">if</span></code>s into
 expressions in any meaningful way. It is fairly straightforward to
 answer both questions for our proposed form.</p>
-<p>Let’s also take the example motivating case from <span class="citation" data-cites="P2561R2">[<a href="https://wg21.link/p2561r2" role="doc-biblioref">P2561R2</a>]</span> and compare implicit last
+<p>Let’s also take the example motivating case from <span class="title"><span class="citation" data-cites="P2561R2"><a href="https://wg21.link/p2561r2" role="doc-biblioref">[P2561R2] (A
+control flow operator)</a></span></span> and compare implicit last
 expression to explicit return:</p>
 <table>
 <thead>
@@ -1963,7 +1973,8 @@ use-case for this facility. Because the language does not have any kind
 of block expression today, adding support for one would increase the
 amount of ways that code injection could work.</p>
 <p>One example might be, again, the control flow operator proposal in
-<span class="citation" data-cites="P2561R2">[<a href="https://wg21.link/p2561r2" role="doc-biblioref">P2561R2</a>]</span>. If reflection allows me to
+<span class="title"><span class="citation" data-cites="P2561R2"><a href="https://wg21.link/p2561r2" role="doc-biblioref">[P2561R2] (A
+control flow operator)</a></span></span>. If reflection allows me to
 write a hygienic macro that does code injection, perhaps we could write
 a library such that <code class="sourceCode cpp">try_<span class="op">(</span>E<span class="op">)</span></code>
 would inject an expression that would evaluate in the way that that
@@ -2157,7 +2168,7 @@ statement, and the last
 <code class="sourceCode cpp"><em>do-expression</em></code> is neither a
 diverging statement nor a
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statement, the program is ill-formed. <span class="draftnote" style="color: #01796F">[ Drafting note: See <span class="citation" data-cites="P3549R0">[<a href="https://wg21.link/p3549r0" role="doc-biblioref">P3549R0</a>]</span> for more details. ]</span>
+statement, the program is ill-formed. <span class="draftnote" style="color: #01796F">[ Drafting note: See <span class="citation" data-cites="P3549R0"><a href="https://wg21.link/p3549r0" role="doc-biblioref">[P3549R0]</a></span> for more details. ]</span>
 <span class="note"><span>[ <em>Note 2:</em> </span>Flowing off the end
 of a <code class="sourceCode cpp"><em>do-expression</em></code> whose
 type is not
@@ -2369,11 +2380,6 @@ expression.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
-<div id="ref-P1371R3" class="csl-entry" role="doc-biblioentry">
-[P1371R3] Michael Park, Bruno Cardoso Lopes, Sergei Murzin, David
-Sankel, Dan Sarginson, Bjarne Stroustrup. 2020-09-15. Pattern Matching.
-<a href="https://wg21.link/p1371r3"><div class="csl-block">https://wg21.link/p1371r3</div></a>
-</div>
 <div id="ref-P2552R2" class="csl-entry" role="doc-biblioentry">
 [P2552R2] Timur Doumler. 2023-05-19. On the ignorability of standard
 attributes. <a href="https://wg21.link/p2552r2"><div class="csl-block">https://wg21.link/p2552r2</div></a>
@@ -2381,9 +2387,9 @@ attributes. <a href="https://wg21.link/p2552r2"><div class="csl-block">https://w
 <div id="ref-P2561R2" class="csl-entry" role="doc-biblioentry">
 [P2561R2] Barry Revzin. 2023-05-18. A control flow operator. <a href="https://wg21.link/p2561r2"><div class="csl-block">https://wg21.link/p2561r2</div></a>
 </div>
-<div id="ref-P2688R0" class="csl-entry" role="doc-biblioentry">
-[P2688R0] Michael Park. 2022-10-16. Pattern Matching Discussion for Kona
-2022. <a href="https://wg21.link/p2688r0"><div class="csl-block">https://wg21.link/p2688r0</div></a>
+<div id="ref-P2688R4" class="csl-entry" role="doc-biblioentry">
+[P2688R4] Michael Park. 2024-12-17. Pattern Matching:
+<code class="sourceCode cpp">match</code> Expression. <a href="https://wg21.link/p1771r1"><div class="csl-block">https://wg21.link/p1771r1</div></a>
 </div>
 <div id="ref-P2806R0" class="csl-entry" role="doc-biblioentry">
 [P2806R0] Barry Revzin, Bruno Cardoso Lopez, Zach Laine, Michael Park.

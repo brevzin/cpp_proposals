@@ -17,7 +17,7 @@ toc: true
 
 # Revision History
 
-Since [@P2806R2], wording and referencing a longer discussion on divergence in [@P3549R0].
+Since [@P2806R2], wording and referencing a longer discussion on divergence in [@P3549R0]{.title}.
 
 Since [@P2806R1], switched syntax from `do return` to `do_return` to avoid ambiguity. Added section on [lifetime](#lifetime).
 
@@ -33,7 +33,7 @@ However, this approach leaves a lot to be desired. An immediately invoked lambda
 
 You also have to deal with the issue that the difference between initializing a variable used an immediately-invoked lambda and initializing a variable from a lambda only differs in the trailing `()`, arbitrarily deep into an expression, which are easy to forget. Some people actually use `std::invoke` in this context, specifically to make it clearer that this lambda is, indeed, intended to be immediately invoked.
 
-This problem surfaces especially brightly in the context of pattern matching [@P1371R3], where the current design is built upon a sequence of:
+This problem surfaces especially brightly in the context of [@P2688R4]{.title}, where the current design is built upon a sequence of:
 
 ::: std
 ```
@@ -115,10 +115,10 @@ If no `do_return` statement appears in the body of the `do` expression, or every
 
 Falling off the end of a `do` expression behaves like an implicit `do_return;` - if this is incompatible with the type of the `do` expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.
 
-This makes the pattern matching cases [@P2688R0] work pretty naturally:
+This makes the pattern matching cases [@P2688R4] work pretty naturally:
 
 ::: cmptable
-### P2688R0
+### P2688R4
 ```cpp
 x match {
     0 => { cout << "got zero"; };
@@ -142,7 +142,7 @@ Here, the whole `match` expression has type `void` because each arm has type `vo
 Yes, this requires an extra `do` for each arm, but it means we have a language that's much easier to explain because it's consistent - `do { cout << "don't care"; }` is a `void` expression in _any_ context. We don't have a `$compound-statement$` that happens to be a `void` expression just in this one spot.
 
 ::: cmptable
-### P2688R0
+### P2688R4
 ```cpp
 auto f(int i) {
     return i match -> std::pair<int, int> {
@@ -370,7 +370,7 @@ That is normative wording which we can rely on. The above `do` expression can on
 
 That is: invoking a function marked `[[noreturn]]` can be considering an escaping control flow in exactly the same way that `return`, `break`, `throw`, etc., are already.
 
-Note that this violates the so-called Second Ignorability Rule suggested in [@P2552R2], which is a great reason to ignore that rule.
+Note that this violates the so-called Second Ignorability Rule suggested in [@P2552R2]{.title}, which is a great reason to ignore that rule.
 
 ### Always-escaping expressions
 
@@ -390,7 +390,7 @@ It does lead to an interesting question: what is `decltype(do { return; })`? We 
 
 We could instead introduce a new type, `std::noreturn_t` (as an easier-to-type spelling of `⊥`), change `decltype(throw e)` to be `std::noreturn_t` (since nobody actually writes this - code search results are exclusively in compiler test suites) and treat the return types of `[[noreturn]]` functions as `std::noreturn_t`. Then the type system gains understanding of always-escaping expressions/statements and the rules for pattern matching, the conditional operator, `do` expressions, and arbitrary user-defined libraries just fall out.
 
-See reflector discussion [here](https://lists.isocpp.org/ext/2023/05/21202.php) and more thorough discussion in [@P3549R0].
+See reflector discussion [here](https://lists.isocpp.org/ext/2023/05/21202.php) and more thorough discussion in [@P3549R0]{.title}.
 
 ### `goto`
 
@@ -421,6 +421,7 @@ Breaking out of multiple loops is one of the uses of `goto` that has no real sub
 
 Also, while computed goto is not a standard C++ feature, it would be nice to disallow this example, courtesy of (of course) JF Bastien (in this case, we are referring to a label that is within `v`'s scope. We're not jumping to it directly, but the ability to jump to it indirectly is still problematic):
 
+::: std
 ```cpp
 #include <stdio.h>
 
@@ -450,6 +451,7 @@ int main() {
     label l;
 }
 ```
+:::
 
 ### Should falling off the end be undefined behavior?
 
@@ -527,7 +529,7 @@ With (1), in order to avoid dangling, the `do` expression must return a `T` (`t`
 
 Only with (3) - delaying destroying `result` until the closing of the innermost non-`do`-expression scope - is the above valid code that does not lead to any dangling reference.
 
-Note that the above example is specifically mentioned in [@P2561R2]'s section on lifetimes, where it is quite valuable that the equivalent sugared version does not dangle:
+Note that the above example is specifically mentioned in [@P2561R2]{.title}'s section on lifetimes, where it is quite valuable that the equivalent sugared version does not dangle:
 
 ::: std
 ```cpp
@@ -717,7 +719,7 @@ The reason we're not simply proposing to standardize the existing extension is t
 
 For (1), there is simply no obvious place to put the `$trailing-return-type$`. For (2), you can't turn `if`s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.
 
-Let's also take the example motivating case from [@P2561R2] and compare implicit last expression to explicit return:
+Let's also take the example motivating case from [@P2561R2]{.title} and compare implicit last expression to explicit return:
 
 ::: cmptable
 ### Implicit Last Value
@@ -795,7 +797,7 @@ A question that often comes up, for any language feature: if we had reflection a
 
 The answer is not only yes, but reflection is a good motivating use-case for this facility. Because the language does not have any kind of block expression today, adding support for one would increase the amount of ways that code injection could work.
 
-One example might be, again, the control flow operator proposal in [@P2561R2]. If reflection allows me to write a hygienic macro that does code injection, perhaps we could write a library such that `try_(E)` would inject an expression that would evaluate in the way that that paper proposes. But in order to do such a thing, we would need to be able to have a block expression to inject. This paper provides such a block expression.
+One example might be, again, the control flow operator proposal in [@P2561R2]{.title}. If reflection allows me to write a hygienic macro that does code injection, perhaps we could write a library such that `try_(E)` would inject an expression that would evaluate in the way that that paper proposes. But in order to do such a thing, we would need to be able to have a block expression to inject. This paper provides such a block expression.
 
 ## Where can `do` expressions appear
 
