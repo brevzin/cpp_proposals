@@ -32,10 +32,20 @@ Since [@P2996R8]:
 * specifically state that `define_aggregate` cannot be used for a class currently being defined
 * `members_of($closure-type$)` returns an unspecified sequence of reflections
 * introduced a strong ordering on evaluations during constant evaluation
-* core wording improvements
-  * classify the injection of a declaration as a side effect
-  * rework [lex.phases]: replace "semantically follows" notion; define when a plainly constant-evaluated expression must be evaluated in terms of side effects and reachability. Inline "semantically sequenced" into [expr.const] conditions that make an injected declaration ill-formed.
+* assertions of `$static_assert-declaration$`s are not plainly constant-evaluated
+* core wording changes
+  * classify the injection of a declaration as a side effect ([intro.execution]); remove the related IFNDR condition from [expr.const].
+  * rework [lex.phases]: refactor out the "semantically follows" relation introduced in R7: define when a plainly constant-evaluated expression is evaluated in terms of side effects and reachability. Inline the "semantically sequenced" relation into the [expr.const] conditions that render an injected declaration ill-formed.
   * improved [expr.const] examples demonstrating injected declaration rules
+* library wording changes
+  * minor wording improvements to: `type_of`, `alignment_of`, `bit_size_of`, `data_member_spec`, `define_aggregate`, type traits
+  * fix wording bug that prevents application of `value_of` to a reflection of a local variable in a `consteval` function
+  * clarify in note for `substitute` that instantiation may be triggered if needed to deduce a placeholder type
+  * clarify which members of closure types are _members-of-representable_
+  * fix wording bug in _members-of-reachable_ related to complete-class contexts
+  * remove idempotency from `define_aggregate`
+* fleshed out revision history for R8
+
 
 Since [@P2996R7]:
 
@@ -50,10 +60,26 @@ Since [@P2996R7]:
 * clarified that everything in `std::meta` is addressable
 * renaming `member_offsets` to `member_offset` and changing `member_offset` members to be `ptrdiff_t` instead of `size_t`, to allow for future use with negative offsets
 * renamed the type traits from all being named `type_meow` to a more bespoke naming scheme.
-* rewrote core wording for `$consteval-only type$` and for all splicers.
 * changing signature of `reflect_value` to take a `T const&` instead of a `T`.
 * added an [informal section](#restrictions-on-injected-declarations) explaining restrictions on injected declarations
 * removed `is_trivial_type`, since the corresponding type trait was deprecated.
+* core wording changes
+  * as per CWG feedback, merge phases 7 and 8 of [lex.phases]; get rid of "instantiation units". introduce "semantically sequenced" and "semantically follows" relations to specify ordering of plainly constant-evaluated expressions.
+  * give type aliases and namespace aliases status as entities (note: incurs many changes throughout wording); introduce the notion of an "underlying entity"
+  * audit for places where `$id-expression$` is specially handled for which `$splice-expression$` should be handled similarly
+  * move splice specifiers into [basic.splice]; re-word all splicers
+  * lift template splicers out from `$template-name$` (i.e., introduce a `$splice-specialization-specifier$` parallel to `$simple-template-id$`)
+  * add examples of the reflection operator to [basic.fundamental]
+  * clarify that overload resolution is performed on splices of functions
+  * clarify parsing and semantic rules for [expr.reflect]
+  * define special rules for consteval-only types in [expr.const]
+  * restrict _plainly constant-evaluated expression_s to only constexpr/constinit initializers and static-assert declarations
+  * introduce an IFNDR condition to [expr.const] when injected declarations are unsequenced or indeterminaly sequenced (note: removed in R9)
+  * NTTPs and pack-index-expressions cannot appear as operands of the reflection operator
+  * properly handle type splicers in CTAD and placeholder types
+  * add a new [dcl.type.splice] section for type splicers
+  * introduce notions of _data member description_ and _direct base class relationship_ to assist with specification of `data_member_spec` and `bases_of`
+  * flesh out handling of `$splice-template-argument$`s in [temp.arg.general]
 
 Since [@P2996R6]:
 
@@ -302,6 +328,7 @@ Read ahead to the next sections for a more systematic description of each elemen
 A number of our examples here show a few other language features that we hope to progress at the same time. This facility does not strictly rely on these features, and it is possible to do without them - but it would greatly help the usability experience if those could be adopted as well:
 
 * expansion statements [@P1306R2]
+* consteval block statements [@P3289R1]
 * non-transient constexpr allocation [@P0784R7] [@P1974R0] [@P2670R1]
 
 ## Back-And-Forth
@@ -325,7 +352,7 @@ using MyType = [:sizeof(int)<sizeof(long)? ^^long : ^^int:];  // Implicit "typen
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/4hK564scs), [Clang](https://godbolt.org/z/49859r676).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4hK564scs), [Clang](https://godbolt.org/z/71647q5Mo).
 
 
 ## Selecting Members
@@ -376,7 +403,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/7P3ax5K16), [Clang](https://godbolt.org/z/q158vdbaz).
+On Compiler Explorer: [EDG](https://godbolt.org/z/7P3ax5K16), [Clang](https://godbolt.org/z/8M5jP9d9E).
 
 This proposal specifies that namespace `std::meta` is associated with the reflection type (`std::meta::info`); the `std::meta::` qualification can therefore be omitted in the example above.
 
@@ -402,7 +429,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/hhd9vePW7), [Clang](https://godbolt.org/z/n6ssEWMc5).
+On Compiler Explorer: [EDG](https://godbolt.org/z/hhd9vePW7), [Clang](https://godbolt.org/z/1hP77jbsd).
 
 
 ## List of Types to List of Sizes
@@ -503,7 +530,7 @@ where Xd would be std::array<member_descriptor, 3>{@{@
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/ss9hfaMKT), [Clang](https://godbolt.org/z/Te4KEob6W).
+On Compiler Explorer: [EDG](https://godbolt.org/z/ss9hfaMKT), [Clang](https://godbolt.org/z/Wq13c7Gsv).
 
 ## Enum to String
 
@@ -662,8 +689,9 @@ On Compiler Explorer: [EDG](https://godbolt.org/z/jGfGv84oh), [Clang](https://go
 
 template<typename... Ts> struct Tuple {
   struct storage;
-
-  static_assert(is_type(define_aggregate(^^storage, {data_member_spec(^^Ts)...})));
+  consteval {
+    define_aggregate(^^storage, {data_member_spec(^^Ts)...})
+  }
   storage data;
 
   Tuple(): data{} {}
@@ -694,7 +722,7 @@ template<std::size_t I, typename... Ts>
 This example uses a "magic" `std::meta::define_aggregate` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
 `define_aggregate` takes a reflection for an incomplete class or union plus a vector of non-static data member descriptions, and completes the give class or union type to have the described members.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/76EojjcEe), [Clang](https://godbolt.org/z/WvPzE677q).
+On Compiler Explorer: [EDG](https://godbolt.org/z/76EojjcEe), [Clang](https://godbolt.org/z/cx8cr53q7).
 
 ## A Simple Variant Type
 
@@ -745,10 +773,12 @@ class Variant {
     union Storage;
     struct Empty { };
 
-    static_assert(is_type(define_aggregate(^^Storage, {
-        data_member_spec(^^Empty, {.name="empty"}),
-        data_member_spec(^^Ts)...
-    })));
+    consteval {
+      define_aggregate(^^Storage, {
+          data_member_spec(^^Empty, {.name="empty"}),
+          data_member_spec(^^Ts)...
+      });
+    }
 
     static consteval std::meta::info get_nth_field(std::size_t n) {
         return nonstatic_data_members_of(^^Storage)[n+1];
@@ -850,7 +880,7 @@ The question here is whether we should be should be able to directly initialize 
 
 Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R1].
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/W74qxqnhf), [Clang](https://godbolt.org/z/P8qW3qfda).
+On Compiler Explorer: [EDG](https://godbolt.org/z/W74qxqnhf), [Clang](https://godbolt.org/z/h13oh4s6e).
 
 ## Struct to Struct of Arrays
 
@@ -941,7 +971,7 @@ using struct_of_arrays = [: []{
 
 But now `struct_of_arrays<point, 30>` has no linkage, whereas we wanted it to have external linkage. Hence the structure in the example above where we are instead defining a nested class in a class template — so that we have a type with external linkage but don't run afoul of the "cone of instantiation" rule.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/jWrPGhn5s), [Clang](https://godbolt.org/z/7PcYrY7eq).
+On Compiler Explorer: [EDG](https://godbolt.org/z/jWrPGhn5s), [Clang](https://godbolt.org/z/a1sTxnW4o).
 
 
 ## Parsing Command-Line Options II
@@ -1009,8 +1039,9 @@ struct Clap {
     // check if cmdline contains --help, etc.
 
     struct Opts;
-    static_assert(is_type(spec_to_opts(^^Opts, ^^Spec)));
-    Opts opts;
+    consteval {
+      spec_to_opts(^^Opts, ^^Spec);
+    }
 
     template for (constexpr auto [sm, om] : std::views::zip(nonstatic_data_members_of(^^Spec),
                                                             nonstatic_data_members_of(^^Opts))) {
@@ -1056,7 +1087,7 @@ struct Clap {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/4aseo5eGq), [Clang](https://godbolt.org/z/8415c584f).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4aseo5eGq), [Clang](https://godbolt.org/z/fc38vccYG).
 
 ## A Universal Formatter
 
@@ -1214,7 +1245,7 @@ However, determining the instance of `struct_to_tuple_helper` that is needed is 
 Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, and a compile-time reference to that instance is obtained with `extract`.
 Thus `f` is a function reference to the correct specialization of `struct_to_tuple_helper`, which we can simply invoke.
 
-On Compiler Explorer (with a different implementation than either of the above): [EDG](https://godbolt.org/z/1Tffn4vzn), [Clang](https://godbolt.org/z/r4hKv5voK).
+On Compiler Explorer (with a different implementation than either of the above): [EDG](https://godbolt.org/z/1Tffn4vzn), [Clang](https://godbolt.org/z/9WzGM93dM).
 
 ## Implementing `tuple_cat`
 
@@ -1308,7 +1339,9 @@ consteval auto make_named_tuple(std::meta::info type, Tags... tags) {
 }
 
 struct R;
-static_assert(is_type(make_named_tuple(^^R, pair<int, "x">{}, pair<double, "y">{})));
+consteval {
+  make_named_tuple(^^R, pair<int, "x">{}, pair<double, "y">{});
+}
 
 static_assert(type_of(nonstatic_data_members_of(^^R)[0]) == ^^int);
 static_assert(type_of(nonstatic_data_members_of(^^R)[1]) == ^^double);
@@ -1319,7 +1352,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/64qTe4KG1), [Clang](https://godbolt.org/z/cTrfGhTfE).
+On Compiler Explorer: [EDG](https://godbolt.org/z/64qTe4KG1), [Clang](https://godbolt.org/z/76qM1xqvn).
 
 Alternatively, can side-step the question of non-type template parameters entirely by keeping everything in the value domain:
 
@@ -1335,7 +1368,9 @@ consteval auto make_named_tuple(std::meta::info type,
 }
 
 struct R;
-static_assert(is_type(make_named_tuple(^^R, {{^^int, "x"}, {^^double, "y"}})));
+consteval {
+  make_named_tuple(^^R, {{^^int, "x"}, {^^double, "y"}});
+}
 
 static_assert(type_of(nonstatic_data_members_of(^^R)[0]) == ^^int);
 static_assert(type_of(nonstatic_data_members_of(^^R)[1]) == ^^double);
@@ -1346,7 +1381,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG and Clang](https://godbolt.org/z/4Ev89z4vj) (the EDG and Clang implementations differ only in Clang having the updated `data_member_spec` API that returns an `info`, and the updated name `define_aggregate`).
+On Compiler Explorer: [EDG and Clang](https://godbolt.org/z/oY6ETbv9x) (the EDG and Clang implementations differ only in Clang having the updated `data_member_spec` API that returns an `info`, and the updated name `define_aggregate`).
 
 
 ## Compile-Time Ticket Counter
@@ -1385,7 +1420,7 @@ static_assert(z == 2);
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/5qfcT7vbT), [Clang](https://godbolt.org/z/fdzb1h1o9).
+On Compiler Explorer: [EDG](https://godbolt.org/z/5qfcT7vbT), [Clang](https://godbolt.org/z/h69Kb9T48).
 
 # Proposed Features
 
@@ -1495,8 +1530,12 @@ struct C {
 
 void (C::*p1)(int) = &C::f;  // error: ambiguous
 
-constexpr auto f1 = members_of(^^C, /* function templates named f */)[0];
-constexpr auto f2 = members_of(^^C, /* functions named f */)[0];
+constexpr auto f1 =
+    ((members_of(^^C) |
+      std::views::filter(std::meta::is_function_template)).front());
+constexpr auto f2 =
+    ((members_of(^^C) |
+      std::views::filter(std::meta::is_function)).front());
 void (C::*p2)(int) = &[:f1:]; // ok, refers to C::f<int> (#1)
 void (C::*p3)(int) = &[:f2:]; // ok, refers to C::f      (#2)
 ```
@@ -1884,7 +1923,9 @@ For example:
 struct S;
 
 void g() {
-  static_assert(is_type(define_aggregate(^^S, {})));
+  consteval {
+    define_aggregate(^^S, {});
+  }
   S s;  // S should be defined at this point.
 }
 ```
@@ -2845,11 +2886,13 @@ For example:
 ::: std
 ```c++
 union U;
-static_assert(is_type(define_aggregate(^^U, {
+consteval {
+  define_aggregate(^^U, {
   data_member_spec(^^int),
   data_member_spec(^^char),
   data_member_spec(^^double),
-})));
+});
+}
 
 // U is now defined to the equivalent of
 // union U {
@@ -3109,7 +3152,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
 
-  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). Diagnosable rules ([intro.compliance.general]) that apply to constructs at a program point `$P$` are considered in a context where side-effects ([intro.execution]) of non-dependent plainly constant-evaluated expressions within declarations reachable from `$P$` are complete.]{.addu}
+  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each non-dependent plainly constant-evaluated expression within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where every side effect of that expression is complete if and only if `$D$` is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
@@ -4211,20 +4254,19 @@ Modify (and clean up) the definition of _immediate-escalating_ in paragraph 18 t
 
 :::
 
-Add a new paragraphs prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/21), and renumber accordingly:
+Add a new paragraph prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/21), and renumber accordingly:
 
 ::: std
 ::: addu
 
-[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is not in a complete-class context ([class.mem.general]{.sref}) and is either
-
-* [21pre.#]{.pnum} the `$constant-expression$` of a `$static_assert-declaration$` ([dcl.pre]{.sref}), or
-* [21pre.#]{.pnum} an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable.
+[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not in a complete-class context ([class.mem.general]{.sref}).
 
 [The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below) and happens exactly once ([lex.phases]{.sref}). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
 
 :::
 :::
+
+[We also intend for the "evaluating expression" of a consteval block to be plainly constant-evaluated, but this construct is introduced by a separate follow-on paper ([@P3289R1]).]{.draftnote}
 
 Add a note following the definition of _manifestly constant-evaluated_ to clarify the relationship with _plainly constant-evaluated_ expressions:
 
@@ -6423,7 +6465,9 @@ A member of a closure type is members-of-representable if it is
 
 [Counterexamples of members-of-representable members include: injected class names, partial template specializations, friend declarations, static assertions, and non-static data members of closure types that correspond to entities captured by reference.]{.note}
 
-[#]{.pnum} A member `$M$` of a class or namespace is _members-of-reachable_ from a point `$P$` if there exists a declaration `$D$` of `$M$` that is reachable from `$P$`, and either `$M$` is not TU-local or `$D$` is declared in the translation unit containing `$P$`.
+[3]{.pnum} For any program point `$P$`, let `$P$@~_$S$_~@` be the point from which the declaration set for a hypothetical search from `$P$` would be determined ([class.member.lookup]). A member `$M$` of a class or namespace is _members-of-reachable_ from a point `$P$` if a declaration of `$M$` precedes `$P$@~_$S$_~@`.
+
+[All members of a class are therefore _members-of-reachable_ from any complete-class context of that class. Named entities that can be found by name lookup are generally _members-of-reachable_, but some unnamed entities are as well (e.g., unnamed classes).]{.note}
 
 [#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-reachable from some point in the evaluation context ([expr.const]).
 If `r` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
@@ -6650,7 +6694,7 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Returns*: `^^Z<Args...>`.
 
-[#]{.pnum} [`Z<Args..>` is not instantiated.]{.note}
+[#]{.pnum} [`Z<Args..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
 
 :::
 :::
@@ -6794,11 +6838,8 @@ consteval bool is_data_member_spec(info r);
 
 [#]{.pnum} *Constant When*: Letting `$C$` be the class represented by `class_type` and `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
+- [#.#]{.pnum} `$C$` is incomplete from every point in the evaluation context;
 - [#.#]{.pnum} `$C$` is not a class being defined;
-- [#.#]{.pnum} if `$C$` is a complete type from some point in the evaluation context, without introducing an additional point of instantiation, then
-  - the reachable definition of `$C$` is an injected declaration produced by an evaluation of `define_aggregate`,
-  - `$C$` has as many data members as `mdescrs` has elements, and
-  - each `$K$`^th^ reflection value in `mdescrs` describes a data member with all of the same properties as the `$K$`^th^ data member of `$C$`;
 - [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`;
 - [#.#]{.pnum} the type represented by `type_of(@$r$~$K$~@)` is a complete type for every `@$r$~$K$~@` in `mdescrs`; and
 - [#.#]{.pnum} for every pair 0 ≤ `$K$` < `$L$` < `mdescrs.size()`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then either `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true` or `u8identifier_of(@$r$~$K$~@) == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
