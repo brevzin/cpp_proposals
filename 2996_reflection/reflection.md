@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: D2996R9
+document: P2996R9
 date: today
 audience: CWG, LEWG, LWG
 author:
@@ -327,9 +327,9 @@ Read ahead to the next sections for a more systematic description of each elemen
 
 A number of our examples here show a few other language features that we hope to progress at the same time. This facility does not strictly rely on these features, and it is possible to do without them - but it would greatly help the usability experience if those could be adopted as well:
 
-* expansion statements [@P1306R2]
-* consteval block statements [@P3289R1]
-* non-transient constexpr allocation [@P0784R7] [@P1974R0] [@P2670R1]
+* [@P1306R2]{.title}
+* [@P3289R1]{.title}
+* non-transient constexpr allocation – [@P0784R7]{.title}, [@P1974R0]{.title}, [@P2670R1]{.title}, [@P3554R0]{.title}
 
 ## Back-And-Forth
 
@@ -7273,5 +7273,24 @@ and [version.syn]{.sref}:
 
 ---
 references:
-
+  - id: P3289R1
+    citation-label: P3289R1
+    title: "Consteval blocks"
+    author:
+      - family: Daveed Vandevoorde, Wyatt Childers, Barry Revzin, Dan Katz
+    issued:
+      year: 2024
+      month: 1
+      day: 12
+    URL: https://wg21.link/p3289r1
+  - id: P3554R0
+    citation-label: P3554R0
+    title: "Non-transient allocation with std::vector and std::basic_string"
+    author:
+      - family: Barry Revzin, Peter Dimov
+    issued:
+      year: 2024
+      month: 1
+      day: 5
+    URL: https://wg21.link/p3289r1
 ---
