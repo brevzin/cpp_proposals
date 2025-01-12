@@ -14,7 +14,7 @@ tag: reflection
 
 # Introduction
 
-In [@P2996R8], we had to answer the question of what the error handling mechanism should be. We considered four options:
+In [@P2996R8]{.title}, we had to answer the question of what the error handling mechanism should be. We considered four options:
 
 1. Returning an invalid reflection (similar to `NaN` for floating point)
 2. Returning a `std::expected<T, E>` for some reflection-specific error type `E`
@@ -27,7 +27,7 @@ Option (2) places a heavy syntactic burden on user code, because `std::expected`
 
 Option (3) doesn't provide any means for user code to recover from an error.
 
-At the time we had to make the decision, option (4) was essentially equivalent to (3), because throwing an exception wasn't a constant expression, so we settled on option (3). However, since the adoption of [@P3068R6], that has changed, and option (4) has become viable.
+At the time we had to make the decision, option (4) was essentially equivalent to (3), because throwing an exception wasn't a constant expression, so we settled on option (3). However, since the adoption of [@P3068R6]{.title}, that has changed, and option (4) has become viable.
 
 Using exceptions to signal errors doesn't suffer from the problem with option (1), because it's a strategy that can be used regardless of the return type. It also doesn't require syntactic changes to the user code.
 

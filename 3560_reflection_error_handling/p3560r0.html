@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-11" />
+  <meta name="dcterms.date" content="2025-01-12" />
   <title>Error Handling in Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-11</td>
+    <td>2025-01-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -633,7 +633,8 @@ Unrecoverable<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>In <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span>, we had to answer the question
+<p>In <span class="title"><span class="citation" data-cites="P2996R8"><a href="https://wg21.link/p2996r8" role="doc-biblioref">[P2996R8]
+(Reflection for C++26)</a></span></span>, we had to answer the question
 of what the error handling mechanism should be. We considered four
 options:</p>
 <ol type="1">
@@ -663,8 +664,9 @@ error.</p>
 <p>At the time we had to make the decision, option (4) was essentially
 equivalent to (3), because throwing an exception wasn’t a constant
 expression, so we settled on option (3). However, since the adoption of
-<span class="citation" data-cites="P3068R6">[<a href="https://wg21.link/p3068r6" role="doc-biblioref">P3068R6</a>]</span>, that has changed, and option
-(4) has become viable.</p>
+<span class="title"><span class="citation" data-cites="P3068R6"><a href="https://wg21.link/p3068r6" role="doc-biblioref">[P3068R6]
+(Allowing exception throwing in constant-evaluation)</a></span></span>,
+that has changed, and option (4) has become viable.</p>
 <p>Using exceptions to signal errors doesn’t suffer from the problem
 with option (1), because it’s a strategy that can be used regardless of
 the return type. It also doesn’t require syntactic changes to the user
@@ -761,7 +763,7 @@ to signal errors as follows:</p>
 <p>What encoding should we use for the string describing the error, and
 what character type?</p>
 <p>The encoding is left unspecified in the runtime case (<code class="sourceCode cpp">std<span class="op">::</span>exception<span class="op">::</span>what<span class="op">()</span></code>),
-which is generally regarded as a defect (<span class="citation" data-cites="LWG4087">[<a href="https://wg21.link/lwg4087" role="doc-biblioref">LWG4087</a>]</span>). Since we are designing a new
+which is generally regarded as a defect (<span class="citation" data-cites="LWG4087"><a href="https://wg21.link/lwg4087" role="doc-biblioref">[LWG4087]</a></span>). Since we are designing a new
 component, we should not repeat that mistake, and specify the encoding
 of <code class="sourceCode cpp">meta<span class="op">::</span>exception<span class="op">::</span>what<span class="op">()</span></code>.</p>
 <p>Since the string describing the error can be constructed from
@@ -806,7 +808,7 @@ sequence.</p>
 we could have used any of these.</p>
 <p>So maybe we should just use
 <code class="sourceCode cpp">string_view</code>? But that’s not
-consistent with the current state of <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span>. It did start out using
+consistent with the current state of <span class="citation" data-cites="P2996R8"><a href="https://wg21.link/p2996r8" role="doc-biblioref">[P2996R8]</a></span>. It did start out using
 <code class="sourceCode cpp">string_view</code> everywhere, and had to
 be rewritten to supply additional
 <code class="sourceCode cpp">u8string_view</code> interfaces, for good
@@ -855,12 +857,12 @@ error string that uses the literal encoding.</p>
 <p>That is why we believe that the currently proposed interface, taking
 and returning <code class="sourceCode cpp">u8string_view</code>, is the
 path to take in order to maintain consistency with the current design of
-<span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span>, which is the result of
+<span class="citation" data-cites="P2996R8"><a href="https://wg21.link/p2996r8" role="doc-biblioref">[P2996R8]</a></span>, which is the result of
 extensive discussions in SG16.</p>
 <p>(The fact that the standard library doesn’t provide adequate support
 for <code class="sourceCode cpp"><span class="dt">char8_t</span></code>
 strings is fixable by… adding that support.)</p>
-<p>What if, however, we follow <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span> even more closely and provide
+<p>What if, however, we follow <span class="citation" data-cites="P2996R8"><a href="https://wg21.link/p2996r8" role="doc-biblioref">[P2996R8]</a></span> even more closely and provide
 two constructors for <code class="sourceCode cpp">meta<span class="op">::</span>exception</code>,
 one taking <code class="sourceCode cpp">u8string_view</code> and one
 taking <code class="sourceCode cpp">string_view</code>?</p>
@@ -952,7 +954,7 @@ currently proposed <code class="sourceCode cpp">meta<span class="op">::</span>ex
 Code written against this proposal will continue to work unmodified, and
 new code would be able to use more specific catch clauses.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="recoverable-or-unrecoverable"><span class="header-section-number">3</span> Recoverable or Unrecoverable<a href="#recoverable-or-unrecoverable" class="self-link"></a></h1>
-<p>We went through the proposed API in <span class="citation" data-cites="P2996R8">[<a href="https://wg21.link/p2996r8" role="doc-biblioref">P2996R8</a>]</span> and we think that all of the
+<p>We went through the proposed API in <span class="citation" data-cites="P2996R8"><a href="https://wg21.link/p2996r8" role="doc-biblioref">[P2996R8]</a></span> and we think that all of the
 library functions should be recoverable — that is failing to meet the
 requirements of the function should be an exception rather than constant
 evaluation failure — with a single exception, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>define_aggregate</code>.</p>
