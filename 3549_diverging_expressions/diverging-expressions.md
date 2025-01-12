@@ -17,7 +17,7 @@ toc: true
 
 # Introduction
 
-One pattern that will occur with some regularity with pattern matching [@P2688R4] (and `do` expressions [@P2806R2]) is the desire to produce values for some patterns but not for all cases. Consider the following simplified example:
+One pattern that will occur with some regularity with pattern matching [@P2688R4]{.title} (and [@P2806R2]{.title}) is the desire to produce values for some patterns but not for all cases. Consider the following simplified example:
 
 <table>
 <tr><td>
