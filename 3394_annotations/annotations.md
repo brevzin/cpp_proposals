@@ -55,7 +55,7 @@ These examples are inspired from libraries in other programming languages that p
 
 ## Command-Line Argument Parsing
 
-Rust's [clap](https://docs.rs/clap/latest/clap/) library provides a way to add annotations to declarations to help drive how the parser is declared. We can now [do the same](https://godbolt.org/z/dM3erErrz):
+Rust's [clap](https://docs.rs/clap/latest/clap/) library provides a way to add annotations to declarations to help drive how the parser is declared. We can now [do the same](https://godbolt.org/z/YTWPfnn4n):
 
 ```cpp
 struct Args {
@@ -157,7 +157,7 @@ Overall, a fairly concise implementation for an extremely user-friendly approach
 
 ## Test Parametrization
 
-The pytest framework comes with a decorator to [parametrize](https://docs.pytest.org/en/7.1.x/how-to/parametrize.html) test functions. We can now do [the same](https://godbolt.org/z/vnT51585G):
+The pytest framework comes with a decorator to [parametrize](https://docs.pytest.org/en/7.1.x/how-to/parametrize.html) test functions. We can now do [the same](https://godbolt.org/z/7aK54f1sd):
 
 ```cpp
 namespace N {
@@ -263,7 +263,7 @@ void invoke_all() {
 
 ## Serialization
 
-Rust's [serde](https://serde.rs/) library is a framework for serialization and deserialization. It is easy enough with reflection to do member-wise serialization. But how do you opt into that? An annotation provides a cheap mechanism of [doing just that](https://godbolt.org/z/cjP8EdTj3) (built on top of [Boost.Json](https://www.boost.org/doc/libs/1_85_0/libs/json/doc/html/index.html)):
+Rust's [serde](https://serde.rs/) library is a framework for serialization and deserialization. It is easy enough with reflection to do member-wise serialization. But how do you opt into that? An annotation provides a cheap mechanism of [doing just that](https://godbolt.org/z/oT9cYz9sj) (built on top of [Boost.Json](https://www.boost.org/doc/libs/1_85_0/libs/json/doc/html/index.html)):
 
 ```cpp
 struct [[=serde::derive]] Point {
@@ -320,7 +320,7 @@ namespace boost::json {
 }
 ```
 
-You can imagine extending this out to support a wide variety of other serialization-specific attributes that shouldn't otherwise affect the C++ usage of the type. For instance, a [more complex approach](https://godbolt.org/z/jaKTe57Gf) additionally supports the `skip_serializing_if` annotation while first collecting all `serde` annotations into a struct.
+You can imagine extending this out to support a wide variety of other serialization-specific attributes that shouldn't otherwise affect the C++ usage of the type. For instance, a [more complex approach](https://godbolt.org/z/oT9cYz9sj) additionally supports the `skip_serializing_if` annotation while first collecting all `serde` annotations into a struct.
 
 # Proposal
 
@@ -490,19 +490,13 @@ int main() {
 
 This *works*, but it's not really the ideal way of doing it. This could still run into potential issues with ambiguous specialization of `std::formatter`. Better would be to allow the `Debug` annotation to, at the point of completion of `Point`, inject an explicit specialization of `std::formatter`. This would rely both on the ability for the annotation to be called back and language support for such injection (see [@P3294R2]{.title}).
 
-There are still open questions as to how to handle such callbacks. Does an annotation that gets called back merit different syntax from an annotation that doesn't? Can it mutate the entity that it is attached to? How do we name the potential callbacks? Should the callback be registered implicitly (e.g., if an annotation of type `X` with member `X::annotate_declaration(...)` appears, that member is automatically a callback invoked when an entity is first declared with an annotation of type `X`) or explicitly (e.g., calling `annotated_declaration_callback(^^X, X_handler)` would cause `X_handler(...)` to be invoked when an entity is first declared with an annotation of type `X`).
+There are still open questions as to how to handle such callbacks. Does an annotation that gets called back merit different syntax from an annotation that doesn't? Can it mutate the entity that it is attached to? How do we name the potential callbacks? Should the callback be registered implicitly (e.g., if C of type `X` with member `X::annotate_declaration(...)` appears, that member is automatically a callback invoked when an entity is first declared with an annotation of type `X`) or explicitly (e.g., calling `annotated_declaration_callback(^^X, X_handler)` would cause `X_handler(...)` to be invoked when an entity is first declared with an annotation of type `X`).
 
 # Wording
 
 The wording is relative to [@P2996R9].
 
 ## Language
-
-Change [basic.pre]{.sref} to consider annotations entities (similar to enumerators):
-
-::: std
-[3]{.pnum} An *entity* is a value, object, reference, structured binding, function, enumerator, [annotation,]{.addu} type, class member, bit-field, template, template specialization, namespace, or pack.
-:::
 
 Change [basic.fundamental]{.sref} to add "annotation" to the list of reflection kinds:
 
@@ -515,7 +509,7 @@ Change [basic.fundamental]{.sref} to add "annotation" to the list of reflection 
 * a structured binding,
 * a function,
 * an enumerator,
-* [an annotation,]{.addu}
+* [an annotation ([dcl.attr.grammar]),]{.addu}
 * a type,
 * a `$typedef-name$`,
 * a class member,
@@ -649,7 +643,7 @@ consteval info type_of(info r);
 
 [35]{.pnum} *Constant When*: `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, [annotation,]{.addu} non-static data member, bit-field, base class specifier, or description of a declaration of a non-static data member.
 
-[#]{.pnum} *Returns*: If `r` represents an entity, object, or value, then the type of what is represented by `r`. Otherwise, if `r` represents a base class specifier, then the type of the base class. Otherwise, the type of any data member declared with the properties represented by `r`.
+[#]{.pnum} *Returns*: If `r` represents an entity, object, or value, then a reflection of the type of what is represented by `r`. [Otherwise, if `r` represents an annotation, then the the type of the annotated value.]{.addu} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class. Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), a reflection of the type `$T$`.
 
 ```cpp
 consteval info value_of(info r);
@@ -704,7 +698,7 @@ And to the new section [meta.reflection.annotation]:
 consteval vector<info> annotations_of(info item);
 ```
 
-[#]{.pnum} *Constant When*: `item` represents a type, `$typedef-name$`, variable, function, or a specialization of a function template, class template, alias template, or variable template.
+[#]{.pnum} *Constant When*: `dealias(item)` represents a type, variable, function, or a namespace.
 
 [#]{.pnum} *Returns*: For each `$annotation$` in each `$attribute-specifier-seq$` appertaining to the entity represented by `item`, in lexical order, a reflection representing that annotation, whose value is the result of the corresponding `$constant-expression$`.
 
@@ -723,9 +717,9 @@ struct C {
 
 static_assert(annotations_of(^^f).size() == 1);
 static_assert(annotations_of(^^g).size() == 3);
-static_assert([:annotations_of(^^g)[0]:] == 2);
-static_assert([:annotations_of(^^g)[1]:] == 3);
-static_assert([:annotations_of(^^g)[2]:] == 4);
+static_assert(extract<int>(annotations_of(^^g)[0]) == 2);
+static_assert(extract<int>(annotations_of(^^g)[1]) == 3);
+static_assert(extract<int>(annotations_of(^^g)[2]) == 4);
 
 static_assert(extract<Option>(annotations_of(^^C::a)[0]).value);
 static_assert(!extract<Option>(annotations_of(^^C::b)[0]).value);
@@ -776,7 +770,10 @@ template<class T>
 
 ::: example
 ```cpp
-struct Option { int value; };
+struct Option {
+    int value;
+    bool operator==(const Option&) const = default;
+};
 
 struct C {
     [[=Option{9}]] int x;
@@ -784,8 +781,8 @@ struct C {
     int z;
 };
 
-static_assert(annotation_of<Option>(^^C::x)->value == 9);
-static_assert(annotation_of<Option>(^^C::y)->value == 17);
+static_assert(annotation_of<Option>(^^C::x) == Option{9});
+static_assert(annotation_of<Option>(^^C::y) == Option{17});
 static_assert(!annotation_of<Option>(^^C::z));
 
 static_assert(has_annotation<Option>(^^C::x));
