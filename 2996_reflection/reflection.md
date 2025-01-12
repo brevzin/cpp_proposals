@@ -34,9 +34,7 @@ Since [@P2996R8]:
 * introduced a strong ordering on evaluations during constant evaluation
 * assertions of `$static_assert-declaration$`s are not plainly constant-evaluated
 * core wording changes
-  * apply edits to [lex.phases] requested during Dec 2024 CWG review
   * classify the injection of a declaration as a side effect ([intro.execution]); remove the related IFNDR condition from [expr.const].
-  * clarify that variables with static storage duration are sometimes initialized during translation ([basic.static.start])
   * rework [lex.phases]: refactor out the "semantically follows" relation introduced in R7: define when a plainly constant-evaluated expression is evaluated in terms of side effects and reachability. Inline the "semantically sequenced" relation into the [expr.const] conditions that render an injected declaration ill-formed.
   * improved [expr.const] examples demonstrating injected declaration rules
 * library wording changes
@@ -67,49 +65,21 @@ Since [@P2996R7]:
 * removed `is_trivial_type`, since the corresponding type trait was deprecated.
 * core wording changes
   * as per CWG feedback, merge phases 7 and 8 of [lex.phases]; get rid of "instantiation units". introduce "semantically sequenced" and "semantically follows" relations to specify ordering of plainly constant-evaluated expressions.
-  * clarify in a note that `[:` and `:]` cannot be composed from digraphs
-  * add `^^` to the `$operator-or-punctuator$` table in [lex.operators]
   * give type aliases and namespace aliases status as entities (note: incurs many changes throughout wording); introduce the notion of an "underlying entity"
   * audit for places where `$id-expression$` is specially handled for which `$splice-expression$` should be handled similarly
-  * relocate definition of "overload set" from [basic.lookup] to [over.pre] (and elaborate on said definition)
-  * further define ODR conditions for `define_aggregate` in [basic.def.odr]
-  * more rigidly specify the verb "denote" to imply that it "looks through" to underlying entities
-  * adjust specification of ADL for `std::meta::info` in [basic.lookup.argdep]
-  * move splice specifiers into [basic.splice]; reword all splicers
-  * re-word _consteval-only type_
-  * lift template splicers out from `$template-name$` (i.e., introduce a `$splice-specialization-specifier$` parallel to `$simple-template-id$`) (note: incurs many changes throughout wording)
+  * move splice specifiers into [basic.splice]; re-word all splicers
+  * lift template splicers out from `$template-name$` (i.e., introduce a `$splice-specialization-specifier$` parallel to `$simple-template-id$`)
   * add examples of the reflection operator to [basic.fundamental]
-  * add a note discouraging representation of standardized constructs not explicitly said to be representable by the standard
-  * drive-by fix to clarify that an lvalue can denote a non-static data member
-  * operands of the reflection operator are unevaluated
-  * avoid the implicit `this` transform on reflection operands naming non-static data members
-  * handle splicers in nested name specifiers via a `$splice-scope-specifier$` non-terminal
-  * add examples to `$splice-expression$` in [expr.prim.splice]
-  * clarify that overload resolution is performed on splices of functions; explicitly exempt such splices from access rules
-  * restrict contexts in which splices of non-static data members can appear ([expr.prim.splice])
-  * add a note to [expr.reflect] clarifying that non-standard constructs can also appear as operands
-  * corrections to examples in [expr.reflect]
+  * clarify that overload resolution is performed on splices of functions
   * clarify parsing and semantic rules for [expr.reflect]
   * define special rules for consteval-only types in [expr.const]
   * restrict _plainly constant-evaluated expression_s to only constexpr/constinit initializers and static-assert declarations
-  * rename "injected point" to "synthesized point"
   * introduce an IFNDR condition to [expr.const] when injected declarations are unsequenced or indeterminaly sequenced (note: removed in R9)
-  * add examples of injected declarations to [expr.const]
   * NTTPs and pack-index-expressions cannot appear as operands of the reflection operator
   * properly handle type splicers in CTAD and placeholder types
   * add a new [dcl.type.splice] section for type splicers
-  * allow splices of non-static data members in default-arguments in [dcl.fct.default]
-  * remove `$splice-specifier$` from `$qualified-namespace-specifier$` grammar
-  * account for splicers in [module.global.frag]
-  * introduce the notion of a _data member description_ to [class.mem.general] to assist with specification of `data_member_spec`
-  * introduce the notion of "direct base class relationship" to [class.derived.general] to assist with specification of reflections of base classes
-  * clarify in [over.match.general] that certain contexts are exempt from access rules
-  * better account for function templates in [over.call.func]; extend to cover `$splice-expression$`S
-  * ensure in [temp.param] that splicers can be default type template arguments
+  * introduce notions of _data member description_ and _direct base class relationship_ to assist with specification of `data_member_spec` and `bases_of`
   * flesh out handling of `$splice-template-argument$`s in [temp.arg.general]
-  * define what it means for a `$splice-specifier$` to be in a type-only context in [temp.res.general]
-  * extend [temp.dep] to handle dependent type splicers, expression splicers, etc; introduce [temp.dep.splice] for dependent `$splice-specifier$`S
-  * add a note to [temp.spec.general] that enumerates all constructs subject to instantiation
 
 Since [@P2996R6]:
 
@@ -358,7 +328,7 @@ Read ahead to the next sections for a more systematic description of each elemen
 A number of our examples here show a few other language features that we hope to progress at the same time. This facility does not strictly rely on these features, and it is possible to do without them - but it would greatly help the usability experience if those could be adopted as well:
 
 * expansion statements [@P1306R2]
-* consteval block statements [@P3289R0]
+* consteval block statements [@P3289R1]
 * non-transient constexpr allocation [@P0784R7] [@P1974R0] [@P2670R1]
 
 ## Back-And-Forth
@@ -3182,7 +3152,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
 
-  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). Constructs at a program point `$P$` are analyzed in a context where every side-effect ([intro.execution]) of each non-dependent plainly constant-evaluated expression within a declaration `$D$` is complete if and only if `$D$` is reachable from `$P$`.]{.addu}
+  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each non-dependent plainly constant-evaluated expression within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where every side effect of that expression is complete if and only if `$D$` is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
@@ -4289,14 +4259,14 @@ Add a new paragraph prior to the definition of _manifestly constant-evaluated_ (
 ::: std
 ::: addu
 
-[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not in a complete-class context ([class.mem.general]{.sref}).
+[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not in a complete-class context ([class.mem.general]{.sref}).
 
 [The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below) and happens exactly once ([lex.phases]{.sref}). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
 
 :::
 :::
 
-[We also intend for the "evaluating expression" of a consteval block to be plainly constant-evaluated, but this construct is introduced by a separate follow-on paper ([@P3289R0]).]{.draftnote}
+[We also intend for the "evaluating expression" of a consteval block to be plainly constant-evaluated, but this construct is introduced by a separate follow-on paper ([@P3289R1]).]{.draftnote}
 
 Add a note following the definition of _manifestly constant-evaluated_ to clarify the relationship with _plainly constant-evaluated_ expressions:
 
