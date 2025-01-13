@@ -352,7 +352,7 @@ Or at least, this will work once `string_view` becomes structural. Until then, t
 
 ### With Expansion Statements
 
-Something like this ([@P1306R2]) is not doable without non-transient constexpr allocation :
+Something like this — [@P1306R2]{.title} — is not doable without non-transient constexpr allocation :
 
 ::: std
 ```cpp
