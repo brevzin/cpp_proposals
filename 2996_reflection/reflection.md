@@ -3152,7 +3152,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
 
-  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each plainly constant-evaluated expression within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where every side effect of that expression is complete if and only if `$D$` is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
+  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each plainly constant-evaluated expression within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where each side effect of that expression is complete if and only if `$D$` is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
