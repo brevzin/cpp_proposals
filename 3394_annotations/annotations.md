@@ -707,9 +707,11 @@ consteval vector<info> annotations_of(info item);
 
 [#]{.pnum} *Returns*: A `vector` containing the following reflections:
 
-* For each declaration `$D$` of the entity represented by `item` that is reachable from some point in the evaluation context ([expr.const]), in lexical order,
-* For each `$annotation$` `$A$` in each `$attribute-specifier-seq$` appertaining to `$D$`, in lexical order,
+* For each declaration `$D$` of the entity represented by `item` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of a class for which such a point is in a complete-class context,
+* For each `$annotation$` `$A$` in each `$attribute-specifier-seq$` appertaining to `$D$`,
 * A reflection `$R$` representing `$A$`, whose value is the result of the corresponding `$constant-expression$`.
+
+For  any two reflections `@*R*~1~@` and `@*R*~2~@` returned, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` is sequenced before `@*R*~2~@` in the returned `vector`.
 
 
 ::: example

@@ -1608,18 +1608,29 @@ containing the following reflections:</p>
 <ul>
 <li>For each declaration <code class="sourceCode cpp"><em>D</em></code>
 of the entity represented by <code class="sourceCode cpp">item</code>
-that is reachable from some point in the evaluation context
-([expr.const]), in lexical order,</li>
+that precedes either some point in the evaluation context ([expr.const])
+or a point immediately following the
+<code class="sourceCode cpp"><em>class-specifier</em></code> of a class
+for which such a point is in a complete-class context,</li>
 <li>For each <code class="sourceCode cpp"><em>annotation</em></code>
 <code class="sourceCode cpp"><em>A</em></code> in each
 <code class="sourceCode cpp"><em>attribute-specifier-seq</em></code>
-appertaining to <code class="sourceCode cpp"><em>D</em></code>, in
-lexical order,</li>
+appertaining to <code class="sourceCode cpp"><em>D</em></code>,</li>
 <li>A reflection <code class="sourceCode cpp"><em>R</em></code>
 representing <code class="sourceCode cpp"><em>A</em></code>, whose value
 is the result of the corresponding
 <code class="sourceCode cpp"><em>constant-expression</em></code>.</li>
 </ul>
+<p>For any two reflections
+<code class="sourceCode cpp"><em>R</em><sub>1</sub></code> and
+<code class="sourceCode cpp"><em>R</em><sub>2</sub></code> returned, if
+the annotation represented by
+<code class="sourceCode cpp"><em>R</em><sub>1</sub></code> precedes the
+annotation represented by
+<code class="sourceCode cpp"><em>R</em><sub>2</sub></code>, then
+<code class="sourceCode cpp"><em>R</em><sub>1</sub></code> is sequenced
+before <code class="sourceCode cpp"><em>R</em><sub>2</sub></code> in the
+returned <code class="sourceCode cpp">vector</code>.</p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Option <span class="op">{</span> <span class="dt">bool</span> value; <span class="op">}</span>;</span>
