@@ -618,6 +618,8 @@ namespace std::meta {
 +   consteval bool has_annotation(info item);
 + template<class T>
 +   consteval bool has_annotation(info item, T const& value);
++
++  consteval info annotate(info item, info value, source_location loc = source_location::current());
 }
 ```
 :::
@@ -700,7 +702,13 @@ consteval vector<info> annotations_of(info item);
 
 [#]{.pnum} *Constant When*: `dealias(item)` represents a type, variable, function, or a namespace.
 
-[#]{.pnum} *Returns*: For each `$annotation$` in each `$attribute-specifier-seq$` appertaining to the entity represented by `item`, in lexical order, a reflection representing that annotation, whose value is the result of the corresponding `$constant-expression$`.
+
+[#]{.pnum} *Returns*: A `vector` containing the following reflections:
+
+* For each declaration `$D$` of the entity represented by `item` that is reachable from some point in the evaluation context ([expr.const]), in lexical order,
+* For each `$annotation$` `$A$` in each `$attribute-specifier-seq$` appertaining to `$D$`, in lexical order,
+* A reflection `$R$` representing `$A$`, whose value is the result of the corresponding `$constant-expression$`.
+
 
 ::: example
 ```cpp
@@ -794,6 +802,18 @@ static_assert(!has_annotation(^^C::y, Option{9}));
 ```
 :::
 
+```cpp
+consteval info annotate(info item, info value, source_location loc = source_location::current());
+```
+
+[#]{.pnum} *Constant When*:
+
+* [#.#]{.pnum} `dealias(item)` represents a class type, variable, function, or a namespace; and
+* [#.#]{.pnum} `value` reprents a value.
+
+[#]{.pnum} *Effects*: Produces an injected declaration ([expr.const]) at location `loc` redeclaring the entity represented by `dealias(item)`. That injected declaration is annotated by `value`.
+
+[#]{.pnum} *Returns*: `dealias(item)`.
 
 :::
 :::

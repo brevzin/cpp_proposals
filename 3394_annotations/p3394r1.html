@@ -1462,7 +1462,9 @@ synopsis:</p>
 <span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval bool has_annotation(info item);</span></span>
 <span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class T&gt;</span></span>
 <span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval bool has_annotation(info item, T const&amp; value);</span></span>
-<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a><span class="va">+  consteval info annotate(info item, info value, source_location loc = source_location::current());</span></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1599,14 +1601,23 @@ for future introspection.</p>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>
 represents a type, variable, function, or a namespace.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">3</a></span>
-<em>Returns</em>: For each
-<code class="sourceCode cpp"><em>annotation</em></code> in each
+<em>Returns</em>: A <code class="sourceCode cpp">vector</code>
+containing the following reflections:</p>
+<ul>
+<li>For each declaration <code class="sourceCode cpp"><em>D</em></code>
+of the entity represented by <code class="sourceCode cpp">item</code>
+that is reachable from some point in the evaluation context
+([expr.const]), in lexical order,</li>
+<li>For each <code class="sourceCode cpp"><em>annotation</em></code>
+<code class="sourceCode cpp"><em>A</em></code> in each
 <code class="sourceCode cpp"><em>attribute-specifier-seq</em></code>
-appertaining to the entity represented by
-<code class="sourceCode cpp">item</code>, in lexical order, a reflection
-representing that annotation, whose value is the result of the
-corresponding
-<code class="sourceCode cpp"><em>constant-expression</em></code>.</p>
+appertaining to <code class="sourceCode cpp"><em>D</em></code>, in
+lexical order,</li>
+<li>A reflection <code class="sourceCode cpp"><em>R</em></code>
+representing <code class="sourceCode cpp"><em>A</em></code>, whose value
+is the result of the corresponding
+<code class="sourceCode cpp"><em>constant-expression</em></code>.</li>
+</ul>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Option <span class="op">{</span> <span class="dt">bool</span> value; <span class="op">}</span>;</span>
@@ -1709,6 +1720,24 @@ user-provided <code class="sourceCode cpp"><span class="kw">operator</span><span
 <span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>has_annotation<span class="op">(^^</span>C<span class="op">::</span>y, Option<span class="op">{</span><span class="dv">9</span><span class="op">}))</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info annotate<span class="op">(</span>info item, info value, source_location loc <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">14</a></span>
+<em>Constant When</em>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">(14.1)</a></span>
+<code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>
+represents a class type, variable, function, or a namespace; and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">(14.2)</a></span>
+<code class="sourceCode cpp">value</code> reprents a value.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">15</a></span>
+<em>Effects</em>: Produces an injected declaration ([expr.const]) at
+location <code class="sourceCode cpp">loc</code> redeclaring the entity
+represented by <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>.
+That injected declaration is annotated by
+<code class="sourceCode cpp">value</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">16</a></span>
+<em>Returns</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>.</p>
 </div>
 </blockquote>
 </div>
