@@ -42,7 +42,7 @@ Since [@P2996R8]:
   * fix wording bug that prevents application of `value_of` to a reflection of a local variable in a `consteval` function
   * clarify in note for `substitute` that instantiation may be triggered if needed to deduce a placeholder type
   * clarify which members of closure types are _members-of-representable_
-  * fix wording bug in _members-of-reachable_ related to complete-class contexts
+  * fix wording bug in _members-of-reachable_ related to complete-class contexts; rename to "_members-of-precedes_"
   * remove idempotency from `define_aggregate`
 * fleshed out revision history for R8
 
@@ -3152,7 +3152,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
 
-  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each non-dependent plainly constant-evaluated expression within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where every side effect of that expression is complete if and only if `$D$` is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
+  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each plainly constant-evaluated expression within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where every side effect of that expression is complete if and only if `$D$` is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
@@ -6465,11 +6465,9 @@ A member of a closure type is members-of-representable if it is
 
 [Counterexamples of members-of-representable members include: injected class names, partial template specializations, friend declarations, static assertions, and non-static data members of closure types that correspond to entities captured by reference.]{.note}
 
-[3]{.pnum} For any program point `$P$`, let `$P$@~_$S$_~@` be the point from which the declaration set for a hypothetical search from `$P$` would be determined ([class.member.lookup]). A member `$M$` of a class or namespace is _members-of-reachable_ from a point `$P$` if a declaration of `$M$` precedes `$P$@~_$S$_~@`.
+[3]{.pnum} A member `$M$` of a class or namespace _members-of-precedes_ a point `$P$` if a declaration of `$M$` precedes either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.
 
-[All members of a class are therefore _members-of-reachable_ from any complete-class context of that class. Named entities that can be found by name lookup are generally _members-of-reachable_, but some unnamed entities are as well (e.g., unnamed classes).]{.note}
-
-[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that are members-of-reachable from some point in the evaluation context ([expr.const]).
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that members-of-precede some point in the evaluation context ([expr.const]).
 If `r` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
 Class members and unnamed bit-fields are indexed in the order in which they are declared, but the order of namespace members is unspecified.
 [Base classes are not members. Implicitly-declared special members appear after any user-declared members.]{.note}
