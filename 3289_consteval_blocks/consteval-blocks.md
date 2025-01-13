@@ -2,7 +2,7 @@
 title: "`consteval` blocks"
 document: P3289R1
 date: today
-audience: EWG
+audience: CWG
 author:
     - name: Wyatt Childers
       email: <wcc@edg.com>
