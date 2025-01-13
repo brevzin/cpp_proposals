@@ -626,6 +626,18 @@ Add `is_annotation` to [meta.reflection.queries]:
 
 :::
 
+Update `source_location_of` in [meta.reflection.names]:
+
+::: std
+```cpp
+consteval source_location source_location_of(info r);
+```
+
+[7]{.pnum} *Returns*: If `r` represents a value, a non-class type, the global namespace, or a data member description, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
+
+[#]{.pnum} *Recommended practice*: [If `r` represents an annotation that was added with a call to `std::meta::annotate`, then implementations should return a value corresponding to the `source_location` argument passed to that function.]{.addu} If `r` represents an entity, name, or direct base class relationship that was introduced by a declaration, implementations should return a value corresponding to a declaration of the represented construct that is reachable from the evaluation construct. If there are multiple such declarations and one is a definition, a value corresponding to the definition is preferred.
+:::
+
 Update the meanings of `type_of` and `value_of` in [meta.reflection.queries]:
 
 ::: std
@@ -801,7 +813,7 @@ consteval info annotate(info item, info value, source_location loc = source_loca
 * [#.#]{.pnum} `dealias(item)` represents a class type, variable, function, or a namespace; and
 * [#.#]{.pnum} `value` reprents a value.
 
-[#]{.pnum} *Effects*: Produces an injected declaration ([expr.const]) at location `loc` redeclaring the entity represented by `dealias(item)`. That injected declaration is annotated by `value`.
+[#]{.pnum} *Effects*: Produces an injected declaration ([expr.const]) at location `loc` redeclaring the entity represented by `dealias(item)`. That injected declaration is annotated by `value` and its locus is immediately following the manifestly constant-evaluated expression currently under evaluation.
 
 [#]{.pnum} *Returns*: `dealias(item)`.
 
