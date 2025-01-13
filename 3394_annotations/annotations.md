@@ -520,16 +520,6 @@ Change [basic.fundamental]{.sref} to add "annotation" to the list of reflection 
 * a description of a declaration of a non-static data member.
 :::
 
-Change [expr.prim.splice] to handle splicing a reflection of an annotation:
-
-::: std
-[2]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$E$` be the object, value, [annotation,]{.addu} or entity designated by `$splice-specifier$`.
-
-* [#.#]{.pnum} [...]
-
-* [#.#]{.pnum} Otherwise, `$E$` shall be a value[, an annotation,]{.addu} or an enumerator. The expression is a prvalue whose evaluation computes `$E$` and whose type is the same as `$E$`.
-:::
-
 Extend the grammar in [dcl.attr.grammar]{.sref}:
 
 ::: std
@@ -579,7 +569,7 @@ Adjust the restriction on ellipses in [dcl.attr.grammar]{.sref}/4:
 
 ::: std
 [4]{.pnum} In an `$attribute-list$`, an ellipsis may [appear only]{.rm} [only appear following an `$attribute$`]{.addu} if that `$attribute$`'s specification permits it. An [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu} followed by an ellipsis is a pack expansion. An `$attribute-specifier$` that contains no `$attribute$`s has no effect.
-The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [The `$constant-expression$`s in each `$annotation$` in an `$attribute-list$` are evaluated in lexical order.]{.addu} [...]
+The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [The `$constant-expression$` in each `$annotation$` shall have structural type ([temp.param]).]{.addu} [...]
 
 [5]{.pnum} Each `$attribute-specifier-seq$` is said to appertain to some entity or statement, identified by the syntactic context where it appears ([stmt.stmt], [dcl.dcl], [dcl.decl]).
 If an `$attribute-specifier-seq$` that appertains to some entity or statement contains an `$attribute$` or `$alignment-specifier$` that is not allowed to apply to that entity or statement, the program is ill-formed.
