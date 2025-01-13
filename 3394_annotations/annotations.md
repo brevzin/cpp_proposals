@@ -573,7 +573,7 @@ The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is n
 
 [5]{.pnum} Each `$attribute-specifier-seq$` is said to appertain to some entity or statement, identified by the syntactic context where it appears ([stmt.stmt], [dcl.dcl], [dcl.decl]).
 If an `$attribute-specifier-seq$` that appertains to some entity or statement contains an `$attribute$` or `$alignment-specifier$` that is not allowed to apply to that entity or statement, the program is ill-formed.
-If an `$attribute-specifier-seq$` appertains to a friend declaration ([class.friend]), that declaration shall be a definition. [The `$constant-expression$` in each `$annotation$` in an `$attribute-specifier-seq$` is evaluated in lexical order and shall have structural type ([temp.param]) [Reflections representing annotations can be retrieved with functions like `std::meta::annotations_of` ([meta.reflection.annotation])]{.note}.]{.addu}
+If an `$attribute-specifier-seq$` appertains to a friend declaration ([class.friend]), that declaration shall be a definition. [The `$constant-expression$` in each `$annotation$` in an `$attribute-specifier-seq$` shall have structural type ([temp.param]) [Reflections representing annotations can be retrieved with functions like `std::meta::annotations_of` ([meta.reflection.annotation])]{.note}.]{.addu}
 :::
 
 Change the pack expansion rule in [temp.variadic]{.sref}/5.9:
