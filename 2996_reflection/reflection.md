@@ -4256,6 +4256,8 @@ Modify (and clean up) the definition of _immediate-escalating_ in paragraph 18 t
 
 Add a new paragraph prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/21), and renumber accordingly:
 
+[The adverb "plainly" doesn't really convey any information here. We don't want to change it right now because Core has already reviewed this wording multiple times using this term, but we think an alternative term would be better. Sequentially constant-evaluated is another term we've considered that we like better. Other options might be chronologically, orderly, ordinally, and rendered. We want to somehow emphasize that these expressions can have side effects and must be evaluated exactly once, in order.]{.draftnote}
+
 ::: std
 ::: addu
 
