@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-09" />
+  <meta name="dcterms.date" content="2025-01-12" />
   <title>define_static_{string,object,array}</title>
   <style>
       code{white-space: pre-wrap;}
@@ -568,7 +568,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-09</td>
+    <td>2025-01-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -595,50 +595,63 @@ background-color: #ffff00;
 <div id="TOC" role="doc-toc">
 <h1 id="toctitle">Contents</h1>
 <ul>
-<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">2</span> Proposal<span></span></a>
+<li><a href="#revision-history" id="toc-revision-history"><span class="toc-section-number">1</span> Revision
+History<span></span></a></li>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
 <ul>
-<li><a href="#the-overlapping-question" id="toc-the-overlapping-question"><span class="toc-section-number">2.1</span> The Overlapping
+<li><a href="#the-overlapping-question" id="toc-the-overlapping-question"><span class="toc-section-number">3.1</span> The Overlapping
 Question<span></span></a></li>
-<li><a href="#the-structural-question" id="toc-the-structural-question"><span class="toc-section-number">2.2</span> The Structural
+<li><a href="#the-structural-question" id="toc-the-structural-question"><span class="toc-section-number">3.2</span> The Structural
 Question<span></span></a></li>
-<li><a href="#possible-implementation" id="toc-possible-implementation"><span class="toc-section-number">2.3</span> Possible
+<li><a href="#possible-implementation" id="toc-possible-implementation"><span class="toc-section-number">3.3</span> Possible
 Implementation<span></span></a></li>
-<li><a href="#examples" id="toc-examples"><span class="toc-section-number">2.4</span> Examples<span></span></a>
+<li><a href="#examples" id="toc-examples"><span class="toc-section-number">3.4</span> Examples<span></span></a>
 <ul>
-<li><a href="#use-as-non-type-template-parameter" id="toc-use-as-non-type-template-parameter"><span class="toc-section-number">2.4.1</span> Use as non-type template
+<li><a href="#use-as-non-type-template-parameter" id="toc-use-as-non-type-template-parameter"><span class="toc-section-number">3.4.1</span> Use as non-type template
 parameter<span></span></a></li>
-<li><a href="#pretty-printing" id="toc-pretty-printing"><span class="toc-section-number">2.4.2</span>
+<li><a href="#pretty-printing" id="toc-pretty-printing"><span class="toc-section-number">3.4.2</span>
 Pretty-printing<span></span></a></li>
-<li><a href="#promoting-containers" id="toc-promoting-containers"><span class="toc-section-number">2.4.3</span> Promoting
+<li><a href="#promoting-containers" id="toc-promoting-containers"><span class="toc-section-number">3.4.3</span> Promoting
 Containers<span></span></a></li>
-<li><a href="#with-expansion-statements" id="toc-with-expansion-statements"><span class="toc-section-number">2.4.4</span> With Expansion
+<li><a href="#with-expansion-statements" id="toc-with-expansion-statements"><span class="toc-section-number">3.4.4</span> With Expansion
 Statements<span></span></a></li>
-<li><a href="#implementing-source_location" id="toc-implementing-source_location"><span class="toc-section-number">2.4.5</span> Implementing
+<li><a href="#implementing-source_location" id="toc-implementing-source_location"><span class="toc-section-number">3.4.5</span> Implementing
 <code class="sourceCode cpp">source_location</code><span></span></a></li>
 </ul></li>
-<li><a href="#related-papers-in-the-space" id="toc-related-papers-in-the-space"><span class="toc-section-number">2.5</span> Related Papers in the
+<li><a href="#related-papers-in-the-space" id="toc-related-papers-in-the-space"><span class="toc-section-number">3.5</span> Related Papers in the
 Space<span></span></a></li>
 </ul></li>
-<li><a href="#wording" id="toc-wording"><span class="toc-section-number">3</span> Wording<span></span></a>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">4</span> Wording<span></span></a>
 <ul>
-<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">3.1</span> Feature-Test
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">4.1</span> Feature-Test
 Macro<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
-<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
+Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P3491R0"><a href="https://wg21.link/p3491r0" role="doc-biblioref">[P3491R0]</a></span>, wording improvements.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>These functions were originally proposed as part of <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>, but are being split off into
+<p>These functions were originally proposed as part of <span class="title"><span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]
+(Reflection for C++26)</a></span></span>, but are being split off into
 their own paper.</p>
 <p>There are situations where it is useful to take a string (or array)
 from compile time and promote it to static storage for use at runtime.
 We currently have neither:</p>
 <ul>
-<li>non-transient constexpr allocation (see <span class="citation" data-cites="P1974R0">[<a href="https://wg21.link/p1974r0" role="doc-biblioref">P1974R0</a>]</span>, <span class="citation" data-cites="P2670R1">[<a href="https://wg21.link/p2670r1" role="doc-biblioref">P2670R1</a>]</span>), nor</li>
+<li>non-transient constexpr allocation (see <span class="title"><span class="citation" data-cites="P1974R0"><a href="https://wg21.link/p1974r0" role="doc-biblioref">[P1974R0]
+(Non-transient constexpr allocation using propconst)</a></span></span>,
+<span class="title"><span class="citation" data-cites="P2670R1"><a href="https://wg21.link/p2670r1" role="doc-biblioref">[P2670R1]
+(Non-transient constexpr allocation)</a></span></span>), nor</li>
 <li>generalized support for class types as non-type template parameters
-(see <span class="citation" data-cites="P2484R0">[<a href="https://wg21.link/p2484r0" role="doc-biblioref">P2484R0</a>]</span>, <span class="citation" data-cites="P3380R1">[<a href="https://wg21.link/p3380r1" role="doc-biblioref">P3380R1</a>]</span>)</li>
+(see <span class="title"><span class="citation" data-cites="P2484R0"><a href="https://wg21.link/p2484r0" role="doc-biblioref">[P2484R0]
+(Extending class types as non-type template
+parameters)</a></span></span>, <span class="title"><span class="citation" data-cites="P3380R1"><a href="https://wg21.link/p3380r1" role="doc-biblioref">[P3380R1]
+(Extending support for class types as non-type template
+parameters)</a></span></span>)</li>
 </ul>
 <p>If we had non-transient constexpr allocation, we could just directly
 declare a static constexpr variable. And if we could use these container
@@ -662,7 +675,7 @@ means that you can use a pointer to that array as a non-type template
 parameter just fine.</p>
 <p>So having facilities to solve these problems until the general
 language solution arises is very valuable.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">3</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes three new additions — <code class="sourceCode cpp">std<span class="op">::</span>define_static_string</code>,
 <code class="sourceCode cpp">std<span class="op">::</span>define_static_object</code>,
 and <code class="sourceCode cpp">std<span class="op">::</span>define_static_array</code>,
@@ -735,7 +748,7 @@ is sufficiently common as to merit a more ergonomic solution.</p>
 objects can overlap and whether
 <code class="sourceCode cpp">define_static_array</code> needs to mandate
 structural.</p>
-<h2 data-number="2.1" id="the-overlapping-question"><span class="header-section-number">2.1</span> The Overlapping Question<a href="#the-overlapping-question" class="self-link"></a></h2>
+<h2 data-number="3.1" id="the-overlapping-question"><span class="header-section-number">3.1</span> The Overlapping Question<a href="#the-overlapping-question" class="self-link"></a></h2>
 <p>Consider the existence of <code class="sourceCode cpp"><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*&gt;</span> <span class="kw">struct</span> C;</code>
 and the following two translation units:</p>
 <table>
@@ -758,7 +771,7 @@ TU #2
 </td>
 </tr>
 </table>
-<p>In the specification in <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>, the results of
+<p>In the specification in <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span>, the results of
 <code class="sourceCode cpp">define_static_string</code> were allowed to
 overlap. That is, a possible result of this program could be:</p>
 <table>
@@ -882,7 +895,7 @@ since that is comparing the contents.</p>
 <code class="sourceCode cpp">a <span class="op">==</span> b</code> could
 be invalid but <code class="sourceCode cpp">is_same_v<span class="op">&lt;</span>C<span class="op">&lt;</span>a<span class="op">&gt;</span>, C<span class="op">&lt;</span>b<span class="op">&gt;&gt;</span></code>
 would be valid.</p>
-<h2 data-number="2.2" id="the-structural-question"><span class="header-section-number">2.2</span> The Structural Question<a href="#the-structural-question" class="self-link"></a></h2>
+<h2 data-number="3.2" id="the-structural-question"><span class="header-section-number">3.2</span> The Structural Question<a href="#the-structural-question" class="self-link"></a></h2>
 <p>For <code class="sourceCode cpp">define_static_string</code>, we have
 it easy because we know that
 <code class="sourceCode cpp"><span class="dt">char</span></code> and
@@ -923,15 +936,15 @@ some very motivating use-cases since neither
 <code class="sourceCode cpp">string_view</code> are structural types
 yet, which means you cannot reify a <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code>
 into a <code class="sourceCode cpp">span<span class="op">&lt;</span>string_view<span class="op">&gt;</span></code>,
-but hopefully that can be resolved soon (<span class="citation" data-cites="P3380R1">[<a href="https://wg21.link/p3380r1" role="doc-biblioref">P3380R1</a>]</span>). You can at least reify it
+but hopefully that can be resolved soon (<span class="citation" data-cites="P3380R1"><a href="https://wg21.link/p3380r1" role="doc-biblioref">[P3380R1]</a></span>). You can at least reify it
 into a <code class="sourceCode cpp">span<span class="op">&lt;</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*&gt;</span></code>?</p>
 <p>For now, this paper proposes the last option, as it’s the simplest
 (and the relative cost will hopefully decrease over time). Allowing the
 call but rejecting use as non-type template parameters is appealing
 though.</p>
-<h2 data-number="2.3" id="possible-implementation"><span class="header-section-number">2.3</span> Possible Implementation<a href="#possible-implementation" class="self-link"></a></h2>
+<h2 data-number="3.3" id="possible-implementation"><span class="header-section-number">3.3</span> Possible Implementation<a href="#possible-implementation" class="self-link"></a></h2>
 <p><code class="sourceCode cpp">define_static_string</code> can be
-nearly implemented with the facilities in <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>, we just need
+nearly implemented with the facilities in <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span>, we just need
 <code class="sourceCode cpp">is_string_literal</code> to handle the
 different signature proposed in this paper.</p>
 <p><code class="sourceCode cpp">define_static_array</code> for is
@@ -990,8 +1003,8 @@ is a structural type if <code class="sourceCode cpp">T</code> is, which
 to ensure this for us. This won’t ever produce overlapping arrays, would
 need implementation help for that, but it is a viable solution for all
 use-cases.</p>
-<h2 data-number="2.4" id="examples"><span class="header-section-number">2.4</span> Examples<a href="#examples" class="self-link"></a></h2>
-<h3 data-number="2.4.1" id="use-as-non-type-template-parameter"><span class="header-section-number">2.4.1</span> Use as non-type template
+<h2 data-number="3.4" id="examples"><span class="header-section-number">3.4</span> Examples<a href="#examples" class="self-link"></a></h2>
+<h3 data-number="3.4.1" id="use-as-non-type-template-parameter"><span class="header-section-number">3.4.1</span> Use as non-type template
 parameter<a href="#use-as-non-type-template-parameter" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
@@ -1004,7 +1017,7 @@ parameter<a href="#use-as-non-type-template-parameter" class="self-link"></a></h
 <span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>C<span class="op">&lt;</span>define_static_string<span class="op">(</span><span class="st">&quot;yay&quot;</span><span class="op">)&gt;</span> c3;  <span class="co">// ok</span></span></code></pre></div>
 </blockquote>
 </div>
-<h3 data-number="2.4.2" id="pretty-printing"><span class="header-section-number">2.4.2</span> Pretty-printing<a href="#pretty-printing" class="self-link"></a></h3>
+<h3 data-number="3.4.2" id="pretty-printing"><span class="header-section-number">3.4.2</span> Pretty-printing<a href="#pretty-printing" class="self-link"></a></h3>
 <p>In the absence of general support for non-transient constexpr
 allocation, such a facility is essential to building utilities like
 pretty printers.</p>
@@ -1032,7 +1045,7 @@ pretty printers.</p>
 at the core</a> of how the Clang/P2996 fork builds its example
 implementation of the
 <code class="sourceCode cpp">display_string_of</code> metafunction.</p>
-<h3 data-number="2.4.3" id="promoting-containers"><span class="header-section-number">2.4.3</span> Promoting Containers<a href="#promoting-containers" class="self-link"></a></h3>
+<h3 data-number="3.4.3" id="promoting-containers"><span class="header-section-number">3.4.3</span> Promoting Containers<a href="#promoting-containers" class="self-link"></a></h3>
 <p>In the Jason Turner talk cited earlier, he demonstrates an <a href="https://compiler-explorer.com/z/E7n1T357T">example</a> of taking a
 function that produces a <code class="sourceCode cpp">vector<span class="op">&lt;</span>string<span class="op">&gt;</span></code>
 and promoting that into static storage, in a condensed way so that the
@@ -1076,8 +1089,8 @@ Until then, this can be worked around with a
 <code class="sourceCode cpp">structural_string_view</code> type that
 just has public members for the data and length with an implicit
 conversion to <code class="sourceCode cpp">string_view</code>.</p>
-<h3 data-number="2.4.4" id="with-expansion-statements"><span class="header-section-number">2.4.4</span> With Expansion Statements<a href="#with-expansion-statements" class="self-link"></a></h3>
-<p>Something like this (<span class="citation" data-cites="P1306R2">[<a href="https://wg21.link/p1306r2" role="doc-biblioref">P1306R2</a>]</span>) is not doable without
+<h3 data-number="3.4.4" id="with-expansion-statements"><span class="header-section-number">3.4.4</span> With Expansion Statements<a href="#with-expansion-statements" class="self-link"></a></h3>
+<p>Something like this (<span class="citation" data-cites="P1306R2"><a href="https://wg21.link/p1306r2" role="doc-biblioref">[P1306R2]</a></span>) is not doable without
 non-transient constexpr allocation :</p>
 <div class="std">
 <blockquote>
@@ -1102,7 +1115,7 @@ then this would work fine:</p>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<h3 data-number="2.4.5" id="implementing-source_location"><span class="header-section-number">2.4.5</span> Implementing
+<h3 data-number="3.4.5" id="implementing-source_location"><span class="header-section-number">3.4.5</span> Implementing
 <code class="sourceCode cpp">source_location</code><a href="#implementing-source_location" class="self-link"></a></h3>
 <p>One interesting use of a specific
 <code class="sourceCode cpp">define_static_object</code> (for the single
@@ -1135,24 +1148,27 @@ without compiler support:</p>
 <span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<h2 data-number="2.5" id="related-papers-in-the-space"><span class="header-section-number">2.5</span> Related Papers in the Space<a href="#related-papers-in-the-space" class="self-link"></a></h2>
+<h2 data-number="3.5" id="related-papers-in-the-space"><span class="header-section-number">3.5</span> Related Papers in the Space<a href="#related-papers-in-the-space" class="self-link"></a></h2>
 <p>A number of other papers have been brought up as being related to
 this problem, so let’s just enumerate them.</p>
 <ul>
-<li><span class="citation" data-cites="P3094R5">[<a href="https://wg21.link/p3094r5" role="doc-biblioref">P3094R5</a>]</span> proposed <code class="sourceCode cpp">std<span class="op">::</span>basic_fixed_string<span class="op">&lt;</span><span class="dt">char</span>, N<span class="op">&gt;</span></code>.
+<li><span class="title"><span class="citation" data-cites="P3094R5"><a href="https://wg21.link/p3094r5" role="doc-biblioref">[P3094R5]
+(std::basic_fixed_string)</a></span></span> proposed <code class="sourceCode cpp">std<span class="op">::</span>basic_fixed_string<span class="op">&lt;</span><span class="dt">char</span>, N<span class="op">&gt;</span></code>.
 It exists to solve the problem that <code class="sourceCode cpp">C<span class="op">&lt;</span><span class="st">&quot;hello&quot;</span><span class="op">&gt;</span></code>
 needs support right now. Nothing in this paper would make <code class="sourceCode cpp">C<span class="op">&lt;</span><span class="st">&quot;hello&quot;</span><span class="op">&gt;</span></code>
 work, although it might affect the way that you would implement the type
 that makes it work.</li>
-<li><span class="citation" data-cites="P3380R1">[<a href="https://wg21.link/p3380r1" role="doc-biblioref">P3380R1</a>]</span> proposes to extend non-type
-template parameter support, which could eventually make
+<li><span class="title"><span class="citation" data-cites="P3380R1"><a href="https://wg21.link/p3380r1" role="doc-biblioref">[P3380R1]
+(Extending support for class types as non-type template
+parameters)</a></span></span> proposes to extend non-type template
+parameter support, which could eventually make
 <code class="sourceCode cpp">std<span class="op">::</span>string</code>
 usable as a non-type template parameter. But without non-transient
 constexpr allocation, this doesn’t obviate the need for this paper. Note
-that that paper depends on this paper for how to normalize string
+that that paper even depends on this paper for how to normalize string
 literals, making string literals usable as non-type template
-arguemnts.</li>
-<li><span class="citation" data-cites="P1974R0">[<a href="https://wg21.link/p1974r0" role="doc-biblioref">P1974R0</a>]</span> and <span class="citation" data-cites="P2670R1">[<a href="https://wg21.link/p2670r1" role="doc-biblioref">P2670R1</a>]</span> propose approaches to tackle
+arguments.</li>
+<li><span class="citation" data-cites="P1974R0"><a href="https://wg21.link/p1974r0" role="doc-biblioref">[P1974R0]</a></span> and <span class="citation" data-cites="P2670R1"><a href="https://wg21.link/p2670r1" role="doc-biblioref">[P2670R1]</a></span> propose approaches to tackle
 the non-transient allocation problem.</li>
 </ul>
 <p>Given non-transient allocation <em>and</em> a
@@ -1176,7 +1192,7 @@ becomes unnecessary. Or at least, fairly trivial:</p>
 <span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">3</span> Wording<a href="#wording" class="self-link"></a></h1>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>Change <span>6.7.2 <a href="https://wg21.link/intro.object">[intro.object]</a></span>:</p>
 <div class="std">
 <blockquote>
@@ -1188,8 +1204,8 @@ a string literal object ([lex.string]),</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(9.2)</a></span>
 the backing array of an initializer list ([dcl.init.ref]),</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(9.3)</a></span>
-<span class="addu">the result of a call to <code class="sourceCode cpp">std<span class="op">::</span>define_string</code>
-or <code class="sourceCode cpp">std<span class="op">::</span>define_array</code></span>,
+<span class="addu">the object declared by a call to <code class="sourceCode cpp">std<span class="op">::</span>define_static_string</code>
+or <code class="sourceCode cpp">std<span class="op">::</span>define_static_array</code></span>,
 or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(9.4)</a></span>
 a subobject thereof.</li>
@@ -1291,10 +1307,8 @@ either <code class="sourceCode cpp"><span class="dt">char</span></code>
 or
 <code class="sourceCode cpp"><span class="dt">char8_t</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">4</a></span>
-Let
-<code class="sourceCode cpp"><em>V</em><span class="op">.</span></code>
-be the pack of elements of type
-<code class="sourceCode cpp"><em>CharT</em></code> in
+Let <code class="sourceCode cpp"><em>V</em></code> be the pack of
+elements of type <code class="sourceCode cpp"><em>CharT</em></code> in
 <code class="sourceCode cpp">r</code>. If
 <code class="sourceCode cpp">r</code> is a string literal, then
 <code class="sourceCode cpp"><em>V</em></code> does not include the
@@ -1311,7 +1325,7 @@ initialized with <code class="sourceCode cpp"><span class="op">{</span>V<span cl
 non-unique object ([intro.object])<span> — <em>end
 note</em> ]</span></span></p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;*</span> define_static_object<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span></code></pre></div>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;*</span> define_static_object<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">8</a></span>
 Let <code class="sourceCode cpp">U</code> be <code class="sourceCode cpp">remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">9</a></span>
@@ -1354,14 +1368,14 @@ note</em> ]</span></span></p>
 </div>
 </blockquote>
 </div>
-<h2 data-number="3.1" id="feature-test-macro"><span class="header-section-number">3.1</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<h2 data-number="4.1" id="feature-test-macro"><span class="header-section-number">4.1</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Add to <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
 <blockquote>
 <div class="addu">
 <div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>#define __cpp_lib_define_static 2025XX // freestanding, also in &lt;meta&gt;</span></code></pre></div>
 </div>
 </blockquote>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
 <div id="ref-P1306R2" class="csl-entry" role="doc-biblioentry">
@@ -1391,6 +1405,10 @@ C++26. <a href="https://wg21.link/p2996r7"><div class="csl-block">https://wg21.l
 <div id="ref-P3380R1" class="csl-entry" role="doc-biblioentry">
 [P3380R1] Barry Revzin. 2024-12-04. Extending support for class types as
 non-type template parameters. <a href="https://wg21.link/p3380r1"><div class="csl-block">https://wg21.link/p3380r1</div></a>
+</div>
+<div id="ref-P3491R0" class="csl-entry" role="doc-biblioentry">
+[P3491R0] Barry Revzin, Peter Dimov, Daveed Vandevoorde, Dan Katz.
+2024-12-15. define_static_{string,object,array}. <a href="https://wg21.link/p3491r0"><div class="csl-block">https://wg21.link/p3491r0</div></a>
 </div>
 </div>
 </div>

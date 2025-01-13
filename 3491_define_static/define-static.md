@@ -16,14 +16,18 @@ toc: true
 tag: constexpr
 ---
 
+# Revision History
+
+Since [@P3491R0], wording improvements.
+
 # Introduction
 
-These functions were originally proposed as part of [@P2996R7], but are being split off into their own paper.
+These functions were originally proposed as part of [@P2996R7]{.title}, but are being split off into their own paper.
 
 There are situations where it is useful to take a string (or array) from compile time and promote it to static storage for use at runtime. We currently have neither:
 
-* non-transient constexpr allocation (see [@P1974R0], [@P2670R1]), nor
-* generalized support for class types as non-type template parameters (see [@P2484R0], [@P3380R1])
+* non-transient constexpr allocation (see [@P1974R0]{.title}, [@P2670R1]{.title}), nor
+* generalized support for class types as non-type template parameters (see [@P2484R0]{.title}, [@P3380R1]{.title})
 
 If we had non-transient constexpr allocation, we could just directly declare a static constexpr variable. And if we could use these container types like `std::string` and `std::vector<T>` as non-type template parameter types, then we would use those directly too.
 
@@ -409,8 +413,8 @@ public:
 
 A number of other papers have been brought up as being related to this problem, so let's just enumerate them.
 
-* [@P3094R5] proposed `std::basic_fixed_string<char, N>`. It exists to solve the problem that `C<"hello">` needs support right now. Nothing in this paper would make `C<"hello">` work, although it might affect the way that you would implement the type that makes it work.
-* [@P3380R1] proposes to extend non-type template parameter support, which could eventually make `std::string` usable as a non-type template parameter. But without non-transient constexpr allocation, this doesn't obviate the need for this paper. Note that that paper depends on this paper for how to normalize string literals, making string literals usable as non-type template arguemnts.
+* [@P3094R5]{.title} proposed `std::basic_fixed_string<char, N>`. It exists to solve the problem that `C<"hello">` needs support right now. Nothing in this paper would make `C<"hello">` work, although it might affect the way that you would implement the type that makes it work.
+* [@P3380R1]{.title} proposes to extend non-type template parameter support, which could eventually make `std::string` usable as a non-type template parameter. But without non-transient constexpr allocation, this doesn't obviate the need for this paper. Note that that paper even depends on this paper for how to normalize string literals, making string literals usable as non-type template arguments.
 * [@P1974R0] and [@P2670R1] propose approaches to tackle the non-transient allocation problem.
 
 Given non-transient allocation _and_ a `std::string` and `std::vector` that are usable as non-type template parameters, this paper likely becomes unnecessary. Or at least, fairly trivial:
@@ -441,7 +445,7 @@ Change [intro.object]{.sref}:
 
 * [9.1]{.pnum} a string literal object ([lex.string]),
 * [9.2]{.pnum} the backing array of an initializer list ([dcl.init.ref]),
-* [9.3]{.pnum} [the result of a call to `std::define_string` or `std::define_array`]{.addu}, or
+* [9.3]{.pnum} [the object declared by a call to `std::define_static_string` or `std::define_static_array`]{.addu}, or
 * [9.4]{.pnum} a subobject thereof.
 :::
 
@@ -524,7 +528,7 @@ consteval const ranges::range_value_t<R>* define_static_string(R&& r);
 
 [#]{.pnum} *Mandates*: `$CharT$` is either `char` or `char8_t`.
 
-[#]{.pnum} Let `$V$.` be the pack of elements of type `$CharT$` in `r`. If `r` is a string literal, then `$V$` does not include the trailing null terminator of `r`.
+[#]{.pnum} Let `$V$` be the pack of elements of type `$CharT$` in `r`. If `r` is a string literal, then `$V$` does not include the trailing null terminator of `r`.
 
 [#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const $CharT$[sizeof...(V)+1]` initialized with `{V..., $CharT$()}`.
 
@@ -534,7 +538,7 @@ consteval const ranges::range_value_t<R>* define_static_string(R&& r);
 
 ```cpp
 template <class T>
-consteval const remove_reference_t<T>* define_static_object(T&& t);
+consteval const remove_cvref_t<T>* define_static_object(T&& t);
 ```
 
 [#]{.pnum} Let `U` be `remove_cvref_t<T>`.
