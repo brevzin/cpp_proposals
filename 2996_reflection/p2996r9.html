@@ -1084,7 +1084,7 @@ type</li>
 <li>clarify which members of closure types are
 <em>members-of-representable</em></li>
 <li>fix wording bug in <em>members-of-reachable</em> related to
-complete-class contexts</li>
+complete-class contexts; rename to “<em>members-of-precedes</em>”</li>
 <li>remove idempotency from
 <code class="sourceCode cpp">define_aggregate</code></li>
 </ul></li>
@@ -5348,8 +5348,8 @@ note</em> ]</span></span></p>
 specified in ([temp.spec.general]).<span> — <em>end
 note</em> ]</span></span></span></p>
 <p><span class="addu">During the analysis and translation of tokens,
-certain expressions are evaluated ([expr.const]). For each non-dependent
-plainly constant-evaluated expression within a declaration
+certain expressions are evaluated ([expr.const]). For each plainly
+constant-evaluated expression within a declaration
 <code class="sourceCode cpp"><em>D</em></code>, constructs appearing at
 a program point <code class="sourceCode cpp"><em>P</em></code> are
 analyzed in a context where every side effect of that expression is
@@ -6116,7 +6116,7 @@ is called a <em>reflection</em>. There exists a unique <em>null
 reflection</em>; every other reflection is a representation of</p>
 <ul>
 <li>a value of structural type (<span>13.2 <a href="https://wg21.link/temp.param">[temp.param]</a></span>),</li>
-<li>an object with static storage duration (<span>6.7.5 <a href="https://wg21.link/basic.stc">[basic.stc]</a></span>),</li>
+<li>an object with static storage duration (<span>6.7.6 <a href="https://wg21.link/basic.stc">[basic.stc]</a></span>),</li>
 <li>a variable (<span>6.1 <a href="https://wg21.link/basic.pre">[basic.pre]</a></span>),</li>
 <li>a structured binding (<span>9.6 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span>),</li>
 <li>a function,</li>
@@ -7424,7 +7424,7 @@ of consteval-only type, or is the subobject of such an object, then so
 is the value,</span></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_178" id="pnum_178">(15.4)</a></span>
 if the value is an object of scalar type, it does not have an
-indeterminate or erroneous value (<span>6.7.4 <a href="https://wg21.link/basic.indet">[basic.indet]</a></span>),</li>
+indeterminate or erroneous value (<span>6.7.5 <a href="https://wg21.link/basic.indet">[basic.indet]</a></span>),</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_179" id="pnum_179">(15.5)</a></span>
 if the value is of pointer type, <span class="addu">then: </span>
 <ul>
@@ -11315,35 +11315,27 @@ template specializations, friend declarations, static assertions, and
 non-static data members of closure types that correspond to entities
 captured by reference.<span> — <em>end note</em> ]</span></span></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_463" id="pnum_463">3</a></span>
-For any program point <code class="sourceCode cpp"><em>P</em></code>,
-let
-<code class="sourceCode cpp"><em>P</em><sub><em><span class="math inline"><em>S</em></span></em></sub></code>
-be the point from which the declaration set for a hypothetical search
-from <code class="sourceCode cpp"><em>P</em></code> would be determined
-([class.member.lookup]). A member
-<code class="sourceCode cpp"><em>M</em></code> of a class or namespace
-is <em>members-of-reachable</em> from a point
+A member <code class="sourceCode cpp"><em>M</em></code> of a class or
+namespace <em>members-of-precedes</em> a point
 <code class="sourceCode cpp"><em>P</em></code> if a declaration of
-<code class="sourceCode cpp"><em>M</em></code> precedes
-<code class="sourceCode cpp"><em>P</em><sub><em><span class="math inline"><em>S</em></span></em></sub></code>.</p>
-<p><span class="note"><span>[ <em>Note 2:</em> </span>All members of a
-class are therefore <em>members-of-reachable</em> from any
-complete-class context of that class. Named entities that can be found
-by name lookup are generally <em>members-of-reachable</em>, but some
-unnamed entities are as well (e.g., unnamed classes).<span> — <em>end
-note</em> ]</span></span></p>
+<code class="sourceCode cpp"><em>M</em></code> precedes either
+<code class="sourceCode cpp"><em>P</em></code> or a point immediately
+following the
+<code class="sourceCode cpp"><em>class-specifier</em></code> of a class
+for which <code class="sourceCode cpp"><em>P</em></code> is in a
+complete-class context.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_464" id="pnum_464">4</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing reflections of all members-of-representable members of the
-entity represented by <code class="sourceCode cpp">r</code> that are
-members-of-reachable from some point in the evaluation context
-([expr.const]). If <code class="sourceCode cpp">r</code> represents a
-class <code class="sourceCode cpp"><em>C</em></code>, then the vector
-also contains reflections representing all unnamed bit-fields declared
-within the member-specification of
+entity represented by <code class="sourceCode cpp">r</code> that
+members-of-precede some point in the evaluation context ([expr.const]).
+If <code class="sourceCode cpp">r</code> represents a class
+<code class="sourceCode cpp"><em>C</em></code>, then the vector also
+contains reflections representing all unnamed bit-fields declared within
+the member-specification of
 <code class="sourceCode cpp"><em>C</em></code>. Class members and
 unnamed bit-fields are indexed in the order in which they are declared,
-but the order of namespace members is unspecified. <span class="note"><span>[ <em>Note 3:</em> </span>Base classes are not
+but the order of namespace members is unspecified. <span class="note"><span>[ <em>Note 2:</em> </span>Base classes are not
 members. Implicitly-declared special members appear after any
 user-declared members.<span> — <em>end note</em> ]</span></span></p>
 <div class="sourceCode" id="cb211"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb211-1"><a href="#cb211-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> bases_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
@@ -12096,7 +12088,7 @@ be used to query the properties of a type at compile time.</p>
 For each function taking an argument of type
 <code class="sourceCode cpp">meta<span class="op">::</span>info</code>
 whose name contains <code class="sourceCode cpp">type</code>, a call to
-the function is a non-constant library call (<span>3.34 <a href="https://wg21.link/defns.nonconst.libcall">[defns.nonconst.libcall]</a></span>)
+the function is a non-constant library call (<span>3.35 <a href="https://wg21.link/defns.nonconst.libcall">[defns.nonconst.libcall]</a></span>)
 if that argument is not a reflection of a type or type alias. For each
 function taking an argument named
 <code class="sourceCode cpp">type_args</code>, a call to the function is
