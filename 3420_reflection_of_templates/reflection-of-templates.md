@@ -159,7 +159,6 @@ private:
   std::vector<T, A> data;
   using namespace std::meta;
 public:
-  // ... constructors omitted ...
   consteval {
     template for (constexpr auto r : get_public_members(^^std::vector<T, A>)) {
       if (is_type_alias(r) || is_class_type(r)) {
@@ -194,7 +193,7 @@ public:
 };
 ```
 
-(Refer to [@P2996R7] for metafunctions `get_public_members`, `is_type_alias`, `is_class_type`, `is_function`, `is_function_template`, and `identifier_of`, of which semantics should be intuitive as we discuss the context.) Here, as the code iterates declarations in class `std::vector<T, A>` (an instance, not the template class itself, which simplifies a few aspects of the example), it takes action depending on the nature of the declaration found. For `typedef` (or equivalent `using`) declarations and for nested class declaration, a `using` declaration of the form `using name = std::vector<T, A>::name;` is issued for each corresponding `name` found in `std::vector<T, A>`.
+(Refer to [@P2996R7] for metafunctions `get_public_members`, `is_type_alias`, `is_class_type`, `is_function`, `is_function_template`, and `identifier_of`, of which semantics should be intuitive as we discuss the context.) Here, as the code iterates declarations in class `std::vector<T, A>` (an instance, not the template class itself, which simplifies a few aspects of the example), it takes action depending on the nature of the declaration found. For `typedef` (or equivalent `using`) declarations and for nested class declaration, a `using` declaration of the form `using` _name_ `= std::vector<T, A>::name;` is issued for each corresponding _name_ found in `std::vector<T, A>`.
 
 If the iterated declaration introduces a non-special function (filtered with the test `is_function(r) && !is_special_member_function(r)`), a new function is defined with the same signature. The definition issues a call to `logger` passing the parameters list, followed by a forwarding action to the original function for the `data` member.
 
@@ -206,7 +205,7 @@ For seeing how variadic parameters are handled, consider the function `emplace` 
 
 It is worth noting that the forwarding call syntaxes `data.[:r:](...)` (for regular functions) and `data.template [:r:]<...>(...)` (for function templates) are already defined with the expected semantics in [@P2996R7], and work properly in the prototype implementations. The only added elements are the metafunctions `template_parameter_list`, `parameter_list`, and `forward_parameter_list`, which ensure proper passing down of parameter names from the synthesized function to to the corresponding member function.
 
-### Renaming Identifiers in Declarations
+### Renaming and Projection
 
 The `logging_vector` example has an issue related to member functions of `std::vector` that refer to `std::vector` itself in their signature, such as `void swap(std::vector<T, A>&)`. The example as written above will generate code equivalent to the following:
 
@@ -214,32 +213,74 @@ The `logging_vector` example has an issue related to member functions of `std::v
 template <typename T, typename A>
 class logging_vector {
   ...
-  void swap(std::vector<T, A>& other) { ... }
+  void swap(std::vector<T, A>& other) {
+    logger("Calling ", "std::vector<T, A>", "::",
+      "swap", "(", other, ")");
+    return data.swap(std::forward<decltype(other)>(other));
+  }
+  ...
 };
 ```
 
-The intent, however, is to define `swap` as taking another instance of `logging_vector`, i.e., `void swap(logging_vector<T, A>&)`. Things get even more interesting when a class template defines member functions referring other instantiations of the same template:
+The declaration is technically correct, but not what was intended. We need to define `swap` as taking another instance of `logging_vector`, i.e., `void swap(logging_vector<T, A>&)`:
 
 ```cpp
-template <typename T>
-class shared_ptr {
-  ...
-  template <typename U>
-  shared_ptr(const shared_ptr<U>&) noexcept;
-};
+  void swap(logging_vector<T, A>& other) {
+    logger("Calling ", "std::vector<T, A>", "::",
+      "swap", "(", other.data, ")");
+    return data.swap(std::forward<decltype(other)>(other).data);
+  }
 ```
 
-This adds one more nuance to the matter because we are dealing with two distinct instantiations of the same template. If we want to create a copy of `shared_ptr` called `my_shared_ptr`, the constructor would need to rename `shared_ptr` to `my_shared_ptr` in the as-of-yet-not-instantiated constructor above. The need arising here is to be able to replace an identifier with another throughout a declaration, potentially in multiple places, in a manner reminiscent to the [alpha renaming](https://opendsa.cs.vt.edu/ODSA/Books/PL/html/AlphaConversion.html) notion found in lambda calculus. To that end we define `replace` for declarations, with the signature:
+There are two fundamental transformation we need to perform to morph the original `vector<T, A>::swap` into its desired counterpart inside `logging_vector`:
+
+- *Replacement:* for all parameters in the signature that have type `std::vector<T, A>`, change their type to `logging_vector<T, A>`; and
+- *Projection:* for all parameters `p` in the function body that have type `std::vector<T, A>`, replace `p` with `p.data`.
+
+For replacement, we propose a primitive metafunction `replace` that replaces a type with another throughout a declaration, potentially in multiple places, in a manner reminiscent to the [alpha renaming](https://opendsa.cs.vt.edu/ODSA/Books/PL/html/AlphaConversion.html) notion found in lambda calculus. To that end we define `replace` for declarations, with the signature:
 
 ```cpp
 info replace(info declaration, info replace_this, info with_this);
 ```
 
-The metafunction returns a new declaration with the replacements effected. To improve the `logging_vector` example above, we'd need to replace the uses of `declaration_of(f)` with `replace(declaration_of(f), ^^std::vector, ^^logging_vector))`. The construct would transform properly all declarations, including those in the `shared_ptr` example.
+The metafunction returns a new declaration with the replacements effected. To improve the `logging_vector` example above, we'd need to replace the uses of `declaration_of(f)` with `replace(declaration_of(f), ^^std::vector<T, A>, ^^logging_vector<T, A>))`. The construct would transform properly all declarations.
 
-Replacement takes place transitively and includes dependent names. For example, assuming `iterator` is a nested class inside `std::vector<T, A>`, then declaration `std::vector<T, A>::iterator erase(std::vector<T, A>::iterator)` will be changed to `logging_vector<T, A>::iterator erase(logging_vector<T, A>::iterator)`. (However, if `std::vector<T, A>::iterator` is just a `using` declaration, `replace` does not effect any change).
+Projection is trickier because not all parameters should be affected, only those whose type (after removing cvref qualifiers) is `std::vector<T, A>`. To effect projection, user code defines a _projection function_:
 
-If replacing occurrences of a specific instantiation of `std::vector` is desirable, `replace(declaration_of(f), ^^std::vector<T, A>, ^^logging_vector<T, A>))` can be used.
+```cpp
+  // Inside logging_vector's definition
+  template <typename X>
+  decltype(auto) project(X&& x) {
+    if constexpr (std::is_same_v<remove_cvref_t<X>, std::logging_vector>) {
+      return std::forward<decltype(x.data)>(x.data);
+    } else {
+      return std::forward<X>(x);
+    }
+  }
+```
+
+We then propose a standard metafunction that applies a projection function to each parameter of a function:
+
+```cpp
+info project_parameters(info declaration, info projection_function);
+```
+
+Armed with these artifacts, we can have reflection generate proper forwarding functions from existing member functions of `std::vector` like this:
+
+```cpp
+        // For member functions of std::vector<T, A>
+        auto my_decl = replace(declaration_of(r), ^^std::vector<T, A>, ^^logging_vector<T, A>);
+        auto my_params = project_parameters(r, ^^project);
+        queue_injection(^^{
+          [:\(decl):] {
+            logger("Calling ", identifier_of(^^std::vector<T, A>), "::",
+              identifier_of(r), "(", \tokens(my_params), ")");
+            return data.[:r:](forward_param_list_of(my_params));
+          }
+        });
+```
+
+The code for member function templates is similar. One notable detail is that `forward_param_list_of` works seamlessly on function declarations and on projected parameter lists (flexibility made possible by the uniform representation of code artifacts as `std::meta::info` objects).
 
 # Metafunctions for Template Declarations
 
@@ -275,6 +316,10 @@ The declarations below summarize the metafunctions proposed, with full explanati
 namespace std::meta {
     // Returns the reflection of the declaration of a template
     consteval auto declaration_of(info) -> info;
+    // Replacement
+    consteval auto replace(info declaration, info replace_this, info with_this) -> info;
+    // Projection
+    consteval auto project_parameters(info declaration, info projection_function) -> info;
     // Returns given declaration with a changed name
     consteval auto set_name(info) -> info;
     //  Multiple explicit specializations and/or partial specializations
