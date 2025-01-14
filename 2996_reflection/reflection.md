@@ -4300,7 +4300,7 @@ After the example following the definition of _manifestly constant-evaluated_, i
 [#]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression `$M$` produces an injected declaration `$D$` and either
 
 * [#.#]{.pnum} `$M$` is not a plainly constant-evaluated expression, or
-* [#.#]{.pnum} there exists an instantiation ([temp.spec.general]) that results in either `$M$` or the target scope of `$D$` but not both.
+* [#.#]{.pnum} there exists a scope associated with a template specialization or a function that encloses exactly one of _M_ or _D_.
 
 ::: example
 ```cpp
