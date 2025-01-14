@@ -441,7 +441,7 @@ Here, `sizes` will be a `std::array<std::size_t, 3>` initialized with `{sizeof(i
 constexpr std::array types = {^^int, ^^float, ^^double};
 constexpr std::array sizes = []{
   std::array<std::size_t, types.size()> r;
-  std::views::transform(types, r.begin(), std::meta::size_of);
+  std::ranges::transform(types, r.begin(), std::meta::size_of);
   return r;
 }();
 ```
