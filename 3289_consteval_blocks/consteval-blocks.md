@@ -1,6 +1,6 @@
 ---
 title: "`consteval` blocks"
-document: P3289R1
+document: D3289R2
 date: today
 audience: CWG
 author:
@@ -18,7 +18,16 @@ toc: true
 
 # Revision History
 
-Since [@P3289R0], updated wording to make a consteval block distinct from a `static_assert`.
+Since [@P3289R1]:
+
+* wording edits
+  * drop the assertion that consteval blocks in templated contexts have no effect
+  * clarify that the evaluating expression of a consteval block shall be a constant expression
+  * minor formatting edits
+
+Since [@P3289R0]:
+
+* updated wording to make a consteval block distinct from a `static_assert`
 
 # Introduction
 
@@ -201,11 +210,14 @@ And then after [dcl.pre]{.sref}/13:
 [13]{.pnum} *Recommended practice*: When a `$static_assert-declaration$` fails, [...]
 
 ::: addu
-[*]{.pnum} If a `$consteval-block-declaration$` is within a template definition, it has no effect. The evaluating expression of a `$consteval-block-declaration$` is
+[*]{.pnum} The _evaluating expression_ of a `$consteval-block-declaration$` is
 ```cpp
-[]() -> void consteval $compound-statement$ ()
+[] -> void consteval $compound-statement$ ()
 ```
-[This expression is plainly constant-evaluated ([expr.const]).]{.note}
+
+[A non-dependent evaluating expression of a `$consteval-block-declaration$` is plainly constant-evaluated ([expr.const]).]{.note}
+
+[*]{.pnum} The evaluating expression of a `$consteval-block-declaration$` shall be a constant expression ([expr.const]).
 :::
 
 [14]{.pnum} An `$empty-declaration$` has no effect.

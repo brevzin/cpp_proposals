@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R9
+document: P2996R10
 date: today
 audience: CWG, LEWG, LWG
 author:
@@ -25,6 +25,12 @@ tag: reflection
 ---
 
 # Revision History
+
+Since [@P2996R9]:
+
+* make the [expr.const] "scope rule" for injected declarations more rigorous; disallow escape from function parameter scopes
+* slight changes to "plainly constant-evaluated": disallow variable template specialization initializers; allow complete-class contexts
+* bring notes and examples into line with current definitions
 
 Since [@P2996R8]:
 
@@ -4261,7 +4267,7 @@ Add a new paragraph prior to the definition of _manifestly constant-evaluated_ (
 ::: std
 ::: addu
 
-[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not in a complete-class context ([class.mem.general]{.sref}).
+[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not a specialization of a variable template.
 
 [The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below) and happens exactly once ([lex.phases]{.sref}). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
 
@@ -4283,7 +4289,7 @@ Add a note following the definition of _manifestly constant-evaluated_ to clarif
 * [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
 
 ::: addu
-[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., template arguments) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) can be evaluated multiple times, and there are no constraints on the relative order of their evaluation.]{.note}
+[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., template arguments) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) cannot have observable side effects, and there are no explicit constraints on the relative order of their evaluation.]{.note}
 :::
 
 :::
@@ -4300,7 +4306,9 @@ After the example following the definition of _manifestly constant-evaluated_, i
 [#]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression `$M$` produces an injected declaration `$D$` and either
 
 * [#.#]{.pnum} `$M$` is not a plainly constant-evaluated expression, or
-* [#.#]{.pnum} there exists a scope associated with a template specialization or a function that encloses exactly one of _M_ or _D_.
+* [#.#]{.pnum} there exists a scope that encloses exactly one of `$M$` or `$D$` that is either
+  * [#.#.#]{.pnum} a function parameter scope, or
+  * [#.#.#]{.pnum} a scope associated with a class template specialization.
 
 ::: example
 ```cpp
@@ -4329,7 +4337,7 @@ template <std::meta::info R> consteval bool tfn2() {
 
 struct S3;
 constexpr bool b3 = tfn2<^^S3>();
-  // OK, neither tfn2<^^S3>() nor S3 result from an instantiation
+  // OK, tfn2<^^S3>() and S3 are enclosed by the same scope
 
 template <std::meta::info R> consteval bool tfn3() {
   static constexpr bool b = complete_type(R);
@@ -4338,18 +4346,18 @@ template <std::meta::info R> consteval bool tfn3() {
 
 struct S4;
 constexpr bool b4 = tfn3<^^S4>();
-  // error: complete_type(^^S4) results from instantiation of tfn3<^^S4>, but S4 does not.
+  // error: complete_type(^^S4) is enclosed tfn3<^^S4>, but S4 is not
 
 template <typename> struct TCls {
   struct S5;
-  static void sfn() requires ([]{  // requires-clause is separately instantiated
+  static void sfn() requires ([]{
     constexpr bool b = complete_type(^^S5);
     return b;
   }) { }
 };
 
 constexpr bool b5 = T2<void>::sfn();
-  // error: TCls<void> does not result from instantiation of the requires-clause
+  // error: TCls<void>::S5 is not enclosed by requires-clause lambda
 ```
 :::
 
