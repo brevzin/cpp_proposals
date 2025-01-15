@@ -148,16 +148,16 @@ Change [basic.def]{.sref}/2:
 * [2.16]{.pnum} [...]
 :::
 
-Extend the wording for plainly constant-evaluated to allow a `consteval` block [this is adjusting wording that is added by [@P2996R9]]{.draftnote}:
+Extend the wording for plainly constant-evaluated to allow a `consteval` block [this is adjusting wording that is added by [@D2996R10]]{.draftnote}:
 
 ::: std
 
-[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if [it is not in a complete-class context ([class.mem.general]{.sref}) and either]{.addu}
+[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if
 
 * [21.#]{.pnum} [it is the evaluating expression of a `$consteval-block-declaration$` ([dcl.pre]{.sref}), or]{.addu}
-* [21.#]{.pnum} it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable [that is not in a complete-class context ([class.mem.general]{.sref})]{.rm}.
+* [21.#]{.pnum} it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not in a specialization of a variable template.
 
-[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below) and happens exactly once ([lex.phases]{.sref}). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
+[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
 
 :::
 
@@ -215,9 +215,9 @@ And then after [dcl.pre]{.sref}/13:
 [] -> void consteval $compound-statement$ ()
 ```
 
-[A non-dependent evaluating expression of a `$consteval-block-declaration$` is plainly constant-evaluated ([expr.const]).]{.note}
-
 [*]{.pnum} The evaluating expression of a `$consteval-block-declaration$` shall be a constant expression ([expr.const]).
+
+[A non-dependent evaluating expression of a `$consteval-block-declaration$` is plainly constant-evaluated ([expr.const]).]{.note}
 :::
 
 [14]{.pnum} An `$empty-declaration$` has no effect.

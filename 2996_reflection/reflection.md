@@ -4273,7 +4273,7 @@ Add a new paragraph prior to the definition of _manifestly constant-evaluated_ (
 
 [28pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not a specialization of a variable template.
 
-[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below) and happens exactly once ([lex.phases]{.sref}). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
+[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
 
 :::
 :::
