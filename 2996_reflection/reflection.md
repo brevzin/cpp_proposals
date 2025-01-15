@@ -28,9 +28,13 @@ tag: reflection
 
 Since [@P2996R9]:
 
-* make the [expr.const] "scope rule" for injected declarations more rigorous; disallow escape from function parameter scopes
-* slight changes to "plainly constant-evaluated": disallow variable template specialization initializers; allow complete-class contexts
-* bring notes and examples into line with current definitions
+* core wording updates
+  * make the [expr.const] "scope rule" for injected declarations more rigorous; disallow escape from function parameter scopes
+  * slight changes to "plainly constant-evaluated": disallow variable template specialization initializers; allow complete-class contexts
+  * bring notes and examples into line with current definitions
+  * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
+* library wording updates
+  * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
 
 Since [@P2996R8]:
 
