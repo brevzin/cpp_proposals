@@ -6728,7 +6728,7 @@ template <typename T>
 
 [#]{.pnum} Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
 
-[#]{.pnum} *Constant When*: `$V` satisfies the constraints for a value computed by a prvalue constant expression, no constituent reference of `$V$` shall refer to, or constituent poitner of `$V$` shall point to:
+[#]{.pnum} *Constant When*: `$V$` satisfies the constraints for a value computed by a prvalue constant expression and no constituent reference of `$V$` shall refer to, or constituent pointer of `$V$` shall point to:
 
   - [#.#]{.pnum} a temporary object ([class.temporary]),
   - [#.#]{.pnum} a string literal object ([lex.string]),
@@ -6736,7 +6736,7 @@ template <typename T>
   - [#.#]{.pnum} an object associated with a predefined `__func__` variable ([dcl.fct.def.general]), or
   - [#.#]{.pnum} an object that is not constexpr-representable from a program point in a namespace scope.
 
-[#]{.pnum} *Returns*: A reflection of `$V`. The type of the represented value is the cv-unqualified version of `T`.
+[#]{.pnum} *Returns*: A reflection of `$V$`. The type of the represented value is the cv-unqualified version of `T`.
 
 ```cpp
 template <typename T>
