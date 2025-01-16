@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R9
+document: D2996R10
 date: today
 audience: CWG, LEWG, LWG
 author:
@@ -25,6 +25,16 @@ tag: reflection
 ---
 
 # Revision History
+
+Since [@P2996R9]:
+
+* core wording updates
+  * make the [expr.const] "scope rule" for injected declarations more rigorous; disallow escape from function parameter scopes
+  * slight changes to "plainly constant-evaluated": disallow variable template specialization initializers; allow complete-class contexts
+  * bring notes and examples into line with current definitions
+  * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
+* library wording updates
+  * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
 
 Since [@P2996R8]:
 
@@ -4198,19 +4208,19 @@ Add a new paragraph between paragraphs 5 and 6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
-Modify paragraph 10 to mention `$splice-expression$`s:
+Modify paragraph 17 to mention `$splice-expression$`s:
 
 ::: std
-[10]{.pnum} During the evaluation of an expression `$E$` as a core constant expression, all `$id-expression$`s[, `$splice-expression$`s,]{.addu} and uses of `*this` that refer to an object or reference whose lifetime did not begin with the evaluation of `$E$` are treated as referring to a specific instance of taht object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. [...]
+[17]{.pnum} During the evaluation of an expression `$E$` as a core constant expression, all `$id-expression$`s[, `$splice-expression$`s,]{.addu} and uses of `*this` that refer to an object or reference whose lifetime did not begin with the evaluation of `$E$` are treated as referring to a specific instance of that object or reference whose lifetime and that of all subobjects (including all union members) includes the entire constant evaluation. [...]
 
 :::
 
-Modify paragraph 15 to disallow returning non-consteval-only pointers and references to consteval-only objects from constant expressions.
+Modify paragraph 22 to disallow returning non-consteval-only pointers and references to consteval-only objects from constant expressions.
 
 ::: std
-[15]{.pnum} A _constant expression_ is either a glvalue core constant expression [`$E$`]{.addu} that [\ ]{.addu}
+[22]{.pnum} A _constant expression_ is either a glvalue core constant expression [`$E$`]{.addu} that [\ ]{.addu}
 
-* [#.#]{.pnum} refers to an [entity]{.rm} [object or function]{.addu} that is a permitted result of a constant expression[, and]{.addu}
+* [#.#]{.pnum} refers to an object or a non-immediate function[, and]{.addu}
 * [[#.#]{.pnum} if `$E$` designates a function of consteval-only type ([basic.types.general]{.sref}) or an object whose complete object is of consteval-only type, then `$E$` is also of consteval-only type,]{.addu}
 
   ::: addu
@@ -4232,21 +4242,25 @@ Modify paragraph 15 to disallow returning non-consteval-only pointers and refere
 
 or a prvalue core constant expression whose value satisfies the following constraints:
 
-* [#.#]{.pnum} if the value is an object of class type, each non-static data member of reference type refers to an [entity]{.rm} [object or function]{.addu} that is a permitted result of a constant expression, [and if the object or function is of consteval-only type, or is the subobject of such an object, then so is the value,]{.addu}
-* [#.#]{.pnum} if the value is an object of scalar type, it does not have an indeterminate or erroneous value ([basic.indet]{.sref}),
-* [#.#]{.pnum} if the value is of pointer type, [then:\ ]{.addu}
-  * [#.#.#]{.pnum} it is a pointer to an object of static storage duration[,]{.rm} [or]{.addu} a pointer past the end of such an object ([expr.add]{.sref}), [and if the complete object of that object is of consteval-only type then so is that pointer,]{.addu}
-  * [#.#.#]{.pnum} [it is]{.addu} a pointer to a non-immediate function, [and if that function is of consteval-only type then so is that pointer,]{.addu} or
-  * [#.#.#]{.pnum} [it is]{.addu} a null pointer value,
-* [#.#]{.pnum} if the value is of pointer-to-member-function type, it does not designate an immediate function, [and if that function is of consteval-only type then so is that value,]{.addu} and
-* [#.#]{.pnum} if the value is an object of class or array type, each subobject satisfies these constraints for the value.
+* [#.#]{.pnum} each constituent reference refers to an object or a non-immediate function,
+* [#.#]{.pnum} no constituent value of scalar type is an indeterminate value ([basic.indet]{.sref}),
+* [#.#]{.pnum} no constituent value of pointer type is a pointer to an immediate function or an invalid pointer value ([basic.compound]), [and]{.rm}
+* [#.#]{.pnum} no constituent value of pointer-to-member type designates an immediate function[.]{.rm}[, and]{.addu}
+
+::: addu
+* [#.#]{.pnum} unless the value is of consteval-only type, no constituent value of pointer or pointer-to-member type is
+  * a pointer to a function or member of consteval-only type, or
+  * a pointer to or past an object whose complete object has consteval-only type,
+
+  nor does any constituent reference refer to an object or function of consteval-only type.
+:::
 
 :::
 
-Modify (and clean up) the definition of _immediate-escalating_ in paragraph 18 to also apply to expressions of consteval-only type.
+Modify (and clean up) the definition of _immediate-escalating_ in paragraph 25 to also apply to expressions of consteval-only type.
 
 ::: std
-[18]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it is [either]{.rm}
+[25]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it is [either]{.rm}
 
 * [#.#]{.pnum} [a potentially-evaluated]{.rm} [an]{.addu} `$id-expression$` [or `$splice-expression$`]{.addu} that [denotes]{.rm} [designates]{.addu} an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
 * [#.#]{.pnum} an immediate invocation that is not a constant expression[, or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
@@ -4254,16 +4268,16 @@ Modify (and clean up) the definition of _immediate-escalating_ in paragraph 18 t
 
 :::
 
-Add a new paragraph prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/21), and renumber accordingly:
+Add a new paragraph prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/28), and renumber accordingly:
 
 [The adverb "plainly" doesn't really convey any information here. We don't want to change it right now because Core has already reviewed this wording multiple times using this term, but we think an alternative term would be better. Sequentially constant-evaluated is another term we've considered that we like better. Other options might be chronologically, orderly, ordinally, and rendered. We want to somehow emphasize that these expressions can have side effects and must be evaluated exactly once, in order.]{.draftnote}
 
 ::: std
 ::: addu
 
-[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not in a complete-class context ([class.mem.general]{.sref}).
+[28pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not a specialization of a variable template.
 
-[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below) and happens exactly once ([lex.phases]{.sref}). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
+[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
 
 :::
 :::
@@ -4274,7 +4288,7 @@ Add a note following the definition of _manifestly constant-evaluated_ to clarif
 
 ::: std
 
-[21]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
+[28]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
 
 * [#.#]{.pnum} a `$constant-expression$`, or
 * [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}), or
@@ -4283,7 +4297,7 @@ Add a note following the definition of _manifestly constant-evaluated_ to clarif
 * [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
 
 ::: addu
-[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., template arguments) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) can be evaluated multiple times, and there are no constraints on the relative order of their evaluation.]{.note}
+[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., template arguments) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) cannot have observable side effects, and there are no explicit constraints on the relative order of their evaluation.]{.note}
 :::
 
 :::
@@ -4300,7 +4314,9 @@ After the example following the definition of _manifestly constant-evaluated_, i
 [#]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression `$M$` produces an injected declaration `$D$` and either
 
 * [#.#]{.pnum} `$M$` is not a plainly constant-evaluated expression, or
-* [#.#]{.pnum} there exists an instantiation ([temp.spec.general]) that results in either `$M$` or the target scope of `$D$` but not both.
+* [#.#]{.pnum} there exists a scope that encloses exactly one of `$M$` or `$D$` that is either
+  * [#.#.#]{.pnum} a function parameter scope, or
+  * [#.#.#]{.pnum} a scope associated with a class template specialization.
 
 ::: example
 ```cpp
@@ -4329,7 +4345,7 @@ template <std::meta::info R> consteval bool tfn2() {
 
 struct S3;
 constexpr bool b3 = tfn2<^^S3>();
-  // OK, neither tfn2<^^S3>() nor S3 result from an instantiation
+  // OK, tfn2<^^S3>() and S3 are enclosed by the same scope
 
 template <std::meta::info R> consteval bool tfn3() {
   static constexpr bool b = complete_type(R);
@@ -4338,18 +4354,18 @@ template <std::meta::info R> consteval bool tfn3() {
 
 struct S4;
 constexpr bool b4 = tfn3<^^S4>();
-  // error: complete_type(^^S4) results from instantiation of tfn3<^^S4>, but S4 does not.
+  // error: complete_type(^^S4) is enclosed tfn3<^^S4>, but S4 is not
 
 template <typename> struct TCls {
   struct S5;
-  static void sfn() requires ([]{  // requires-clause is separately instantiated
+  static void sfn() requires ([]{
     constexpr bool b = complete_type(^^S5);
     return b;
   }) { }
 };
 
 constexpr bool b5 = T2<void>::sfn();
-  // error: TCls<void> does not result from instantiation of the requires-clause
+  // error: TCls<void>::S5 is not enclosed by requires-clause lambda
 ```
 :::
 
@@ -6710,13 +6726,12 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is a structural type that is neither a reference type nor an array type.
 
-[#]{.pnum} *Constant When*: Any value computed by `expr` having pointer type, or every subobject of the value computed by `expr` having pointer or reference type, is the address of or refers to an object or function that
+[#]{.pnum} *Constant When*: The value computed by `expr` satisfies the constraints for a value computed by a prvalue constant expression. Furthermore, neither the value computed by an lvalue-to-rvalue conversion applied to `expr` nor any subobject of that value is a pointer or reference to
 
-  - [#.#]{.pnum} is a permitted result of a constant expression ([expr.const]),
-  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
-  - [#.#]{.pnum} is not a string literal object ([lex.string]),
-  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
-  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
+  - [#.#]{.pnum} a temporary object ([class.temporary]),
+  - [#.#]{.pnum} a string literal object ([lex.string]),
+  - [#.#]{.pnum} the result of a `typeid` expression ([expr.typeid]), or
+  - [#.#]{.pnum} an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
 
 [#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the represented value is the cv-unqualified version of `T`.
 
@@ -6729,7 +6744,7 @@ template <typename T>
 
 [#]{.pnum} *Constant When*: `expr` designates an object or function that
 
-  - [#.#]{.pnum} is a permitted result of a constant expression ([expr.const]),
+  - [#.#]{.pnum} is constexpr-representable from a program point in a namespace scope ([expr.const]),
   - [#.#]{.pnum} is not a temporary object ([class.temporary]),
   - [#.#]{.pnum} is not a string literal object ([lex.string]),
   - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
