@@ -599,7 +599,13 @@ immediate functions to persist</h1>
 <li><a href="#didnt-you-already-propose-something-like-this" id="toc-didnt-you-already-propose-something-like-this"><span class="toc-section-number">2.1</span> Didn’t You Already Propose
 Something Like This?<span></span></a></li>
 </ul></li>
-<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">3</span> Proposal<span></span></a></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">3</span> Proposal<span></span></a>
+<ul>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">3.1</span> Feature-Test
+Macro<span></span></a></li>
+<li><a href="#feature-test-macro-1" id="toc-feature-test-macro-1"><span class="toc-section-number">3.2</span> Feature-test
+Macro<span></span></a></li>
+</ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
@@ -900,9 +906,9 @@ A variable <code class="sourceCode cpp">v</code> is
 <span class="addu">either</span> the full-expression of its
 initialization is a constant expression when interpreted as a
 <em>constant-expression</em> <span class="addu">or
-<code class="sourceCode cpp">v</code> is an immediate function context
-and the full-expression of its initialization is an immediate constant
-expression when interpreted as a
+<code class="sourceCode cpp">v</code> is in an immediate function
+context and the full-expression of its initialization is an immediate
+constant expression when interpreted as a
 <em>constant-expression</em></span>,</p>
 <p><span class="note2"><span>[ <em>Note 2:</em> </span>Within this
 evaluation, <code class="sourceCode cpp">std​<span class="op">::</span>​is_constant_evaluated<span class="op">()</span></code>
@@ -941,31 +947,43 @@ each constituent reference refers to an object or a function,</li>
 no constituent value of scalar type is an indeterminate value
 ([basic.indet]), and</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(x.3)</a></span>
-no constituent value of pointer type has invalid pointer value
+no constituent value of pointer type has an invalid pointer value
 ([basic.compound]).</li>
 </ul>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">22</a></span>
-A <em>constant expression</em> is either a glvalue core constant
-expression that refers to an object or a non-immediate function, or a
-prvalue core constant expression whose value satisfies the following
-constraints:</p>
+A <em>constant expression</em> is either a glvalue <span class="addu">immediate</span> core constant expression <span class="rm" style="color: #bf0303"><del>that refers to an object or a non-immediate
+function</del></span> <span class="addu">does not refer to an immediate
+function</span>, or a prvalue <span class="rm" style="color: #bf0303"><del>core</del></span> <span class="addu">immediate</span> constant expression whose value satisfies
+the following constraints:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(22.1)</a></span>
-each constituent reference refers to an object or a non-immediate
-function,</li>
+<span class="rm" style="color: #bf0303"><del>each constituent reference
+refers to an object or a non-immediate function</del></span> <span class="addu">no constituent reference refers to an immediate
+function</span>,</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(22.2)</a></span>
-no constituent value of scalar type is an indeterminate value
-([basic.indet]),</li>
+<span class="rm" style="color: #bf0303"><del>no constituent value of
+scalar type is an indeterminate value ([basic.indet])</del></span>,</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(22.3)</a></span>
 no constituent value of pointer type is a pointer to an immediate
-function or an invalid pointer value ([basic.compound]), and</li>
+function <span class="rm" style="color: #bf0303"><del>or an invalid
+pointer value ([basic.compound])</del></span>, and</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(22.4)</a></span>
 no constituent value of pointer-to-member type designates an immediate
 function.</li>
 </ul>
 </blockquote>
 </div>
+<h2 data-number="3.1" id="feature-test-macro"><span class="header-section-number">3.1</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<h2 data-number="3.2" id="feature-test-macro-1"><span class="header-section-number">3.2</span> Feature-test Macro<a href="#feature-test-macro-1" class="self-link"></a></h2>
+<p>Bump <code class="sourceCode cpp">__cpp_consteval</code> in
+<span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
+</div>
+</blockquote>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">

@@ -209,7 +209,7 @@ Change [expr.const]{.sref}:
 ::: std
 [6]{.pnum} A variable `v` is *constant-initializable* if
 
-* [6.1]{.pnum}  [either]{.addu} the full-expression of its initialization is a constant expression when interpreted as a *constant-expression* [or `v` is an immediate function context and the full-expression of its initialization is an immediate constant expression when interpreted as a *constant-expression*]{.addu},
+* [6.1]{.pnum}  [either]{.addu} the full-expression of its initialization is a constant expression when interpreted as a *constant-expression* [or `v` is in an immediate function context and the full-expression of its initialization is an immediate constant expression when interpreted as a *constant-expression*]{.addu},
 
     [Within this evaluation, `std​::​is_constant_evaluated()` ([meta.const.eval]) returns `true`.]{.note2}
 
@@ -226,16 +226,30 @@ and
 
 * [x.1]{.pnum} each constituent reference refers to an object or a function,
 * [x.2]{.pnum} no constituent value of scalar type is an indeterminate value ([basic.indet]), and
-* [x.3]{.pnum} no constituent value of pointer type has invalid pointer value ([basic.compound]).
+* [x.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
 :::
 
-[22]{.pnum} A *constant expression* is either a glvalue core constant expression that refers to an object or a non-immediate function, or a prvalue core constant expression whose value satisfies the following constraints:
+[22]{.pnum} A *constant expression* is either a glvalue [immediate]{.addu} core constant expression [that refers to an object or a non-immediate function]{.rm} [does not refer to an immediate function]{.addu}, or a prvalue [core]{.rm} [immediate]{.addu} constant expression whose value satisfies the following constraints:
 
-* [22.1]{.pnum} each constituent reference refers to an object or a non-immediate function,
-* [22.2]{.pnum} no constituent value of scalar type is an indeterminate value ([basic.indet]),
-* [22.3]{.pnum} no constituent value of pointer type is a pointer to an immediate function or an invalid pointer value ([basic.compound]), and
+* [22.1]{.pnum} [each constituent reference refers to an object or a non-immediate function]{.rm} [no constituent reference refers to an immediate function]{.addu},
+* [22.2]{.pnum} [no constituent value of scalar type is an indeterminate value ([basic.indet])]{.rm},
+* [22.3]{.pnum} no constituent value of pointer type is a pointer to an immediate function [or an invalid pointer value ([basic.compound])]{.rm}, and
 * [22.4]{.pnum} no constituent value of pointer-to-member type designates an immediate function.
 :::
+
+## Feature-Test Macro
+
+## Feature-test Macro
+
+Bump `__cpp_consteval` in [cpp.predefined]{.sref}:
+
+::: bq
+```diff
+- __cpp_­consteval @[202406L]{.diffdel}@
++ __cpp_­consteval @[20XXXXL]{.diffins}@
+```
+:::
+
 ---
 references:
   - id: P3554R0
