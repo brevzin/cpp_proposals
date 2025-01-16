@@ -6726,14 +6726,17 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is a structural type that is neither a reference type nor an array type.
 
-[#]{.pnum} *Constant When*: The value computed by `expr` satisfies the constraints for a value computed by a prvalue constant expression. Furthermore, neither the value computed by an lvalue-to-rvalue conversion applied to `expr` nor any subobject of that value is a pointer or reference to
+[#]{.pnum} Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
+
+[#]{.pnum} *Constant When*: `$V` satisfies the constraints for a value computed by a prvalue constant expression, no constituent reference of `$V$` shall refer to, or constituent poitner of `$V$` shall point to:
 
   - [#.#]{.pnum} a temporary object ([class.temporary]),
   - [#.#]{.pnum} a string literal object ([lex.string]),
-  - [#.#]{.pnum} the result of a `typeid` expression ([expr.typeid]), or
-  - [#.#]{.pnum} an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
+  - [#.#]{.pnum} the result of a `typeid` expression ([expr.typeid]),
+  - [#.#]{.pnum} an object associated with a predefined `__func__` variable ([dcl.fct.def.general]), or
+  - [#.#]{.pnum} an object that is not constexpr-representable from a program point in a namespace scope.
 
-[#]{.pnum} *Returns*: A reflection of the value computed by an lvalue-to-rvalue conversion applied to `expr`. The type of the represented value is the cv-unqualified version of `T`.
+[#]{.pnum} *Returns*: A reflection of `$V`. The type of the represented value is the cv-unqualified version of `T`.
 
 ```cpp
 template <typename T>
@@ -7308,4 +7311,20 @@ references:
       month: 1
       day: 5
     URL: https://wg21.link/p3289r1
+  - id: P2996R9
+    citation-label: P2996R9
+    title: "Reflection for C++26"
+    author:
+      - family: Wyatt Childers
+      - family: Peter Dimov
+      - family: Dan Katz
+      - family: Barry Revzin
+      - family: Andrew Sutton
+      - family: Faisal Vali
+      - family: Daveed Vandevoorde
+    issued:
+      - year: 2025
+        month: 1
+        day: 12
+    URL: https://wg21.link/p2996r9
 ---
