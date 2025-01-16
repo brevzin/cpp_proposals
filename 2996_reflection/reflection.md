@@ -6728,7 +6728,7 @@ template <typename T>
 
 [#]{.pnum} Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
 
-[#]{.pnum} *Constant When*: `$V$` satisfies the constraints for a value computed by a prvalue constant expression and no constituent reference of `$V$` refers to, or constituent pointer of `$V$` points to:
+[#]{.pnum} *Constant When*: `$V$` satisfies the constraints for a value computed by a prvalue constant expression and no constituent reference of `$V$` refers to, or constituent value of `$V$` is a pointer to:
 
   - [#.#]{.pnum} a temporary object ([class.temporary]),
   - [#.#]{.pnum} a string literal object ([lex.string]),
