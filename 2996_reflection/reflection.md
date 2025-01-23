@@ -33,8 +33,11 @@ Since [@P2996R9]:
   * slight changes to "plainly constant-evaluated": disallow variable template specialization initializers; allow complete-class contexts
   * bring notes and examples into line with current definitions
   * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
+  * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
+  * side effects of immediate invocations are immediate-escalatory
 * library wording updates
   * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
+  * non-static data members of closure types are not _members-of-representable_
 
 Since [@P2996R8]:
 
@@ -3162,7 +3165,10 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
 
-  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each plainly constant-evaluated expression within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where each side effect of that expression is complete if and only if `$D$` is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
+  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each expression `$E$` within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating `$E$` as a full-expression is complete if and only if]{.addu}
+
+  - [[7-8.#]{.pnum} `$E$` is manifestly constant-evaluated, and]{.addu}
+  - [[7-8.#]{.pnum} either `$D$` or the template definition from which `$D$` is instantiated is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
@@ -3549,7 +3555,7 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 
   - [#.#]{.pnum} the object associated with a constexpr variable or a subobject thereof,
   - [#.#]{.pnum} a template parameter object ([temp.param]{.sref}) or a subobject thereof, or
-  - [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a manifestly constant-evaluated expression.
+  - [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a core constant expression.
 
 :::
 :::
@@ -4257,15 +4263,35 @@ or a prvalue core constant expression whose value satisfies the following constr
 
 :::
 
-Modify (and clean up) the definition of _immediate-escalating_ in paragraph 25 to also apply to expressions of consteval-only type.
+Extend the conditions in paragraph 24 under which an aggregate initialization constitutes an immediate invocation.
+
+::: std
+[24]{.pnum} ...
+
+  An invocation is an _immediate invocation_ if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An aggregatae initialization is an immediate invocation if it [initializes an object of consteval-only type or if it]{.addu} evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
+
+:::
+
+Modify (and clean up) the definition of _immediate-escalating expression_ in paragraph 25 to also apply to expressions of consteval-only type.
 
 ::: std
 [25]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it is [either]{.rm}
 
 * [#.#]{.pnum} [a potentially-evaluated]{.rm} [an]{.addu} `$id-expression$` [or `$splice-expression$`]{.addu} that [denotes]{.rm} [designates]{.addu} an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
-* [#.#]{.pnum} an immediate invocation that is not a constant expression[, or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
+* [#.#]{.pnum} an immediate invocation that [either]{.addu} is not a constant expression [ or has associated side effects ([basic.execution]), or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
 * [[#.#]{.pnum} of consteval-only type ([basic.types.general]{.sref}).]{.addu}
 
+:::
+
+Extend the definition of _immediate function_ in paragraph 27 to include functions containing a declaration of a variable of consteval-only type.
+
+::: std
+[27]{.pnum} An _immediate function_ is a function or constructor that is
+
+* [#.#]{.pnum} declared with the `consteval` specifier, or
+* [#.#]{.pnum} an immediate-escalating function `$F$` whose function body contains [either]{.addu}
+  * [#.#.#]{.pnum} an immediate-escalating expression `$E$` such that `$E$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope[.]{.rm}[, or]{.addu}
+  * [[#.#.#]{.pnum} a definition `$D$` of a variable with consteval-only type such that `$D$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope.]{.addu}
 :::
 
 Add a new paragraph prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/28), and renumber accordingly:
@@ -4369,9 +4395,9 @@ constexpr bool b5 = T2<void>::sfn();
 ```
 :::
 
-[#]{.pnum} The _evaluation context_ is a set of points within the program that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of a manifestly constant-evaluated expression `$M$`, the evaluation context of an evaluation `$E$` comprises the union of
+[#]{.pnum} The _evaluation context_ is a set of points within the program that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$C$` as a core constant expression, the evaluation context of an evaluation `$E$` comprises the union of
 
-- [#.#]{.pnum} the instantiation context of `$M$` ([module.context]{.sref}), and
+- [#.#]{.pnum} the instantiation context of `$C$` ([module.context]{.sref}), and
 - [#.#]{.pnum} the synthesized points corresponding to any injected declarations produced by evaluations sequenced before `$E$` ([intro.execution]{.sref}).
 
 :::
@@ -6375,7 +6401,7 @@ consteval info value_of(info r);
 
 * [#.#]{.pnum} a value,
 * [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type, and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began in the manifestly constant-evaluated expression currently under evaluation ([expr.const]), ([temp.type]).
+* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type, and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began in the core constant expression currently under evaluation ([expr.const]), ([temp.type]).
 
 [#]{.pnum} *Returns*:
 
@@ -6477,9 +6503,10 @@ is _members-of-representable_ if it is
 
 A member of a closure type is members-of-representable if it is
 
-* [#.#]{.pnum} a function call operator or function call operator template,
-* [#.#]{.pnum} a conversion function or conversion function template, or
-* [#.#]{.pnum} a non-static data member corresponding to an entity captured by copy.
+* [#.#]{.pnum} a function call operator or function call operator template, or
+* [#.#]{.pnum} a conversion function or conversion function template.
+
+It is implementation-defined whether other members of closure types are _members-of-representable_.
 
 [Counterexamples of members-of-representable members include: injected class names, partial template specializations, friend declarations, static assertions, and non-static data members of closure types that correspond to entities captured by reference.]{.note}
 
@@ -6874,7 +6901,7 @@ for every `@$r$~$k$~@` in `mdescrs`.
 Produces an injected declaration `$D$` ([expr.const]) that provides a definition for `$C$` with properties as follows:
 
 - [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
-- [#.#]{.pnum} The locus of `$D$` follows immediately after the manifestly constant-evaluated expression currently under evaluation.
+- [#.#]{.pnum} The locus of `$D$` follows immediately after the core constant expression currently under evaluation.
 - [#.#]{.pnum} If `$C$` is a specialization of a class template `$T$`, then `$D$` is is an explicit specialization of `$T$`.
 - [#.#]{.pnum} `$D$` contains a public non-static data member or unnamed bit-field corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
 - [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@` is declared with the type or type alias represented by `@$t$~$K$~@`.
