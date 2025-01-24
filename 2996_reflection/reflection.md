@@ -3661,7 +3661,7 @@ Add a new paragraph to the end of [intro.execution] specifying a stronger sequen
 [12]{.pnum} If a signal handler is executed as a result of a call to the `std::raise` function, then the execution of the handler is sequenced after the invocation of the `std::raise` function and before its return.
 
 ::: addu
-[12+]{.pnum} During the evalutation of a plainly constant-evaluated expression ([expr.const]), evaluations of operands of individual operators and of subexpressions of individual expresssions that are otherwise either unsequenced or indeterminately sequenced are evaluated in lexical order.
+[12+]{.pnum} During the evaluation of a manifestly constant-evaluated expression ([expr.const]), evaluations of operands of individual operators and of subexpressions of individual expresssions that are otherwise either unsequenced or indeterminately sequenced are evaluated in lexical order.
 :::
 
 :::
