@@ -24,36 +24,37 @@ Since [@P3420R0]:
 - replaced API that returns portions of a function declaration as a token sequence with a functional-style API that takes a declaration and returns a modified declaration
 - for implementation friendliness, removed metafunctions returning code that potentially contains a mix of dependent and non-dependent identifiers as token sequences
 - consequently, no need for the "as-if" rule for compiler-returned token sequences
+- added _replacement_ and _projection_ as fundamental transformations
 
 # Motivation
 
-A key trait that makes a reflection facility powerful is *completeness*&mdash;the ability to reflect the entire source language. Current proposals facilitate reflection of certain declarations in a namespace or a `struct`/`class`/`union` definition. Although [@P2996R7]'s `members_of` metafunction includes template members (function template and class template declarations), it does not offer primitives for reflection of template declarations themselves. In this proposal, we aim to define a comprehensive API for reflection of C++ templates.
+A key trait that makes a reflection facility powerful is *completeness*&mdash;the ability to reflect the entire source language. Current proposals facilitate reflection of certain declarations in a namespace or a `struct`/`class`/`union` definition. Although [@P2996R7]'s `members_of` metafunction includes template members (function template and class template declarations), that proposal does not offer primitives for reflection of template declarations themselves. In this proposal, we aim to define a comprehensive API for reflection of C++ templates.
 
-A powerful archetypal motivator&mdash;argued in [@P3157R1] and at length in the CppCon 2024 talk "Reflection Is Not Contemplation"&mdash;is the *identity* metafunction. This function, given a class type, creates a replica of it, crucially providing the ability to make minute changes to the copy, such as changing its name, adding or removing members, changing the signature of existing member functions, and so on. By means of example:
+A powerful archetypal motivator&mdash;argued in [@P3157R1] and at length in the CppCon 2024 [talk](https://youtube.com/watch?v=H3IdVM4xoCU) "Reflection Is Not Contemplation"&mdash;is the *identity* metafunction. This function, given a class type, creates a replica of it, crucially providing the ability to make minute changes to the copy, such as changing its name, adding or removing members, changing the signature of existing member functions, and so on. By means of example:
 
 ```cpp
 class Widget {
-    int a;
+  int a;
 public:
-    template <class T> requires (std::is_convertible_v<T, int>)
-    Widget(const T&);
-    const Widget& f(const Widget&) const &;
-    template <class T>
-    void g();
+  template <class T> requires (std::is_convertible_v<T, int>)
+  Widget(const T&);
+  const Widget& f(const Widget&) const &;
+  template <class T>
+  void g();
 };
 
 consteval {
-    identity(^^Widget, "Gadget");
+  identity(^^Widget, "Gadget");
 }
 // Same effect as this handwritten code:
 // class Gadget {
-//     int a;
+//   int a;
 // public:
-//     template <class T> requires (std::is_convertible_v<T, int>)
-//     Gadget(const T&);
-//     const Gadget& f(const Gadget&) const &;
-//     template <class T>
-//     void g();
+//   template <class T> requires (std::is_convertible_v<T, int>)
+//   Gadget(const T&);
+//   const Gadget& f(const Gadget&) const &;
+//   template <class T>
+//   void g();
 // };
 ```
 
@@ -77,9 +78,9 @@ While an exact copy of a type is not particularly interesting&mdash;and although
 - `reflect_invoke`
 -->
 
-In order to reflect on nontrivial C++ code and splice it back with controlled modifications, the language must necessarily reflect on all templates&mdash;class templates and specializations thereof, function templates, variable templates, and alias templates. This is not an easy task; templates pose unique challenges to a reflection engine because, by their nature, they are only partially analyzed semantically. For example, neither parameter types nor the return type of a function template can be represented as reflections of types because dependent types are not known until the template is instantiated. The same thinking goes for a variety of declarations that can be found inside a class template; C++ templates are more akin to patterns by which code is to be generated than to standalone, semantically verified code. For that reason, the reflection facilities proposed in P2996 intended for non-templated declarations are not readily applicable to templates.
+In order to reflect on nontrivial C++ code and splice it back with controlled modifications, the language must necessarily reflect on all templates&mdash;class templates and specializations thereof, function templates, variable templates, and alias templates. This is not an easy task; templates pose unique challenges to a reflection engine because, by their nature, they are only partially analyzed semantically. For example, neither parameter types nor the return type of a function template can be reliably represented as reflections of types because they may refer dependent types, which are not known until the template is instantiated. The same thinking goes for a variety of declarations that can be found inside a class template; C++ templates are more akin to patterns by which code is to be generated than to standalone, semantically verified code. For that reason, the reflection facilities proposed in P2996 intended for non-templated declarations are not readily applicable to templates.
 
-Conversely, reflection code would be seriously hamstrung if it lacked the ability to reflect on template code (and subsequently manipulate and generate related code), especially because templates are ubiquitous in today's C++ codebases. Furthermore, limiting reflection to instantiations of class templates (which would fit the charter of P2996) does not suffice because class templates commonly define inner function templates (e.g., every instantiation of `std::vector` defines several constructor templates and other function templates such as `insert` and `emplace_back`). Therefore, to the extent reflection of C++ declarations is deemed useful, reflection of templates is essential.
+Conversely, reflection code would be seriously hamstrung if it lacked the ability to reflect on template code (and subsequently manipulate and generate related code), especially because templates are ubiquitous in today's C++ codebases. Furthermore, limiting reflection to instantiations of class templates (which would fit the charter of P2996) does not suffice because class templates commonly define inner function templates (e.g., every instantiation of `std::vector` defines several constructor templates and other function templates such as `insert` and `emplace_back`). (Nontemplate classes may, of course, also define class templates and function templates within.) Therefore, to the extent that reflection of C++ declarations is deemed useful, reflection of templates is essential.
 
 Given that many elements of a template cannot be semantically analyzed early (at template definition time), this proposal adopts a two-pronged strategy for reflecting components of template declarations:
 
@@ -100,7 +101,7 @@ struct Widget {};
 
 template <typename T>
 requires std::is_copy_constructible_v<T>
-void fun(const T& value, S&) { ... }
+void fun(const T& value, Widget&) { ... }
 
 template <typename... Ts>
 void logger(const Ts&.. values);
@@ -166,9 +167,9 @@ public:
       } else if (is_function(r) && !is_special_member_function(r)) {
         queue_injection(^^{
           [:\(declaration_of(r)):] {
-            logger("Calling ", identifier_of(^^std::vector<T, A>), "::",
+            logger("Calling ", display_string_of(^^std::vector<T, A>), "::",
               identifier_of(r), "(", \tokens(parameter_list(r)), ")");
-            return data.[:r:](forward_param_list_of(r));
+            return data.[:r:](\tokens(forward_param_list_of(r)));
           }
         });
       } else if (is_function_template(r) && !is_constructor(r)) {
@@ -193,7 +194,7 @@ public:
 };
 ```
 
-(Refer to [@P2996R7] for metafunctions `get_public_members`, `is_type_alias`, `is_class_type`, `is_function`, `is_function_template`, and `identifier_of`, of which semantics should be intuitive as we discuss the context.) Here, as the code iterates declarations in class `std::vector<T, A>` (an instance, not the template class itself, which simplifies a few aspects of the example), it takes action depending on the nature of the declaration found. For `typedef` (or equivalent `using`) declarations and for nested class declaration, a `using` declaration of the form `using` _name_ `= std::vector<T, A>::name;` is issued for each corresponding _name_ found in `std::vector<T, A>`.
+(Refer to [@P2996R7] for metafunctions `get_public_members`, `is_type_alias`, `is_class_type`, `is_function`, `is_function_template`, and `identifier_of`, of which semantics should be intuitive as we discuss the context.) Here, as the code iterates declarations in class `std::vector<T, A>` (an instance of `std::vector`, not the template class itself, which simplifies a few aspects of the example), it takes action depending on the nature of the declaration found. For `typedef` (or equivalent `using`) declarations and for nested class declaration, a `using` declaration of the form `using` _name_ `= std::vector<T, A>::name;` is issued for each corresponding _name_ found in `std::vector<T, A>`.
 
 If the iterated declaration introduces a non-special function (filtered with the test `is_function(r) && !is_special_member_function(r)`), a new function is defined with the same signature. The definition issues a call to `logger` passing the parameters list, followed by a forwarding action to the original function for the `data` member.
 

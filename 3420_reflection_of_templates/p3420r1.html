@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-13" />
+  <meta name="dcterms.date" content="2025-01-24" />
   <title>Reflection of Templates</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-13</td>
+    <td>2025-01-24</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -673,7 +673,7 @@ of Class Templates<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P3420R0">[<a href="https://wg21.link/p3420r0" role="doc-biblioref">P3420R0</a>]</span>:</p>
+<p>Since <span class="citation" data-cites="P3420R0"><a href="https://wg21.link/p3420r0" role="doc-biblioref">[P3420R0]</a></span>:</p>
 <ul>
 <li>replaced API that returns portions of a function declaration as a
 token sequence with a functional-style API that takes a declaration and
@@ -683,6 +683,8 @@ code that potentially contains a mix of dependent and non-dependent
 identifiers as token sequences</li>
 <li>consequently, no need for the “as-if” rule for compiler-returned
 token sequences</li>
+<li>added <em>replacement</em> and <em>projection</em> as fundamental
+transformations</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="motivation"><span class="header-section-number">2</span>
 Motivation<a href="#motivation" class="self-link"></a></h1>
@@ -691,43 +693,43 @@ Motivation<a href="#motivation" class="self-link"></a></h1>
 Current proposals facilitate reflection of certain declarations in a
 namespace or a
 <code class="sourceCode cpp"><span class="kw">struct</span></code>/<code class="sourceCode cpp"><span class="kw">class</span></code>/<code class="sourceCode cpp"><span class="kw">union</span></code>
-definition. Although <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>’s
+definition. Although <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span>’s
 <code class="sourceCode cpp">members_of</code> metafunction includes
-template members (function template and class template declarations), it
-does not offer primitives for reflection of template declarations
-themselves. In this proposal, we aim to define a comprehensive API for
-reflection of C++ templates.</p>
-<p>A powerful archetypal motivator—argued in <span class="citation" data-cites="P3157R1">[<a href="https://wg21.link/p3157r1" role="doc-biblioref">P3157R1</a>]</span> and at length in the CppCon
-2024 talk “Reflection Is Not Contemplation”—is the <em>identity</em>
-metafunction. This function, given a class type, creates a replica of
-it, crucially providing the ability to make minute changes to the copy,
-such as changing its name, adding or removing members, changing the
-signature of existing member functions, and so on. By means of
-example:</p>
+template members (function template and class template declarations),
+that proposal does not offer primitives for reflection of template
+declarations themselves. In this proposal, we aim to define a
+comprehensive API for reflection of C++ templates.</p>
+<p>A powerful archetypal motivator—argued in <span class="citation" data-cites="P3157R1"><a href="https://wg21.link/p3157r1" role="doc-biblioref">[P3157R1]</a></span> and at length in the CppCon
+2024 <a href="https://youtube.com/watch?v=H3IdVM4xoCU">talk</a>
+“Reflection Is Not Contemplation”—is the <em>identity</em> metafunction.
+This function, given a class type, creates a replica of it, crucially
+providing the ability to make minute changes to the copy, such as
+changing its name, adding or removing members, changing the signature of
+existing member functions, and so on. By means of example:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Widget <span class="op">{</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> a;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> a;</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>std<span class="op">::</span>is_convertible_v<span class="op">&lt;</span>T, <span class="dt">int</span><span class="op">&gt;)</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    Widget<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;)</span>;</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> Widget<span class="op">&amp;</span> f<span class="op">(</span><span class="kw">const</span> Widget<span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">&amp;</span>;</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> g<span class="op">()</span>;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>std<span class="op">::</span>is_convertible_v<span class="op">&lt;</span>T, <span class="dt">int</span><span class="op">&gt;)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  Widget<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;)</span>;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> Widget<span class="op">&amp;</span> f<span class="op">(</span><span class="kw">const</span> Widget<span class="op">&amp;)</span> <span class="kw">const</span> <span class="op">&amp;</span>;</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> g<span class="op">()</span>;</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    identity<span class="op">(^^</span>Widget, <span class="st">&quot;Gadget&quot;</span><span class="op">)</span>;</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  identity<span class="op">(^^</span>Widget, <span class="st">&quot;Gadget&quot;</span><span class="op">)</span>;</span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Same effect as this handwritten code:</span></span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">// class Gadget {</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co">//     int a;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co">//   int a;</span></span>
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">// public:</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co">//     template &lt;class T&gt; requires (std::is_convertible_v&lt;T, int&gt;)</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co">//     Gadget(const T&amp;);</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co">//     const Gadget&amp; f(const Gadget&amp;) const &amp;;</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co">//     template &lt;class T&gt;</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co">//     void g();</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co">//   template &lt;class T&gt; requires (std::is_convertible_v&lt;T, int&gt;)</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co">//   Gadget(const T&amp;);</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co">//   const Gadget&amp; f(const Gadget&amp;) const &amp;;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co">//   template &lt;class T&gt;</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co">//   void g();</span></span>
 <span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co">// };</span></span></code></pre></div>
 </blockquote>
 </div>
@@ -770,13 +772,14 @@ templates, variable templates, and alias templates. This is not an easy
 task; templates pose unique challenges to a reflection engine because,
 by their nature, they are only partially analyzed semantically. For
 example, neither parameter types nor the return type of a function
-template can be represented as reflections of types because dependent
-types are not known until the template is instantiated. The same
-thinking goes for a variety of declarations that can be found inside a
-class template; C++ templates are more akin to patterns by which code is
-to be generated than to standalone, semantically verified code. For that
-reason, the reflection facilities proposed in P2996 intended for
-non-templated declarations are not readily applicable to templates.</p>
+template can be reliably represented as reflections of types because
+they may refer dependent types, which are not known until the template
+is instantiated. The same thinking goes for a variety of declarations
+that can be found inside a class template; C++ templates are more akin
+to patterns by which code is to be generated than to standalone,
+semantically verified code. For that reason, the reflection facilities
+proposed in P2996 intended for non-templated declarations are not
+readily applicable to templates.</p>
 <p>Conversely, reflection code would be seriously hamstrung if it lacked
 the ability to reflect on template code (and subsequently manipulate and
 generate related code), especially because templates are ubiquitous in
@@ -787,16 +790,17 @@ templates (e.g., every instantiation of
 <code class="sourceCode cpp">std<span class="op">::</span>vector</code>
 defines several constructor templates and other function templates such
 as <code class="sourceCode cpp">insert</code> and
-<code class="sourceCode cpp">emplace_back</code>). Therefore, to the
-extent reflection of C++ declarations is deemed useful, reflection of
-templates is essential.</p>
+<code class="sourceCode cpp">emplace_back</code>). (Nontemplate classes
+may, of course, also define class templates and function templates
+within.) Therefore, to the extent that reflection of C++ declarations is
+deemed useful, reflection of templates is essential.</p>
 <p>Given that many elements of a template cannot be semantically
 analyzed early (at template definition time), this proposal adopts a
 two-pronged strategy for reflecting components of template
 declarations:</p>
 <ul>
 <li>template parameter names and function parameter names can be
-reflected as <em>token sequences</em>, as proposed in <span class="citation" data-cites="P3294R2">[<a href="https://wg21.link/p3294r2" role="doc-biblioref">P3294R2</a>]</span>;</li>
+reflected as <em>token sequences</em>, as proposed in <span class="citation" data-cites="P3294R2"><a href="https://wg21.link/p3294r2" role="doc-biblioref">[P3294R2]</a></span>;</li>
 <li>the other elements of a template declaration—constraints, predicate
 in the
 <code class="sourceCode cpp"><span class="kw">noexcept</span></code> or
@@ -807,13 +811,13 @@ arguments—are kept together with the template declaration;</li>
 functional manner, and the “deltas” are expressed as token
 sequences.</li>
 </ul>
-<p>The initial proposal <span class="citation" data-cites="P3420R0">[<a href="https://wg21.link/p3420r0" role="doc-biblioref">P3420R0</a>]</span> allowed accessing all parts of
+<p>The initial proposal <span class="citation" data-cites="P3420R0"><a href="https://wg21.link/p3420r0" role="doc-biblioref">[P3420R0]</a></span> allowed accessing all parts of
 a template definition as token sequences. However, for some
 implementations performing such extrication was deemed difficult. Also,
 separating parts of a function declaration made it difficult to define
 how names are looked up after splicing.</p>
 <p>We paid special attention to preserve the spirit and design style of
-<span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> and to ensure seamless
+<span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span> and to ensure seamless
 interoperation with it.</p>
 <h2 data-number="2.1" id="example-logging-and-forwarding"><span class="header-section-number">2.1</span> Example: Logging and
 Forwarding<a href="#example-logging-and-forwarding" class="self-link"></a></h2>
@@ -834,7 +838,7 @@ complete) than the case of simple functions.</p>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> std<span class="op">::</span>is_copy_constructible_v<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value, S<span class="op">&amp;)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value, Widget<span class="op">&amp;)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> logger<span class="op">(</span><span class="kw">const</span> Ts<span class="op">&amp;..</span> values<span class="op">)</span>;</span>
@@ -871,8 +875,8 @@ complete) than the case of simple functions.</p>
 </blockquote>
 </div>
 <p>The code uses <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>namespace_inject</code>
-as defined in <span class="citation" data-cites="P3294R1">[<a href="https://wg21.link/p3294r1" role="doc-biblioref">P3294R1</a>]</span> to create a function definition
-from a token sequence in a given namespace, in this case
+as defined in <span class="citation" data-cites="P3294R1"><a href="https://wg21.link/p3294r1" role="doc-biblioref">[P3294R1]</a></span> to create a function
+definition from a token sequence in a given namespace, in this case
 <code class="sourceCode cpp">logged</code>. We identify a few high-level
 metafunctions that facilitate such manipulation of template
 declarations. First, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>declaration_of<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info f<span class="op">)</span></code>
@@ -973,9 +977,9 @@ and insert appropriate copies of declarations.</p>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>is_function<span class="op">(</span>r<span class="op">)</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>is_special_member_function<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span></span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>          <span class="op">[:</span>\<span class="op">(</span>declaration_of<span class="op">(</span>r<span class="op">)):]</span> <span class="op">{</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>            logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, identifier_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>, <span class="st">&quot;::&quot;</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>            logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, display_string_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>, <span class="st">&quot;::&quot;</span>,</span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>              identifier_of<span class="op">(</span>r<span class="op">)</span>, <span class="st">&quot;(&quot;</span>, \tokens<span class="op">(</span>parameter_list<span class="op">(</span>r<span class="op">))</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> data<span class="op">.[:</span>r<span class="op">:](</span>forward_param_list_of<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> data<span class="op">.[:</span>r<span class="op">:](</span>\tokens<span class="op">(</span>forward_param_list_of<span class="op">(</span>r<span class="op">)))</span>;</span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
 <span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>is_function_template<span class="op">(</span>r<span class="op">)</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>is_constructor<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
@@ -1000,7 +1004,7 @@ and insert appropriate copies of declarations.</p>
 <span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>(Refer to <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> for metafunctions
+<p>(Refer to <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span> for metafunctions
 <code class="sourceCode cpp">get_public_members</code>,
 <code class="sourceCode cpp">is_type_alias</code>,
 <code class="sourceCode cpp">is_class_type</code>,
@@ -1009,9 +1013,11 @@ and insert appropriate copies of declarations.</p>
 <code class="sourceCode cpp">identifier_of</code>, of which semantics
 should be intuitive as we discuss the context.) Here, as the code
 iterates declarations in class <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;</span></code>
-(an instance, not the template class itself, which simplifies a few
-aspects of the example), it takes action depending on the nature of the
-declaration found. For
+(an instance of
+<code class="sourceCode cpp">std<span class="op">::</span>vector</code>,
+not the template class itself, which simplifies a few aspects of the
+example), it takes action depending on the nature of the declaration
+found. For
 <code class="sourceCode cpp"><span class="kw">typedef</span></code> (or
 equivalent
 <code class="sourceCode cpp"><span class="kw">using</span></code>)
@@ -1058,7 +1064,7 @@ function are needed.</p>
 <p>It is worth noting that the forwarding call syntaxes <code class="sourceCode cpp">data<span class="op">.[:</span>r<span class="op">:](...)</span></code>
 (for regular functions) and <code class="sourceCode cpp">data<span class="op">.</span><span class="kw">template</span> <span class="op">[:</span>r<span class="op">:]&lt;...&gt;(...)</span></code>
 (for function templates) are already defined with the expected semantics
-in <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>, and work properly in the
+in <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span>, and work properly in the
 prototype implementations. The only added elements are the metafunctions
 <code class="sourceCode cpp">template_parameter_list</code>,
 <code class="sourceCode cpp">parameter_list</code>, and
@@ -1498,7 +1504,7 @@ followed by
 <p><code class="sourceCode cpp">attributes_of</code> returns all
 attributes associated with <code class="sourceCode cpp">info</code>. The
 intent is to extend the functionality of
-<code class="sourceCode cpp">attributes_of</code> as defined in <span class="citation" data-cites="P3385R0">[<a href="https://wg21.link/p3385r0" role="doc-biblioref">P3385R0</a>]</span> to template declarations.</p>
+<code class="sourceCode cpp">attributes_of</code> as defined in <span class="citation" data-cites="P3385R0"><a href="https://wg21.link/p3385r0" role="doc-biblioref">[P3385R0]</a></span> to template declarations.</p>
 <p><code class="sourceCode cpp">add_attribute<span class="op">(</span>r, attr<span class="op">)</span></code>
 returns a reflection that adds the attribute
 <code class="sourceCode cpp">attr</code> to the given reflection
@@ -1511,7 +1517,7 @@ reflection that removes the attribute
 <code class="sourceCode cpp">r</code>. If
 <code class="sourceCode cpp">r</code> did now have the attribute, it is
 returned.</p>
-<p>We defer details and particulars to <span class="citation" data-cites="P3385R0">[<a href="https://wg21.link/p3385r0" role="doc-biblioref">P3385R0</a>]</span>.</p>
+<p>We defer details and particulars to <span class="citation" data-cites="P3385R0"><a href="https://wg21.link/p3385r0" role="doc-biblioref">[P3385R0]</a></span>.</p>
 <h3 data-number="3.1.7" id="set_requires_clause-add_requires_clause_conjunction-add_requires_clause_disjunction"><span class="header-section-number">3.1.7</span>
 <code class="sourceCode cpp">set_requires_clause</code>,
 <code class="sourceCode cpp">add_requires_clause_conjunction</code>,
@@ -1608,7 +1614,7 @@ in as a reflection of an identifier (e.g.,
 <code class="sourceCode cpp"><span class="op">^^</span>func</code>). All
 overloads are included, template and nontemplate. To distinguish
 functions from function templates,
-<code class="sourceCode cpp">is_function_template</code> (<span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>) can be used. Example:</p>
+<code class="sourceCode cpp">is_function_template</code> (<span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span>) can be used. Example:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span>;</span>
@@ -1673,7 +1679,7 @@ possible to migrate this metafunction to a future revision of P2996.</p>
 <span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_noexcept<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>Extends the homonym metafunctions defined by <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> to function templates.</p>
+<p>Extends the homonym metafunctions defined by <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span> to function templates.</p>
 <p>For <code class="sourceCode cpp">is_noexcept</code> and
 <code class="sourceCode cpp">is_explicit</code>,
 <code class="sourceCode cpp"><span class="kw">true</span></code> is
@@ -1807,8 +1813,8 @@ are consistent with the names returned by <code class="sourceCode cpp">parameter
 for any reflection <code class="sourceCode cpp">f</code> of a function
 template.</p>
 <p>This function bears similarities with
-<code class="sourceCode cpp">parameters_of</code> in <span class="citation" data-cites="P3096R3">[<a href="https://wg21.link/p3096r3" role="doc-biblioref">P3096R3</a>]</span>. However, one key difference is
-that <code class="sourceCode cpp">parameters_of</code> returns
+<code class="sourceCode cpp">parameters_of</code> in <span class="citation" data-cites="P3096R3"><a href="https://wg21.link/p3096r3" role="doc-biblioref">[P3096R3]</a></span>. However, one key difference
+is that <code class="sourceCode cpp">parameters_of</code> returns
 reflection of types, whereas
 <code class="sourceCode cpp">template_return_type_of</code> returns the
 token sequence of the return type (given that the type is often not
@@ -1895,7 +1901,7 @@ fails to evaluate to a constant expression.</p>
 Members of Class Templates<a href="#metafunctions-for-iterating-members-of-class-templates" class="self-link"></a></h1>
 <p>The metafunctions described above need to be complemented with
 metafunctions that enumerate the contents of a class template.
-Fortunately, <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span> already defines number of
+Fortunately, <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span> already defines number of
 metafunctions for doing so:
 <code class="sourceCode cpp">members_of</code>,
 <code class="sourceCode cpp">static_data_members_of</code>,
@@ -1930,12 +1936,12 @@ templates. Consider:</p>
 </div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="future-work"><span class="header-section-number">5</span> Future
 Work<a href="#future-work" class="self-link"></a></h1>
-<p>Like <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>, this proposal is designed to
+<p>Like <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span>, this proposal is designed to
 grow by accretion. Future revisions will add more primitives that
 complement the existing ones and improve the comprehensiveness of the
 reflection facility for templates.</p>
-<p>This proposal is designed to interoperate with <span class="citation" data-cites="P2996R7">[<a href="https://wg21.link/p2996r7" role="doc-biblioref">P2996R7</a>]</span>, <span class="citation" data-cites="P3157R1">[<a href="https://wg21.link/p3157r1" role="doc-biblioref">P3157R1</a>]</span>, <span class="citation" data-cites="P3294R2">[<a href="https://wg21.link/p3294r2" role="doc-biblioref">P3294R2</a>]</span>, and <span class="citation" data-cites="P3385R0">[<a href="https://wg21.link/p3385r0" role="doc-biblioref">P3385R0</a>]</span>. Changes in these proposals may
-influence this proposal. Also, certain metafunctions proposed herein
+<p>This proposal is designed to interoperate with <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span>, <span class="citation" data-cites="P3157R1"><a href="https://wg21.link/p3157r1" role="doc-biblioref">[P3157R1]</a></span>, <span class="citation" data-cites="P3294R2"><a href="https://wg21.link/p3294r2" role="doc-biblioref">[P3294R2]</a></span>, and <span class="citation" data-cites="P3385R0"><a href="https://wg21.link/p3385r0" role="doc-biblioref">[P3385R0]</a></span>. Changes in these proposals
+may influence this proposal. Also, certain metafunctions proposed herein
 (such as <code class="sourceCode cpp">is_inline</code>) may migrate to
 these proposals.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
