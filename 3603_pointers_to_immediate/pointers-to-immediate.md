@@ -1,5 +1,5 @@
 ---
-title: "Permitting pointers to immediate functions to persist"
+title: "Consteval-only Values and Consteval Variables"
 document: P3603R0
 date: today
 audience: EWG
@@ -10,7 +10,103 @@ toc: true
 tag: constexpr
 ---
 
+# Abstract
+
+This paper formalizes the concept of _consteval-only value_ and uses it to introduce consteval variables — variables that can only exist at compile time and are never code-gen. Consteval variables can then be used to solve some concrete problems we have today — like variant visitation.
+
 # Introduction
+
+C++ today already has an *informal* notion of a value that is only allowed to exist during compile time. Currently, this is ill-formed:
+
+::: std
+```cpp
+consteval int add(int x, int y) {
+    return x + y;
+}
+
+constexpr auto ptr = add; // error
+```
+:::
+
+We cannot "persist" a pointer to immediate function like this — `add` is a value that is only allowed to exist at compile time. This is because we cannot invoke `ptr` at runtime, and if we allowed this, `ptr` would just be a regular old `int(*)(int, int)`. The original addition of `consteval` functions — [@P1073R3]{.title} — already had this rule.
+
+It's not just that you cannot create a `constexpr` variable whose value is `add`, you also cannot use it as a template argument, cannot have it as a member of a struct that's used in either way, etc.
+
+Similarly, we cannot *really* persist reflections [@P2996R9]{.title}:
+
+::: std
+```cpp
+constexpr auto refl = ^^int;
+```
+:::
+
+We cannot allow you doing anything with `refl` at runtime in the same way we cannot do anything with `ptr` at runtime. But we enforce these requirements very differently:
+
+* we disallow `ptr` through what used to be the "permitted result" rule
+* we allow `refl` but ensure that all expressions involving `refl` are constant (by way of consteval-only types and immediate escalation from [@P2564R3]{.title}).
+
+The status quo from the Reflection design is that we can handle these differently because we can differentiate based on type. `ptr` is just a function pointer, `refl` is a `std::meta::info` — we can ensure that expressions involving the latter are constant, but we can't tell from a given function pointer whether we need that machinery or not.
+
+What if we did things a little bit differently.
+
+Let's start by introducing the notion of a consteval-only value:
+
+::: std
+An expression has a _consteval-only value_ if:
+
+* any constituent part of it either points to or refers to an immediate function, or
+* any constituent part of it has consteval-only type.
+:::
+
+For instance, an `$id-expression$` naming an immediate function is a consteval-only value (like `add`), `^^int` is a consteval-only value, `members_of(^^something)` is a consteval-only value, etc.
+
+Our rules around immediate-escalating expressions already presuppose the existence of a consteval-only value, the term just allows us to be more explicit about it:
+
+::: std
+[25]{.pnum} An expression or conversion is *immediate-escalating* if it is not initially in an immediate function context and [it is]{.rm} either
+
+* [25.1]{.pnum} [a potentially-evaluated *id-expression* that denotes an immediate function that]{.rm} [it has consteval-only value and it]{.addu} is not a subexpression of an immediate invocation, or
+* [25.2]{.pnum} [it is]{.addu} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
+:::
+
+Now, a consteval-only value might also presuppose the existence of a consteval _variable_. Following the principle of escalation, we could introduce the notion of a variable being allowed to be declared `consteval` and also allow certain `constexpr` variables to escalate to `consteval` variables:
+
+::: std
+A variable is a _consteval variable_ if it is:
+
+* a variable declared `consteval`, or
+* a variable whose initializer is a consteval-only value where that variable is either a template parameter object or a `constexpr` variable that is a templated entity.
+:::
+
+Which then we update our notion of consteval-only value to account for consteval variables:
+
+::: std
+An expression has a _consteval-only value_ if:
+
+* [any constituent part of it either points to or refers to a consteval variable,]{.addu}
+* any constituent part of it either points to or refers to an immediate function, or
+* any constituent part of it has consteval-only type.
+:::
+
+What does this gives us?
+
+Well, for starters, it allows us to alias immediate functions — you can now create variables that refer to them:
+
+::: std
+```cpp
+consteval int add(int x, int y) {
+    return x + y;
+}
+
+consteval auto ptr = add;   // OK: ptr is a consteval variable — its initializer can be consteval-only
+```
+:::
+
+We couldn't allow `ptr` to be declared `constexpr` because that implies that it be available at runtime. But if `ptr` is a consteval variable, then we say that all uses of it have to be constant. We already have the tools to allow `ptr` to "persist" in this way because we can still ensure that no code ever is able to invoke `ptr` at runtime.
+
+But immediately escalating a `constexpr` variable to a `consteval` variable has some other interesting potential...
+
+# Motivating Example: Variant Visitation
 
 Jiang An submitted a very interesting bug report to [libstdc++](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118434) (and [libc++](https://github.com/llvm/llvm-project/issues/118560)) in January 2025. It dealt with visiting a `std::variant` with a consteval lambda.
 
@@ -47,10 +143,14 @@ struct binary_vtable_impl {
 
     static constexpr auto get_array() {
         return std::array{
-            &visit<0, 0>,
-            &visit<0, 1>,
-            &visit<1, 0>,
-            &visit<1, 1>
+            std::array{
+                &visit<0, 0>,
+                &visit<0, 1>
+            },
+            std::array{
+                &visit<1, 0>,
+                &visit<1, 1>
+            }
         };
     }
 
@@ -60,7 +160,7 @@ struct binary_vtable_impl {
 template <class R, class F, class V0, class V1>
 constexpr auto visit(F&& f, V0 const& v0, V1 const& v1) -> R {
     using Impl = binary_vtable_impl<R, F, V0, V1>;
-    return Impl::fptrs[v0.index * 2 + v1.index]((F&&)f, v0, v1);
+    return Impl::fptrs[v0.index][v1.index]((F&&)f, v0, v1);
 }
 
 consteval auto func(const Variant<int, long>& v1, const Variant<int, long>& v2) {
@@ -71,7 +171,7 @@ static_assert(func(Variant<int, long>{42}, Variant<int, long>{1729}) == 1771);
 ```
 :::
 
-Here, the lambda `[](auto x, auto y) consteval { return x + y; }` is `consteval`. It is invoked in multiple instantiations of `binary_vtable_impl<...>::visit<...>`, which causes those `constexpr` functions to escalate into `consteval` functions, due to [@P2564R3]{.title} (otherwise the invocation would already be ill-formed). `get_array()` is returning an array of 4 function pointers into different instantiations of those functions, which are all `consteval` — and that array is stored as the `static constexpr` data member `fptrs`.
+Here, the lambda `[](auto x, auto y) consteval { return x + y; }` is `consteval`. It is invoked in multiple instantiations of `binary_vtable_impl<...>::visit<...>`, which causes those `constexpr` functions to escalate into `consteval` functions, due to [@P2564R3] (otherwise the invocation would already be ill-formed). `get_array()` is returning an array of 4 function pointers into different instantiations of those functions, which are all `consteval` — and that array is stored as the `static constexpr` data member `fptrs`.
 
 That is ill-formed.
 
@@ -90,154 +190,77 @@ This code breaks that rule. We have pointers that point to immediate functions, 
 
 What do we do now?
 
-# Relaxing the Rule
+## Consteval Variable Escalation
 
-We have the rule that constituent values cannot point to an immediate function (previously, this was the "permitted result of a constant expression" rule) to avoid leaking immediate functions to runtime. In the simplest case, we need to reject this:
+Importantly, `fptrs` is a `static constexpr` variable that is a templated entity, and its initializer — `get_array()` — has consteval-only value. Today, we reject this initialization for the same reason that we rejected the initialization of `p` earlier: if that initialization were allowed to succeed, we have regular function pointers, and nothing prevents me from invoking them at runtime. Which would defeat the purpose of the `consteval` specifier.
 
-::: std
-```cpp
-consteval int add(int x, int y) { return x + y; }
+However.
 
-constexpr auto ptr = add;
-```
-:::
+What if, instead of rejecting the example, the fact that the initializer were a consteval-only value instead led to the escalation of `fptrs` to be `consteval` variable instead of a `constexpr` one?
 
-If that initialization were allowed to succeed, then `ptr` is a totally normal `int(*)(int, int)` and nothing prevents me from calling it at runtime. Defeating the purpose of the `consteval` specifier.
-
-The reduced code I showed _cannot_ work. It needs to remain ill-formed, because otherwise nothing stops you from calling `binary_vtable_impl<...>::fptrs[0]` at runtime. It's just a function pointer. However, it wouldn't make for much of an interesting paper if I showed some code that doesn't work and concluded by simply saying it cannot work. Let's consider a slightly different implementation:
-
-::: cmptable
-### `static constexpr` data member
-```cpp
-template <class R, class F, class V0, class V1>
-struct binary_vtable_impl {
-    template <int I, int J>
-    static constexpr auto visit(F&& f,
-                                V0 const& v0,
-                                V1 const& v1) -> R {
-        return f(v0.template get<I>(),
-                 v1.template get<J>());
-    }
-
-    static constexpr auto get_array() {
-        return std::array{
-            &visit<0, 0>,
-            &visit<0, 1>,
-            &visit<1, 0>,
-            &visit<1, 1>
-        };
-    }
-
-    static constexpr std::array fptrs = get_array();
-};
-
-template <class R, class F, class V0, class V1>
-constexpr auto visit(F&& f, V0 const& v0, V1 const& v1) -> R {
-    using Impl = binary_vtable_impl<R, F, V0, V1>;
-
-    return Impl::fptrs[v0.index * 2 + v1.index]((F&&)f, v0, v1);
-}
-```
-
-### `static constexpr` local variable
-```cpp
-template <class R, class F, class V0, class V1>
-struct binary_vtable_impl {
-    template <int I, int J>
-    static constexpr auto visit(F&& f,
-                                V0 const& v0,
-                                V1 const& v1) -> R {
-        return f(v0.template get<I>(),
-                 v1.template get<J>());
-    }
-
-    static constexpr auto get_array() {
-        return std::array{
-            &visit<0, 0>,
-            &visit<0, 1>,
-            &visit<1, 0>,
-            &visit<1, 1>
-        };
-    }
-};
-
-
-
-template <class R, class F, class V0, class V1>
-constexpr auto visit(F&& f, V0 const& v0, V1 const& v1) -> R {
-    using Impl = binary_vtable_impl<R, F, V0, V1>;
-    static constexpr std::array fptrs = Impl::get_array();
-    return fptrs[v0.index * 2 + v1.index]((F&&)f, v0, v1);
-}
-```
-:::
-
-The one on the right only became valid in C++23 — this was [@P2647R1]{.title} — while the one on the left was valid in C++17. But everything else is the same. `visit` is still a `static constexpr` function templated on the variant indices. We still have `get_array()`. However, instead of `fptrs` being a `static constexpr` data member of `binary_vtable_impl`, it is declared locally inside of the namespace-scope `visit`. Does this matter?
-
-Well, not yet. This is still ill-formed (although gcc [accepts](https://godbolt.org/z/o5zejor6z) the one on the right), for the same exact reason — we're initializing a `constexpr` variable with something that is not a constant expression.
-
-But there's a big difference. On the left, `binary_vtable_impl<...>::fptrs[0]` could be invoked at runtime. It would leak, so it must be rejected. But, on the right, the local `fptrs` _cannot_ be invoked at runtime. It does not leak, so it need not be rejected. We could relax the rule to allow the local `fptrs` declaration.
-
-## Didn't You Already Propose Something Like This?
-
-In [@P3032R2]{.title}, I did propose something similar. Let's put both ideas together in one short example:
+If `fptrs` escalates to be a consteval variable, then we have to examine its usage within `visit`, copied here again for convenience:
 
 ::: std
 ```cpp
-consteval int add(int x, int y) { return x + y; }
-
-constexpr std::vector<int> v_outer = {1, 2, 3};
-constexpr auto f_outer = add;
-
-consteval void immediate() {
-  constexpr std::vector<int> v_inner = {1, 2, 3};
-  constexpr auto f_inner = add;
+template <class R, class F, class V0, class V1>
+constexpr auto visit(F&& f, V0 const& v0, V1 const& v1) -> R {
+    using Impl = binary_vtable_impl<R, F, V0, V1>;
+    return Impl::fptrs[v0.index][v1.index]((F&&)f, v0, v1);
 }
 ```
 :::
 
-P3032 proposed allowing `v_inner` even though `v_outer` would still be invalid. But that was intended to be a stop-gap, we always wanted `v_outer` to _also_ be valid (and [@P3554R0]{.title} attempts to do that), it's just that making `v_inner` valid was easier.
+`fptrs` being a `consteval` variable means that the invocation there has to be immediate-escalating. This causes the specialization of `visit` to become a `consteval` function following the same rules as in [@P2564R3]. At which point, everything just works.
 
-This case is different though. Here, `f_outer` _cannot_ be valid while `f_inner` can be. It's not a question of choosing which parts to allow, it's that we fundamentally must reject one — but do not have to reject both.
+Put differently — as a `constexpr` variable, `fptrs` was not allowed to be initialized with pointers to immediate functions. But as a `consteval` variable, it can be — since we escalate all invocations of those pointers! Everything just... works, and requires no code changes on the part of the library implementation.
+
+## Consteval Variable Storage
+
+One particular benefit of `consteval` variables is that they are _guaranteed_ to not occupy space at runtime. You just don't hit issues [like this](https://www.reddit.com/r/cpp/comments/1i36ahd/is_this_an_msvc_bug_or_am_i_doing_something_wrong/). `constexpr` variables, even if never accessed at runtime, may occupy space anyway. It's just QoI.
+
+But in the say way that `consteval` functions _cannot_ lead to codegen, `consteval` variables _cannot_ either. That's a pretty nice benefit.
+
+# Mutability
+
+One question we have to address is, given:
+
+::: std
+```cpp
+consteval int v = 0;
+```
+:::
+
+What is `decltype(v)`? In Daveed's original proposal in [@P0596R1]{.title}, `v` was an `int` that was actually possible to mutate during constant evaluation time. Having compile-time mutable variables would be quite useful to solve some problems, although it is not without its share of complexity — specifically when such mutation is allowed to happen.
+
+While I do think it would be quite valuable to have compile-time mutable variables, I am not pursuing those in this paper for two reasons:
+
+1. They are complicated, and
+2. I think inherently having a variable declared `consteval` that is mutable is just confusing from a keyword standpoint. It's one thing to have `constinit` — which at least is simply `const`ant `init`ialized. But `consteval` seems a bit strong.
+
+We can always add consteval mutable variables in the future by allowing the declaration:
+
+::: std
+```cpp
+consteval mutable int v = 0;
+static_assert(v == 0); // ok
+consteval {
+  ++v;                 // ok, mutable
+}
+static_assert(v == 1); // ok, observed mutation
+```
+:::
 
 # Proposal
 
-Permit the initialization of a `constexpr` variable in an immediate function to have constituent values that refer or point to immediate functions. With the adoption of [@P2996R9], this would also include consteval-only types.
+This paper proposes:
 
-Change [expr.const]{.sref}:
+1. introducing the notion of consteval-only value,
+2. introducing consteval variables, and
+3. allowing certain constexpr variables to escalate to consteval variables
 
-::: std
-[6]{.pnum} A variable `v` is *constant-initializable* if
+Currently, the only kind of consteval-only value is a pointer (or reference) to immediate function. This paper directly also adds consteval variables. With the adoption of [@P2996R9], we will also include consteval-only types.
 
-* [6.1]{.pnum}  [either]{.addu} the full-expression of its initialization is a constant expression when interpreted as a *constant-expression* [or `v` is in an immediate function context and the full-expression of its initialization is an immediate constant expression when interpreted as a *constant-expression*]{.addu},
-
-    [Within this evaluation, `std​::​is_constant_evaluated()` ([meta.const.eval]) returns `true`.]{.note2}
-
-    and
-* [6.2]{.pnum} immediately after the initializing declaration of `v`, the object or reference `x` declared by `v` is constexpr-representable, and
-* [6.3]{.pnum} if `x` has static or thread storage duration, `x` is constexpr-representable at the nearest point whose immediate scope is a namespace scope that follows the initializing declaration of `v`.
-:::
-
-and
-
-::: std
-::: addu
-[x]{.pnum} An *immediate constant expression* is either a glvalue core constant expression that refers to an object or a function, or a prvalue core constant expression whose value satisfies the following constraints:
-
-* [x.1]{.pnum} each constituent reference refers to an object or a function,
-* [x.2]{.pnum} no constituent value of scalar type is an indeterminate value ([basic.indet]), and
-* [x.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
-:::
-
-[22]{.pnum} A *constant expression* is either a glvalue [immediate]{.addu} core constant expression [that refers to an object or a non-immediate function]{.rm} [does not refer to an immediate function]{.addu}, or a prvalue [core]{.rm} [immediate]{.addu} constant expression whose value satisfies the following constraints:
-
-* [22.1]{.pnum} [each constituent reference refers to an object or a non-immediate function]{.rm} [no constituent reference refers to an immediate function]{.addu},
-* [22.2]{.pnum} [no constituent value of scalar type is an indeterminate value ([basic.indet])]{.rm},
-* [22.3]{.pnum} no constituent value of pointer type is a pointer to an immediate function [or an invalid pointer value ([basic.compound])]{.rm}, and
-* [22.4]{.pnum} no constituent value of pointer-to-member type designates an immediate function.
-:::
-
-## Feature-Test Macro
+Wording TBD.
 
 ## Feature-test Macro
 
