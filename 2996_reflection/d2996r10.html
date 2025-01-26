@@ -12660,7 +12660,8 @@ template <code class="sourceCode cpp">bit_cast</code><a href="#bit.cast-function
 <code class="sourceCode cpp">bit_cast</code> to not allow casting to or
 from
 <code class="sourceCode cpp">meta<span class="op">::</span>info</code>,
-in <span>22.11.3 <a href="https://wg21.link/bit.cast">[bit.cast]</a></span>/3:</p>
+in <span>22.11.3 <a href="https://wg21.link/bit.cast">[bit.cast]</a></span>/3, which we add
+as a mandates:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb257"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb257-1"><a href="#cb257-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> To, <span class="kw">class</span> From<span class="op">&gt;</span></span>
@@ -12668,23 +12669,25 @@ in <span>22.11.3 <a href="https://wg21.link/bit.cast">[bit.cast]</a></span>/3:</
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_620" id="pnum_620">1</a></span>
 <em>Constraints</em>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_621" id="pnum_621">(1.0)</a></span>
-<span class="addu">neither <code class="sourceCode cpp">To</code> nor
-<code class="sourceCode cpp">From</code> are consteval-only types
-([expr.const]);</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_622" id="pnum_622">(1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_621" id="pnum_621">(1.1)</a></span>
 <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>To<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">(</span>From<span class="op">)</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">true</span></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_623" id="pnum_623">(1.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_622" id="pnum_622">(1.2)</a></span>
 <code class="sourceCode cpp">is_trivially_copyable_v<span class="op">&lt;</span>To<span class="op">&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>;
 and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_624" id="pnum_624">(1.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_623" id="pnum_623">(1.3)</a></span>
 <code class="sourceCode cpp">is_trivially_copyable_v<span class="op">&lt;</span>From<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">true</span></code>.</li>
 </ul>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_624" id="pnum_624">*</a></span>
+<em>Mandates</em>: Neither <code class="sourceCode cpp">To</code> nor
+<code class="sourceCode cpp">From</code> are consteval-only types
+([expr.const]).</p>
+</div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_625" id="pnum_625">2</a></span>
 <em>Returns</em>: […]</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_626" id="pnum_626">3</a></span>

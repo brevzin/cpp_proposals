@@ -7266,7 +7266,7 @@ consteval info variant_alternative(size_t index, info type);
 
 ### [bit.cast]{.sref} Function template `bit_cast` {-}
 
-And we have adjust the requirements of `bit_cast` to not allow casting to or from `meta::info`, in [bit.cast]{.sref}/3:
+And we have adjust the requirements of `bit_cast` to not allow casting to or from `meta::info`, in [bit.cast]{.sref}/3, which we add as a mandates:
 
 ::: std
 ```cpp
@@ -7275,10 +7275,13 @@ template<class To, class From>
 ```
 [1]{.pnum} *Constraints*:
 
-* [1.0]{.pnum} [neither `To` nor `From` are consteval-only types ([expr.const]);]{.addu}
 * [1.1]{.pnum} `sizeof(To) == sizeof(From)` is `true`;
 * [1.2]{.pnum} `is_trivially_copyable_v<To>` is `true`; and
 * [1.3]{.pnum} `is_trivially_copyable_v<From>` is `true`.
+
+::: addu
+[*]{.pnum} *Mandates*: Neither `To` nor `From` are consteval-only types ([expr.const]).
+:::
 
 [2]{.pnum} *Returns*: [...]
 
