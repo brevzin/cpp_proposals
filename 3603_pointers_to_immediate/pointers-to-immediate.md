@@ -4,6 +4,8 @@ document: P3603R0
 date: today
 audience: EWG
 author:
+    - name: Peter Dimov
+      email: <pdimov@gmail.com>
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
