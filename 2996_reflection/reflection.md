@@ -7275,7 +7275,7 @@ template<class To, class From>
 ```
 [1]{.pnum} *Constraints*:
 
-* [1.0]{.pnum} [`To`, `From`, and all of the subobjects of `To` and `From` are types `T` such that `is_reflection_v<T>` is `false`;]{.addu}
+* [1.0]{.pnum} [neither `To` nor `From` are consteval-only types ([expr.const]);]{.addu}
 * [1.1]{.pnum} `sizeof(To) == sizeof(From)` is `true`;
 * [1.2]{.pnum} `is_trivially_copyable_v<To>` is `true`; and
 * [1.3]{.pnum} `is_trivially_copyable_v<From>` is `true`.
