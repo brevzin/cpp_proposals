@@ -49,7 +49,7 @@ We cannot allow you to do anything with `refl` at runtime in the same way we can
 
 The status quo from the Reflection design is that we can handle these differently because we can differentiate based on type. `ptr` is just a function pointer, `refl` is a `std::meta::info` — we can ensure that expressions involving the latter are constant, but we can't tell from a given function pointer whether we need that machinery or not.
 
-What if we did things a little bit differently.
+What if we did things a little bit differently?
 
 ## Consteval Variables
 
@@ -228,10 +228,11 @@ consteval int v = 0;
 
 What is `decltype(v)`? In Daveed's original proposal in [@P0596R1]{.title}, `v` was an `int` that was actually possible to mutate during constant evaluation time. Having compile-time mutable variables would be quite useful to solve some problems, although it is not without its share of complexity — specifically when such mutation is allowed to happen.
 
-While I do think it would be quite valuable to have compile-time mutable variables, I am not pursuing those in this paper for two reasons:
+While I do think it would be quite valuable to have compile-time mutable variables, I am not pursuing those in this paper for three reasons:
 
-1. They are complicated, and
-2. I think inherently having a variable declared `consteval` that is mutable is just confusing from a keyword standpoint. It's one thing to have `constinit` — which at least is simply `const`ant `init`ialized. But `consteval` seems a bit strong.
+1. They are complicated,
+2. I think inherently having a variable declared `consteval` that is mutable is just confusing from a keyword standpoint. It's one thing to have `constinit` — which at least is simply `const`ant `init`ialized. But `consteval` seems a bit strong, and
+3. Given that `constexpr` variables can escalate to `consteval` ones, it is important that they don't change types. `constexpr` is `int const`, so `consteval` should be too.
 
 We can always add consteval mutable variables in the future by allowing the declaration:
 
@@ -258,7 +259,77 @@ Currently, the only kind of consteval-only value is a pointer (or reference) to 
 
 ## Wording
 
-TBD
+Change [expr.const]{.sref}
+
+::: std
+
+[6]{.pnum} A variable `v` is *constant-initializable* if
+
+* [6.1]{.pnum}  [either]{.addu} the full-expression of its initialization is a constant expression when interpreted as a *constant-expression* [or `v` is in an immediate variable and the full-expression of its initialization is an immediate constant expression when interpreted as a *constant-expression*]{.addu},
+    [Within this evaluation, `std​::​is_constant_evaluated()` ([meta.const.eval]) returns `true`.]{.note2}
+    and
+* [6.2]{.pnum} immediately after the initializing declaration of `v`, the object or reference `x` declared by `v` is constexpr-representable, and
+* [6.3]{.pnum} if `x` has static or thread storage duration, `x` is constexpr-representable at the nearest point whose immediate scope is a namespace scope that follows the initializing declaration of `v`.
+
+[...]
+
+::: addu
+[x]{.pnum} An expression has consteval-only value if its value satisfies any of the following:
+
+* [x.1]{.pnum} any constituent reference refers to an immediate function or an immediate variable,
+* [x.2]{.pnum} any constituent pointer points to an immediate function or an immediate variable, or
+* [x.3]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
+
+[y]{.pnum} An *immediate constant expression* is either a glvalue core constant expression that refers to an object or a function, or a prvalue core constant expression whose value satisfies the following constraints:
+
+* [y.1]{.pnum} each constituent reference refers to an object or a function,
+* [y.2]{.pnum} no constituent value of scalar type is an indeterminate value ([basic.indet]), and
+* [y.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
+:::
+
+[22]{.pnum} A *constant expression* is either a glvalue [immediate]{.addu} core constant expression [that refers to an object or non-immediate function]{.rm} [does not refer to an immediate function????]{.addu}, or a prvalue [core]{.rm} [immediate]{.addu} constant expression [whose value satisfies the following constraints]{.rm} [that does not have consteval-only value.]{.addu}
+
+::: rm
+* [22.1]{.pnum} each constituent reference refers to an object or a non-immediate function,
+* [22.2]{.pnum} no constituent value of scalar type is an indeterminate value ([basic.indet]),
+* [22.3]{.pnum} no constituent value of pointer type is a pointer to an immediate function or an invalid pointer value ([basic.compound]), and
+* [22.4]{.pnum} no constituent value of pointer-to-member type designates an immediate function.
+:::
+
+[...]
+
+[25]{.pnum} An expression or conversion is *immediate-escalating* if it is not initially in an immediate function context and it is either
+
+* [#.1]{.pnum} a potentially-evaluated [*id-expression* that denotes an immediate function]{.rm} [expression that has consteval-only value]{.addu} that is not a subexpression of an immediate invocation, or
+* [#.2]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
+
+[26]{.pnum} An *immediate-escalating* function is [...]
+
+[27]{.pnum} An *immediate function* is [...]
+
+::: addu
+[z]{.pnum} An *immediate variable* is:
+
+* [z.1]{.pnum} a variable declared with the `consteval` specifier, or
+* [z.2]{.pnum} a variable that results from the instantiation of a templated entity declared with the `constexpr` specifier whose initialization results in a consteval-only value.
+:::
+:::
+
+Change [dcl.constexpr]{.sref} to account for `consteval` variables:
+
+::: std
+[1]{.pnum} The `constexpr` [and `consteval`]{.addu} specifier[s]{.addu} shall be applied only to the definition of a variable or variable template, a structured binding declaration, or the declaration of a function or function template. [The `consteval` specifier shall be applied only to the declaration of a function or function template.]{.rm}
+A function or static data member declared with the `constexpr` or `consteval` specifier on its first declaration is implicitly an inline function or variable ([dcl.inline]).
+If any declaration of a function or function template has a `constexpr` or `consteval` specifier, then all its declarations shall contain the same specifier.
+
+[...]
+
+[6]{.pnum} A `constexpr` [or `consteval`]{.addu} specifier used in an object declaration declares the object as `const`.
+Such an object shall have literal type and shall be initialized.
+A `constexpr` [or `consteval`]{.addu} variable shall be constant-initializable ([expr.const]).
+A `constexpr` [or `consteval`]{.addu} variable that is an object, as well as any temporary to which a constexpr reference is bound, shall have constant destruction.
+
+:::
 
 ## Feature-test Macro
 
