@@ -110,7 +110,7 @@ This isn't just a way to clean up the specification a little. It also has some o
 
 # Motivating Example: Variant Visitation
 
-Jiang An submitted a very interesting bug report to [libstdc++](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118434) (and [libc++](https://github.com/llvm/llvm-project/issues/118560)) in January 2025. It dealt with visiting a `std::variant` with a consteval lambda.
+Jiang An submitted a very interesting bug report to [libstdc++](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118434) (and [libc++](https://github.com/llvm/llvm-project/issues/118560)) in January 2025, which is also now [@LWG4197]. It dealt with visiting a `std::variant` with a consteval lambda.
 
 Here is a short reproduction of it, with a greatly reduced `variant` implementation that gets us to the point:
 
@@ -216,7 +216,11 @@ constexpr auto visit(F&& f, V0 const& v0, V1 const& v1) -> R {
 
 Put differently — as a `constexpr` variable, `fptrs` was not allowed to be initialized with pointers to immediate functions. But as a `consteval` variable, it can be — since we escalate all invocations of those pointers! Everything just... works, and requires no code changes on the part of the library implementation.
 
-# Mutability
+# Other Design Questions
+
+There are a few other design questions to discuss.
+
+## Mutability
 
 One question we have to address is, given:
 
@@ -246,6 +250,52 @@ consteval {
 static_assert(v == 1); // ok, observed mutation
 ```
 :::
+
+## Rules around `constexpr` Variables
+
+Let's quickly consider:
+
+::: std
+```cpp
+consteval int add(int x, int y) {
+    return x + y;
+}
+
+constexpr auto a = add;
+consteval auto b = add;
+
+constexpr auto c = ^^int;
+consteval auto d = ^^int;
+```
+:::
+
+The status quo is that `a` is ill-formed (as already mentioned) and `c` is proposed okay. `b` and `d` are obviously okay. Is that the right set of rules? There are other alternatives:
+
+* **`c` is ill-formed**. This might be a little surprising to propose, but it actually has merit. If you want a variable that only exists at compile time, declare it `consteval`. Just because we _can_ come up with a set of rules that allows `c` (by way of having consteval-only type) but not `a` doesn't mean that we should. Rejecting `c` can also provide a clear error message that it should be `consteval` instead and makes for a simpler set of rules.
+* **`a` is well-formed**. We can achieve this by having consteval variable escalation apply for all variables, not just templated ones. But when we were discussing [@P2564R3], we didn't do escalation for regular functions then — if you have a function that must be `consteval`, we decided that you should explicitly mark it as such. The same principle should apply here — if `a` has to be `consteval` (and it does), then it should be explicitly labeled as such.
+
+## Do we still need consteval-only types?
+
+[@P2996R9] introduces the notion of consteval-only type — basically any type that has a `std::meta::info` in it somewhere — to ensure that reflections exist only at compile time. This paper provides an alternative approach to solve the same problem: extend consteval-only to include values of type `std::meta::info`.
+
+This broadly accomplishes the same thing (and would necessitate having `c` be ill-formed in the above example), there are a few cases where the suggested rules would differ though. For example:
+
+::: std
+```cpp
+// v has "consteval-only type," but it does not have "consteval-only value"
+constexpr std::variant<std::meta::info, int> v = 42;
+
+struct C {
+    std::meta::info const* p;
+};
+// c has "consteval-only type," but it does not have "consteval-only value"
+auto c = C{.p=nullptr};
+```
+:::
+
+On the whole, it's definitely important to ensure that reflections do not persist to runtime and do not lead to codegen. These cases don't _actually_ have reflections in them though. So perhaps we don't need them the concept of consteval-only type after all.
+
+[@P3421R0]{.title} is another paper in this space that also seems like what it is really trying to do is come up with a way to produce consteval-only values. Perhaps a consteval destructor would be a way to signal that.
 
 # Proposal
 
@@ -279,6 +329,8 @@ Change [expr.const]{.sref}
 * [x.1]{.pnum} any constituent reference refers to an immediate function or an immediate variable,
 * [x.2]{.pnum} any constituent pointer points to an immediate function or an immediate variable, or
 * [x.3]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
+
+[With the adoption of P2996, this would have to be extended to also account for any references to, pointers to, or values of type `std::meta::info`.]{.draftnote}
 
 [y]{.pnum} An *immediate constant expression* is either a glvalue core constant expression that refers to an object or a function, or a prvalue core constant expression whose value satisfies the following constraints:
 
@@ -371,5 +423,14 @@ references:
         month: 1
         day: 12
     URL: https://wg21.link/p2996r9
-
+  - id: LWG4197
+    citation-label: LWG4197
+    title: "Complexity of `std::visit` with immediate functions"
+    author:
+      - family: Jiang An
+    issued:
+      - year: 2025
+        month: 1
+        day: 26
+    URL: https://wg21.link/lwg4197
 ---

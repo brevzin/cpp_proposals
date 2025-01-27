@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-26" />
+  <meta name="dcterms.date" content="2025-01-27" />
   <title>Consteval-only Values and Consteval Variables</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ Consteval Variables</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-26</td>
+    <td>2025-01-27</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -608,7 +608,16 @@ Visitation<span></span></a>
 <li><a href="#consteval-variable-escalation" id="toc-consteval-variable-escalation"><span class="toc-section-number">3.1</span> Consteval Variable
 Escalation<span></span></a></li>
 </ul></li>
-<li><a href="#mutability" id="toc-mutability"><span class="toc-section-number">4</span> Mutability<span></span></a></li>
+<li><a href="#other-design-questions" id="toc-other-design-questions"><span class="toc-section-number">4</span> Other Design
+Questions<span></span></a>
+<ul>
+<li><a href="#mutability" id="toc-mutability"><span class="toc-section-number">4.1</span> Mutability<span></span></a></li>
+<li><a href="#rules-around-constexpr-variables" id="toc-rules-around-constexpr-variables"><span class="toc-section-number">4.2</span> Rules around
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+Variables<span></span></a></li>
+<li><a href="#do-we-still-need-consteval-only-types" id="toc-do-we-still-need-consteval-only-types"><span class="toc-section-number">4.3</span> Do we still need consteval-only
+types?<span></span></a></li>
+</ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">5</span> Proposal<span></span></a>
 <ul>
 <li><a href="#wording" id="toc-wording"><span class="toc-section-number">5.1</span> Wording<span></span></a></li>
@@ -784,7 +793,7 @@ has some other interesting potential…</p>
 Visitation<a href="#motivating-example-variant-visitation" class="self-link"></a></h1>
 <p>Jiang An submitted a very interesting bug report to <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118434">libstdc++</a>
 (and <a href="https://github.com/llvm/llvm-project/issues/118560">libc++</a>) in
-January 2025. It dealt with visiting a
+January 2025, which is also now <span class="citation" data-cites="LWG4197"><a href="https://wg21.link/lwg4197" role="doc-biblioref">[LWG4197]</a></span>. It dealt with visiting a
 <code class="sourceCode cpp">std<span class="op">::</span>variant</code>
 with a consteval lambda.</p>
 <p>Here is a short reproduction of it, with a greatly reduced
@@ -959,8 +968,10 @@ be initialized with pointers to immediate functions. But as a
 variable, it can be — since we escalate all invocations of those
 pointers! Everything just… works, and requires no code changes on the
 part of the library implementation.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="mutability"><span class="header-section-number">4</span>
-Mutability<a href="#mutability" class="self-link"></a></h1>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="other-design-questions"><span class="header-section-number">4</span>
+Other Design Questions<a href="#other-design-questions" class="self-link"></a></h1>
+<p>There are a few other design questions to discuss.</p>
+<h2 data-number="4.1" id="mutability"><span class="header-section-number">4.1</span> Mutability<a href="#mutability" class="self-link"></a></h2>
 <p>One question we have to address is, given:</p>
 <div class="std">
 <blockquote>
@@ -1013,6 +1024,86 @@ allowing the declaration:</p>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>v <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>; <span class="co">// ok, observed mutation</span></span></code></pre></div>
 </blockquote>
 </div>
+<h2 data-number="4.2" id="rules-around-constexpr-variables"><span class="header-section-number">4.2</span> Rules around
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+Variables<a href="#rules-around-constexpr-variables" class="self-link"></a></h2>
+<p>Let’s quickly consider:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> add<span class="op">(</span><span class="dt">int</span> x, <span class="dt">int</span> y<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">+</span> y;</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> a <span class="op">=</span> add;</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> b <span class="op">=</span> add;</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> c <span class="op">=</span> <span class="op">^^</span><span class="dt">int</span>;</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> d <span class="op">=</span> <span class="op">^^</span><span class="dt">int</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>The status quo is that <code class="sourceCode cpp">a</code> is
+ill-formed (as already mentioned) and
+<code class="sourceCode cpp">c</code> is proposed okay.
+<code class="sourceCode cpp">b</code> and
+<code class="sourceCode cpp">d</code> are obviously okay. Is that the
+right set of rules? There are other alternatives:</p>
+<ul>
+<li><strong><code class="sourceCode cpp">c</code> is
+ill-formed</strong>. This might be a little surprising to propose, but
+it actually has merit. If you want a variable that only exists at
+compile time, declare it
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>.
+Just because we <em>can</em> come up with a set of rules that allows
+<code class="sourceCode cpp">c</code> (by way of having consteval-only
+type) but not <code class="sourceCode cpp">a</code> doesn’t mean that we
+should. Rejecting <code class="sourceCode cpp">c</code> can also provide
+a clear error message that it should be
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+instead and makes for a simpler set of rules.</li>
+<li><strong><code class="sourceCode cpp">a</code> is
+well-formed</strong>. We can achieve this by having consteval variable
+escalation apply for all variables, not just templated ones. But when we
+were discussing <span class="citation" data-cites="P2564R3"><a href="https://wg21.link/p2564r3" role="doc-biblioref">[P2564R3]</a></span>, we didn’t do escalation for
+regular functions then — if you have a function that must be
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>,
+we decided that you should explicitly mark it as such. The same
+principle should apply here — if <code class="sourceCode cpp">a</code>
+has to be
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+(and it does), then it should be explicitly labeled as such.</li>
+</ul>
+<h2 data-number="4.3" id="do-we-still-need-consteval-only-types"><span class="header-section-number">4.3</span> Do we still need consteval-only
+types?<a href="#do-we-still-need-consteval-only-types" class="self-link"></a></h2>
+<p><span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span> introduces the notion of
+consteval-only type — basically any type that has a <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+in it somewhere — to ensure that reflections exist only at compile time.
+This paper provides an alternative approach to solve the same problem:
+extend consteval-only to include values of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.</p>
+<p>This broadly accomplishes the same thing (and would necessitate
+having <code class="sourceCode cpp">c</code> be ill-formed in the above
+example), there are a few cases where the suggested rules would differ
+though. For example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">// v has &quot;consteval-only type,&quot; but it does not have &quot;consteval-only value&quot;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>variant<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info, <span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="dv">42</span>;</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> p;</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">// c has &quot;consteval-only type,&quot; but it does not have &quot;consteval-only value&quot;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> C<span class="op">{.</span>p<span class="op">=</span><span class="kw">nullptr</span><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>On the whole, it’s definitely important to ensure that reflections do
+not persist to runtime and do not lead to codegen. These cases don’t
+<em>actually</em> have reflections in them though. So perhaps we don’t
+need them the concept of consteval-only type after all.</p>
+<p><span class="title"><span class="citation" data-cites="P3421R0"><a href="https://wg21.link/p3421r0" role="doc-biblioref">[P3421R0]
+(Consteval destructors)</a></span></span> is another paper in this space
+that also seems like what it is really trying to do is come up with a
+way to produce consteval-only values. Perhaps a consteval destructor
+would be a way to signal that.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes:</p>
 <ol type="1">
@@ -1074,6 +1165,10 @@ variable, or</li>
 any constituent value of pointer-to-member type designates an immediate
 function.</li>
 </ul>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: With
+the adoption of P2996, this would have to be extended to also account
+for any references to, pointers to, or values of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.
+]</span></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">y</a></span>
 An <em>immediate constant expression</em> is either a glvalue core
 constant expression that refers to an object or a function, or a prvalue
@@ -1201,13 +1296,18 @@ constexpr reference is bound, shall have constant destruction.</p>
 <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-LWG4197" class="csl-entry" role="doc-biblioentry">
+[LWG4197] Jiang An. 2025-01-26. Complexity of
+<code class="sourceCode cpp">std<span class="op">::</span>visit</code>
+with immediate functions. <a href="https://wg21.link/lwg4197"><div class="csl-block">https://wg21.link/lwg4197</div></a>
+</div>
 <div id="ref-P0596R1" class="csl-entry" role="doc-biblioentry">
 [P0596R1] Daveed Vandevoorde. 2019-10-08. Side-effects in constant
 evaluation: Output and consteval variables. <a href="https://wg21.link/p0596r1"><div class="csl-block">https://wg21.link/p0596r1</div></a>
@@ -1223,6 +1323,9 @@ Immediate functions. <a href="https://wg21.link/p1073r3"><div class="csl-block">
 [P2996R9] Wyatt Childers, Peter Dimov, Dan Katz, Barry Revzin, Andrew
 Sutton, Faisal Vali, and Daveed Vandevoorde. 2025-01-12. Reflection for
 C++26. <a href="https://wg21.link/p2996r9"><div class="csl-block">https://wg21.link/p2996r9</div></a>
+</div>
+<div id="ref-P3421R0" class="csl-entry" role="doc-biblioentry">
+[P3421R0] Ben Craig. 2024-10-12. Consteval destructors. <a href="https://wg21.link/p3421r0"><div class="csl-block">https://wg21.link/p3421r0</div></a>
 </div>
 </div>
 </div>
