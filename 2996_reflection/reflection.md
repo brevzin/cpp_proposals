@@ -35,7 +35,9 @@ Since [@P2996R9]:
   * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
   * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
   * side effects of immediate invocations are immediate-escalatory
+  * size and alignment of `info` are both 1
 * library wording updates
+  * fix definition of "Constant When" (use "constant subexpression" in lieu of "core constant expression")
   * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
   * non-static data members of closure types are not _members-of-representable_
 
@@ -3163,7 +3165,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [The program is ill-formed if any instantiation fails.]{.note}
 
-  [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
+  [[Constructs that are separately subject to instantiation are specified in [temp.inst].]{.note}]{.addu}
 
   [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each expression `$E$` within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating `$E$` as a full-expression is complete if and only if]{.addu}
 
@@ -3573,10 +3575,10 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * an object with static storage duration ([basic.stc]{.sref}),
 * a variable ([basic.pre]{.sref}),
 * a structured binding ([dcl.struct.bind]{.sref}),
-* a function,
+* a function ([dcl.fct]{.sref}),
 * an enumerator ([dcl.enum]{.sref}),
 * a type alias ([dcl.typedef]{.sref}),
-* a type,
+* a type ([basic.types]{.sref}),
 * a class member ([class.mem]{.sref}),
 * an unnamed bit-field ([class.bit]{.sref}),
 * a primary class template ([temp.pre]{.sref}),
@@ -3589,7 +3591,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a direct base class relationship ([class.derived.general]{.sref}), or
 * a data member description ([class.mem.general]{.sref}).
 
-An expression convertible to a reflection is said to _represent_ the corresponding construct. `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
+A reflection is said to _represent_ the corresponding construct. `sizeof(std::meta::info)` and `alignof(std::meta::info)` shall both be equal to 1.
 
 ::: example
 ```cpp
@@ -3651,7 +3653,7 @@ constexpr auto r18 = std::meta::data_member_spec(^^int, {.name="member"});
 Introduce a new kind of side effect in paragraph 7 (i.e., injecting a declaration).
 
 ::: std
-[7]{.pnum} Reading an object designated by a `volatile` glvalue ([basic.lval]), modifying an object, [injecting a declaration,]{.addu} calling a library I/O function, or calling a function that does any of those operations are all _side effects_, which are changes in the state of the execution [or translation]{.addu} environment. _Evaluation_ of an expression (or a subexpression) in general includes both value computations (including determining the identity of an object for glvalue evaluation and fetching a value previously assigned to an object for prvalue evaluation) and initiation of side effects. When a call to a library I/O function returns or an access through a volatile glvalue is evaluated, the side effect is considered complete, even though some external actions implied by the call (such as the I/O itself) or by the `volatile` access may not have completed yet.
+[7]{.pnum} Reading an object designated by a `volatile` glvalue ([basic.lval]), modifying an object, [producing an injected declaration ([expr.const]),]{.addu} calling a library I/O function, or calling a function that does any of those operations are all _side effects_, which are changes in the state of the execution [or translation]{.addu} environment. _Evaluation_ of an expression (or a subexpression) in general includes both value computations (including determining the identity of an object for glvalue evaluation and fetching a value previously assigned to an object for prvalue evaluation) and initiation of side effects. When a call to a library I/O function returns or an access through a volatile glvalue is evaluated, the side effect is considered complete, even though some external actions implied by the call (such as the I/O itself) or by the `volatile` access may not have completed yet.
 
 :::
 
@@ -4268,7 +4270,7 @@ Extend the conditions in paragraph 24 under which an aggregate initialization co
 ::: std
 [24]{.pnum} ...
 
-  An invocation is an _immediate invocation_ if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An aggregatae initialization is an immediate invocation if it [initializes an object of consteval-only type or if it]{.addu} evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
+  An invocation is an _immediate invocation_ if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An aggregate initialization is an immediate invocation if it [initializes an object of consteval-only type or if it]{.addu} evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
 
 :::
 
@@ -4291,19 +4293,17 @@ Extend the definition of _immediate function_ in paragraph 27 to include functio
 * [#.#]{.pnum} declared with the `consteval` specifier, or
 * [#.#]{.pnum} an immediate-escalating function `$F$` whose function body contains [either]{.addu}
   * [#.#.#]{.pnum} an immediate-escalating expression `$E$` such that `$E$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope[.]{.rm}[, or]{.addu}
-  * [[#.#.#]{.pnum} a definition `$D$` of a variable with consteval-only type such that `$D$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope.]{.addu}
+  * [[#.#.#]{.pnum} a definition `$D$` of a non-constexpr variable with consteval-only type such that `$D$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope.]{.addu}
 :::
 
 Add a new paragraph prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/28), and renumber accordingly:
 
-[The adverb "plainly" doesn't really convey any information here. We don't want to change it right now because Core has already reviewed this wording multiple times using this term, but we think an alternative term would be better. Sequentially constant-evaluated is another term we've considered that we like better. Other options might be chronologically, orderly, ordinally, and rendered. We want to somehow emphasize that these expressions can have side effects and must be evaluated exactly once, in order.]{.draftnote}
-
 ::: std
 ::: addu
 
-[28pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not a specialization of a variable template.
+[28pre]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not a specialization of a variable template.
 
-[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
+[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below). Any such declarations are reachable from a point that follows immediately after the declaration containing `$E$`.]{.note}
 
 :::
 :::
@@ -4323,7 +4323,7 @@ Add a note following the definition of _manifestly constant-evaluated_ to clarif
 * [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
 
 ::: addu
-[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., template arguments) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) cannot have observable side effects, and there are no explicit constraints on the relative order of their evaluation.]{.note}
+[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., template arguments) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) cannot have observable side effects.]{.note}
 :::
 
 :::
@@ -5451,27 +5451,6 @@ int main() {
 :::
 :::
 
-### [temp.spec.general]{.sref} General {-}
-
-Add a note after paragraph 1 enumerating other constructs that are subject to instantiation.
-
-::: std
-[1]{.pnum} The act of instantiating a function, a variable, a class, a member of a class template, or a member template is referred to as _template instantiation_.
-
-::: addu
-::: note
-The following constructs are also separately subject to instantiation:
-
-* [#.#]{.pnum} Default arguments in template specializations and members of class templates,
-* [#.#]{.pnum} Default template arguments,
-* [#.#]{.pnum} Default member initializers in template specializations,
-* [#.#]{.pnum} `$noexcept-specifier$`s of template specializations and members of class templates, and
-* [#.#]{.pnum} `$type-constraint$`s and `$requires-clause$`s of template specializations and member functions.
-
-:::
-:::
-:::
-
 
 ### [temp.expl.spec]{.sref} Explicit specialization {-}
 
@@ -5540,7 +5519,7 @@ For convenience, we're going to add a new library element to [structure.specific
 * [#.2]{.pnum} *Mandates*: the conditions that, if not met, render the program ill-formed. [...]
 
 ::: addu
-* [#.2+1]{.pnum} *Constant When*: the conditions that are required for a call to this function to be a core constant expression ([expr.const]).
+* [#.2+1]{.pnum} *Constant When*: the conditions that are required for a call to this function to be a constant subexpression ([defns.const.subexpr]).
 :::
 
 [4]{.pnum} [...] Next, the semantics of the code sequence are determined by the *Constraints*, *Mandates*, [*Constant When*,]{.addu} *Preconditions*, *Effects*, *Synchronization*, *Postconditions*, *Returns*, *Throws*, *Complexity*, *Remarks*, and *Error* conditions specified for the function invocations contained in the code sequence. [...]
@@ -6490,7 +6469,7 @@ consteval vector<info> members_of(info r);
 * [#.#]{.pnum} a class that is not a closure type, or
 * [#.#]{.pnum} a namespace
 
-is _members-of-representable_ if it is
+is _members-of-representable_ if it is not a specialization of a template and if it is
 
 * [#.#]{.pnum} a class that is not a closure type,
 * [#.#]{.pnum} a type alias,
