@@ -1,8 +1,8 @@
 ---
 title: "Emitting messages at compile time"
-document: P2758R4
+document: P2758R5
 date: today
-audience: CWG, LEWG
+audience: CWG, LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -12,7 +12,9 @@ tag: constexpr
 
 # Revision History
 
-For R4: wording. Re-targeting towards CWG and LEWG. Introduced concept of constexpr-erroneous both for proper wording and to handle an escalating issue.
+For R5: wording. Re-targeting towards LWG.
+
+For [@P2758R4]: wording. Re-targeting towards CWG and LEWG. Introduced concept of constexpr-erroneous both for proper wording and to handle an escalating issue.
 
 For [@P2758R3]: Clean-up the paper to account for other papers ([@P2741R3] and [@P2738R1]) being adopted. More discussion of tags, which are added to every API. Expanding wording.
 
@@ -789,6 +791,19 @@ constexpr void constexpr_error_str($tag-string$ tag, string_view msg) noexcept;
 [#]{.pnum} *Recommended practice*: Implementations should include the text of `$tag$.$str$` in the diagnostic.
 :::
 :::
+
+## Feature-Test Macro
+
+Add to [version.syn]{.sref}:
+
+::: bq
+::: addu
+```
+#define __cpp_lib_compile_time_messages 2025XX // freestanding, also in <meta>
+```
+:::
+:::
+
 
 ---
 references:
