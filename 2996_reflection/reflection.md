@@ -35,7 +35,7 @@ Since [@P2996R9]:
   * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
   * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
   * producing an injected declaration from a non-plainly constant-evaluated context is prohibited for core constant expressions, rather than rendering the program ill-formed
-  * size and alignment of `info` are both 1
+  * do not specify `sizeof(std::meta::info)`
 * library wording updates
   * fix definition of "Constant When" (use "constant subexpression" in lieu of "core constant expression")
   * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
@@ -3591,7 +3591,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a direct base class relationship ([class.derived.general]{.sref}), or
 * a data member description ([class.mem.general]{.sref}).
 
-A reflection is said to _represent_ the corresponding construct. `sizeof(std::meta::info)` and `alignof(std::meta::info)` shall both be equal to 1.
+A reflection is said to _represent_ the corresponding construct.
 
 ::: example
 ```cpp
