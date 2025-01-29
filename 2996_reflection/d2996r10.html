@@ -7674,9 +7674,11 @@ there exists a scope that encloses exactly one of
 <code class="sourceCode cpp"><em>D</em></code> that is either</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_208" id="pnum_208">(30.1)</a></span>
-a function parameter scope, or</li>
+a function parameter scope of a function not declared by
+<code class="sourceCode cpp"><em>D</em></code>, or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_209" id="pnum_209">(30.2)</a></span>
-a scope associated with a class template specialization.</li>
+a class scope of a class not declared by
+<code class="sourceCode cpp"><em>D</em></code>.</li>
 </ul>
 <div class="example">
 <span>[ <em>Example 2:</em> </span>
@@ -7715,7 +7717,13 @@ a scope associated with a class template specialization.</li>
 <span id="cb128-33"><a href="#cb128-33" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb128-34"><a href="#cb128-34" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb128-35"><a href="#cb128-35" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> b4 <span class="op">=</span> TCls<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;::</span>sfn<span class="op">()</span>;</span>
-<span id="cb128-36"><a href="#cb128-36" aria-hidden="true" tabindex="-1"></a>  <span class="co">// error: TCls&lt;void&gt;::S4 is not enclosed by requires-clause lambda</span></span></code></pre></div>
+<span id="cb128-36"><a href="#cb128-36" aria-hidden="true" tabindex="-1"></a>  <span class="co">// error: TCls&lt;void&gt;::S4 is not enclosed by requires-clause lambda</span></span>
+<span id="cb128-37"><a href="#cb128-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb128-38"><a href="#cb128-38" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> S5;</span>
+<span id="cb128-39"><a href="#cb128-39" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Cls <span class="op">{</span></span>
+<span id="cb128-40"><a href="#cb128-40" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">bool</span> b <span class="op">=</span> complete_type<span class="op">(^^</span>S5<span class="op">)</span>;</span>
+<span id="cb128-41"><a href="#cb128-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">// error: S5 is not enclosed by class Inner</span></span>
+<span id="cb128-42"><a href="#cb128-42" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_210" id="pnum_210">31</a></span>

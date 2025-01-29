@@ -1,7 +1,7 @@
 ---
 title: Annotations for Reflection
 tag: reflection
-document: P3394R1
+document: D3394R2
 date: today
 audience: CWG, LEWG
 hackmd: true
@@ -18,7 +18,13 @@ author:
 
 # Revision History
 
-Since [@P3394R0], added wording.
+Since [@P3394R1]:
+
+- loosened the P2996 scope restrictions around injected declarations: allow the definition of an entity to produce injected declaration of itself
+
+Since [@P3394R0]:
+
+- added wording
 
 # Introduction
 
@@ -518,6 +524,16 @@ Change [basic.fundamental]{.sref} to add "annotation" to the list of reflection 
 * a namespace or namespace alias,
 * a base class specifier, or
 * a description of a declaration of a non-static data member.
+:::
+
+Loosen the scope restrictions in [expr.const]/30 to allow definitions to inject declarations of the entity that they are defining.
+
+::: std
+[30]{.pnum} The program is ill-formed if the evaluation of a plainly constant-evaluated expression `$P$` produces an injected declaration `$D$` such that there exists a scope that encloses exactly one of `$P$` or `$D$` that is either
+
+* [#.#]{.pnum} a function parameter scope [of a function not declared by `$D$`]{.addu}, or
+* [#.#]{.pnum} a class scope [of a class not declared by `$D$`]{.addu}.
+
 :::
 
 Extend the grammar in [dcl.attr.grammar]{.sref}:

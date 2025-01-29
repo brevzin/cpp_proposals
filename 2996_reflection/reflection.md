@@ -4354,7 +4354,7 @@ After the example following the definition of _manifestly constant-evaluated_, i
 [#]{.pnum} The program is ill-formed if the evaluation of a plainly constant-evaluated expression `$P$` produces an injected declaration `$D$` such that there exists a scope that encloses exactly one of `$P$` or `$D$` that is either
 
 * [#.#]{.pnum} a function parameter scope, or
-* [#.#]{.pnum} a scope associated with a class template specialization.
+* [#.#]{.pnum} a class scope.
 
 ::: example
 ```cpp
@@ -4394,6 +4394,12 @@ template <typename> struct TCls {
 
 constexpr bool b4 = TCls<void>::sfn();
   // error: TCls<void>::S4 is not enclosed by requires-clause lambda
+
+struct S5;
+struct Cls {
+  static constexpr bool b = complete_type(^^S5);
+    // error: S5 is not enclosed by class Inner
+};
 ```
 :::
 
