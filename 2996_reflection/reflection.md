@@ -1406,8 +1406,9 @@ This is not an ideal implementation (we'd prefer direct support for compile-time
 
 ::: std
 ```cpp
+template<int N> struct Helper;
+
 class TU_Ticket {
-  template<int N> struct Helper;
 public:
   static consteval int next() {
     int k = 0;
