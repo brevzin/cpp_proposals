@@ -34,12 +34,12 @@ Since [@P2996R9]:
   * bring notes and examples into line with current definitions
   * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
   * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
-  * side effects of immediate invocations are immediate-escalatory
+  * producing an injected declaration from a non-plainly constant-evaluated context is prohibited for core constant expressions, rather than rendering the program ill-formed
   * size and alignment of `info` are both 1
 * library wording updates
   * fix definition of "Constant When" (use "constant subexpression" in lieu of "core constant expression")
   * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
-  * non-static data members of closure types are not _members-of-representable_
+  * template specializations and non-static data members of closure types are not _members-of-representable_
 
 Since [@P2996R8]:
 
@@ -3169,7 +3169,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each expression `$E$` within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating `$E$` as a full-expression is complete if and only if]{.addu}
 
-  - [[7-8.#]{.pnum} `$E$` is manifestly constant-evaluated, and]{.addu}
+  - [[7-8.#]{.pnum} `$E$` is plainly constant-evaluated, and]{.addu}
   - [[7-8.#]{.pnum} either `$D$` or the template definition from which `$D$` is instantiated is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
@@ -3663,7 +3663,7 @@ Add a new paragraph to the end of [intro.execution] specifying a stronger sequen
 [12]{.pnum} If a signal handler is executed as a result of a call to the `std::raise` function, then the execution of the handler is sequenced after the invocation of the `std::raise` function and before its return.
 
 ::: addu
-[12+]{.pnum} During the evaluation of a manifestly constant-evaluated expression ([expr.const]), evaluations of operands of individual operators and of subexpressions of individual expresssions that are otherwise either unsequenced or indeterminately sequenced are evaluated in lexical order.
+[12+]{.pnum} During the evaluation of an expression as a core constant expression ([expr.const]), evaluations of operands of individual operators and of subexpressions of individual expresssions that are otherwise either unsequenced or indeterminately sequenced are evaluated in lexical order.
 :::
 
 :::
@@ -4216,6 +4216,20 @@ Add a new paragraph between paragraphs 5 and 6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
+Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production of injected declarations from any core constant expression that isn't plainly constant-evaluated.
+
+::: std
+[10]{.pnum} An expression `$E$` is a _core constant expression_ unless the evaluation of `$E$`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
+
+[...]
+
+- [#.27]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) expression, `typeid` ([expr.typeid]) expression, or `$new-expression$` ([expr.new]) that would throw an exception where no definition of the exception type is reachable;
+- [[#.27+]{.pnum} an expression that would produce an injected declaration, unless `$E$` is plainly constant-evaluated;]{.addu}
+- [#.28]{.pnum} an `$asm-declaration$` ([dcl.asm]);
+- [#.#]{.pnum} [...]
+
+:::
+
 Modify paragraph 17 to mention `$splice-expression$`s:
 
 ::: std
@@ -4280,7 +4294,7 @@ Modify (and clean up) the definition of _immediate-escalating expression_ in par
 [25]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it is [either]{.rm}
 
 * [#.#]{.pnum} [a potentially-evaluated]{.rm} [an]{.addu} `$id-expression$` [or `$splice-expression$`]{.addu} that [denotes]{.rm} [designates]{.addu} an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
-* [#.#]{.pnum} an immediate invocation that [either]{.addu} is not a constant expression [ or has associated side effects ([basic.execution]), or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
+* [#.#]{.pnum} an immediate invocation that [either]{.addu} is not a constant expression [and is not a subexpression of an immediate invocation.]{.rm}
 * [[#.#]{.pnum} of consteval-only type ([basic.types.general]{.sref}).]{.addu}
 
 :::
@@ -4337,12 +4351,10 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
 
-[#]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression `$M$` produces an injected declaration `$D$` and either
+[#]{.pnum} The program is ill-formed if the evaluation of a plainly constant-evaluated expression `$P$` produces an injected declaration `$D$` such that there exists a scope that encloses exactly one of `$P$` or `$D$` that is either
 
-* [#.#]{.pnum} `$M$` is not a plainly constant-evaluated expression, or
-* [#.#]{.pnum} there exists a scope that encloses exactly one of `$M$` or `$D$` that is either
-  * [#.#.#]{.pnum} a function parameter scope, or
-  * [#.#.#]{.pnum} a scope associated with a class template specialization.
+* [#.#]{.pnum} a function parameter scope, or
+* [#.#]{.pnum} a scope associated with a class template specialization.
 
 ::: example
 ```cpp
@@ -4353,45 +4365,35 @@ consteval bool complete_type(std::meta::info r) {
 
 struct S1;
 constexpr bool b1 = complete_type(^^S1);
-  // OK, constexpr variable so this is plainly constant-evaluated
+  // OK, constexpr variable initializer is plainly constant-evaluated
 
-template <typename>
-    requires ([] {
-      struct S2;
-      return complete_type(^^S2);
-    }())    // manifestly constant-evaluated expression
-bool tfn1();
-
-constexpr bool b2 = tfn1<void>();
-  // error: requires-clause injects a declaration but is not plainly constant-evaluated
-
-template <std::meta::info R> consteval bool tfn2() {
+template <std::meta::info R> consteval bool tfn1() {
   return complete_type(R);
 }
 
-struct S3;
-constexpr bool b3 = tfn2<^^S3>();
-  // OK, tfn2<^^S3>() and S3 are enclosed by the same scope
+struct S2;
+constexpr bool b2 = tfn1<^^S2>();
+  // OK, tfn1<^^S2>() and S2 are enclosed by the same scope
 
-template <std::meta::info R> consteval bool tfn3() {
+template <std::meta::info R> consteval bool tfn2() {
   static constexpr bool b = complete_type(R);
   return b;
 }
 
-struct S4;
-constexpr bool b4 = tfn3<^^S4>();
-  // error: complete_type(^^S4) is enclosed tfn3<^^S4>, but S4 is not
+struct S3;
+constexpr bool b3 = tfn2<^^S3>();
+  // error: complete_type(^^S3) is enclosed tfn2<^^S3>, but S3 is not
 
 template <typename> struct TCls {
-  struct S5;
+  struct S4;
   static void sfn() requires ([]{
-    constexpr bool b = complete_type(^^S5);
+    constexpr bool b = complete_type(^^S4);
     return b;
   }) { }
 };
 
-constexpr bool b5 = T2<void>::sfn();
-  // error: TCls<void>::S5 is not enclosed by requires-clause lambda
+constexpr bool b4 = TCls<void>::sfn();
+  // error: TCls<void>::S4 is not enclosed by requires-clause lambda
 ```
 :::
 
