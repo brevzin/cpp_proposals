@@ -30,7 +30,7 @@ Since [@P2996R9]:
 
 * core wording updates
   * make the [expr.const] "scope rule" for injected declarations more rigorous; disallow escape from function parameter scopes
-  * slight changes to "plainly constant-evaluated": disallow variable template specialization initializers; allow complete-class contexts
+  * slight changes to "plainly constant-evaluated": disallow variable template specialization initializers; disallow initializers of variables with automatic storage duration; allow complete-class contexts
   * bring notes and examples into line with current definitions
   * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
   * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
@@ -3565,7 +3565,7 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 
 ### [basic.fundamental]{.sref} Fundamental types {-}
 
-Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as follows:
+Add new paragraphs before the last paragraph of [basic.fundamental]{.sref} as follows:
 
 ::: std
 ::: addu
@@ -3644,7 +3644,9 @@ constexpr auto r18 = std::meta::data_member_spec(^^int, {.name="member"});
 
 :::
 
-[17 - 2]{.pnum} [Implementations are discouraged from representing any constructs described by this document that are not explicitly enumerated in the list above (e.g., partial template specializations, attributes, placeholder types, statements). Constructs not described by this document can also be represented.]{.note}
+[17 - 2]{.pnum} *Recommended practice*: Implementations should not represent other constructs specified in this document, such as partial template specializations, attributes, placeholder types, statements, or expressions, as values of type `std::meta::info`.
+
+[17 - 3]{.pnum} [Future revisions of this document can specify semantics for reflections representing any such constructs.]{.note}
 
 :::
 :::
