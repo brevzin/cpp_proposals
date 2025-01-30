@@ -1,5 +1,5 @@
 ---
-title: "Code Injection with Token Sequences"
+title: "Code Injection with Construct Sequences"
 document: P3294R2
 date: today
 audience: EWG
@@ -15,17 +15,23 @@ toc-depth: 2
 tag: reflection
 ---
 
+<style>code{hyphens: none}</style>
+
 # Revision History
+
+Since [@P3294R2]:
+
+* Renamed "token sequence" to "construct sequence" throughout and changed semantics description to shift focus from tokens to AST constructs.
 
 Since [@P3294R1]:
 
 * Cleaned up the paper, corrected our understanding of fragments.
 * Fixed/demonstrated implementation of `LoggingVector`.
-* Extended discussion of the difference between fragments and token sequences.
+* Extended discussion of the difference between fragments and construct sequences.
 
 Since [@P3294R0]:
 
-* Changed syntax for introducing token sequences to `^{ ... }`
+* Changed syntax for introducing construct sequences to `^^{ ... }`
 * Refined the interpolator syntax to `\(e)`, `\id(e)`, and `\tokens(e)` (parens mandatory in all cases)
 * Dropped the `declare [: e :]` splicer
 * Implemented much of the proposal with links to examples (including a new [type erasure example](#type-erasure))
@@ -33,7 +39,7 @@ Since [@P3294R0]:
 
 # Introduction
 
-This paper is proposing augmenting [@P2996R7] to add code injection in the form of token sequences.
+This paper is proposing augmenting [@P2996R7] to add code injection in the form of construct sequences.
 
 We consider the motivation for this feature to some degree pretty obvious, so we will not repeat it here, since there are plenty of other things to cover here. Instead we encourage readers to read some other papers on the topic (e.g. [@P0707R4], [@P0712R0], [@P1717R0], [@P2237R0]).
 
@@ -41,25 +47,25 @@ We consider the motivation for this feature to some degree pretty obvious, so we
 
 There are a lot of things that make code injection in C++ difficult, and the most important problem to solve first is: what will the actual injection mechanism look like? Not its syntax specifically, but what is the shape of the API that we want to expose to users? We hope in this section to do a thorough job of comparing the various semantic models we're aware of to help explain why we came to the conclusion that we came to.
 
-If you're not interested in this journey, you can simply skip to the [next section](#token-sequences).
+If you're not interested in this journey, you can simply skip to the [next section](#construct-sequences).
 
 Here, we will look at a few interesting examples for injection and how different models can implement them. The examples aren't necessarily intended to be the most compelling examples that exist in the wild. Instead, they're hopefully representative enough to cover a wide class of problems. They are:
 
-1. Implementing the storage for `std::tuple<Ts...>`
-2. Implementing `std::enable_if` without resorting to class template specialization
-3. Implementing properties (i.e. given a name like `"author"` and a type like `std::string`, emit a member `std::string m_author`, a getter `get_author()` which returns a `std::string const&` to that member, and a setter `set_author()` which takes a new value of type `std::string const&` and assigns the member).
-4. Implementing the postfix increment operator in terms of an existing prefix increment operator (a pure boilerplate annoyance).
+1. implementing the storage for `std::tuple<Ts...>`;
+2. implementing `std::enable_if` without resorting to class template specialization;
+3. implementing properties (i.e., given a name like `"author"` and a type like `std::string`, emit a member `std::string m_author`, a getter `get_author()` that returns a `std::string const&` to that member, and a setter `set_author()` that takes a new value of type `std::string const&` and assigns the member); and
+4. implementing the postfix increment operator in terms of an existing prefix increment operator (a pure boilerplate annoyance).
 
 ## The Spec API
 
-In P2996, the injection API is based on a function `define_class()` which takes a range of `spec` objects. In P2996, we only currently have `data_member_spec` - but this can conceivably be extended to have a `meow_spec` function for more aspects of the C++ API. Hence the name.
+In P2996, the injection API is based on a function `define_aggregate()` that takes a range of `spec` objects. In P2996, we only currently have `data_member_spec`&mdash;but this can conceivably be extended to have a `meow_spec` function for more aspects of the C++ API. Hence the name.
 
-But `define_class()` is a really clunky API, because invoking it is an expression - but we want to do it in contexts that want a declaration. So a simple example of injecting a single member `int` named `x` is:
+But `define_aggregate()` is a really clunky API, because invoking it is an expression&mdash;but we want to do it in contexts that want a declaration. So a simple example of injecting a single member `int` named `x` is:
 
 ::: std
 ```cpp
 struct C;
-static_assert(is_type(define_class(^C,
+static_assert(is_type(define_aggregate(^C,
     {data_member_spec{.name="x", .type=^int}})));
 ```
 :::
@@ -82,7 +88,7 @@ We already think of this as an improvement. But let's go through several use-cas
 
 ### `std::tuple`
 
-The tuple use-case was already supported by P2996 directly with `define_class()` (even though we think it would be better as a member pack), but it's worth just showing what it looks like with a direct injection API instead:
+The tuple use-case was already supported by P2996 directly with `define_aggregate()` (even though we think it would be better as a member pack), but it's worth just showing what it looks like with a direct injection API instead:
 
 ::: std
 ```cpp
@@ -118,7 +124,7 @@ struct enable_if {
 ```
 :::
 
-So far so good.
+So far so good. It is worth noting that the size of the spec API scales linearly with the number of language constructs we want to support; there is no shortcut and no obvious mapping.
 
 ### Properties
 
@@ -137,7 +143,7 @@ struct Book {
 ```
 :::
 
-to emit a class with two members (`m_author` and `m_title`), two getters that each return a `std::string const&` (`get_author()` and `get_title()`) and two setters that each take a `std::string const&` (`set_author()` and `set_title()`). Fairly basic properties.
+to emit a class with two members (`m_author` and `m_title`), two getters that each return a `std::string const&` (`get_author()` and `get_title()`), and two setters that each take a `std::string const&` (`set_author()` and `set_title()`). Fairly basic properties.
 
 We start by injecting the member:
 
@@ -903,18 +909,18 @@ We also think it's a better idea than the string injection model, since we want 
 
 But we think the fragment model still isn't quite right. By nobly trying to diagnose errors at the point of fragment declaration, it adds a complexity to the fragment model in a way that we don't think carries its weight. The fragment papers ([@P1717R0] and [@P2237R0]) each go into some detail of different approaches of how to do name checking at the point of fragment declaration. They are all complicated.
 
-We'll get more into the differences between fragments and what we are actually proposing (token sequences) in a [later section](#fragments-vs-token-sequences). We basically want something between strings and fragments. Something that gives us the benefits of just writing C++ code, but without the burden of having to do checking to add more complexity to the model.
+We'll get more into the differences between fragments and what we are actually proposing (construct sequences) in a [later section](#fragments-vs-construct-sequences). We basically want something between strings and fragments. Something that gives us the benefits of just writing C++ code, but without the burden of having to do checking to add more complexity to the model.
 
 
-# Token Sequences
+# Construct Sequences
 
-Generation of code from low-level syntactic elements such as strings or token sequences may be considered quite unsophisticated. Indeed, previous proposals for code synthesis in C++ have studiously avoided using strings or tokens as input, instead resorting to AST-based APIs, expansion statements, or code fragments, as shown above. As noted by Andrew Sutton in [@P2237R0]:
+Generation of code from low-level syntactic elements such as strings or tokens may be considered quite unsophisticated. Indeed, previous proposals for code synthesis in C++ have studiously avoided using strings or tokens as input, instead resorting to AST-based APIs, expansion statements, or code fragments, as shown above. As noted by Andrew Sutton in [@P2237R0]:
 
 ::: quote
 synthesizing new code from strings is straightforward, especially when the language/library has robust tools for compile-time string manipulation […] the strings or tokens are syntactically and semantically unanalyzed until they are injected
 :::
 
-whereas the central premise—and purported advantage—of a code fragment is it
+whereas the central premise&mdash;and purported advantage&mdash;of a code fragment is it
 
 ::: quote
 should be fully syntactically and semantically validated prior to its injection
@@ -924,62 +930,60 @@ Due to the lack of consensus for a code synthesis mechanism, some C++ reflection
 
 After extensive study and experimentation (as seen above), we concluded that a form of token-based synthesis is crucially important for practical code generation, and that insisting upon early syntactic and semantic validation of generated code is a net liability. The very nature of code synthesis involves assembling meaningful constructs out of pieces that have little or no meaning in isolation. Using concatenation and deferring syntax/semantics analysis to offer said concatenation is by far the simplest, most direct approach to code synthesis.
 
-Generally, we think that imposing early checking on generated code is likely to complicate and restrict the ways in which users can use the facility — particularly when it comes to composing larger constructs from smaller ones — and also be difficult for implementers, thus hurting everyone involved.
+Generally, we think that imposing early checking on generated code is likely to complicate and restrict the ways in which users can use the facility&mdash;particularly when it comes to composing larger constructs from smaller ones&mdash;and also be difficult for implementers, thus hurting everyone involved.
 
-We therefore choose the notion of *token sequence* as the core building block for generating code. Unparsed token sequences allow for flexible composition, while deferring semantic analysis (lookup, etc.) to the point of injection avoids complexities in trying to re-create the context of the point of injection at the point of composition.
+We therefore choose the notion of *construct sequence* as the core building block for generating code. Abstraction-wise, construct sequences are just above tokens but below semantically-analyzed, valid code. Roughly speaking, constructs correspond to terminals and nonterminals in the C++ grammar, though not all nonterminals would have constructs associated with them. Construct sequences allow for flexible composition. Deferring semantic analysis (lookup, etc.) to the point of injection avoids complexities in trying to re-create the context of the point of injection at the point of composition.
 
-## Token Sequence Expression
+## Construct Sequence Expression
 
-We propose the introduction of a new kind of expression with the following syntax (the specific introducer can be decided later):
+We propose the introduction of a new kind of expression with the following syntax:
 
 ::: std
 ```cpp
-^{ $balanced-brace-tokens$ }
+^^{ $balanced-brace-tokens$ }
 ```
 :::
 
-where `$balanced-brace-tokens$` is an arbitrary sequence of C++ tokens with the sole requirement that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced. The opening and closing `{`/`}` are not part of the token sequence. The type of a token sequence expression is `std::meta::info`.
+where `$balanced-brace-tokens$` is an arbitrary sequence of C++ tokens with the sole requirement that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced. The opening and closing `{`/`}` are not part of the construct sequence. The type of a construct sequence expression is `std::meta::info`.
 
 The choice of syntax is motivated by two notions:
 
-1. If we could reflect on the body of a function template, the only thing that could be yielded back is a token sequence - since the template hasn't been instantiated yet. And the syntax for reflecting on that body would look like `^{ $body$ }`
-2. This maintains the property that the only built-in operator that produces a `std::meta::info` value is the prefix `^`.
+1. If we could reflect on the body of a function template, the only thing that could be yielded back is a construct sequence - since the template hasn't been instantiated yet. And the syntax for reflecting on that body would look like `^^{ $body$ }`
+2. This maintains the property that the only built-in operator that produces a `std::meta::info` value is the prefix `^^`.
 
 
 For example:
 
 ::: std
 ```cpp
-constexpr auto t1 = ^{ a + b };      // three tokens
+constexpr auto t1 = ^^{ a + b };      // three tokens
 static_assert(std::is_same_v<decltype(t1), const std::meta::info>);
-constexpr auto t2 = ^{ a += ( };     // code does not have to be meaningful
-constexpr auto t3 = ^{ abc { def };  // Error, unpaired brace
+constexpr auto t2 = ^^{ a += ( };     // code does not have to be meaningful
+constexpr auto t3 = ^^{ abc { def };  // Error, unpaired brace
 ```
 :::
 
-[We are aware of the conflict with Objective-C/C++ blocks that makes this syntax untenable and [@P3381R0]. For now, the paper is written still using `^` and a subsequent version will have to find something else, probably still choosing the same prefix operator as reflection.]{.ednote}
+## Interpolating into a Construct Sequence
 
-## Interpolating into a Token Sequence
-
-There's still the issue that we need to access outside context from within a token sequence. For that we introduce dedicated interpolation syntax using three kinds of interpolators:
+There's still the issue that we need to access outside context from within a construct sequence. For that we introduce dedicated interpolation syntax using three kinds of interpolators:
 
 * `\($expression$)`
 * `\id($string$, $string-or-int$@~opt~@...)`
 * `\tokens($expression$)`
 
-The implementation model for this is that we collect the tokens within a `^{ ... }` literal, but every time we run into an interpolator, we parse the expressions within.  When the token sequence is evaluated (always a compile-time operation since it produces a `std::meta::info` value), the expressions are evaluated and the corresponding interpolators are replaced as follows:
+The implementation model for this is that we collect the tokens within a `^^{ ... }` literal, but every time we run into an interpolator, we parse the expressions within.  When the construct sequence is evaluated (always a compile-time operation since it produces a `std::meta::info` value), the expressions are evaluated and the corresponding interpolators are replaced as follows:
 
 * `\id(e)` for `e` being string-like is replaced with that string as a new `$identifier$`. `\id(e...)` can concatenate multiple string-like or integral values into a single `$identifier$` (the first argument must be string-like).
 * `\(e)` is replaced by a pseudo-literal token holding the value of `e`. The parentheses are mandatory.
-* `\tokens(e)` is replaced by the — possibly empty — tokens `e` (`e` must be a reflection of an evaluated token sequence).
+* `\tokens(e)` is replaced by the — possibly empty — contents of the construct sequence `e` (`e` must be a reflection of an evaluated construct sequence).
 
 The value and `id` interpolators need to be distinct because a given string could be intended to be injected as a _string_, like `"var"`, or as an _identifier_, like `var`. There's no way to determine which one is intended, so they have to be spelled differently.
 
-We initially considered `+` for token concatenation, but we need token sequence interpolation anyway. Consider wanting to build up the token sequence `T{a, b, c}` where `a, b, c` is the contents of another token sequence. With interpolation, that is straightforward:
+We initially considered `+` for token concatenation, but we need construct sequence interpolation anyway. Consider wanting to build up the construct sequence `T{a, b, c}` where `a, b, c` is the contents of another construct sequence. With interpolation, that is straightforward:
 
 ::: std
 ```cpp
-^{ T{\tokens(args)} }
+^^{ T{\tokens(args)} }
 ```
 :::
 
@@ -987,11 +991,11 @@ but with concatenation, we run into a problem:
 
 ::: std
 ```cpp
-^{ @[T{]{.orange}@ } + args + ^{ @[}]{.orange}@ }
+^^{ @[T{]{.orange}@ } + args + ^^{ @[}]{.orange}@ }
 ```
 :::
 
-This doesn't produce the intended effect because it is a token sequence containing the tokens `T { } + args + ^ { }` instead of an expression containing two additions involving two token sequences as desired.
+This doesn't produce the intended effect because it is a construct sequence containing the tokens `T { } + args + ^^ { }` instead of an expression containing two additions involving two construct sequences as desired.
 
 Given that we need `\tokens` anyway, additionally adding concatenation with `+` and `+=` doesn't seem as necessary, especially since keeping the proposal minimal has a lot of value.
 
@@ -1001,11 +1005,11 @@ Using `\` as an interpolator has at least some prior art. Swift uses `\(e)` in t
 
 Currently, we are proposing three interpolators: `\`, `\id`, and `\tokens`. That might seem like a lot, especially `\tokens` is a lot of characters, but we feel that this is the complete necessary set. A simple alternative is to spell `\tokens(e)` instead as `\{e}` (i.e. braces instead of parentheses). This is a lot shorter, but it's still three interpolators (and the visual distinction might be too subtle).
 
-A bigger alternative would be to overload interpolation on types. In Rust, for instance, interpolation into a procedural macro always is spelled `#var` - and opting in to interpolation is implementing the trait [`ToTokens`](https://docs.rs/proc-quote/latest/proc_quote/trait.ToTokens.html). The way to interpolate an identifier is to interpolate an object of type `syn::Ident`. Going that route (and making tokens sequences [their own type](#token-sequence-type)) might mean that the approach becomes:
+A bigger alternative would be to overload interpolation on types. In Rust, for instance, interpolation into a procedural macro always is spelled `#var` - and opting in to interpolation is implementing the trait [`ToTokens`](https://docs.rs/proc-quote/latest/proc_quote/trait.ToTokens.html). The way to interpolate an identifier is to interpolate an object of type `syn::Ident`. Going that route (and making tokens sequences [their own type](#construct-sequence-type)) might mean that the approach becomes:
 
 ::: std
 ```diff
-  auto seq = ^{
+  auto seq = ^^{
 -     auto \id("_", x) = \tokens(e);
 +     auto \(std::meta::token::id("_", 1)) = \(e);
   };
@@ -1016,7 +1020,7 @@ Or, with a handy using-directive or using-declaration:
 
 ::: std
 ```diff
-  auto seq = ^{
+  auto seq = ^^{
 -     auto \id("_", x) = \tokens(e);
 +     auto \(id("_", 1)) = \(e);
   };
@@ -1039,28 +1043,28 @@ A comparison of interpolations might be (using `$` instead of `\` purely for dif
 
 Token sequences are a construct that is processed in translation phase 7 ([lex.phases]{.sref}).  This has some natural consequences detailed below.
 
-The result of interpolating with `\tokens` is a token sequence consisting of all the tokens of both sequences:
+The result of interpolating with `\tokens` is a construct sequence consisting of all the tokens of both sequences:
 
 ::: std
 ```cpp
-constexpr auto t1 = ^{ c =  };
-constexpr auto t2 = ^{ a + b; };
-constexpr auto t3 = ^{ \tokens(t1) \tokens(t2) };
-static_assert(t3 == ^{ c = a + b; });
+constexpr auto t1 = ^^{ c =  };
+constexpr auto t2 = ^^{ a + b; };
+constexpr auto t3 = ^^{ \tokens(t1) \tokens(t2) };
+static_assert(t3 == ^^{ c = a + b; });
 ```
 :::
 
-It is unclear if we want to support `==` for token sequences, but it is easier to express the intent if we use it. So this paper will use `==` at least for exposition purposes.
+It is unclear if we want to support `==` for construct sequences, but it is easier to express the intent if we use it. So this paper will use `==` at least for exposition purposes.
 
 The concatenation is not textual - two tokens concatenated together preserve their identity, they are not pasted together into a single token. For example:
 
 ::: std
 ```cpp
-constexpr auto t1 = ^{ abc };
-constexpr auto t2 = ^{ def };
-constexpr auto t3 = ^{ \tokens(t1) \tokens(t2) };
-static_assert(t3 != ^{ abcdef });
-static_assert(t3 == ^{ abc def });
+constexpr auto t1 = ^^{ abc };
+constexpr auto t2 = ^^{ def };
+constexpr auto t3 = ^^{ \tokens(t1) \tokens(t2) };
+static_assert(t3 != ^^{ abcdef });
+static_assert(t3 == ^^{ abc def });
 ```
 :::
 
@@ -1068,61 +1072,61 @@ Whitespace and comments are treated just like in regular code - they are not sig
 
 ::: std
 ```cpp
-constexpr auto t1 = ^{ hello  = /* world */   "world" };
-constexpr auto t2 = ^{ /* again */ hello="world" };
+constexpr auto t1 = ^^{ hello  = /* world */   "world" };
+constexpr auto t2 = ^^{ /* again */ hello="world" };
 static_assert(t1 == t2);
 ```
 :::
 
-Tokens are handled after the initial phases of preprocessing: macros and string concatenation can apply, but occur before the implementation assembles a token sequence. You therefore have to be careful with macros because they won't work the way you might want to:
+Tokens are handled after the initial phases of preprocessing: macros and string concatenation can apply, but occur before the implementation assembles a construct sequence. You therefore have to be careful with macros because they won't work the way you might want to:
 
 ::: std
 ```cpp
 consteval auto operator+(info t1, info t2) -> info {
-    return ^{ \tokens(t1) \tokens(t2) };
+    return ^^{ \tokens(t1) \tokens(t2) };
 }
 
-static_assert(^{ "abc" "def" } == ^{ "abcdef" });
+static_assert(^^{ "abc" "def" } == ^^{ "abcdef" });
 
-// this concatenation produces the token sequence "abc" "def", not "abcdef"
-// when this token sequence will be injected, that will be ill-formed
-static_assert(^{ "abc" } + ^{ "def" } != ^{ "abcdef" });
+// this concatenation produces the construct sequence "abc" "def", not "abcdef"
+// when this construct sequence will be injected, that will be ill-formed
+static_assert(^^{ "abc"\tokens(^^{ "def" }) } != ^^{ "abcdef" });
 
 #define PLUS_ONE(x) ((x) + 1)
-static_assert(^{ PLUS_ONE(x) } == ^{ ((x) + 1) });
+static_assert(^^{ PLUS_ONE(x) } == ^^{ ((x) + 1) });
 
 // amusingly this version also still works but not for the reason you think
 // on the left-hand-side the macro PLUS_ONE is still invoked...
-// but as PLUS_ONE(x} +^{)
-// which produces ((x} +^{) + 1)
-// which leads to ^{ ((x } + ^{) + 1) }
-// which is ^{ ((x) + 1)}
-static_assert(^{ PLUS_ONE(x } + ^{ ) } == ^{ PLUS_ONE(x) });
+// but as PLUS_ONE(x} +^^{)
+// which produces ((x} +^^{) + 1)
+// which leads to ^^{ ((x } + ^^{) + 1) }
+// which is ^^{ ((x) + 1)}
+static_assert(^^{ PLUS_ONE(x \tokens(^^{ ) }) } == ^^{ PLUS_ONE(x) });
 
 // But this one finally fails, because the macro isn't actually invoked
 constexpr auto tok2 = []{
-    auto t = ^{ PLUS_ONE(x };
+    auto t = ^^{ PLUS_ONE(x };
     constexpr_print_str("Logging...\n");
-    t += ^{ ) }
+    t = ^^{ \tokens(t) ) };
     return t;
 }();
-static_assert(tok2 != ^{ PLUS_ONE(x) });
+static_assert(tok2 != ^^{ PLUS_ONE(x) });
 ```
 :::
 
-A token sequence has no meaning by itself, until injected. But because (hopefully) users will write valid C++ code, the resulting injection actually does look like C++ code.
+A construct sequence has no meaning by itself, until injected. But because (hopefully) users will write valid C++ code, the resulting injection actually does look like C++ code.
 
 ## Injection
 
-Once we have a token sequence, we need to do something with it. We need to inject it somewhere to get parsed and become part of the program.
+Once we have a construct sequence, we need to do something with it. We need to inject it somewhere to get parsed and become part of the program.
 
 We propose two injection functions.
 
-`std::meta::queue_injection(e)`, where `e` is a token sequence, will queue up a token sequence to be injected at the end of the current constant evaluation - typically the end of the `consteval` block that the call is made from.
+`std::meta::queue_injection(e)`, where `e` is a construct sequence, will queue up a construct sequence to be injected at the end of the current constant evaluation - typically the end of the `consteval` block that the call is made from.
 
-`std::meta::namespace_inject(ns, e)`, where `ns` is a reflection of a namespace and `e` is a token sequence, will immediately inject the contents of `e` into the namespace designated by `ns`.
+`std::meta::namespace_inject(ns, e)`, where `ns` is a reflection of a namespace and `e` is a construct sequence, will immediately inject the contents of `e` into the namespace designated by `ns`.
 
-We can inject into a namespace since namespaces are open - we cannot inject into any other context other than the one we're currently in.
+We can inject into a namespace since namespaces are open, but we cannot inject into any other context other than the one we're currently in.
 
 As a [simple example](https://godbolt.org/z/Ehnhxde3K):
 
@@ -1131,19 +1135,19 @@ As a [simple example](https://godbolt.org/z/Ehnhxde3K):
 #include <experimental/meta>
 
 consteval auto f(std::meta::info r, int val, std::string_view name) {
-  return ^{ constexpr [:\(r):] \id(name) = \(val); };
+  return ^^{ constexpr [:\(r):] \id(name) = \(val); };
 }
 
-constexpr auto r = f(^int, 42, "x");
+constexpr auto r = f(^^int, 42, "x");
 
 namespace N {}
 
 consteval {
   // this static assertion will be injected at the end of the block
-  queue_injection(^{ static_assert(N::x == 42); });
+  queue_injection(^^{ static_assert(N::x == 42); });
 
   // this declaration will be injected right into ::N right now
-  namespace_inject(^N, r);
+  namespace_inject(^^N, r);
 }
 
 int main() {
@@ -1154,13 +1158,13 @@ int main() {
 
 With that out of the way, we can now go through our examples from earlier.
 
-## Token Sequence Type
+## Construct Sequence Type
 
-In this paper (and the current implementation), the type of a token sequence is also `std::meta::info`. This follows the general [@P2996R7] design that all types that are opaque handles into the compiler have type `std::meta::info`. And that is appealing for its simplicity.
+In this paper (and the current implementation), the type of a construct sequence is also `std::meta::info`. This follows the general [@P2996R7] design that all types that are opaque handles into the compiler have type `std::meta::info`. And that is appealing for its simplicity.
 
-However, unlike reflections of source constructs, token sequence manipulation is a completely disjoint set of operations. The only kinds of reflection that can produce token sequences can only ever produce token sequences (e.g. getting the `noexcept` specifier of a function template).
+However, unlike reflections of source constructs, construct sequence manipulation is a completely disjoint set of operations. The only kinds of reflection that can produce construct sequences can only ever produce construct sequences (e.g. getting the `noexcept` specifier of a function template).
 
-Some APIs only make sense to do on a token sequence - for instance while we described `+` as not being essential, we could certainly still provide it - but from an API perspective it'd be nicer if it took two objects of type `token_sequence` rather than two of type `info` (and asserted that they were `token_sequence`s). Either way, misuse would be a compile error, but it might be better to only provide the operator when we know it's viable.
+Some APIs only make sense to do on a construct sequence - for instance while we described `+` as not being essential, we could certainly still provide it - but from an API perspective it'd be nicer if it took two objects of type `token_sequence` rather than two of type `info` (and asserted that they were `token_sequence`s). Either way, misuse would be a compile error, but it might be better to only provide the operator when we know it's viable.
 
 A dedicated `token_sequence` type would also make macros (as introduced [below](#scoped-macros)) stand out more from other reflection functions, since there will be a lot of functions that take a `meta::info` and return a `meta::info` and such functions are quite different from macros.
 
@@ -1168,7 +1172,7 @@ A dedicated `token_sequence` type would also make macros (as introduced [below](
 
 A significant amount of this proposal is already implemented in EDG and is available for experimentation on Compiler Explorer. The examples we will demonstrate provide links.
 
-The implementation provides a `__report_tokens(e)` function that can be used to dump the contents of a token sequence during constant evaluation to aid in debugging.
+The implementation provides a `__report_tokens(e)` function that can be used to dump the contents of a construct sequence during constant evaluation to aid in debugging.
 
 Two things to note with the implementation:
 
@@ -1179,7 +1183,7 @@ Two things to note with the implementation:
 
 ## Examples
 
-Now, the `std::tuple` and `std::enable_if` cases look nearly-identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a token sequence and a proper fragment.
+Now, the `std::tuple` and `std::enable_if` cases look nearly-identical to their corresponding implementations with [fragments](#fragments). In both cases, we are injecting complete code fragments that require no other name lookup, so there is not really any difference between a construct sequence and a proper fragment.
 
 [Implementing `Tuple<Ts...>`](https://godbolt.org/z/861MsqzPx) requires using both the value interpolator and the identifier interpolator (in this case we're naming the members `_0`, `_1`, etc.):
 
@@ -1188,9 +1192,9 @@ Now, the `std::tuple` and `std::enable_if` cases look nearly-identical to their 
 template <class... Ts>
 struct Tuple {
     consteval {
-        std::meta::info types[] = {^Ts...};
+        std::meta::info types[] = {^^Ts...};
         for (size_t i = 0; i != sizeof...(Ts); ++i) {
-            queue_injection(^{ [[no_unique_address]] [:\(types[i]):] \id("_", i); });
+            queue_injection(^^{ [[no_unique_address]] [:\(types[i]):] \id("_", i); });
         }
     }
 };
@@ -1205,7 +1209,7 @@ template <bool B, class T=void>
 struct enable_if {
     consteval {
         if (B) {
-            queue_injection(^{ using type = T; });
+            queue_injection(^^{ using type = T; });
         }
     }
 };
@@ -1220,17 +1224,17 @@ The property example likewise could be identical to the fragment implementation.
 consteval auto property(std::meta::info type, std::string_view name)
     -> void
 {
-    auto member = ^{ \id("m_"sv, name) };
+    auto member = ^^{ \id("m_"sv, name) };
 
-    queue_injection(^{ [:\(type):] \tokens(member); });
+    queue_injection(^^{ [:\(type):] \tokens(member); });
 
-    queue_injection(^{
+    queue_injection(^^{
         auto \id("get_"sv, name)() -> [:\(type):] const& {
             return \tokens(member);
         }
     });
 
-    queue_injection(^{
+    queue_injection(^^{
         auto \id("set_"sv, name)(typename [:\(type):] const& x)
             -> void {
             \tokens(member) = x;
@@ -1240,8 +1244,8 @@ consteval auto property(std::meta::info type, std::string_view name)
 
 struct Book {
     consteval {
-        property(^std::string, "title");
-        property(^std::string, "author");
+        property(^^std::string, "title");
+        property(^^std::string, "author");
     }
 };
 ```
@@ -1264,11 +1268,11 @@ consteval auto postfix_increment() -> void {
 }
 ```
 
-### [Token Sequence](https://godbolt.org/z/bTxPvb8cn)
+### [Construct Sequence](https://godbolt.org/z/bTxPvb8cn)
 ```cpp
 consteval auto postfix_increment() -> void {
     auto T = std::meta::nearest_class_or_namespace();
-    queue_injection(^{
+    queue_injection(^^{
         auto operator++(int) -> [:\(T):] {
             auto tmp = *this;
             ++*this;
@@ -1368,7 +1372,7 @@ public:
 
     consteval {
         for (std::meta::info fun : /* public, non-special member functions */) {
-            queue_injection(^{
+            queue_injection(^^{
                 \tokens(make_decl_of(fun)) {
                     // ...
                 }
@@ -1379,7 +1383,7 @@ public:
 ```
 :::
 
-We want to clone every member function, which requires copying the declaration. We don't want to actually have to spell out the declaration in the token sequence that we inject - that would be a tremendous amount of work given the complexity of C++ declarations. But the nice thing about token sequence injection is that we really only have to do that *one* time and stuff it into a function. `make_decl_of()` can just be a function that takes a reflection of a function and returns a token sequence for its declaration. We'll probably want to put this in the standard library.
+We want to clone every member function, which requires copying the declaration. We don't want to actually have to spell out the declaration in the construct sequence that we inject - that would be a tremendous amount of work given the complexity of C++ declarations. But the nice thing about construct sequence injection is that we really only have to do that *one* time and stuff it into a function. `make_decl_of()` can just be a function that takes a reflection of a function and returns a construct sequence for its declaration. We'll probably want to put this in the standard library.
 
 Now, we have two problems to solve in the body (as well as a few more problems we'll get to later).
 
@@ -1400,7 +1404,7 @@ public:
         for (std::meta::info fun : /* public, non-special member functions */) {
             auto argument_list = list_builder();
             for (size_t i = 0; i != parameters_of(fun).size(); ++i) {
-                argument_list += ^{
+                argument_list += ^^{
                     // we could get the nth parameter's type (we can't splice
                     // the other function's parameters but we CAN query them)
                     // or we could just write decltype(p0)
@@ -1408,7 +1412,7 @@ public:
                 };
             }
 
-            queue_injection(^{
+            queue_injection(^^{
                 \tokens(make_decl_of(fun, "p")) {
                     std::println("Calling {}", \(name_of(fun)));
                     return impl.[:\(fun):]( [:\tokens(argument_list):] );
@@ -1530,13 +1534,13 @@ queue_injection(logged_f);
 
 There is probably a better library API that can be thrown on top of this, but this already gets us a lot of the way there.
 
-Note the treatment of `const` qualification here. We are producing a token sequence that is either empty or contains the single token `const`. That's an example of another weirdness in C++, where an implicit object parameter is presented very different from an explicit object one. In fragments, this would likely be a situation where you would have to just use an explicit object parameter.
+Note the treatment of `const` qualification here. We are producing a construct sequence that is either empty or contains the single token `const`. That's an example of another weirdness in C++, where an implicit object parameter is presented very different from an explicit object one. In fragments, this would likely be a situation where you would have to just use an explicit object parameter.
 
 Also note that this implementation is not a complete implementation of all things `LoggingVector`, due to not supporting function templates — or even non-template member functions that have things like `requires` clauses or `noexcept` specifiers. Those add a lot of complexity that we're still working on.
 
-## Fragments vs Token Sequences
+## Fragments vs Construct Sequences
 
-Now that we've gone through a few examples using token sequences, we can get back to comparing token sequences and fragments. For many examples, including many of the ones in this paper, the two are identical (modulo choice for interpolation syntax and introducer, which are orthogonal decisions anyway). But there are a few here which allow us to dive into the details.
+Now that we've gone through a few examples using construct sequences, we can get back to comparing construct sequences and fragments. For many examples, including many of the ones in this paper, the two are identical (modulo choice for interpolation syntax and introducer, which are orthogonal decisions anyway). But there are a few here which allow us to dive into the details.
 
 It's the restriction on having a *complete* block of code that really ends up being a limitation. A fragment has to be a completely valid piece of C++. This is okay in the examples we've shown where we're building up part of a class. But there are a lot of weird parts of C++ — how do you build up a *mem-initializer-list*? Or put pieces of a function template together?
 
@@ -1581,11 +1585,11 @@ auto unqualid(identifier_of(fun))(auto... params << meta::parameters_of(fun))
 
 This superficially works but it's a fairly problematic approach. For starters, it's dropping the main advantage of fragments — which is that they're just C++ code. Of course, we need some kind of interpolation facility (i.e. `%{var}` and `unqualid(name)`), but adding more features on top of that seems like it's pushing. And in this case, while it's helpful to think of parameters as a pack (in this example, we really do actually want to just expand them into another function), the model of pack/expansion happens entirely at the wrong layer. The pack expansion has to happen at the point of fragment interpolation. But this implementation really looks like we're declaring a variadic function template — even though the intent was to declare a regular function!
 
-Compare that to the implementation shown above, where we _can_ incrementally produce this token sequence. Taking a very manual approach to just demonstrate the facility:
+Compare that to the implementation shown above, where we _can_ incrementally produce this construct sequence. Taking a very manual approach to just demonstrate the facility:
 
 ::: std
 ```cpp
-// this is a convenience type for producing token sequence lists
+// this is a convenience type for producing construct sequence lists
 // with a delimiter, that defaults to a comma
 consteval auto tokens_for(info mem) -> info {
     // build up the parameter list (e.g. char p0, double p1)
@@ -1617,7 +1621,7 @@ consteval auto tokens_for(info mem) -> info {
 
 This is mildly tedious, and will certainly be wrapped in better library facilities in the future. But the point is that it doesn't require any additional language features to support, and clearly is injecting a declaration of the same form as intended — a function, not a variadic function template.
 
-Additionally, there's an extra bit of functionality up there: support for the `const` qualifier. With token sequences, we can either inject the token `const` or nothing to get that behavior. With fragments, again, we cannot. We would have to come up with a different approach to solving this problem. Thankfully, deducing `this` gives us one — we could provide an explicit object parameter of suitable type. But will all such problems have a potentially clean solution? With token sequences, we don't have to have a crystal ball: token sequences are just sequences, so they can definitely produce anything that we might need to produce, for all future language evolution.
+Additionally, there's an extra bit of functionality up there: support for the `const` qualifier. With construct sequences, we can either inject the token `const` or nothing to get that behavior. With fragments, again, we cannot. We would have to come up with a different approach to solving this problem. Thankfully, deducing `this` gives us one — we could provide an explicit object parameter of suitable type. But will all such problems have a potentially clean solution? With construct sequences, we don't have to have a crystal ball: construct sequences are just sequences, so they can definitely produce anything that we might need to produce, for all future language evolution.
 
 # Scoped Macros
 
@@ -1626,13 +1630,13 @@ C macros have a (well-deserved) bad reputation in the C++ community. This is bec
 * C macros don't follow any scoping rules, and can change any code, anywhere. This is why they do not leak into or out of C++ modules.
 * The C preprocessor is a language unto itself, that doesn't understand C++ syntax, with limited functionality that is very tedious to program in. Even what we would consider to be very basic language constructs like `if` or `for` are expert-level features in the preprocessor, and even then are highly limited.
 
-We think that C++ does need a code manipulation mechanism, and that token sequences can provide a much better solution than C macros.
+We think that C++ does need a code manipulation mechanism, and that construct sequences can provide a much better solution than C macros.
 
 ## Design Approach
 
 One way to think about a macro is that it is a function that takes _code_ and produces _code_, without necessarily evaluating or even parsing the code (indeed the code that is input to the macro need not even be valid C++ at all).
 
-With token sequences, we suddenly gain a way to represent macros in C++ proper: a macro is a function that takes a token sequence and returns a token sequence, whereby it can be automatically injected (with some syntax marker at the call site).
+With construct sequences, we suddenly gain a way to represent macros in C++ proper: a macro is a function that takes a construct sequence and returns a construct sequence, whereby it can be automatically injected (with some syntax marker at the call site).
 
 This is already implicitly the way that macros operate in LISPs like Scheme and Racket, and is explicitly how they work in Rust and Swift. In Rust, [procedural macros](https://doc.rust-lang.org/reference/procedural-macros.html) have the form:
 
@@ -1662,7 +1666,7 @@ public struct FourCharacterCode: ExpressionMacro {
 
 Either way, unevaluated raw code in, unevaluated raw code out.
 
-Now that we have the ability to represent code in code (using token sequences) and can inject said code that is produced by regular C++ functions, we can do in the same in C++ as well.
+Now that we have the ability to represent code in code (using construct sequences) and can inject said code that is produced by regular C++ functions, we can do in the same in C++ as well.
 
 ## Forwarding
 
@@ -1681,12 +1685,12 @@ auto new_f = [](auto&& x) { return fwd(x); };
 ```
 :::
 
-With token sequences, using the design described earlier that we accept code in and return code out, we can achieve similar syntax:
+With construct sequences, using the design described earlier that we accept code in and return code out, we can achieve similar syntax:
 
 ::: std
 ```cpp
 consteval auto fwd2(meta::info x) -> meta::info {
-    return ^{
+    return ^^{
         static_cast<decltype([:\tokens(x):])&&>([:\tokens(x):]);
     };
 }
@@ -1695,13 +1699,13 @@ auto new_f2 = [](auto&& x) { return fwd2!(x); };
 ```
 :::
 
-The logic here is that `fwd2!(x)` is syntactic sugar for `immediately_inject(fwd2(^{ x }))` (which requires a new mechanism for injecting into an expression). We're taking a page out of Rust's book and suggesting that invoking a "macro" with an exclamation point does the injection. Seems nice to both have convenient syntax for token manipulation and a syntactic marker for it on the call-site.
+The logic here is that `fwd2!(x)` is syntactic sugar for `immediately_inject(fwd2(^^{ x }))` (which requires a new mechanism for injecting into an expression). We're taking a page out of Rust's book and suggesting that invoking a "macro" with an exclamation point does the injection. Seems nice to both have convenient syntax for token manipulation and a syntactic marker for it on the call-site.
 
-The first revision of this paper used the placeholder syntax `@tokens x` to declare the parameter of `fwd2`, but it turns out that this is just a token sequence - so it can just have type `std::meta::info`. The call-site syntax of `fwd2!` should be all you need to request tokenization.
+The first revision of this paper used the placeholder syntax `@tokens x` to declare the parameter of `fwd2`, but it turns out that this is just a construct sequence - so it can just have type `std::meta::info`. The call-site syntax of `fwd2!` should be all you need to request tokenization.
 
 Of course, `fwd2` is a regular C++ function. You have to invoke it through the usual C++ scoping rules, so it does not suffer that problem from C macros. And then the body is a regular C++ function too, so writing complex token manipulation is just a matter of writing complex C++ code - which is a lot easier than writing complex C preprocessor code.
 
-Note that the invocation of a macro like `macro!(std::pair<int, int>{1, 2})` would just work fine - the argument passed to `macro` would be `^{ std::pair<int, int>{1, 2} }`. But that leads us to the question of parsing...
+Note that the invocation of a macro like `macro!(std::pair<int, int>{1, 2})` would just work fine - the argument passed to `macro` would be `^^{ std::pair<int, int>{1, 2} }`. But that leads us to the question of parsing...
 
 ## Assertion
 
@@ -1710,7 +1714,7 @@ Consider a different example (borrowed from [here](https://www.forrestthewoods.c
 ::: std
 ```cpp
 consteval auto assert_eq(meta::info a, meta::info b) -> meta::info {
-    return ^{
+    return ^^{
         do {
             auto sa = \(stringify(a));
             auto va = \tokens(a);
@@ -1777,11 +1781,11 @@ consteval auto assert_eq(meta::info a, meta::info b) -> meta::info;
 ```
 :::
 
-Earlier we described the design as taking _a single_ token sequence and producing a token sequence output. We'd of course want to express `assert_eq` as a function taking two token sequences, but how does the compiler know when to end one token seequence and start the next? That requires parsing. If the user writes `assert_eq!(std::pair<int, int>{1, 2}, x)`, the compiler needs to figure out which comma in there is actually an argument delimiter (or how to fail if there is only one argument).
+Earlier we described the design as taking _a single_ construct sequence and producing a construct sequence output. We'd of course want to express `assert_eq` as a function taking two construct sequences, but how does the compiler know when to end one token seequence and start the next? That requires parsing. If the user writes `assert_eq!(std::pair<int, int>{1, 2}, x)`, the compiler needs to figure out which comma in there is actually an argument delimiter (or how to fail if there is only one argument).
 
 There are a couple ways that we could approach this.
 
-We could always require that a macro takes a single token-sequence argument and provide a parser library to help pull out the pieces. For instance, [in Rust](https://docs.rs/syn/latest/syn/parse/index.html), you would write something like this:
+We could always require that a macro takes a single construct-sequence argument and provide a parser library to help pull out the pieces. For instance, [in Rust](https://docs.rs/syn/latest/syn/parse/index.html), you would write something like this:
 
 ::: std
 ```rust
@@ -1799,15 +1803,15 @@ Alternatively, we could push this more into the signature of the macro - choosin
 ::: std
 ```cpp
 // this parses f!(1+2, f(3, 4))
-// into f(^{1+2}, ^{f(3, 4)})
+// into f(^^{1+2}, ^^{f(3, 4)})
 consteval auto f(meta::token::expr lhs, meta::token::expr rhs) -> meta::info;
 
 // this parses g!(1+2, f(3, 4))
-// into g(^{ 1+2, f(3, 4) })
+// into g(^^{ 1+2, f(3, 4) })
 consteval auto g(meta::info xs) -> meta::info;
 
 // this parses h!(1+2, f(3, 4))
-// into h!({ ^{1+2}, ^{f(3, 4)}})
+// into h!({ ^^{1+2}, ^^{f(3, 4)}})
 // so that xs.size() == 2
 consteval auto h(meta::token::expr_list xs) -> meta::info
 ```
@@ -1874,7 +1878,7 @@ which we can declare as:
 ::: std
 ```cpp
 consteval auto λ(meta::info body) -> meta::info {
-    return ^{
+    return ^^{
         [&](auto&& it)
             noexcept(noexcept(\tokens(body)))
             -> decltype(\tokens(body))
@@ -1897,7 +1901,7 @@ With hygienic macros, the assertion example is already correct. With unhygienic 
 consteval auto assert_eq(meta::info a, meta::info b) -> meta::info {
     auto [sa, va, sb, vb] = std::meta::make_unique_names<4>();
 
-    return ^{
+    return ^^{
         do {
             auto \id(sa) = \(stringify(a));
             auto \id(va) = \tokens(a);
@@ -1945,23 +1949,23 @@ consteval auto parse_format_string(string_view) -> FormatParts;
 consteval auto format(string_view str) -> meta::info {
     auto parts = parse_format_string(str);
 
-    auto tok = ^{
+    auto tok = ^^{
         // NB: there's no close paren yet
         // we're allowed to build up a partial fragment like this
         ::std::format(\(parts.format_str)
     };
 
     for (string_view arg : parts.args) {
-        tok = ^{ \tokens(tok), \tokens(tokenize(arg)) };
+        tok = ^^{ \tokens(tok), \tokens(tokenize(arg)) };
     }
 
     // now finally here's our close paren
-    return ^{ \tokens(tok) ) };
+    return ^^{ \tokens(tok) ) };
 }
 ```
 :::
 
-In the previous example, we demonstrated the need for a way to convert a token sequence to a string. In this example, we need a way to convert a string to a token sequence. This doesn't involve parsing or any semantic analysis. It's *just* lexing.
+In the previous example, we demonstrated the need for a way to convert a construct sequence to a string. In this example, we need a way to convert a string to a construct sequence. This doesn't involve parsing or any semantic analysis. It's *just* lexing.
 
 Of course, this approach has limitations. We cannot fully faithfully parse the format string because at this layer we don't have types - we can't stop and look up what type `this->x` was, instantiate the appropriate `std::formatter<X>` and use it tell us where the end of its formatter is. We can just count balanced `{}`s and hope for the best.
 
@@ -1969,7 +1973,7 @@ Similarly, something like `format!("{SOME_MACRO(x)}")` can't work since we're no
 
 But realistically, this would handily cover the 90%, if not the 99% case. Not to mention could easily adopt other nice features of string interpolation that show up in other languages (like Python's `f"{x =}` which formats as `"x = 42"`) as library features. And, importantly, this isn't a language feature tied to `std::format`. It could easily be made into a library to be used by any logging framework.
 
-Note here that unlike previous examples, the `format` macro just took a `string_view`. This is in contrast to the earlier examples where the macro had to take a token sequence (possibly with some [parsing](#macro-parsing) involved). Depending on how we approach parsing, the design could simply be that any implicit tokenization only occurs if the macro's parameters actually expect token sequences. Or it could be that the `format!` macro needs to take a token sequence too and parse a string literal out of it.
+Note here that unlike previous examples, the `format` macro just took a `string_view`. This is in contrast to the earlier examples where the macro had to take a construct sequence (possibly with some [parsing](#macro-parsing) involved). Depending on how we approach parsing, the design could simply be that any implicit tokenization only occurs if the macro's parameters actually expect construct sequences. Or it could be that the `format!` macro needs to take a construct sequence too and parse a string literal out of it.
 
 ## Abbreviated Lambdas
 
@@ -1981,11 +1985,11 @@ consteval auto λ(int n, meta::info body) -> meta::info {
     // our parameters are _1, _2, ..., _n
     auto params = list_builder();
     for (int i = 0; i < n; ++i) {
-        params += ^{ auto&& \id("_", i+1) };
+        params += ^^{ auto&& \id("_", i+1) };
     }
 
     // and then the rest is just repeating the body
-    return ^{
+    return ^^{
         [&](\tokens(params))
             noexcept(noexcept(\tokens(body)))
             -> decltype(\tokens(body))
@@ -1999,7 +2003,7 @@ consteval auto λ(int n, meta::info body) -> meta::info {
 
 As with the string interpolation example, here we're now taking one parameter of type `int` (that doesn't need to be tokenized) and another parameter that are the actual tokens. The usage here might be something like `λ!(2, _1 > _2)` - which is a lambda version of `std::greater{}`.
 
-Of course it'd be nice to do even better. That is: we can infer the arity of the lambda based on the parameters that are used. This paper does not yet have an API for iterating over a token sequence - but this particular problem would not involve parsing. Simply iterate over the tokens and find the largest `n` for which there exists an identifier of the form `_$n$` and use that as the arity. That would allow `λ!(_1 > _2)` by itself to be a binary lambda (or a lambda that takes at least two parameters). Can't do that with a C macro!
+Of course it'd be nice to do even better. That is: we can infer the arity of the lambda based on the parameters that are used. This paper does not yet have an API for iterating over a construct sequence - but this particular problem would not involve parsing. Simply iterate over the tokens and find the largest `n` for which there exists an identifier of the form `_$n$` and use that as the arity. That would allow `λ!(_1 > _2)` by itself to be a binary lambda (or a lambda that takes at least two parameters). Can't do that with a C macro!
 
 ## A control flow operator
 
@@ -2038,7 +2042,7 @@ consteval auto try_(meta::info body) -> meta::info {
     //    that is of type Storage<T>
     meta::info storage = create_local_variable(substitute(^Storage, {T}));
 
-    return ^{
+    return ^^{
         do -> decltype(auto) {
             // 3. we construct the "body" of the macro into that storage
             auto& r = [: \(storage) :].construct(
@@ -2075,7 +2079,7 @@ struct C {
    bool b;
 
    macro operator&&(this std::meta::info self, std::meta::info rhs) {
-       return ^{ [:\(self):].b && \tokens(rhs); }
+       return ^^{ [:\(self):].b && \tokens(rhs); }
    }
 };
 
@@ -2091,46 +2095,46 @@ It's unclear if macro operators are worth pursuing. Dedicated `macro` syntax dec
 
 We have two forms of injection in this paper:
 
-* metafunctions `std::meta::queue_injection` and `std::meta::namespace_inject` that take an `info`, used through [token sequences](#token-sequences).
+* metafunctions `std::meta::queue_injection` and `std::meta::namespace_inject` that take an `info`, used through [construct sequences](#construct-sequences).
 * a trailing `!` used for [scoped macros](#scoped-macros).
 
-But these really are similar - both are requests to take a token sequence and inject it in the current context. The bigger token sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `immediately_inject(forward(x))` somewhat defeats the purpose and nobody would write it.
+But these really are similar - both are requests to take a construct sequence and inject it in the current context. The bigger construct sequence injection doesn't really have any particular reason to require terse syntax. Prior papers did use some punctuation marks (e.g. `->`, `<<`), but a named function seems better. But the macros *really* do want to have terse invocation syntax. Having to write `immediately_inject(forward(x))` somewhat defeats the purpose and nobody would write it.
 
 Using one of the arrows for the macro use-case is weird, so one option might be prefix `@`. As in `@forward(x)`, `@assert_eq(a, b)`, and `@format("x={this->x}")`. This is what Swift does, except using prefix `#` (which isn't really a viable option for us as `#x` already has meaning in the existing C preprocessor and we wouldn't want to completely prevent using new macros inside of old macros). Prefix `%` is what the CodeReckons implementation did, which also seems viable.
 
 Or we could stick with two syntaxes - the longer one for the bigger reflection cases where terseness is arguably bad, and the short one for the macro use case where terseness is essential.
 
-Likewise, macros could be declared as regular functions that take a token sequence and return a token sequence (or [other parameters](#macro-parsing)). Or perhaps we introduce a new context-sensitive keyword instead:
+Likewise, macros could be declared as regular functions that take a construct sequence and return a construct sequence (or [other parameters](#macro-parsing)). Or perhaps we introduce a new context-sensitive keyword instead:
 
 ::: std
 ```cpp
 // regular function
-consteval auto fwd(meta::info x) -> meta::info { return ^{ /* ... */ }; }
+consteval auto fwd(meta::info x) -> meta::info { return ^^{ /* ... */ }; }
 
 // dedicated declaration
-macro fwd(meta::info x) { return ^{ /* ... */ }; }
+macro fwd(meta::info x) { return ^^{ /* ... */ }; }
 ```
 :::
 
 # Proposal
 
-We propose a code injection mechanism using token sequences.
+We propose a code injection mechanism using construct sequences.
 
-The fragment model initially introduced in [@P1717R0] is great for allowing writing code-to-be-injected to actually look like regular C++ code, which has the benefit of being both familiar and being already recognizable to tools like syntax highlighters. But the early checking adds complexity to the model and the implementation which makes it harder to use and limits its usefulness. Hence, we propose raw token sequences that are unparsed until the point of injection.
+The fragment model initially introduced in [@P1717R0] is great for allowing writing code-to-be-injected to actually look like regular C++ code, which has the benefit of being both familiar and being already recognizable to tools like syntax highlighters. But the early checking adds complexity to the model and the implementation which makes it harder to use and limits its usefulness. Hence, we propose raw construct sequences that are unparsed until the point of injection.
 
 This proposal consists of several pieces:
 
-* a mechanism to introduce a token sequence (in this paper `^{ $balanced-brace-tokens$ }`)
-* three interpolators to add outside context to a token sequence, one for identifiers (`\id(e...)`), one for values (`\(e)` - parens mandatory), and one for token sequences (`\tokens(e)`)
-* new metafunctions to inject a token sequence (`std::meta::queue_injection()` and `std::meta::namespace_inject()`)
-* new metaprogramming facilities for dealing with token sequences:
-    * converting a string to a token sequence and a token sequence to a string
-    * splitting a token sequence into a range of tokens and querying/mutating those tokens
+* a mechanism to introduce a construct sequence (in this paper `^^{ $balanced-brace-tokens$ }`)
+* three interpolators to add outside context to a construct sequence, one for identifiers (`\id(e...)`), one for values (`\(e)` - parens mandatory), and one for construct sequences (`\tokens(e)`)
+* new metafunctions to inject a construct sequence (`std::meta::queue_injection()` and `std::meta::namespace_inject()`)
+* new metaprogramming facilities for dealing with construct sequences:
+    * converting a string to a construct sequence and a construct sequence to a string
+    * splitting a construct sequence into a range of tokens and querying/mutating those tokens
 * macros would benefit syntactically from:
     * a mechanism to accept a tokens sequence as a function parameter
-    * a mechanism to inject a token sequence directly as returned by a function (trailing `!`)
+    * a mechanism to inject a construct sequence directly as returned by a function (trailing `!`)
 
-Note that the macro proposal, and even the facilities for splitting/iterating/querying/mutating tokens, can be split off as well. We feel that even the core proposal of injecting token sequences in declaration contexts only can provide a tremendous amount of value.
+Note that the macro proposal, and even the facilities for splitting/iterating/querying/mutating tokens, can be split off as well. We feel that even the core proposal of injecting construct sequences in declaration contexts only can provide a tremendous amount of value.
 
 ---
 references:
