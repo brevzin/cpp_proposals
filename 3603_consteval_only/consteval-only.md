@@ -311,7 +311,7 @@ consteval int* p = new int(4);
 ```
 :::
 
-The issue we're trying to solve with non-transient allocation ([@P1974R0]{.title}, [@P2670R1]{.title}, and [@P3554R0]) relies upon dealing with persistence. How do we persist the constant allocation into runtime in a way that is reliably coherent.
+The issue we're trying to solve with non-transient allocation ([@P1974R0]{.title}, [@P2670R1]{.title}, and [@P3554R0]{.title}) relies upon dealing with persistence. How do we persist the constant allocation into runtime in a way that is reliably coherent.
 
 But [@P3032R2]{.title} already recognized that there are situations in which a constexpr variable will _not_ persist into runtime, so such allocations _could_ be allowed. The rule suggested in that paper was `constexpr` variables in immediate function contexts. But `consteval` variables allow for a much clearer, more general approach to the problem: an allocation in an initializer of a `consteval` variable could simply leak — even `p` could be allowed. We would have to adopt the rule suggested in P3032 — that any mutation through the allocation after initialization is disallowed (which we can enforce since the variables live entirely at compile time).
 
