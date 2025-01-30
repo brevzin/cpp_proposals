@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-27" />
+  <meta name="dcterms.date" content="2025-01-30" />
   <title>Consteval-only Values and Consteval Variables</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ Consteval Variables</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-27</td>
+    <td>2025-01-30</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -617,6 +617,8 @@ Questions<span></span></a>
 Variables<span></span></a></li>
 <li><a href="#do-we-still-need-consteval-only-types" id="toc-do-we-still-need-consteval-only-types"><span class="toc-section-number">4.3</span> Do we still need consteval-only
 types?<span></span></a></li>
+<li><a href="#consteval-only-allocation" id="toc-consteval-only-allocation"><span class="toc-section-number">4.4</span> Consteval-only
+Allocation<span></span></a></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">5</span> Proposal<span></span></a>
 <ul>
@@ -731,7 +733,7 @@ runtime. You just don’t hit issues <a href="https://www.reddit.com/r/cpp/comme
 this</a>.
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 variables, even if never accessed at runtime, may occupy space anyway.
-It’s just QoI. But in the say way that
+It’s just QoI. But in the same way that
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 functions <em>cannot</em> lead to codegen,
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
@@ -1072,6 +1074,11 @@ has to be
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 (and it does), then it should be explicitly labeled as such.</li>
 </ul>
+<p>We think the right answer is that only the
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+declarations above should be valid. The only way to keep
+<code class="sourceCode cpp">c</code> valid would require consteval-only
+types, but…</p>
 <h2 data-number="4.3" id="do-we-still-need-consteval-only-types"><span class="header-section-number">4.3</span> Do we still need consteval-only
 types?<a href="#do-we-still-need-consteval-only-types" class="self-link"></a></h2>
 <p><span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span> introduces the notion of
@@ -1104,18 +1111,61 @@ need them the concept of consteval-only type after all.</p>
 that also seems like what it is really trying to do is come up with a
 way to produce consteval-only values. Perhaps a consteval destructor
 would be a way to signal that.</p>
+<h2 data-number="4.4" id="consteval-only-allocation"><span class="header-section-number">4.4</span> Consteval-only Allocation<a href="#consteval-only-allocation" class="self-link"></a></h2>
+<p>Consider:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span><span class="op">*</span> p <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">4</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>The issue we’re trying to solve with non-transient allocation (<span class="title"><span class="citation" data-cites="P1974R0"><a href="https://wg21.link/p1974r0" role="doc-biblioref">[P1974R0]
+(Non-transient constexpr allocation using propconst)</a></span></span>,
+<span class="title"><span class="citation" data-cites="P2670R1"><a href="https://wg21.link/p2670r1" role="doc-biblioref">[P2670R1]
+(Non-transient constexpr allocation)</a></span></span>, and <span class="citation" data-cites="P3554R0"><a href="https://wg21.link/p3554r0" role="doc-biblioref">[P3554R0]</a></span>) relies upon dealing with
+persistence. How do we persist the constant allocation into runtime in a
+way that is reliably coherent.</p>
+<p>But <span class="title"><span class="citation" data-cites="P3032R2"><a href="https://wg21.link/p3032r2" role="doc-biblioref">[P3032R2] (Less transient constexpr
+allocation)</a></span></span> already recognized that there are
+situations in which a constexpr variable will <em>not</em> persist into
+runtime, so such allocations <em>could</em> be allowed. The rule
+suggested in that paper was
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variables in immediate function contexts. But
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables allow for a much clearer, more general approach to the
+problem: an allocation in an initializer of a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable could simply leak — even <code class="sourceCode cpp">p</code>
+could be allowed. We would have to adopt the rule suggested in P3032 —
+that any mutation through the allocation after initialization is
+disallowed (which we can enforce since the variables live entirely at
+compile time).</p>
+<p>The
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier also makes clear that these variables would exist only at
+compile time, and thus there is no jarring code movement difference that
+the P3032 rule led to — where you can move a declaration from one
+context to another and that changes its validity.</p>
+<p>Consteval-only allocation can always be adopted later, it is not
+strictly essential to this proposal, and we’re already late. We leave it
+in the hands of Evolution.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes:</p>
 <ol type="1">
 <li>introducing the notion of consteval-only value,</li>
 <li>introducing consteval variables, and</li>
-<li>allowing certain constexpr variables to escalate to consteval
-variables</li>
+<li>allowing certain constexpr variables (those with consteval-only
+value) to escalate to consteval variables.</li>
 </ol>
 <p>Currently, the only kind of consteval-only value is a pointer (or
 reference) to immediate function. This paper directly also adds
-consteval variables. With the adoption of <span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span>, we will also include
-consteval-only types.</p>
+consteval variables. With the adoption of <span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span>, consteval-only values will
+extend to include values of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+(and thus variables of that type will escalate to
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>).
+We won’t need consteval-only types.</p>
 <h2 data-number="5.1" id="wording"><span class="header-section-number">5.1</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>Change <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span></p>
 <div class="std">
@@ -1296,8 +1346,8 @@ constexpr reference is bound, shall have constant destruction.</p>
 <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
@@ -1316,16 +1366,35 @@ evaluation: Output and consteval variables. <a href="https://wg21.link/p0596r1">
 [P1073R3] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018-11-06.
 Immediate functions. <a href="https://wg21.link/p1073r3"><div class="csl-block">https://wg21.link/p1073r3</div></a>
 </div>
+<div id="ref-P1974R0" class="csl-entry" role="doc-biblioentry">
+[P1974R0] Jeff Snyder, Louis Dionne, Daveed Vandevoorde. 2020-05-15.
+Non-transient constexpr allocation using propconst. <a href="https://wg21.link/p1974r0"><div class="csl-block">https://wg21.link/p1974r0</div></a>
+</div>
 <div id="ref-P2564R3" class="csl-entry" role="doc-biblioentry">
 [P2564R3] Barry Revzin. 2022-11-11. consteval needs to propagate up. <a href="https://wg21.link/p2564r3"><div class="csl-block">https://wg21.link/p2564r3</div></a>
+</div>
+<div id="ref-P2670R1" class="csl-entry" role="doc-biblioentry">
+[P2670R1] Barry Revzin. 2023-02-03. Non-transient constexpr allocation.
+<a href="https://wg21.link/p2670r1"><div class="csl-block">https://wg21.link/p2670r1</div></a>
 </div>
 <div id="ref-P2996R9" class="csl-entry" role="doc-biblioentry">
 [P2996R9] Wyatt Childers, Peter Dimov, Dan Katz, Barry Revzin, Andrew
 Sutton, Faisal Vali, and Daveed Vandevoorde. 2025-01-12. Reflection for
 C++26. <a href="https://wg21.link/p2996r9"><div class="csl-block">https://wg21.link/p2996r9</div></a>
 </div>
+<div id="ref-P3032R2" class="csl-entry" role="doc-biblioentry">
+[P3032R2] Barry Revzin. 2024-04-16. Less transient constexpr allocation.
+<a href="https://wg21.link/p3032r2"><div class="csl-block">https://wg21.link/p3032r2</div></a>
+</div>
 <div id="ref-P3421R0" class="csl-entry" role="doc-biblioentry">
 [P3421R0] Ben Craig. 2024-10-12. Consteval destructors. <a href="https://wg21.link/p3421r0"><div class="csl-block">https://wg21.link/p3421r0</div></a>
+</div>
+<div id="ref-P3554R0" class="csl-entry" role="doc-biblioentry">
+[P3554R0] Peter Dimov and Barry Revzin. 2025-01-05. Non-transient
+allocation with
+<code class="sourceCode cpp">std<span class="op">::</span>vector</code>
+and <code class="sourceCode cpp">std<span class="op">::</span>basic_string</code>.
+<a href="https://wg21.link/p3554r0"><div class="csl-block">https://wg21.link/p3554r0</div></a>
 </div>
 </div>
 </div>

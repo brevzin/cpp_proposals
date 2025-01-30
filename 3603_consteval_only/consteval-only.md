@@ -79,7 +79,7 @@ int main(int argc, char**) {
 
 This is already pretty nice. We could never initialize something like `p2` today (including as part of a struct, etc.).
 
-Another important benefit of `consteval` variables is that they are _guaranteed_ to not occupy space at runtime. You just don't hit issues [like this](https://www.reddit.com/r/cpp/comments/1i36ahd/is_this_an_msvc_bug_or_am_i_doing_something_wrong/). `constexpr` variables, even if never accessed at runtime, may occupy space anyway. It's just QoI. But in the say way that `consteval` functions _cannot_ lead to codegen, `consteval` variables _cannot_ either. That's a pretty nice benefit.
+Another important benefit of `consteval` variables is that they are _guaranteed_ to not occupy space at runtime. You just don't hit issues [like this](https://www.reddit.com/r/cpp/comments/1i36ahd/is_this_an_msvc_bug_or_am_i_doing_something_wrong/). `constexpr` variables, even if never accessed at runtime, may occupy space anyway. It's just QoI. But in the same way that `consteval` functions _cannot_ lead to codegen, `consteval` variables _cannot_ either. That's a pretty nice benefit.
 
 But how do we distinguish between what is allowed for `p1` and what is allowed for `p2`? We simply need to introduce...
 
@@ -274,6 +274,8 @@ The status quo is that `a` is ill-formed (as already mentioned) and `c` is propo
 * **`c` is ill-formed**. This might be a little surprising to propose, but it actually has merit. If you want a variable that only exists at compile time, declare it `consteval`. Just because we _can_ come up with a set of rules that allows `c` (by way of having consteval-only type) but not `a` doesn't mean that we should. Rejecting `c` can also provide a clear error message that it should be `consteval` instead and makes for a simpler set of rules.
 * **`a` is well-formed**. We can achieve this by having consteval variable escalation apply for all variables, not just templated ones. But when we were discussing [@P2564R3], we didn't do escalation for regular functions then — if you have a function that must be `consteval`, we decided that you should explicitly mark it as such. The same principle should apply here — if `a` has to be `consteval` (and it does), then it should be explicitly labeled as such.
 
+We think the right answer is that only the `consteval` declarations above should be valid. The only way to keep `c` valid would require consteval-only types, but...
+
 ## Do we still need consteval-only types?
 
 [@P2996R9] introduces the notion of consteval-only type — basically any type that has a `std::meta::info` in it somewhere — to ensure that reflections exist only at compile time. This paper provides an alternative approach to solve the same problem: extend consteval-only to include values of type `std::meta::info`.
@@ -297,15 +299,36 @@ On the whole, it's definitely important to ensure that reflections do not persis
 
 [@P3421R0]{.title} is another paper in this space that also seems like what it is really trying to do is come up with a way to produce consteval-only values. Perhaps a consteval destructor would be a way to signal that.
 
+## Consteval-only Allocation
+
+Consider:
+
+::: std
+```cpp
+#include <vector>
+consteval std::vector<int> a = {1, 2, 3};
+consteval int* p = new int(4);
+```
+:::
+
+The issue we're trying to solve with non-transient allocation ([@P1974R0]{.title}, [@P2670R1]{.title}, and [@P3554R0]) relies upon dealing with persistence. How do we persist the constant allocation into runtime in a way that is reliably coherent.
+
+But [@P3032R2]{.title} already recognized that there are situations in which a constexpr variable will _not_ persist into runtime, so such allocations _could_ be allowed. The rule suggested in that paper was `constexpr` variables in immediate function contexts. But `consteval` variables allow for a much clearer, more general approach to the problem: an allocation in an initializer of a `consteval` variable could simply leak — even `p` could be allowed. We would have to adopt the rule suggested in P3032 — that any mutation through the allocation after initialization is disallowed (which we can enforce since the variables live entirely at compile time).
+
+The `consteval` specifier also makes clear that these variables would exist only at compile time, and thus there is no jarring code movement difference that the P3032 rule led to — where you can move a declaration from one context to another and that changes its validity.
+
+Consteval-only allocation can always be adopted later, it is not strictly essential to this proposal, and we're already late. We leave it in the hands of Evolution.
+
+
 # Proposal
 
 This paper proposes:
 
 1. introducing the notion of consteval-only value,
 2. introducing consteval variables, and
-3. allowing certain constexpr variables to escalate to consteval variables
+3. allowing certain constexpr variables (those with consteval-only value) to escalate to consteval variables.
 
-Currently, the only kind of consteval-only value is a pointer (or reference) to immediate function. This paper directly also adds consteval variables. With the adoption of [@P2996R9], we will also include consteval-only types.
+Currently, the only kind of consteval-only value is a pointer (or reference) to immediate function. This paper directly also adds consteval variables. With the adoption of [@P2996R9], consteval-only values will extend to include values of type `std::meta::info` (and thus variables of that type will escalate to `consteval`). We won't need consteval-only types.
 
 ## Wording
 
