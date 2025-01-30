@@ -1102,7 +1102,7 @@ struct Clap {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/4aseo5eGq), [Clang](https://godbolt.org/z/fc38vccYG).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4aseo5eGq), [Clang](https://godbolt.org/z/3qG5roer4).
 
 ## A Universal Formatter
 
@@ -1436,7 +1436,7 @@ static_assert(z == 2);
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/5qfcT7vbT), [Clang](https://godbolt.org/z/h69Kb9T48).
+On Compiler Explorer: [EDG](https://godbolt.org/z/coPcG17f1), [Clang](https://godbolt.org/z/qWMavvKeY).
 
 # Proposed Features
 
@@ -4316,7 +4316,7 @@ Add a new paragraph prior to the definition of _manifestly constant-evaluated_ (
 ::: std
 ::: addu
 
-[28pre]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not a specialization of a variable template.
+[28pre]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable with static storage duration that is not a specialization of a variable template.
 
 [The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below). Any such declarations are reachable from a point that follows immediately after the declaration containing `$E$`.]{.note}
 
