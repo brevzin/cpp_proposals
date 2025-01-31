@@ -29,8 +29,8 @@ tag: reflection
 Since [@P2996R9]:
 
 * core wording updates
+  * merge P3289 ("`consteval` blocks") into P2996. Replace the category of "plainly constant-evaluated expressions" with consteval blocks.
   * make the [expr.const] "scope rule" for injected declarations more rigorous; disallow escape from function parameter scopes
-  * slight changes to "plainly constant-evaluated": disallow variable template specialization initializers; disallow initializers of variables with automatic storage duration; allow complete-class contexts
   * bring notes and examples into line with current definitions
   * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
   * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
@@ -3168,10 +3168,10 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [[Constructs that are separately subject to instantiation are specified in [temp.inst].]{.note}]{.addu}
 
-  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each expression `$E$` within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating `$E$` as a full-expression is complete if and only if]{.addu}
+  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). Constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating an expression `$E$` as a full-expression is complete if and only if]{.addu}
 
-  - [[7-8.#]{.pnum} `$E$` is plainly constant-evaluated, and]{.addu}
-  - [[7-8.#]{.pnum} either `$D$` or the template definition from which `$D$` is instantiated is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
+  - [[7-8.#]{.pnum} `$E$` is the evaluating expression of a `$consteval-block-declaration$` `$C$` ([dcl.pre]), and]{.addu}
+  - [[7-8.#]{.pnum} either `$C$` or the template definition from which `$C$` is instantiated is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
@@ -3251,18 +3251,22 @@ Modify the third sentence of paragraph 1 to clarify that type aliases are now en
 
 :::
 
-Since namespace aliases are now entities, but their declarations are not definitions, add `$namespace-alias-definition$` to the list of declarations in paragraph 2, just before `$using-declaration$`:
+Since namespace aliases are now entities but their declarations are not definitions, add `$namespace-alias-definition$` to the list of declarations in paragraph 2, just before `$using-declaration$`. Also replace `$static_assert-declaration$` and `$empty-declaration$` with `$vacant-decalaration$`, which also encompasses consteval blocks:
 
 ::: std
 [2]{.pnum} Each entity declared by a `$declaration$` is also _defined_ by that declaration unless:
 
-* [#.#]{.pnum} it declares a function without specifying the function's body ([dcl.fct.def]{.sref}),
+* [#.#]{.pnum} it declares a function without specifying the function's body ([dcl.fct.def]),
 
 [...]
 
-* [2.10]{.pnum} it is an `$alias-declaration$` ([dcl.typedef]{.sref}),
-* [[2.11-]{.pnum} it is a `$namespace-alias-definition$` ([namespace.alias]{.sref}),]{.addu}
-* [2.11]{.pnum} it is a `$using-declaration$` ([namespace.udecl]{.sref}),
+* [2.10]{.pnum} it is an `$alias-declaration$` ([dcl.typedef]),
+* [[2.11-]{.pnum} it is a `$namespace-alias-definition$` ([namespace.alias]),]{.addu}
+* [2.11]{.pnum} it is a `$using-declaration$` ([namespace.udecl]),
+* [2.12]{.pnum} it is a `$deduction-guide$` ([temp.deduct.guide]),
+* [2.13]{.pnum} it is a [`$static_assert-declaration$`]{.rm} [`$vacant-declaration$`]{.addu} ([dcl.pre]),
+* [2.14]{.pnum} it is an `$attribute-declaration$` ([dcl.pre]),
+* [[2.15]{.pnum} it is an `$empty-declaration$` ([dcl.pre])]{.rm},
 
 [...]
 
@@ -4219,7 +4223,7 @@ Add a new paragraph between paragraphs 5 and 6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
-Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production of injected declarations from any core constant expression that isn't plainly constant-evaluated.
+Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production of injected declarations from any core constant expression that isn't a consteval block.
 
 ::: std
 [10]{.pnum} An expression `$E$` is a _core constant expression_ unless the evaluation of `$E$`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
@@ -4227,7 +4231,7 @@ Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production 
 [...]
 
 - [#.27]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) expression, `typeid` ([expr.typeid]) expression, or `$new-expression$` ([expr.new]) that would throw an exception where no definition of the exception type is reachable;
-- [[#.27+]{.pnum} an expression that would produce an injected declaration, unless `$E$` is plainly constant-evaluated;]{.addu}
+- [[#.27+]{.pnum} an expression that would produce an injected declaration, unless `$E$` is the evaluating expression of a `$consteval-block-declaration$` ([dcl.pre]);]{.addu}
 - [#.28]{.pnum} an `$asm-declaration$` ([dcl.asm]);
 - [#.#]{.pnum} [...]
 
@@ -4313,38 +4317,6 @@ Extend the definition of _immediate function_ in paragraph 27 to include functio
   * [[#.#.#]{.pnum} a definition `$D$` of a non-constexpr variable with consteval-only type such that `$D$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope.]{.addu}
 :::
 
-Add a new paragraph prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/28), and renumber accordingly:
-
-::: std
-::: addu
-
-[28pre]{.pnum} An expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable with static storage duration that is not a specialization of a variable template.
-
-[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below). Any such declarations are reachable from a point that follows immediately after the declaration containing `$E$`.]{.note}
-
-:::
-:::
-
-[We also intend for the "evaluating expression" of a consteval block to be plainly constant-evaluated, but this construct is introduced by a separate follow-on paper ([@P3289R1]).]{.draftnote}
-
-Add a note following the definition of _manifestly constant-evaluated_ to clarify the relationship with _plainly constant-evaluated_ expressions:
-
-::: std
-
-[28]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
-
-* [#.#]{.pnum} a `$constant-expression$`, or
-* [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}), or
-* [#.#]{.pnum} an immediate invocation, or
-* [#.#]{.pnum} the result of substitution into an atomic constraint expression to determine whether it is satisfied ([temp.constr.atomic]{.sref}), or
-* [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
-
-::: addu
-[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., template arguments) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) cannot have observable side effects.]{.note}
-:::
-
-:::
-
 After the example following the definition of _manifestly constant-evaluated_, introduce new terminology and rules for injecting declarations and renumber accordingly:
 
 ::: std
@@ -4354,54 +4326,52 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
 
-[#]{.pnum} The program is ill-formed if the evaluation of a plainly constant-evaluated expression `$P$` produces an injected declaration `$D$` such that there exists a scope that encloses exactly one of `$P$` or `$D$` that is either
+[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$` whose evaluating expression produces an injected declaration `$D$` ([expr.const]). The program is ill-formed if a scope encloses exactly one of `$C$` or `$D$` that is either
 
 * [#.#]{.pnum} a function parameter scope, or
 * [#.#]{.pnum} a class scope.
 
 ::: example
 ```cpp
-consteval bool complete_type(std::meta::info r) {
+consteval void complete_type(std::meta::info r) {
   std::meta::define_aggregate(r, {});
-  return true;
 }
 
 struct S1;
-constexpr bool b1 = complete_type(^^S1);
-  // OK, constexpr variable initializer is plainly constant-evaluated
+consteval { complete_type(^^S1); }  // OK
 
-template <std::meta::info R> consteval bool tfn1() {
-  return complete_type(R);
+template <std::meta::info R> consteval void tfn1() {
+  complete_type(R);
 }
 
 struct S2;
-constexpr bool b2 = tfn1<^^S2>();
+consteval { tfn1<^^S2>(); }
   // OK, tfn1<^^S2>() and S2 are enclosed by the same scope
 
-template <std::meta::info R> consteval bool tfn2() {
-  static constexpr bool b = complete_type(R);
+template <std::meta::info R> consteval void tfn2() {
+  consteval { complete_type(R); }
   return b;
 }
 
 struct S3;
-constexpr bool b3 = tfn2<^^S3>();
+consteval { tfn2<^^S3>(); }
   // error: complete_type(^^S3) is enclosed tfn2<^^S3>, but S3 is not
 
 template <typename> struct TCls {
   struct S4;
-  static void sfn() requires ([]{
-    constexpr bool b = complete_type(^^S4);
-    return b;
+  static void sfn() requires ([] {
+    consteval { complete_type(^^S4); }
+    return true;
   }) { }
 };
 
-constexpr bool b4 = TCls<void>::sfn();
+consteval { TCls<void>::sfn(); }
   // error: TCls<void>::S4 is not enclosed by requires-clause lambda
 
 struct S5;
 struct Cls {
-  static constexpr bool b = complete_type(^^S5);
-    // error: S5 is not enclosed by class Inner
+  consteval { complete_type(^^S5); }
+    // error: S5 is not enclosed by class Cls
 };
 ```
 :::
@@ -4416,10 +4386,73 @@ struct Cls {
 
 ### [dcl.pre]{.sref} Preamble {-}
 
+Introduce the non-terminal `$vacant-declaration$` in paragraph 9.1 to encompass static assertions, empty declarations, and consteval blocks:
+
+::: std
+```diff
+  $name-declaration$:
+    $block-declaration$
+    $nodeclspec-function-declaration$
+    $function-definition$
+    $friend-type-declaration$
+    $template-declaration$
+    $deduction-guide$
+    $linkage-specification$
+    $namespace-definition$
+-   $empty-declaration$
+    $attribute-declaration$
+    $module-import-declaration$
+
+  $block-declaration$:
+    $simple-declaration$
+    $asm-declaration$
+    $namespace-alias-definition$
+    $using-declaration$
+    $using-enum-declaration$
+    $using-directive$
+-   $static_assert-declaration$
+    $alias-declaration$
+    $opaque-enum-declaration$
++   $vacant-declaration$
+
++ $vacant-declaration$:
++    $static_assert-declaration$
++    $empty-declaration$
++    $consteval-block-declaration$
+
+  $static_assert-declaration$:
+    static_assert ( $constant-expression$ ) ;
+    static_assert ( $constant-expression$ , $static_assert-message$ ) ;
+
++ $consteval-block-declaration$:
++   consteval $compound-statement$
+```
+:::
+
 Strike the assertion that a `$typedef-name$` is synonymous with its associated type from paragraph 8 (type aliases are entities now).
 
 ::: std
 [8]{.pnum} If the `$decl-specifier-seq$` contains the `typedef` specifier, the declaration is a _typedef declaration_ and each `$declarator-id$` is declared to be a `$typedef-name$`[, synonymous with its associated type]{.rm} ([dcl.typedef]{.sref}).
+
+:::
+
+Insert the following after paragraph 13 in relation to consteval blocks:
+
+::: std
+[13]{.pnum} *Recommended practice*: When a `$static_assert-declaration$` fails, [...]
+
+::: addu
+[*]{.pnum} The _evaluating expression_ of a `$consteval-block-declaration$` is
+```cpp
+[] -> void consteval $compound-statement$ ()
+```
+
+[*]{.pnum} The evaluating expression of a `$consteval-block-declaration$` shall be a constant expression ([expr.const]).
+
+[The evaluating expression of a `$consteval-block-declaration$` can produce injected declarations as side effects ([expr.const]).]{.note}
+:::
+
+[14]{.pnum} An `$empty-declaration$` has no effect.
 
 :::
 
@@ -4855,6 +4888,41 @@ Modify the definition of reachability to account for injected declarations:
 
 ### [class.mem.general]{.sref} General {-}
 
+Modify the grammar for `$member-declaration$` as follows:
+
+::: std
+```diff
+  $member-declaration$:
+    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$@~opt~@ $member-declarator-list$@~opt~@;
+    $function-definition$
+    $friend-type-declaration$
+    $using-declaration$
+    $using-enum-declaration$
+-   $static_assert-declaration$
++   $vacant-declaration$
+    $template-declaration$
+    $explicit-specialization$
+    $deduction-guide$
+    $alias-declaration$
+    $opaque-enum-declaration$
+-   $empty-declaration$
+```
+:::
+
+Update paragraph 3 accordingly:
+
+::: std
+[3]{.pnum} A `$member-declaration$` does not declare new members of the class if it is
+
+* [#.#]{.pnum} a friend declaration ([class.friend]),
+* [#.#]{.pnum} a `$deduction-guide$` ([temp.deduct.guide]),
+* [#.#]{.pnum} a `$template-declaration$` whose declaration is one of the above,
+* [#.#]{.pnum} a [`$static_assert-declaration$`,]{.rm}
+* [#.#]{.pnum} a `$using-declaration$` ([namespace.udecl]) , or
+* [#.#]{.pnum} [an `$empty-declaration$`.]{.rm} [a `$vacant-declaration$`.]{.addu}
+
+:::
+
 Extend paragraph 5, and modify note 3, to clarify the existence of subobjects corresponding to non-static data members of reference types.
 
 ::: std
@@ -4891,6 +4959,15 @@ Data member descriptions are represented by reflections ([basic.fundamental]{.sr
 :::
 
 :::
+:::
+
+### [class.union.anon]{.sref} Anonymous unions {-}
+
+Replace `$static_assert-declaration$` with `$vacant-declaration$` in paragraph 1. [This refactor allows putting in an `$empty-declaration$` into an anonymous union, which is kind of a consistency drive by with other classes.]{.ednote}
+
+::: std
+[1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacant-declaration$`]{.addu}.  [...]
+
 :::
 
 ### [class.derived.general]{.sref} General {-}
