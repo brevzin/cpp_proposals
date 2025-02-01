@@ -2717,34 +2717,36 @@ ways.</p>
 <blockquote>
 <div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">int</span> N<span class="op">&gt;</span> <span class="kw">struct</span> Helper;</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TU_Ticket <span class="op">{</span></span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">consteval</span> <span class="dt">int</span> next<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> k <span class="op">=</span> <span class="dv">0</span>;</span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Search for the next incomplete &#39;Helper&lt;k&gt;&#39;.</span></span>
-<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>meta<span class="op">::</span>info r;</span>
-<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>is_complete_type<span class="op">(</span>r <span class="op">=</span> substitute<span class="op">(^^</span>Helper,</span>
-<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>                                           <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>k<span class="op">)</span> <span class="op">})))</span></span>
-<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>      <span class="op">++</span>k;</span>
-<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Define &#39;Helper&lt;k&gt;&#39; and return its index.</span></span>
-<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>    define_aggregate<span class="op">(</span>r, <span class="op">{})</span>;</span>
-<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> k;</span>
-<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> x <span class="op">=</span> TU_Ticket<span class="op">::</span>next<span class="op">()</span>;</span>
-<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>x <span class="op">==</span> <span class="dv">0</span><span class="op">)</span>;</span>
-<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> y <span class="op">=</span> TU_Ticket<span class="op">::</span>next<span class="op">()</span>;</span>
-<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>y <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
-<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> z <span class="op">=</span> TU_Ticket<span class="op">::</span>next<span class="op">()</span>;</span>
-<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>z <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> TU_Ticket <span class="op">{</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">consteval</span> <span class="dt">int</span> latest<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> k <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>is_complete_type<span class="op">(</span>substitute<span class="op">(^^</span>Helper,</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>                                       <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>k<span class="op">)</span> <span class="op">})))</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>      <span class="op">++</span>k;</span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> k;</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">consteval</span> <span class="dt">void</span> increment<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>    define_aggregate<span class="op">(</span>substitute<span class="op">(^^</span>Helper,</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>                                <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>latest<span class="op">())})</span>,</span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>                     <span class="op">{})</span>;</span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> x <span class="op">=</span> TU_Ticket<span class="op">::</span>latest<span class="op">()</span>;  <span class="co">// x initialized to 0.</span></span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span> TU_Ticket<span class="op">::</span>increment<span class="op">()</span>; <span class="op">}</span></span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> y <span class="op">=</span> TU_Ticket<span class="op">::</span>latest<span class="op">()</span>;  <span class="co">// y initialized to 1.</span></span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span> TU_Ticket<span class="op">::</span>increment<span class="op">()</span>; <span class="op">}</span></span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> z <span class="op">=</span> TU_Ticket<span class="op">::</span>latest<span class="op">()</span>;  <span class="co">// z initialized to 2.</span></span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>x <span class="op">==</span> <span class="dv">0</span><span class="op">)</span>;</span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>y <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>z <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>On Compiler Explorer: <a href="https://godbolt.org/z/coPcG17f1">EDG</a>, <a href="https://godbolt.org/z/qWMavvKeY">Clang</a>.</p>
+<p>On Compiler Explorer: <a href="https://godbolt.org/z/e1r8q3sWv">EDG</a>, <a href="https://godbolt.org/z/z4KKe5e57">Clang</a>.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposed-features"><span class="header-section-number">4</span>
 Proposed Features<a href="#proposed-features" class="self-link"></a></h1>
 <h2 data-number="4.1" id="the-reflection-operator"><span class="header-section-number">4.1</span> The Reflection Operator

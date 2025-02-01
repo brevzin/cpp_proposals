@@ -1408,35 +1408,37 @@ This is not an ideal implementation (we'd prefer direct support for compile-time
 ```cpp
 template<int N> struct Helper;
 
-class TU_Ticket {
-public:
-  static consteval int next() {
+struct TU_Ticket {
+  static consteval int latest() {
     int k = 0;
-
-    // Search for the next incomplete 'Helper<k>'.
-    std::meta::info r;
-    while (is_complete_type(r = substitute(^^Helper,
-                                           { std::meta::reflect_value(k) })))
+    while (is_complete_type(substitute(^^Helper,
+                                       { std::meta::reflect_value(k) })))
       ++k;
-
-    // Define 'Helper<k>' and return its index.
-    define_aggregate(r, {});
     return k;
+  }
+
+  static consteval void increment() {
+    define_aggregate(substitute(^^Helper,
+                                { std::meta::reflect_value(latest())}),
+                     {});
   }
 };
 
-constexpr int x = TU_Ticket::next();
+constexpr int x = TU_Ticket::latest();  // x initialized to 0.
+
+consteval { TU_Ticket::increment(); }
+constexpr int y = TU_Ticket::latest();  // y initialized to 1.
+
+consteval { TU_Ticket::increment(); }
+constexpr int z = TU_Ticket::latest();  // z initialized to 2.
+
 static_assert(x == 0);
-
-constexpr int y = TU_Ticket::next();
 static_assert(y == 1);
-
-constexpr int z = TU_Ticket::next();
 static_assert(z == 2);
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/coPcG17f1), [Clang](https://godbolt.org/z/qWMavvKeY).
+On Compiler Explorer: [EDG](https://godbolt.org/z/e1r8q3sWv), [Clang](https://godbolt.org/z/z4KKe5e57).
 
 # Proposed Features
 
