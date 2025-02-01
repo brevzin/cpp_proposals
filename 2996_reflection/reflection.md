@@ -29,7 +29,7 @@ tag: reflection
 Since [@P2996R9]:
 
 * core wording updates
-  * merge P3289 ("`consteval` blocks") into P2996. Replace the category of "plainly constant-evaluated expressions" with consteval blocks.
+  * merge [@P3289R1]{.title} into P2996. Replace the category of "plainly constant-evaluated expressions" with consteval blocks.
   * make the [expr.const] "scope rule" for injected declarations more rigorous; disallow escape from function parameter scopes
   * bring notes and examples into line with current definitions
   * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
