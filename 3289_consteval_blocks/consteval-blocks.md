@@ -152,10 +152,10 @@ Extend the wording for plainly constant-evaluated to allow a `consteval` block [
 
 ::: std
 
-[21pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if
+[21pre]{.pnum} An expression or conversion is _plainly constant-evaluated_ if
 
 * [21.#]{.pnum} [it is the evaluating expression of a `$consteval-block-declaration$` ([dcl.pre]{.sref}), or]{.addu}
-* [21.#]{.pnum} it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not in a specialization of a variable template.
+* [21.#]{.pnum} it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable with static storage duration that is not a specialization of a variable template.
 
 [The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
 

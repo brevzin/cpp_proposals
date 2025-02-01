@@ -29,15 +29,17 @@ tag: reflection
 Since [@P2996R9]:
 
 * core wording updates
+  * merge P3289 ("`consteval` blocks") into P2996. Replace the category of "plainly constant-evaluated expressions" with consteval blocks.
   * make the [expr.const] "scope rule" for injected declarations more rigorous; disallow escape from function parameter scopes
-  * slight changes to "plainly constant-evaluated": disallow variable template specialization initializers; allow complete-class contexts
   * bring notes and examples into line with current definitions
   * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
   * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
-  * side effects of immediate invocations are immediate-escalatory
+  * producing an injected declaration from a non-plainly constant-evaluated context is prohibited for core constant expressions, rather than rendering the program ill-formed
+  * do not specify `sizeof(std::meta::info)`
 * library wording updates
+  * fix definition of "Constant When" (use "constant subexpression" in lieu of "core constant expression")
   * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
-  * non-static data members of closure types are not _members-of-representable_
+  * template specializations and non-static data members of closure types are not _members-of-representable_
 
 Since [@P2996R8]:
 
@@ -1100,7 +1102,7 @@ struct Clap {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/4aseo5eGq), [Clang](https://godbolt.org/z/fc38vccYG).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4aseo5eGq), [Clang](https://godbolt.org/z/3qG5roer4).
 
 ## A Universal Formatter
 
@@ -1404,36 +1406,39 @@ This is not an ideal implementation (we'd prefer direct support for compile-time
 
 ::: std
 ```cpp
-class TU_Ticket {
-  template<int N> struct Helper;
-public:
-  static consteval int next() {
+template<int N> struct Helper;
+
+struct TU_Ticket {
+  static consteval int latest() {
     int k = 0;
-
-    // Search for the next incomplete 'Helper<k>'.
-    std::meta::info r;
-    while (is_complete_type(r = substitute(^^Helper,
-                                           { std::meta::reflect_value(k) })))
+    while (is_complete_type(substitute(^^Helper,
+                                       { std::meta::reflect_value(k) })))
       ++k;
-
-    // Define 'Helper<k>' and return its index.
-    define_aggregate(r, {});
     return k;
+  }
+
+  static consteval void increment() {
+    define_aggregate(substitute(^^Helper,
+                                { std::meta::reflect_value(latest())}),
+                     {});
   }
 };
 
-constexpr int x = TU_Ticket::next();
+constexpr int x = TU_Ticket::latest();  // x initialized to 0.
+
+consteval { TU_Ticket::increment(); }
+constexpr int y = TU_Ticket::latest();  // y initialized to 1.
+
+consteval { TU_Ticket::increment(); }
+constexpr int z = TU_Ticket::latest();  // z initialized to 2.
+
 static_assert(x == 0);
-
-constexpr int y = TU_Ticket::next();
 static_assert(y == 1);
-
-constexpr int z = TU_Ticket::next();
 static_assert(z == 2);
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/5qfcT7vbT), [Clang](https://godbolt.org/z/h69Kb9T48).
+On Compiler Explorer: [EDG](https://godbolt.org/z/e1r8q3sWv), [Clang](https://godbolt.org/z/z4KKe5e57).
 
 # Proposed Features
 
@@ -3163,12 +3168,12 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [The program is ill-formed if any instantiation fails.]{.note}
 
-  [[Constructs that are separately subject to instantiation are specified in ([temp.spec.general]).]{.note}]{.addu}
+  [[Constructs that are separately subject to instantiation are specified in [temp.inst].]{.note}]{.addu}
 
-  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). For each expression `$E$` within a declaration `$D$`, constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating `$E$` as a full-expression is complete if and only if]{.addu}
+  [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). Constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating an expression `$E$` as a full-expression is complete if and only if]{.addu}
 
-  - [[7-8.#]{.pnum} `$E$` is manifestly constant-evaluated, and]{.addu}
-  - [[7-8.#]{.pnum} either `$D$` or the template definition from which `$D$` is instantiated is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
+  - [[7-8.#]{.pnum} `$E$` is the evaluating expression of a `$consteval-block-declaration$` ([dcl.pre]), and]{.addu}
+  - [[7-8.#]{.pnum} either that `$consteval-block-declaration$` or the template definition from which it is instantiated is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
@@ -3248,18 +3253,22 @@ Modify the third sentence of paragraph 1 to clarify that type aliases are now en
 
 :::
 
-Since namespace aliases are now entities, but their declarations are not definitions, add `$namespace-alias-definition$` to the list of declarations in paragraph 2, just before `$using-declaration$`:
+Since namespace aliases are now entities but their declarations are not definitions, add `$namespace-alias-definition$` to the list of declarations in paragraph 2, just before `$using-declaration$`. Also replace `$static_assert-declaration$` and `$empty-declaration$` with `$vacant-decalaration$`, which also encompasses consteval blocks:
 
 ::: std
 [2]{.pnum} Each entity declared by a `$declaration$` is also _defined_ by that declaration unless:
 
-* [#.#]{.pnum} it declares a function without specifying the function's body ([dcl.fct.def]{.sref}),
+* [#.#]{.pnum} it declares a function without specifying the function's body ([dcl.fct.def]),
 
 [...]
 
-* [2.10]{.pnum} it is an `$alias-declaration$` ([dcl.typedef]{.sref}),
-* [[2.11-]{.pnum} it is a `$namespace-alias-definition$` ([namespace.alias]{.sref}),]{.addu}
-* [2.11]{.pnum} it is a `$using-declaration$` ([namespace.udecl]{.sref}),
+* [2.10]{.pnum} it is an `$alias-declaration$` ([dcl.typedef]),
+* [[2.11-]{.pnum} it is a `$namespace-alias-definition$` ([namespace.alias]),]{.addu}
+* [2.11]{.pnum} it is a `$using-declaration$` ([namespace.udecl]),
+* [2.12]{.pnum} it is a `$deduction-guide$` ([temp.deduct.guide]),
+* [2.13]{.pnum} it is a [`$static_assert-declaration$`]{.rm} [`$vacant-declaration$`]{.addu} ([dcl.pre]),
+* [2.14]{.pnum} it is an `$attribute-declaration$` ([dcl.pre]),
+* [[2.15]{.pnum} it is an `$empty-declaration$` ([dcl.pre])]{.rm},
 
 [...]
 
@@ -3562,7 +3571,7 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 
 ### [basic.fundamental]{.sref} Fundamental types {-}
 
-Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as follows:
+Add new paragraphs before the last paragraph of [basic.fundamental]{.sref} as follows:
 
 ::: std
 ::: addu
@@ -3573,10 +3582,10 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * an object with static storage duration ([basic.stc]{.sref}),
 * a variable ([basic.pre]{.sref}),
 * a structured binding ([dcl.struct.bind]{.sref}),
-* a function,
+* a function ([dcl.fct]{.sref}),
 * an enumerator ([dcl.enum]{.sref}),
 * a type alias ([dcl.typedef]{.sref}),
-* a type,
+* a type ([basic.types]{.sref}),
 * a class member ([class.mem]{.sref}),
 * an unnamed bit-field ([class.bit]{.sref}),
 * a primary class template ([temp.pre]{.sref}),
@@ -3589,7 +3598,7 @@ Add a new paragraph before the last paragraph of [basic.fundamental]{.sref} as f
 * a direct base class relationship ([class.derived.general]{.sref}), or
 * a data member description ([class.mem.general]{.sref}).
 
-An expression convertible to a reflection is said to _represent_ the corresponding construct. `sizeof(std::meta::info)` shall be equal to `sizeof(void*)`.
+A reflection is said to _represent_ the corresponding construct.
 
 ::: example
 ```cpp
@@ -3641,7 +3650,9 @@ constexpr auto r18 = std::meta::data_member_spec(^^int, {.name="member"});
 
 :::
 
-[17 - 2]{.pnum} [Implementations are discouraged from representing any constructs described by this document that are not explicitly enumerated in the list above (e.g., partial template specializations, attributes, placeholder types, statements). Constructs not described by this document can also be represented.]{.note}
+[17 - 2]{.pnum} *Recommended practice*: Implementations should not represent other constructs specified in this document, such as partial template specializations, attributes, placeholder types, statements, or expressions, as values of type `std::meta::info`.
+
+[17 - 3]{.pnum} [Future revisions of this document can specify semantics for reflections representing any such constructs.]{.note}
 
 :::
 :::
@@ -3651,7 +3662,7 @@ constexpr auto r18 = std::meta::data_member_spec(^^int, {.name="member"});
 Introduce a new kind of side effect in paragraph 7 (i.e., injecting a declaration).
 
 ::: std
-[7]{.pnum} Reading an object designated by a `volatile` glvalue ([basic.lval]), modifying an object, [injecting a declaration,]{.addu} calling a library I/O function, or calling a function that does any of those operations are all _side effects_, which are changes in the state of the execution [or translation]{.addu} environment. _Evaluation_ of an expression (or a subexpression) in general includes both value computations (including determining the identity of an object for glvalue evaluation and fetching a value previously assigned to an object for prvalue evaluation) and initiation of side effects. When a call to a library I/O function returns or an access through a volatile glvalue is evaluated, the side effect is considered complete, even though some external actions implied by the call (such as the I/O itself) or by the `volatile` access may not have completed yet.
+[7]{.pnum} Reading an object designated by a `volatile` glvalue ([basic.lval]), modifying an object, [producing an injected declaration ([expr.const]),]{.addu} calling a library I/O function, or calling a function that does any of those operations are all _side effects_, which are changes in the state of the execution [or translation]{.addu} environment. _Evaluation_ of an expression (or a subexpression) in general includes both value computations (including determining the identity of an object for glvalue evaluation and fetching a value previously assigned to an object for prvalue evaluation) and initiation of side effects. When a call to a library I/O function returns or an access through a volatile glvalue is evaluated, the side effect is considered complete, even though some external actions implied by the call (such as the I/O itself) or by the `volatile` access may not have completed yet.
 
 :::
 
@@ -3661,7 +3672,7 @@ Add a new paragraph to the end of [intro.execution] specifying a stronger sequen
 [12]{.pnum} If a signal handler is executed as a result of a call to the `std::raise` function, then the execution of the handler is sequenced after the invocation of the `std::raise` function and before its return.
 
 ::: addu
-[12+]{.pnum} During the evaluation of a manifestly constant-evaluated expression ([expr.const]), evaluations of operands of individual operators and of subexpressions of individual expresssions that are otherwise either unsequenced or indeterminately sequenced are evaluated in lexical order.
+[12+]{.pnum} During the evaluation of an expression as a core constant expression ([expr.const]), evaluations of operands of individual operators and of subexpressions of individual expresssions that are otherwise either unsequenced or indeterminately sequenced are evaluated in lexical order.
 :::
 
 :::
@@ -4214,6 +4225,20 @@ Add a new paragraph between paragraphs 5 and 6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
+Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production of injected declarations from any core constant expression that isn't a consteval block.
+
+::: std
+[10]{.pnum} An expression `$E$` is a _core constant expression_ unless the evaluation of `$E$`, following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
+
+[...]
+
+- [#.27]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) expression, `typeid` ([expr.typeid]) expression, or `$new-expression$` ([expr.new]) that would throw an exception where no definition of the exception type is reachable;
+- [[#.27+]{.pnum} an expression that would produce an injected declaration, unless `$E$` is the evaluating expression of a `$consteval-block-declaration$` ([dcl.pre]);]{.addu}
+- [#.28]{.pnum} an `$asm-declaration$` ([dcl.asm]);
+- [#.#]{.pnum} [...]
+
+:::
+
 Modify paragraph 17 to mention `$splice-expression$`s:
 
 ::: std
@@ -4268,7 +4293,7 @@ Extend the conditions in paragraph 24 under which an aggregate initialization co
 ::: std
 [24]{.pnum} ...
 
-  An invocation is an _immediate invocation_ if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An aggregatae initialization is an immediate invocation if it [initializes an object of consteval-only type or if it]{.addu} evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
+  An invocation is an _immediate invocation_ if it is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An aggregate initialization is an immediate invocation if it [initializes an object of consteval-only type or if it]{.addu} evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
 
 :::
 
@@ -4278,7 +4303,7 @@ Modify (and clean up) the definition of _immediate-escalating expression_ in par
 [25]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it is [either]{.rm}
 
 * [#.#]{.pnum} [a potentially-evaluated]{.rm} [an]{.addu} `$id-expression$` [or `$splice-expression$`]{.addu} that [denotes]{.rm} [designates]{.addu} an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
-* [#.#]{.pnum} an immediate invocation that [either]{.addu} is not a constant expression [ or has associated side effects ([basic.execution]), or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
+* [#.#]{.pnum} an immediate invocation that [either]{.addu} is not a constant expression [and is not a subexpression of an immediate invocation.]{.rm}
 * [[#.#]{.pnum} of consteval-only type ([basic.types.general]{.sref}).]{.addu}
 
 :::
@@ -4291,41 +4316,7 @@ Extend the definition of _immediate function_ in paragraph 27 to include functio
 * [#.#]{.pnum} declared with the `consteval` specifier, or
 * [#.#]{.pnum} an immediate-escalating function `$F$` whose function body contains [either]{.addu}
   * [#.#.#]{.pnum} an immediate-escalating expression `$E$` such that `$E$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope[.]{.rm}[, or]{.addu}
-  * [[#.#.#]{.pnum} a definition `$D$` of a variable with consteval-only type such that `$D$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope.]{.addu}
-:::
-
-Add a new paragraph prior to the definition of _manifestly constant-evaluated_ ([expr.const]{.sref}/28), and renumber accordingly:
-
-[The adverb "plainly" doesn't really convey any information here. We don't want to change it right now because Core has already reviewed this wording multiple times using this term, but we think an alternative term would be better. Sequentially constant-evaluated is another term we've considered that we like better. Other options might be chronologically, orderly, ordinally, and rendered. We want to somehow emphasize that these expressions can have side effects and must be evaluated exactly once, in order.]{.draftnote}
-
-::: std
-::: addu
-
-[28pre]{.pnum} A non-dependent expression or conversion is _plainly constant-evaluated_ if it is an initializer of a `constexpr` ([dcl.constexpr]{.sref}) or `constinit` ([dcl.constinit]{.sref}) variable that is not a specialization of a variable template.
-
-[The evaluation of a plainly constant-evaluated expression `$E$` can produce injected declarations (see below). Any such declarations are reachable from a point that follows immediately after `$E$`.]{.note}
-
-:::
-:::
-
-[We also intend for the "evaluating expression" of a consteval block to be plainly constant-evaluated, but this construct is introduced by a separate follow-on paper ([@P3289R1]).]{.draftnote}
-
-Add a note following the definition of _manifestly constant-evaluated_ to clarify the relationship with _plainly constant-evaluated_ expressions:
-
-::: std
-
-[28]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is:
-
-* [#.#]{.pnum} a `$constant-expression$`, or
-* [#.#]{.pnum} the condition of a constexpr if statement ([stmt.if]{.sref}), or
-* [#.#]{.pnum} an immediate invocation, or
-* [#.#]{.pnum} the result of substitution into an atomic constraint expression to determine whether it is satisfied ([temp.constr.atomic]{.sref}), or
-* [#.#]{.pnum} the initializer for a variable that is usable in constant expressions or has constant initialization ([basic.start.static]{.sref}).
-
-::: addu
-[All plainly constant-evaluated expressions are manifestly constant-evaluated, but some manifestly constant-evaluated expressions (e.g., template arguments) are not plainly constant-evaluated. Such expressions are still evaluated during translation, but (unlike plainly constant-evaluated expressions) cannot have observable side effects, and there are no explicit constraints on the relative order of their evaluation.]{.note}
-:::
-
+  * [[#.#.#]{.pnum} a definition `$D$` of a non-constexpr variable with consteval-only type such that `$D$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope.]{.addu}
 :::
 
 After the example following the definition of _manifestly constant-evaluated_, introduce new terminology and rules for injecting declarations and renumber accordingly:
@@ -4337,61 +4328,53 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
 
-[#]{.pnum} The program is ill-formed if the evaluation of a manifestly constant-evaluated expression `$M$` produces an injected declaration `$D$` and either
+[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$` whose evaluating expression produces an injected declaration `$D$` ([expr.const]). The program is ill-formed if a scope encloses exactly one of `$C$` or `$D$` that is either
 
-* [#.#]{.pnum} `$M$` is not a plainly constant-evaluated expression, or
-* [#.#]{.pnum} there exists a scope that encloses exactly one of `$M$` or `$D$` that is either
-  * [#.#.#]{.pnum} a function parameter scope, or
-  * [#.#.#]{.pnum} a scope associated with a class template specialization.
+* [#.#]{.pnum} a function parameter scope, or
+* [#.#]{.pnum} a class scope.
 
 ::: example
 ```cpp
-consteval bool complete_type(std::meta::info r) {
+consteval void complete_type(std::meta::info r) {
   std::meta::define_aggregate(r, {});
-  return true;
 }
 
 struct S1;
-constexpr bool b1 = complete_type(^^S1);
-  // OK, constexpr variable so this is plainly constant-evaluated
+consteval { complete_type(^^S1); }  // OK
 
-template <typename>
-    requires ([] {
-      struct S2;
-      return complete_type(^^S2);
-    }())    // manifestly constant-evaluated expression
-bool tfn1();
-
-constexpr bool b2 = tfn1<void>();
-  // error: requires-clause injects a declaration but is not plainly constant-evaluated
-
-template <std::meta::info R> consteval bool tfn2() {
-  return complete_type(R);
+template <std::meta::info R> consteval void tfn1() {
+  complete_type(R);
 }
 
-struct S3;
-constexpr bool b3 = tfn2<^^S3>();
-  // OK, tfn2<^^S3>() and S3 are enclosed by the same scope
+struct S2;
+consteval { tfn1<^^S2>(); }
+  // OK, tfn1<^^S2>() and S2 are enclosed by the same scope
 
-template <std::meta::info R> consteval bool tfn3() {
-  static constexpr bool b = complete_type(R);
+template <std::meta::info R> consteval void tfn2() {
+  consteval { complete_type(R); }
   return b;
 }
 
-struct S4;
-constexpr bool b4 = tfn3<^^S4>();
-  // error: complete_type(^^S4) is enclosed tfn3<^^S4>, but S4 is not
+struct S3;
+consteval { tfn2<^^S3>(); }
+  // error: complete_type(^^S3) is enclosed tfn2<^^S3>, but S3 is not
 
 template <typename> struct TCls {
-  struct S5;
-  static void sfn() requires ([]{
-    constexpr bool b = complete_type(^^S5);
-    return b;
+  struct S4;
+  static void sfn() requires ([] {
+    consteval { complete_type(^^S4); }
+    return true;
   }) { }
 };
 
-constexpr bool b5 = T2<void>::sfn();
-  // error: TCls<void>::S5 is not enclosed by requires-clause lambda
+consteval { TCls<void>::sfn(); }
+  // error: TCls<void>::S4 is not enclosed by requires-clause lambda
+
+struct S5;
+struct Cls {
+  consteval { complete_type(^^S5); }
+    // error: S5 is not enclosed by class Cls
+};
 ```
 :::
 
@@ -4405,10 +4388,73 @@ constexpr bool b5 = T2<void>::sfn();
 
 ### [dcl.pre]{.sref} Preamble {-}
 
+Introduce the non-terminal `$vacant-declaration$` in paragraph 9.1 to encompass static assertions, empty declarations, and consteval blocks:
+
+::: std
+```diff
+  $name-declaration$:
+    $block-declaration$
+    $nodeclspec-function-declaration$
+    $function-definition$
+    $friend-type-declaration$
+    $template-declaration$
+    $deduction-guide$
+    $linkage-specification$
+    $namespace-definition$
+-   $empty-declaration$
+    $attribute-declaration$
+    $module-import-declaration$
+
+  $block-declaration$:
+    $simple-declaration$
+    $asm-declaration$
+    $namespace-alias-definition$
+    $using-declaration$
+    $using-enum-declaration$
+    $using-directive$
+-   $static_assert-declaration$
+    $alias-declaration$
+    $opaque-enum-declaration$
++   $vacant-declaration$
+
++ $vacant-declaration$:
++    $static_assert-declaration$
++    $empty-declaration$
++    $consteval-block-declaration$
+
+  $static_assert-declaration$:
+    static_assert ( $constant-expression$ ) ;
+    static_assert ( $constant-expression$ , $static_assert-message$ ) ;
+
++ $consteval-block-declaration$:
++   consteval $compound-statement$
+```
+:::
+
 Strike the assertion that a `$typedef-name$` is synonymous with its associated type from paragraph 8 (type aliases are entities now).
 
 ::: std
 [8]{.pnum} If the `$decl-specifier-seq$` contains the `typedef` specifier, the declaration is a _typedef declaration_ and each `$declarator-id$` is declared to be a `$typedef-name$`[, synonymous with its associated type]{.rm} ([dcl.typedef]{.sref}).
+
+:::
+
+Insert the following after paragraph 13 in relation to consteval blocks:
+
+::: std
+[13]{.pnum} *Recommended practice*: When a `$static_assert-declaration$` fails, [...]
+
+::: addu
+[*]{.pnum} The _evaluating expression_ of a `$consteval-block-declaration$` is
+```cpp
+[] -> void consteval $compound-statement$ ()
+```
+
+[*]{.pnum} The evaluating expression of a `$consteval-block-declaration$` shall be a constant expression ([expr.const]).
+
+[The evaluating expression of a `$consteval-block-declaration$` can produce injected declarations as side effects ([expr.const]).]{.note}
+:::
+
+[14]{.pnum} An `$empty-declaration$` has no effect.
 
 :::
 
@@ -4844,6 +4890,41 @@ Modify the definition of reachability to account for injected declarations:
 
 ### [class.mem.general]{.sref} General {-}
 
+Modify the grammar for `$member-declaration$` as follows:
+
+::: std
+```diff
+  $member-declaration$:
+    $attribute-specifier-seq$@~opt~@ $decl-specifier-seq$@~opt~@ $member-declarator-list$@~opt~@;
+    $function-definition$
+    $friend-type-declaration$
+    $using-declaration$
+    $using-enum-declaration$
+-   $static_assert-declaration$
++   $vacant-declaration$
+    $template-declaration$
+    $explicit-specialization$
+    $deduction-guide$
+    $alias-declaration$
+    $opaque-enum-declaration$
+-   $empty-declaration$
+```
+:::
+
+Update paragraph 3 accordingly:
+
+::: std
+[3]{.pnum} A `$member-declaration$` does not declare new members of the class if it is
+
+* [#.#]{.pnum} a friend declaration ([class.friend]),
+* [#.#]{.pnum} a `$deduction-guide$` ([temp.deduct.guide]),
+* [#.#]{.pnum} a `$template-declaration$` whose declaration is one of the above,
+* [#.#]{.pnum} a [`$static_assert-declaration$`,]{.rm}
+* [#.#]{.pnum} a `$using-declaration$` ([namespace.udecl]) , or
+* [#.#]{.pnum} [an `$empty-declaration$`.]{.rm} [a `$vacant-declaration$`.]{.addu}
+
+:::
+
 Extend paragraph 5, and modify note 3, to clarify the existence of subobjects corresponding to non-static data members of reference types.
 
 ::: std
@@ -4880,6 +4961,15 @@ Data member descriptions are represented by reflections ([basic.fundamental]{.sr
 :::
 
 :::
+:::
+
+### [class.union.anon]{.sref} Anonymous unions {-}
+
+Replace `$static_assert-declaration$` with `$vacant-declaration$` in paragraph 1. [This refactor allows putting in an `$empty-declaration$` into an anonymous union, which is kind of a consistency drive by with other classes.]{.ednote}
+
+::: std
+[1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacant-declaration$`]{.addu}.  [...]
+
 :::
 
 ### [class.derived.general]{.sref} General {-}
@@ -5451,27 +5541,6 @@ int main() {
 :::
 :::
 
-### [temp.spec.general]{.sref} General {-}
-
-Add a note after paragraph 1 enumerating other constructs that are subject to instantiation.
-
-::: std
-[1]{.pnum} The act of instantiating a function, a variable, a class, a member of a class template, or a member template is referred to as _template instantiation_.
-
-::: addu
-::: note
-The following constructs are also separately subject to instantiation:
-
-* [#.#]{.pnum} Default arguments in template specializations and members of class templates,
-* [#.#]{.pnum} Default template arguments,
-* [#.#]{.pnum} Default member initializers in template specializations,
-* [#.#]{.pnum} `$noexcept-specifier$`s of template specializations and members of class templates, and
-* [#.#]{.pnum} `$type-constraint$`s and `$requires-clause$`s of template specializations and member functions.
-
-:::
-:::
-:::
-
 
 ### [temp.expl.spec]{.sref} Explicit specialization {-}
 
@@ -5540,7 +5609,7 @@ For convenience, we're going to add a new library element to [structure.specific
 * [#.2]{.pnum} *Mandates*: the conditions that, if not met, render the program ill-formed. [...]
 
 ::: addu
-* [#.2+1]{.pnum} *Constant When*: the conditions that are required for a call to this function to be a core constant expression ([expr.const]).
+* [#.2+1]{.pnum} *Constant When*: the conditions that are required for a call to this function to be a constant subexpression ([defns.const.subexpr]).
 :::
 
 [4]{.pnum} [...] Next, the semantics of the code sequence are determined by the *Constraints*, *Mandates*, [*Constant When*,]{.addu} *Preconditions*, *Effects*, *Synchronization*, *Postconditions*, *Returns*, *Throws*, *Complexity*, *Remarks*, and *Error* conditions specified for the function invocations contained in the code sequence. [...]
@@ -6490,7 +6559,7 @@ consteval vector<info> members_of(info r);
 * [#.#]{.pnum} a class that is not a closure type, or
 * [#.#]{.pnum} a namespace
 
-is _members-of-representable_ if it is
+is _members-of-representable_ if it is not a specialization of a template and if it is
 
 * [#.#]{.pnum} a class that is not a closure type,
 * [#.#]{.pnum} a type alias,
