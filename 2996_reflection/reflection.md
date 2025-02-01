@@ -3170,8 +3170,8 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). Constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating an expression `$E$` as a full-expression is complete if and only if]{.addu}
 
-  - [[7-8.#]{.pnum} `$E$` is the evaluating expression of a `$consteval-block-declaration$` `$C$` ([dcl.pre]), and]{.addu}
-  - [[7-8.#]{.pnum} either `$C$` or the template definition from which `$C$` is instantiated is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
+  - [[7-8.#]{.pnum} `$E$` is the evaluating expression of a `$consteval-block-declaration$` ([dcl.pre]), and]{.addu}
+  - [[7-8.#]{.pnum} either that `$consteval-block-declaration$` or the template definition from which it is instantiated is reachable from either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.]{.addu}
 
   [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
