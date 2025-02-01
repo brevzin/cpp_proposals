@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-30" />
+  <meta name="dcterms.date" content="2025-02-01" />
   <title>Consteval-only Values and Consteval Variables</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ Consteval Variables</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-30</td>
+    <td>2025-02-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1151,6 +1151,17 @@ specifier also makes clear that these variables would exist only at
 compile time, and thus there is no jarring code movement difference that
 the P3032 rule led to — where you can move a declaration from one
 context to another and that changes its validity.</p>
+<p>Note that this also would help address a usability issue with <span class="title"><span class="citation" data-cites="P1306R3"><a href="https://wg21.link/p1306r3" role="doc-biblioref">[P1306R3]
+(Expansion statements)</a></span></span>, where we could say that:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">consteval</span> info r <span class="op">:</span> members_of<span class="op">(</span>type<span class="op">))</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>desugars into declaring the underlying range
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>,
+which seems like a fairly tidy way to resolve that the allocation
+issue.</p>
 <p>Consteval-only allocation can always be adopted later, it is not
 strictly essential to this proposal, and we’re already late. We leave it
 in the hands of Evolution.</p>
@@ -1349,8 +1360,8 @@ constexpr reference is bound, shall have constant destruction.</p>
 <span>15.11 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
@@ -1368,6 +1379,10 @@ evaluation: Output and consteval variables. <a href="https://wg21.link/p0596r1">
 <div id="ref-P1073R3" class="csl-entry" role="doc-biblioentry">
 [P1073R3] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018-11-06.
 Immediate functions. <a href="https://wg21.link/p1073r3"><div class="csl-block">https://wg21.link/p1073r3</div></a>
+</div>
+<div id="ref-P1306R3" class="csl-entry" role="doc-biblioentry">
+[P1306R3] Dan Katz, Andrew Sutton, Sam Goodrick, Daveed Vandevoorde.
+2024-10-14. Expansion statements. <a href="https://wg21.link/p1306r3"><div class="csl-block">https://wg21.link/p1306r3</div></a>
 </div>
 <div id="ref-P1974R0" class="csl-entry" role="doc-biblioentry">
 [P1974R0] Jeff Snyder, Louis Dionne, Daveed Vandevoorde. 2020-05-15.

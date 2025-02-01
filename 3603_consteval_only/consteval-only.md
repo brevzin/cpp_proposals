@@ -317,6 +317,16 @@ But [@P3032R2]{.title} already recognized that there are situations in which a c
 
 The `consteval` specifier also makes clear that these variables would exist only at compile time, and thus there is no jarring code movement difference that the P3032 rule led to — where you can move a declaration from one context to another and that changes its validity.
 
+Note that this also would help address a usability issue with [@P1306R3]{.title}, where we could say that:
+
+::: std
+```cpp
+template for (consteval info r : members_of(type))
+```
+:::
+
+desugars into declaring the underlying range `consteval`, which seems like a fairly tidy way to resolve that the allocation issue.
+
 Consteval-only allocation can always be adopted later, it is not strictly essential to this proposal, and we're already late. We leave it in the hands of Evolution.
 
 
