@@ -6604,7 +6604,7 @@ A member of a closure type is members-of-representable if it is
 
 It is implementation-defined whether other members of closure types are _members-of-representable_.
 
-[Counterexamples of members-of-representable members include: injected class names, partial template specializations, friend declarations, static assertions, and non-static data members of closure types that correspond to entities captured by reference.]{.note}
+[Counterexamples of members-of-representable members include: injected class names, partial template specializations, friend declarations, static assertions, and non-static data members of closure types that correspond to captured entities.]{.note}
 
 [3]{.pnum} A member `$M$` of a class or namespace _members-of-precedes_ a point `$P$` if a declaration of `$M$` precedes either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.
 
