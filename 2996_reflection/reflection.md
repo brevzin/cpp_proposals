@@ -3537,8 +3537,8 @@ Add a bullet to paragraph 13 and handle `$splice-expression$`s in the existing b
 [13]{.pnum} A declaration `$D$` _names_ an entity `$E$` if
 
 * [13.1]{.pnum} `$D$` contains a `$lambda-expression$` whose closure type is `$E$`,
-* [13.1+]{.pnum} [`$D$` contains a `$reflect-expression$` or a manifestly constant-evaluated expression of type `std::meta::info` that represents `$E$`,]{.addu}
-* [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an `$id-expression$`, `$type-specifier$`, `$nested-name-specifier$`, `$template-name$`, or `$concept-name$` denoting `$E$` [or a `$splice-expression$` designating `$E$`]{.addu}, or
+* [13.1+]{.pnum} [`$D$` contains a manifestly constant-evaluated expression of type `std::meta::info` that represents `$E$`,]{.addu}
+* [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an `$id-expression$`, `$type-specifier$`, `$nested-name-specifier$`, `$template-name$`, or `$concept-name$` denoting `$E$` [or a `$splice-specifier$` or `$splice-expression$` designating `$E$`]{.addu}, or
 * [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an `$id-expression$` [or `$splice-expression$`]{.addu} that refers to a set of overloads that contains `$E$`.
 
 :::
@@ -3549,7 +3549,7 @@ Modify paragraph 15 to make all type aliases and namespace aliases explicitly TU
 An entity is _TU-local_ if it is
 
 * [15.#]{.pnum} a type, function, variable, or template that [...]
-* [[15.1+]{.pnum} a type alias or a namespace alias,]{.addu}  TODO
+* [[15.1+]{.pnum} a type alias or a namespace alias,]{.addu}
 * [15.#]{.pnum} [...]
 
 :::
@@ -3567,7 +3567,7 @@ Extend the definition of _TU-local_ values and objects in p16 to include reflect
 
 :::addu
 * [16.1+]{.pnum} it is a reflection representing either
-  * [16.1+.#]{.pnum} a TU-local value or object, or
+  * [16.1+.#]{.pnum} an entity, value, or object that is TU-local, or
   * [16.1+.#]{.pnum} a direct base class relationship introduced by an exposure, or
 :::
 * [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
@@ -4334,9 +4334,9 @@ Extend the definition of _immediate function_ in paragraph 27 to include functio
 [27]{.pnum} An _immediate function_ is a function or constructor that is [either]{.addu}
 
 * [#.#]{.pnum} declared with the `consteval` specifier, or
-* [#.#]{.pnum} an immediate-escalating function [`$F$`]{.rm} whose function [body contains]{.rm} [parameter scope is the innermost non-block scope enclosing]{.addu}
+* [#.#]{.pnum} an immediate-escalating function [`$F$`]{.rm} whose function [body contains]{.rm} [parameter scope is the innermost non-block scope enclosing either]{.addu}
   * [#.#.#]{.pnum} an immediate-escalating expression [`$E$` such that `$E$`'s innermost enclosing non-block scope is `$F$`'s function parameter scope.]{.rm}[, or]{.addu}
-  * [[#.#.#]{.pnum} a definition of a non-constexpr variable.]{.addu}
+  * [[#.#.#]{.pnum} a definition of a non-constexpr variable with consteval-only type.]{.addu}
 :::
 
 After the example following the definition of _manifestly constant-evaluated_, introduce new terminology and rules for injecting declarations and renumber accordingly:
