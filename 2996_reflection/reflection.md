@@ -6619,13 +6619,13 @@ class S {
   class Incomplete;
 
   /* P1 */ consteval {
-    // OK, the member Incomplete::x members-of-precedes the synthesized point P2
+    // OK, n == 7. The member Incomplete::x members-of-precedes the synthesized point P2 associated
+    // with the injected declaration produced by the call to define_aggregate.
     int n = members_of(
-      /* P2 */ define_aggregate(^^Incomplete,
-                {data_member_spec(^^int, {.name="x})}
-            ).size();
+        define_aggregate(^^Incomplete, {data_member_spec(^^int, {.name="x"})})
+      ).size();
   }
-};
+}; /* P2 */
 ```
 :::
 

@@ -11561,13 +11561,13 @@ user-declared members.<span> — <em>end note</em> ]</span></span></p>
 <span id="cb215-2"><a href="#cb215-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">class</span> Incomplete;</span>
 <span id="cb215-3"><a href="#cb215-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb215-4"><a href="#cb215-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">/* P1 */</span> <span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb215-5"><a href="#cb215-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// OK, the member Incomplete::x members-of-precedes the synthesized point P2</span></span>
-<span id="cb215-6"><a href="#cb215-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> n <span class="op">=</span> members_of<span class="op">(</span></span>
-<span id="cb215-7"><a href="#cb215-7" aria-hidden="true" tabindex="-1"></a>      <span class="co">/* P2 */</span> define_aggregate<span class="op">(^^</span>Incomplete,</span>
-<span id="cb215-8"><a href="#cb215-8" aria-hidden="true" tabindex="-1"></a>                <span class="op">{</span>data_member_spec<span class="op">(^^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;x})}</span></span>
-<span id="cb215-9"><a href="#cb215-9" aria-hidden="true" tabindex="-1"></a>            <span class="op">).</span>size<span class="op">()</span>;</span>
+<span id="cb215-5"><a href="#cb215-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// OK, n == 7. The member Incomplete::x members-of-precedes the synthesized point P2 associated</span></span>
+<span id="cb215-6"><a href="#cb215-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// with the injected declaration produced by the call to define_aggregate.</span></span>
+<span id="cb215-7"><a href="#cb215-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> n <span class="op">=</span> members_of<span class="op">(</span></span>
+<span id="cb215-8"><a href="#cb215-8" aria-hidden="true" tabindex="-1"></a>        define_aggregate<span class="op">(^^</span>Incomplete, <span class="op">{</span>data_member_spec<span class="op">(^^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;x&quot;</span><span class="op">})})</span></span>
+<span id="cb215-9"><a href="#cb215-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">).</span>size<span class="op">()</span>;</span>
 <span id="cb215-10"><a href="#cb215-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb215-11"><a href="#cb215-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<span id="cb215-11"><a href="#cb215-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>; <span class="co">/* P2 */</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 <div class="sourceCode" id="cb216"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb216-1"><a href="#cb216-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> bases_of<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
