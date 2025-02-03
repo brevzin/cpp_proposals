@@ -6613,6 +6613,22 @@ If `r` represents a class `$C$`, then the vector also contains reflections repre
 Class members and unnamed bit-fields are indexed in the order in which they are declared, but the order of namespace members is unspecified.
 [Base classes are not members. Implicitly-declared special members appear after any user-declared members.]{.note}
 
+::: example
+```cpp
+class S {
+  class Incomplete;
+
+  /* P1 */ consteval {
+    // OK, the member Incomplete::x members-of-precedes the synthesized point P2
+    int n = members_of(
+      /* P2 */ define_aggregate(^^Incomplete,
+                {data_member_spec(^^int, {.name="x})}
+            ).size();
+  }
+};
+```
+:::
+
 ```cpp
 consteval vector<info> bases_of(info type);
 ```
