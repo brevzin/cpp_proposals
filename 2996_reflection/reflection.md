@@ -7406,6 +7406,28 @@ template<class To, class From>
 * [#.5]{.pnum} `T` has no non-static data members of reference type.
 :::
 
+### [diff.cpp23]{.sref} Annex C (informative) Compatibility {-}
+
+Add a new Annex C entry:
+
+::: std
+**Affected subclause**: [lex.operators]
+
+**Change**: Operations mixing a value of an enumeration type and a value of a different enumeration type or of a floating-point type are no longer valid.
+
+**Rationale**: Required for new features.
+
+**Effect on original feature**: Valid C++23 code that contains two consecutive `^` tokens may be ill-formed in this revision of C++.
+
+::: example
+```cpp
+struct C { int operator^(int); };
+int operator^(int (C::*p)(int), C);
+int i = &C::operator^^C{}; // ill-formed; previously well-formed
+```
+:::
+:::
+
 ## Feature-Test Macro
 
 This is a feature with both a language and library component. Our usual practice is to provide something like `__cpp_impl_reflection` and `__cpp_lib_reflection` for this. But since the two pieces are so closely tied together, maybe it really only makes sense to provide one?

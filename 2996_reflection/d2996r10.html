@@ -1029,6 +1029,9 @@ Tuple and Variant Queries<span></span></a></li>
 <li><a href="#bit.cast-function-template-bit_cast" id="toc-bit.cast-function-template-bit_cast"><span>22.11.3
 <span>[bit.cast]</span></span> Function template
 <code class="sourceCode cpp">bit_cast</code><span></span></a></li>
+<li><a href="#diff.cpp23-annex-c-informative-compatibility" id="toc-diff.cpp23-annex-c-informative-compatibility"><span>C.1
+<span>[diff.cpp23]</span></span> Annex C (informative)
+Compatibility<span></span></a></li>
 </ul></li>
 <li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">5.3</span> Feature-Test
 Macro<span></span></a></li>
@@ -12857,6 +12860,29 @@ reference type.</li>
 </ul>
 </blockquote>
 </div>
+<h3 class="unnumbered" id="diff.cpp23-annex-c-informative-compatibility"><span>C.1 <a href="https://wg21.link/diff.cpp23">[diff.cpp23]</a></span> Annex
+C (informative) Compatibility<a href="#diff.cpp23-annex-c-informative-compatibility" class="self-link"></a></h3>
+<p>Add a new Annex C entry:</p>
+<div class="std">
+<blockquote>
+<p><strong>Affected subclause</strong>: [lex.operators]</p>
+<p><strong>Change</strong>: Operations mixing a value of an enumeration
+type and a value of a different enumeration type or of a floating-point
+type are no longer valid.</p>
+<p><strong>Rationale</strong>: Required for new features.</p>
+<p><strong>Effect on original feature</strong>: Valid C++23 code that
+contains two consecutive
+<code class="sourceCode cpp"><span class="op">^</span></code> tokens may
+be ill-formed in this revision of C++.</p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb263"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb263-1"><a href="#cb263-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> <span class="dt">int</span> <span class="kw">operator</span><span class="op">^(</span><span class="dt">int</span><span class="op">)</span>; <span class="op">}</span>;</span>
+<span id="cb263-2"><a href="#cb263-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> <span class="kw">operator</span><span class="op">^(</span><span class="dt">int</span> <span class="op">(</span>C<span class="op">::*</span>p<span class="op">)(</span><span class="dt">int</span><span class="op">)</span>, C<span class="op">)</span>;</span>
+<span id="cb263-3"><a href="#cb263-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="op">&amp;</span>C<span class="op">::</span><span class="kw">operator</span><span class="op">^^</span>C<span class="op">{}</span>; <span class="co">// ill-formed; previously well-formed</span></span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+</blockquote>
+</div>
 <h2 data-number="5.3" id="feature-test-macro"><span class="header-section-number">5.3</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>This is a feature with both a language and library component. Our
 usual practice is to provide something like
@@ -12869,10 +12895,10 @@ makes sense to provide one?</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb263"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb263-1"><a href="#cb263-1" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_coroutine 201902L</span>
-<span id="cb263-2"><a href="#cb263-2" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_destroying_delete 201806L</span>
-<span id="cb263-3"><a href="#cb263-3" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_three_way_comparison 201907L</span>
-<span id="cb263-4"><a href="#cb263-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_impl_reflection 2025XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb264"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb264-1"><a href="#cb264-1" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_coroutine 201902L</span>
+<span id="cb264-2"><a href="#cb264-2" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_destroying_delete 201806L</span>
+<span id="cb264-3"><a href="#cb264-3" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_three_way_comparison 201907L</span>
+<span id="cb264-4"><a href="#cb264-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_impl_reflection 2025XXL</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -12880,7 +12906,7 @@ makes sense to provide one?</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb264"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb264-1"><a href="#cb264-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_reflection 2025XXL // also in &lt;meta&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb265"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb265-1"><a href="#cb265-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_reflection 2025XXL // also in &lt;meta&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
