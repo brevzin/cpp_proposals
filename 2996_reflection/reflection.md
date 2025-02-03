@@ -3366,7 +3366,7 @@ Break bullet 4.1 into sub-bullets, modify it to cover splicing of functions, and
 - [4.1]{.pnum} A function is named by an expression or conversion [`$E$`]{.addu} if it is the selected member of an overload set ([[basic.lookup]]{.rm} [[over.pre]]{.addu}, [over.match], [over.over]) in an overload resolution performed as part of forming that expression or conversion, unless it is a pure virtual function and [either the expression]{.rm}[\ ]{.addu}
 
   - [#.#.#]{.pnum} [`$E$`]{.addu} is not an `$id-expression$` naming the function with an explicitly qualified name[,]{.addu}
-  - [[#.#.#]{.pnum} [`$E$`]{.addu} is not a `$splice-expression$`,]{.addu} or
+  - [[#.#.#]{.pnum} [`$E$`]{.addu} is a `$splice-expression$`,]{.addu} or
   - [#.#.#]{.pnum} [the expression]{.rm} [`$E$`]{.addu} forms a pointer to member ([expr.unary.op]).
 
 :::
