@@ -31,12 +31,15 @@ Since [@P2996R9]:
 * core wording updates
   * merge [@P3289R1]{.title} into P2996. Replace the category of "plainly constant-evaluated expressions" with consteval blocks.
   * make the [expr.const] "scope rule" for injected declarations more rigorous; disallow escape from function parameter scopes
+  * revise [expr.reflect] grammar according to CWG feedback
+  * handle concept splicing in type constraints with template arguments
   * bring notes and examples into line with current definitions
   * rebase [expr.const] onto latest from working draft (in particular, integrate changes from [@P2686R5])
   * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
   * producing an injected declaration from a non-plainly constant-evaluated context is prohibited for core constant expressions, rather than rendering the program ill-formed
   * do not specify `sizeof(std::meta::info)`
 * library wording updates
+  * add `<meta>` to [headers]
   * fix definition of "Constant When" (use "constant subexpression" in lieu of "core constant expression")
   * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
   * template specializations and non-static data members of closure types are not _members-of-representable_
@@ -3483,6 +3486,21 @@ Extend paragraph 1 to cover `$splice-specifier$`s:
 
 :::
 
+Add `$qualified-reflection-name$` ([expr.reflect]) to the list of non-terminals in bullet 2.4.5 that are "qualified names" in the presence of a  `$nested-name-specifier$`:
+
+::: std
+[2]{.pnum} [...] A _qualified name_ is
+
+- [2.3]{.pnum} a member-qualified name or
+- [#.#]{.pnum} the terminal name of
+  - [#.#.#]{.pnum} a `$qualified-id$`,
+  - [#.#.#]{.pnum} a `$using-declarator$`,
+  - [#.#.#]{.pnum} a `$typename-specifier$`,
+  - [#.#.#]{.pnum} a `$qualified-namespace-specifier$`, or
+  - [#.#.#]{.pnum} a `$nested-name-specifier$`, [`$qualified-reflection-name$`, ]{.addu} `$elaborated-type-specifier$`, or `$class-or-decltype$` that has a `$nested-name-specifier$` ([expr.prim.id.qual]).
+
+:::
+
 ### 6.5+ [basic.splice] Splice specifiers {-}
 
 Add a new subsection after [basic.lookup]{.sref}, and renumber accordingly:
@@ -4132,11 +4150,12 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 ```
 $reflect-expression$:
    ^^ ::
-   ^^ $qualified-namespace-specifier$
-   ^^ $nested-name-specifier$@~_opt_~@ $template-name$
-   ^^ $nested-name-specifier$@~_opt_~@ $concept-name$
+   ^^ $qualified-reflection-name$
    ^^ $type-id$
    ^^ $id-expression$
+
+$qualified-reflection-name$:
+  $nested-name-specifier$@~_opt_~@ $identifier$
 ```
 
 [#]{.pnum} The unary `^^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]{.sref}).
@@ -4150,7 +4169,7 @@ $reflect-expression$:
 static_assert(std::meta::is_type(^^int()));  // ^^ applies to the type-id "int()"
 
 template<bool> struct X {};
-bool operator<(std::meta::info, X<false>);
+consteval bool operator<(std::meta::info, X<false>) { return false; }
 consteval void g(std::meta::info r, X<false> xv) {
   r == ^^int && true;    // error: ^^ applies to the type-id "int&&"
   r == ^^int & true;     // error: ^^ applies to the type-id "int&"
@@ -4163,33 +4182,34 @@ consteval void g(std::meta::info r, X<false> xv) {
 ```
 :::
 
-[#]{.pnum} A `$reflect-expression$` that could be validly interpreted as `^^ $template-name$` is never interpreted as `^^ $id-expression$`, and is interpreted as `^^ $type-id$` if and only if the operand refers to the current instantiation ([temp.dep.type]).
+[#]{.pnum} A `$reflect-expression$` of the form `^^ ::` represents the global namespace.
 
-[#]{.pnum} A `$reflect-expression$` of the form `^^ ::` represents the global namespace. A `$reflect-expression$` of the form `^^ $qualified-namespace-specifier$`
-is interpreted as follows:
+[#]{.pnum} If a `$reflect-expression$` `$R$` matches the form `^^ $qualified-reflection-name$`, it is interpreted as such and represents the entity named by the `$identifier$` of `R` as follows:
 
-- [#]{.pnum} If lookup of the `$qualified-namespace-specifier$` unambiguously finds a `$namespace-alias-definition$`, the `$reflect-expression$` represents the namespace alias declared by that `$namespace-alias-definition$`.
-- [#]{.pnum} Otherwise, the `$reflect-expression$` represents the namespace denoted by the `$qualified-namespace-specifier$`.
+- [#.#]{.pnum} If the `$identifier$` is a `$namespace-name$` that names a namespace alias ([namespace.alias]), `$R$` represents that namespace alias. For any other `$namespace-name$`, `$R$` represents the denoted namespace.
+- [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$concept-name$` ([temp.concept]), `$R$` represents the denoted concept.
+- [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$template-name$` ([temp.names]) that is an injected-class-name ([class.pre]), the injected-class-name is instead considered a `$type-name$` ([temp.local]) and `$R$` represents the class template specialization so named. For any other `$template-name$` denoting a primary class template, function template, primary variable template, or alias template, `$R$` represents that template.
 
-[#]{.pnum} A `$reflect-expression$` of the form `^^ $nested-name-specifier$@~_opt_~@ $template-name$` represents the primary class template, function template, primary variable template, or alias template denoted by the `$template-name$`.
+- [#.#]{.pnum} Otherwise, if the `$identifier$` names a type alias that was introduced by the declaration of a template parameter, `$R$` represents the underlying entity of that type alias. For any other `$identifier$` that names a type alias, `$R$` represents that type alias.
+- [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$class-name$` or an `$enum-name$`, `$R$` represents the denoted type.
+- [#.#]{.pnum} Otherwise, the `$qualified-reflection-name$` shall be an `$id-expression$` `$I$` and `$R$` is `^^ $I$` (see below).
 
-[#]{.pnum} A `$reflect-expression$` of the form `^^ $nested-name-specifier$@~_opt_~@ $concept-name$` represents the concept denoted by the `$concept-name$`.
+[#]{.pnum} A `$reflect-expression$` of the form `^^ $type-id$` represents an entity determined as follows:
 
-[#]{.pnum} A `$reflect-expression$` of the form `^^ $type-id$` is interpreted as follows:
+- [#.#]{.pnum} If the `$type-id$` names a type alias that is a specialization of an alias template, `$R$` represents that type alias.
+- [#.#]{.pnum} Otherwise, `$R$` represents the type denoted by the `$type-id$`.
 
-* [#.#]{.pnum} If the `$type-id$` is a `$typedef-name$` that was introduced by the declaration of a template parameter, the `$reflect-expression$` represents the type denoted by that `$typedef-name$`.
-* [#.#]{.pnum} Otherwise, if the `$type-id$` is any other `$typedef-name$`, the `$reflect-expression$` represents the type alias associated with that `$typedef-name$`.
-* [#.#]{.pnum} Otherwise, the `$reflect-expression$` represents the type denoted by the `$type-id$`.
+[All other cases for `^^ $type-id$` are covered by `$qualified-reflection-name$`.]{.ednote}
 
-[#]{.pnum} A `$reflect-expression$` of the form `^^ $id-expression$` is interpreted as follows:
+[#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
 
-  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$` and overload resolution for the expression `&$S$` determines a unique function `$F$` ([over.over]{.sref}), the `$reflect-expression$` represents `$F$`.
+  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, the `$reflect-expression$` is ill-formed.
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member, the `$reflect-expression$` represents that entity.
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member, `$R$` represents that entity.
 
-  * [#.#]{.pnum} Otherwise, the `$reflect-expression$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
+  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
 
   The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}).
 
@@ -4584,7 +4604,7 @@ void f() {
 
 :::
 
-### [dcl.type.splice] Type splicing {-}
+### 9.2.9.8+ [dcl.type.splice] Type splicing {-}
 
 Add a new subsection of ([dcl.type]{.sref}) following ([dcl.type.class.deduct]{.sref}).
 
@@ -4618,10 +4638,7 @@ using alias = [:^^S::type:];    // OK, type-only context
 
 [#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specifier$`, the `$splice-specifier$` shall designate a type, a primary class template, an alias template, or a concept. The `$splice-type-specifier$` designates the same entity as the `$splice-specifier$`.
 
-[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template. Let `$T$` be that template and let `$S$` be the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`.
-
-  - [#.#]{.pnum} If `$T$` is a primary class template, the `$splice-type-specifier$` designates `$S$`.
-  - [#.#]{.pnum} Otherwise if `$T$` is an alias template, the `$splice-type-specifier$` designates the type denoted by `$S$`.
+[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template, an alias template, or a type concept (call it `$T$`). If `$T$` designates a primary class template or an alias template, the `$splice-type-specifier$` designates the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`. Otherwise, the `$splice-specifier$` shall appear as a `$type-constraint$`.
 
 :::
 :::
@@ -4766,7 +4783,7 @@ Modify the grammar for `$namespace-alias-definition$` in paragraph 1, and clarif
       $nested-name-specifier$@~_opt_~@ $namespace-name$
 ```
 
-[The `$splice-specifier$` (if any) shall designate a namespace.]{.addu}
+[The `$splice-specifier$` (if any) shall either designate a namespace or be dependent.]{.addu}
 :::
 
 Remove the details about what the `$namespace-alias$` denotes; this will fall out from the "underlying entity" of the namespace alias defined below:
@@ -4801,7 +4818,7 @@ Add the following prior to the first paragraph of [namespace.udir]{.sref}, and r
 
 ::: std
 ::: addu
-[0]{.pnum} The `$splice-specifier$`, if any, designates a namespace. The `$nested-name-specifier$` and the `$splice-specifier$` shall not be dependent.
+[0]{.pnum} The `$splice-specifier$`, if any, designates a namespace. The `$nested-name-specifier$`, `$namespace-name$`, and `$splice-specifier$` shall not be dependent.
 :::
 
 [1]{.pnum} A `$using-directive$` shall not appear in class scope, but may appear in namespace scope or in block scope.
@@ -4873,16 +4890,6 @@ Prefer "type alias" to "`$typedef-name$`" in paragraph 2.
 
 ### [module.global.frag]{.sref} Global module fragment {-}
 
-Extend bullet 3.1 to include `$splice-specifier$`s that designate `$D$`. Separately account for `$splice-specifier$`s that might have a `$splice-specialization-specifier$` designating a specialization.
-
-::: std
-[3]{.pnum} A declaration `$D$` is _decl-reachable_ from a declaration `$S$` in the same translation unit if
-
-- [#.#]{.pnum} `$D$` does not declare a function or function template and `$S$` contains an `$id-expression$`, `$namespace-name$`, `$type-name$`, `$template-name$`, or `$concept-name$` naming `$D$` [or a `$splice-specifier$` or `$splice-expression$` designating `$D$`]{.addu}, or
-- [#.#]{.pnum} [...]
-
-:::
-
 Specify in paragraph 3 that it is unspecified whether spliced types are replaced by their designated types, and renumber accordingly. Add an additional bullet further clarifying that it is unspecified whether any splice specifier is replaced.
 
 ::: std
@@ -4892,7 +4899,7 @@ In this determination, it is unspecified
 - [#.#]{.pnum} whether a `$simple-template-id$` that does not denote a dependent type and whose `$template-name$` names an alias template is replaced by its denoted type prior to this determination,
 - [#.#]{.pnum} whether a `$decltype-specifier$` [or `$splice-type-specifier$`]{.addu} that does not [denote]{.rm} [designate]{.addu} a dependent type is replaced by its [denoted]{.rm} [designated]{.addu} type prior to this determination, [and]{.rm}
 - [#.#]{.pnum} whether a non-value-dependent constant expression is replaced by the result of constant evaluation prior to this determination[.]{.rm}[, and]{.addu}
-- [[#.#]{.pnum} whether a `$splice-specifier$` that is not dependent is replaced by the construct that it designates prior to this determination.]{.addu}
+- [[#.#]{.pnum} whether a `$splice-specifier$` or `$splice-expression$` that is not dependent is replaced by the construct that it designates prior to this determination.]{.addu}
 
 :::
 
@@ -5088,7 +5095,7 @@ as specified in [dcl.type.simple]{.sref}. The guides of `A` are the set of funct
 
 :::
 
-### [over.over]{.sref} Address of an overload set
+### [over.over]{.sref} Address of an overload set {-}
 
 Remove the explicit references to `$id-expression$`s from paragraph 1 to allow taking the address of an overload set specified by a `$splice-expression$`:
 
@@ -5137,7 +5144,7 @@ Add a paragraph after paragraph 3 to restrict which `$splice-type-specifier$`s f
 
 ::: std
 ::: addu
-[3+]{.pnum} A `$type-constraint$` of the form `$splice-type-specifier$` shall not appear in a `$type-parameter$`. The `$splice-type-specifier$` (if any) shall either designate a concept or be dependent.
+[3+]{.pnum} A `$type-constraint$` of the form `$splice-type-specifier$` shall not appear in a `$type-parameter$`. The `$splice-type-specifier$` (if any) shall contain a `$splice-specifier$` that either designates a type concept or is dependent.
 :::
 :::
 
@@ -5504,7 +5511,7 @@ alignof ( type-id )
 noexcept ( expression )
 ```
 
-[A `$reflect-expression$` is value-dependent if its `$nested-name-specifier$` (if any) is dependent or if it has a dependent `$type-id$`, a dependent `$qualified-namespace-specifier$`, a dependent `$template-name$`, or a value-dependent or type-dependent `$id-expression$`.]{.addu}
+[A `$reflect-expression$` is value-dependent if it contains a dependent `$nested-name-specifier$`, `$type-id$`, `$namespace-name$`, or `$template-name$`, or if it contains a value-dependent or type-dependent `$id-expression$`.]{.addu}
 :::
 
 
@@ -5556,6 +5563,44 @@ int main() {
 :::
 :::
 
+### [temp.dep.temp]{.sref} Dependent template arguments {-}
+
+Add a new paragraph to cover dependent splice template arguments.
+
+::: std
+[4]{.pnum} A template `$template-parameter$` is dependent if it names a `$template-parameter$` or if its terminal name is dependent.
+
+[[5]{.pnum} A splice template argument is dependent if its `$splice-specifier$` is dependent.]{.addu}
+
+:::
+
+### 13.8.3.6 [temp.dep.alias] Dependent aliases {-}
+
+Add a new section to cover dependent type aliases and namespace aliases.
+
+::: std
+::: addu
+[1]{.pnum} A type alias is dependent if its underlying entity is a dependent type.
+
+[2]{.pnum} A namespace alias is dependent if it is introduced by a `$namespace-alias-definition$` containing a dependent `$nested-name-specifier$` or a dependent `$splice-specifier$`. A `$namespace-name$` is dependent if it names a dependent namespace alias.
+
+::: example
+```cpp
+template <std::meta::info R> int fn() {
+  namespace Alias = [:R:];  // [:R:] is dependent
+  return Alias::v;  // Alias is dependent
+}
+
+namespace NS {
+  int v = 1;
+}
+
+int a = fn<^^NS>();
+```
+:::
+
+:::
+:::
 
 ### [temp.expl.spec]{.sref} Explicit specialization {-}
 
