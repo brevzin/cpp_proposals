@@ -4150,6 +4150,7 @@ Add a new subsection of [expr.unary]{.sref} following [expr.delete]{.sref}
 ```
 $reflect-expression$:
    ^^ ::
+   ^^ $qualified-reflection-name$
    ^^ $type-id$
    ^^ $id-expression$
 
@@ -4183,21 +4184,26 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} A `$reflect-expression$` of the form `^^ ::` represents the global namespace.
 
-[#]{.pnum} If a `$reflect-expression$` `$R$` matches the form `$qualified-reflection-name$`, it is interpreted as such and represents the entity named by the `$identifier$` of `R` as follows:
+[#]{.pnum} If a `$reflect-expression$` `$R$` matches the form `^^ $qualified-reflection-name$`, it is interpreted as such and represents the entity named by the `$identifier$` of `R` as follows:
 
 - [#.#]{.pnum} If the `$identifier$` is a `$namespace-name$` that names a namespace alias ([namespace.alias]), `$R$` represents that namespace alias. For any other `$namespace-name$`, `$R$` represents the denoted namespace.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$concept-name$` ([temp.concept]), `$R$` represents the denoted concept.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$template-name$` ([temp.names]) that is an injected-class-name ([class.pre]), the injected-class-name is instead considered a `$type-name$` ([temp.local]) and `$R$` represents the class template specialization so named. For any other `$template-name$` denoting a primary class template, function template, primary variable template, or alias template, `$R$` represents that template.
-- [#.#]{.pnum} Otherwise, the `$qualified-reflection-name$` shall be either a `$type-id$` or an `$id-expression$` (see below) and interpreted as such.
 
-[#]{.pnum} A `$reflect-expression$` `$R$` interpreted as `^^ $type-id$` represents an entity determined as follows:
+- [#.#]{.pnum} Otherwise, if the `$identifier$` names a type alias that was introduced by the declaration of a template parameter, `$R$` represents the underlying entity of that type alias. For any other `$identifier$` that names a type alias, `$R$` represents that type alias.
+- [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$class-name$` or an `$enum-name$`, `$R$` represents the denoted type.
+- [#.#]{.pnum} Otherwise, the `$qualified-reflection-name$` shall be an `$id-expression$` `$I$` and `$R$` is `^^ $I$` (see below).
 
-- [#.#]{.pnum} If the `$type-id$` names a type alias that was not introduced by the declaration of a template parameter, `$R$` represents that type alias.
+[#]{.pnum} A `$reflect-expression$` of the form `^^ $type-id$` represents an entity determined as follows:
+
+- [#.#]{.pnum} If the `$type-id$` names a type alias that is a specialization of an alias template, `$R$` represents that type alias.
 - [#.#]{.pnum} Otherwise, `$R$` represents the type denoted by the `$type-id$`.
 
-[#]{.pnum} A `$reflect-expression$` `$R$` interpreted as `^^ $id-expression$` represents an entity determined as follows:
+[All other cases for `^^ $type-id$` are covered by `$qualified-reflection-name$`.]{.ednote}
 
-  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$` with no target and overload resolution for the expression `&$S$` determines a unique function ([over.over]{.sref}), `$R$` represents that function.
+[#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
+
+  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$` and overload resolution for the expression `&$S$` with no target selects a unique function ([over.over]{.sref}), `$R$` represents that function.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
@@ -5581,8 +5587,8 @@ Add a new section to cover dependent type aliases and namespace aliases.
 ::: example
 ```cpp
 template <std::meta::info R> int fn() {
-  namespace Alias = [:R:];  // [:R:] is dependent.
-  return Alias::v;
+  namespace Alias = [:R:];  // [:R:] is dependent
+  return Alias::v;  // Alias is dependent
 }
 
 namespace NS {
