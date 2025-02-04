@@ -4203,7 +4203,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
 
-  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$` and overload resolution for the expression `&$S$` with no target selects a unique function ([over.over]{.sref}), `$R$` represents that function.
+  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
