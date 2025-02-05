@@ -12,7 +12,7 @@ tag: constexpr
 
 # Revision History
 
-For R5: wording. Re-targeting towards LWG.
+For R5: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request.
 
 For [@P2758R4]: wording. Re-targeting towards CWG and LEWG. Introduced concept of constexpr-erroneous both for proper wording and to handle an escalating issue.
 
@@ -170,7 +170,7 @@ We will eventually have `constexpr std::format`, I'm just hoping that we can do 
 
 # Improving compile-time diagnostics
 
-While in `static_assert`, I'm not sure that we can adopt a `std::format()`-based API [^ynot], for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this:
+While in `static_assert`, I'm not sure that we can adopt a `std::format()`-based API [^ynot], for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this (see [this section](#warnings-and-tagging) for the motivation for tagging):
 
 [^ynot]: A previous revision of the paper [explained why](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2758r2.html#improving-static_assert): `static_assert(cond, "T{} must be valid expression")` is a valid assertion today. Adopting the `format` API would break this assertion - were it to fire. However, given that this is a static assertion, perhaps there's room to maneuver here.
 
@@ -180,9 +180,11 @@ namespace std {
   template<class... Args>
     constexpr void constexpr_print(format_string<Args...> fmt, Args&&... args);
   template<class... Args>
-    constexpr void constexpr_warn(format_string<Args...> fmt, Args&&... args);
+    constexpr void constexpr_print($tag-string$, format_string<Args...> fmt, Args&&... args);
   template<class... Args>
-    constexpr void constexpr_error(format_string<Args...> fmt, Args&&... args);
+    constexpr void constexpr_warn($tag-string$, format_string<Args...> fmt, Args&&... args);
+  template<class... Args>
+    constexpr void constexpr_error($tag-string$, format_string<Args...> fmt, Args&&... args);
 }
 ```
 :::
@@ -193,8 +195,9 @@ But we'll probably still need a lower-level API as well. Something these facilit
 ```cpp
 namespace std {
   constexpr void constexpr_print_str(string_view);
-  constexpr void constexpr_warn_str(string_view);
-  constexpr void constexpr_error_str(string_view);
+  constexpr void constexpr_print_str($tag-string$, string_view);
+  constexpr void constexpr_warn_str($tag-string$, string_view);
+  constexpr void constexpr_error_str($tag-string$, string_view);
 }
 ```
 :::
@@ -610,6 +613,12 @@ static_assert(attempt_to([]{ throw_up(); }));
 
 Currently, `throw_up()` is immediate-escalating, causing the appropriate specialization of `attempt_to` to become `consteval`. And at that point, that specialization is actually a constant expression (that returns `true`). If we labelled `throw_up()` as erroneous (because of the uncaught exception), `attempt_to()` wouldn't be able to recover. But since it can, I don't think we can label escaped exceptions as constexpr-erroneous.
 
+## Other Encodings
+
+In [@P2758R4], the only overloads proposed took `string_view`s. It was suggested that there should be additional overloads taking `u8string_view`, especially in light of the fact that [@P2996R9]{.title} and [@P3560R0]{.title} both are providing facilities that yield `u8string_view`s. Those should be able to be emitted as well.
+
+Thus starting in R5, this paper is also proposing an added set of overloads taking `u8string_view`. There was no consensus in SG16 to add further overloads (e.g. taking `wstring_view`, `u16string_view`, etc.).
+
 # Proposal
 
 This paper proposes the following:
@@ -732,9 +741,13 @@ namespace std {
 + struct $tag-string$; // exposition-only
 +
 + constexpr void constexpr_print_str(string_view) noexcept;
++ constexpr void constexpr_print_str(u8string_view) noexcept;
 + constexpr void constexpr_print_str($tag-string$, string_view) noexcept;
++ constexpr void constexpr_print_str($tag-string$, u8string_view) noexcept;
 + constexpr void constexpr_warning_str($tag-string$, string_view) noexcept;
++ constexpr void constexpr_warning_str($tag-string$, u8string_view) noexcept;
 + constexpr void constexpr_error_str($tag-string$, string_view) noexcept;
++ constexpr void constexpr_error_str($tag-string$, u8string_view) noexcept;
 
 }
 ```
@@ -744,7 +757,7 @@ Add a new clause after [meta.const.eval]{.sref} named "Emitting messages at comp
 
 ::: std
 ::: addu
-[1]{.pnum} The facilities in this subclause are used to emit messages at compile time.
+[1]{.pnum} The facilities in this subclause are used to emit messages during program translation.
 
 [#]{.pnum} A call to any of the functions defined in this subclause may produce a diagnostic message during constant evaluation. The text from a `string_view`, `$M$`, is formed by the sequence of `$M$.size()` code units, starting at `$M$.data()`, of the ordinary literal encoding ([lex.charset]).
 
@@ -766,29 +779,37 @@ template<class T> consteval $tag-string$(const T& s);
 
 [#]{.pnum} *Effects*: Direct-non-list-initializes `$str$` with `s`.
 
+[If [@P2996R9] is adopted, choose the Constant When wording. Otherwise, the Remarks.]{.draftnote}
+
+[#]{.pnum} *Constant When*: Every character in `$str$` is either a `$nondigit$`, a `$digit$`, or a `-`.
+
 [#]{.pnum} *Remarks*: A call to this function is not a core constant expression unless every character in `$str$` is either a `$nondigit$`, a `$digit$`, or a `-`.
 
 
 ```
 constexpr void constexpr_print_str(string_view msg) noexcept;
+constexpr void constexpr_print_str(u8string_view msg) noexcept;
 constexpr void constexpr_print_str($tag-string$ tag, string_view msg) noexcept;
+constexpr void constexpr_print_str($tag-string$ tag, u8string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued. Otherwise, no effect.
 
-[#]{.pnum} *Recommended practice*: Implementations should include the text of `$tag$.$str$`, if provided, in the diagnostic.
+[#]{.pnum} *Recommended practice*: The resulting diagnostic message should include the text of `$tag$.$str$`, if provided, and `msg`.
 
 ```
 constexpr void constexpr_warning_str($tag-string$ tag, string_view msg) noexcept;
+constexpr void constexpr_warning_str($tag-string$ tag, u8string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg`. Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued. Otherwise, no effect.
 
-[#]{.pnum} *Recommended practice*: Implementations should issue a warning in such cases and provide a mechanism allowing users to either opt in or opt out of such warnings based on the value of `$tag$.$str$`.
+[#]{.pnum} *Recommended practice*: Implementations should issue a warning and provide a mechanism allowing users to either opt in or opt out of such warnings based on the value of `$tag$.$str$`. The resulting diagnostic message should include the text of `$tag$.$str$` and `msg`.
 ```
 constexpr void constexpr_error_str($tag-string$ tag, string_view msg) noexcept;
+constexpr void constexpr_error_str($tag-string$ tag, u8string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued including the text of `msg` [evaluation of such a call is constexpr-erroneous ([expr.const])]{.note}. Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued [evaluation of such a call is constexpr-erroneous ([expr.const])]{.note}. Otherwise, no effect.
 
-[#]{.pnum} *Recommended practice*: Implementations should include the text of `$tag$.$str$` in the diagnostic.
+[#]{.pnum} *Recommended practice*: The resulting diagnostic message should include the text of `$tag$.$str$` and `msg`.
 :::
 :::
 

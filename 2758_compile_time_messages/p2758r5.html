@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-28" />
+  <meta name="dcterms.date" content="2025-02-05" />
   <title>Emitting messages at compile time</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ time</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-28</td>
+    <td>2025-02-05</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -631,6 +631,8 @@ Values<span></span></a>
 Escalation<span></span></a></li>
 <li><a href="#exceptions" id="toc-exceptions"><span class="toc-section-number">4.6.2</span> Exceptions<span></span></a></li>
 </ul></li>
+<li><a href="#other-encodings" id="toc-other-encodings"><span class="toc-section-number">4.7</span> Other
+Encodings<span></span></a></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">5</span> Proposal<span></span></a>
 <ul>
@@ -647,7 +649,9 @@ Macro<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>For R5: wording. Re-targeting towards LWG.</p>
+<p>For R5: wording. Re-targeting towards LWG. Adding
+<code class="sourceCode cpp">u8string_view</code> overloads per SG16
+request.</p>
 <p>For <span class="citation" data-cites="P2758R4"><a href="https://wg21.link/p2758r4" role="doc-biblioref">[P2758R4]</a></span>: wording. Re-targeting towards
 CWG and LEWG. Introduced concept of constexpr-erroneous both for proper
 wording and to handle an escalating issue.</p>
@@ -906,17 +910,20 @@ diagnostics<a href="#improving-compile-time-diagnostics" class="self-link"></a><
 not sure that we can adopt a <code class="sourceCode cpp">std<span class="op">::</span>format<span class="op">()</span></code>-based
 API <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, for compile-time diagnostics, I
 think we should. In particular, the user-facing API should probably be
-something like this:</p>
+something like this (see <a href="#warnings-and-tagging">this
+section</a> for the motivation for tagging):</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_print<span class="op">(</span>format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span>;</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_warn<span class="op">(</span>format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span>;</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_print<span class="op">(</span><em>tag-string</em>, format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span>;</span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_error<span class="op">(</span>format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span>;</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_warn<span class="op">(</span><em>tag-string</em>, format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span>;</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_error<span class="op">(</span><em>tag-string</em>, format_string<span class="op">&lt;</span>Args<span class="op">...&gt;</span> fmt, Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span>;</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>But we’ll probably still need a lower-level API as well. Something
@@ -928,9 +935,10 @@ for their formatting needs. Perhaps something like this:</p>
 <blockquote>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_print_str<span class="op">(</span>string_view<span class="op">)</span>;</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_warn_str<span class="op">(</span>string_view<span class="op">)</span>;</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_error_str<span class="op">(</span>string_view<span class="op">)</span>;</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_print_str<span class="op">(</span><em>tag-string</em>, string_view<span class="op">)</span>;</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_warn_str<span class="op">(</span><em>tag-string</em>, string_view<span class="op">)</span>;</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> constexpr_error_str<span class="op">(</span><em>tag-string</em>, string_view<span class="op">)</span>;</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>That is really the minimum necessary, and the nice
@@ -1530,6 +1538,21 @@ as erroneous (because of the uncaught exception),
 <code class="sourceCode cpp">attempt_to<span class="op">()</span></code>
 wouldn’t be able to recover. But since it can, I don’t think we can
 label escaped exceptions as constexpr-erroneous.</p>
+<h2 data-number="4.7" id="other-encodings"><span class="header-section-number">4.7</span> Other Encodings<a href="#other-encodings" class="self-link"></a></h2>
+<p>In <span class="citation" data-cites="P2758R4"><a href="https://wg21.link/p2758r4" role="doc-biblioref">[P2758R4]</a></span>, the only overloads proposed
+took <code class="sourceCode cpp">string_view</code>s. It was suggested
+that there should be additional overloads taking
+<code class="sourceCode cpp">u8string_view</code>, especially in light
+of the fact that <span class="title"><span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9] (Reflection for C++26)</a></span></span>
+and <span class="title"><span class="citation" data-cites="P3560R0"><a href="https://wg21.link/p3560r0" role="doc-biblioref">[P3560R0] (Error
+Handling in Reflection)</a></span></span> both are providing facilities
+that yield <code class="sourceCode cpp">u8string_view</code>s. Those
+should be able to be emitted as well.</p>
+<p>Thus starting in R5, this paper is also proposing an added set of
+overloads taking <code class="sourceCode cpp">u8string_view</code>.
+There was no consensus in SG16 to add further overloads (e.g. taking
+<code class="sourceCode cpp">wstring_view</code>,
+<code class="sourceCode cpp">u16string_view</code>, etc.).</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes the following:</p>
 <ol type="1">
@@ -1749,11 +1772,15 @@ immediate-escalating function.</p>
 <span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct <em>tag-string</em>; // exposition-only</span></span>
 <span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
 <span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(string_view) noexcept;</span></span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, string_view) noexcept;</span></span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, string_view) noexcept;</span></span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, string_view) noexcept;</span></span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(u8string_view) noexcept;</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, u8string_view) noexcept;</span></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, u8string_view) noexcept;</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, u8string_view) noexcept;</span></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1763,8 +1790,8 @@ named “Emitting messages at compile time”:</p>
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">1</a></span>
-The facilities in this subclause are used to emit messages at compile
-time.</p>
+The facilities in this subclause are used to emit messages during
+program translation.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">2</a></span>
 A call to any of the functions defined in this subclause may produce a
 diagnostic message during constant evaluation. The text from a
@@ -1788,7 +1815,16 @@ models <code class="sourceCode cpp">convertible_to<span class="op">&lt;</span>st
 <em>Effects</em>: Direct-non-list-initializes
 <code class="sourceCode cpp"><em>str</em></code> with
 <code class="sourceCode cpp">s</code>.</p>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: If
+<span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span> is adopted, choose the
+Constant When wording. Otherwise, the Remarks. ]</span></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">5</a></span>
+<em>Constant When</em>: Every character in
+<code class="sourceCode cpp"><em>str</em></code> is either a
+<code class="sourceCode cpp"><em>nondigit</em></code>, a
+<code class="sourceCode cpp"><em>digit</em></code>, or a
+<code class="sourceCode cpp"><span class="op">-</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">6</a></span>
 <em>Remarks</em>: A call to this function is not a core constant
 expression unless every character in
 <code class="sourceCode cpp"><em>str</em></code> is either a
@@ -1796,38 +1832,42 @@ expression unless every character in
 <code class="sourceCode cpp"><em>digit</em></code>, or a
 <code class="sourceCode cpp"><span class="op">-</span></code>.</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(string_view msg) noexcept;</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">6</a></span>
-<em>Effects</em>: During constant evaluation, a diagnostic message is
-issued including the text of <code class="sourceCode cpp">msg</code>.
-Otherwise, no effect.</p>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(u8string_view msg) noexcept;</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">7</a></span>
-<em>Recommended practice</em>: Implementations should include the text
-of
-<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>,
-if provided, in the diagnostic.</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
+<em>Effects</em>: During constant evaluation, a diagnostic message is
+issued. Otherwise, no effect.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">8</a></span>
-<em>Effects</em>: During constant evaluation, a diagnostic message is
-issued including the text of <code class="sourceCode cpp">msg</code>.
-Otherwise, no effect.</p>
+<em>Recommended practice</em>: The resulting diagnostic message should
+include the text of
+<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>,
+if provided, and <code class="sourceCode cpp">msg</code>.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">9</a></span>
-<em>Recommended practice</em>: Implementations should issue a warning in
-such cases and provide a mechanism allowing users to either opt in or
-opt out of such warnings based on the value of
-<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>.</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">10</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
-issued including the text of <code class="sourceCode cpp">msg</code>
-<span class="note"><span>[ <em>Note 1:</em> </span>evaluation of such a
-call is constexpr-erroneous ([expr.const])<span> — <em>end
-note</em> ]</span></span>. Otherwise, no effect.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">11</a></span>
-<em>Recommended practice</em>: Implementations should include the text
-of
+issued. Otherwise, no effect.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">10</a></span>
+<em>Recommended practice</em>: Implementations should issue a warning
+and provide a mechanism allowing users to either opt in or opt out of
+such warnings based on the value of
+<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>.
+The resulting diagnostic message should include the text of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>
-in the diagnostic.</p>
+and <code class="sourceCode cpp">msg</code>.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">11</a></span>
+<em>Effects</em>: During constant evaluation, a diagnostic message is
+issued <span class="note"><span>[ <em>Note 1:</em> </span>evaluation of
+such a call is constexpr-erroneous ([expr.const])<span> — <em>end
+note</em> ]</span></span>. Otherwise, no effect.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">12</a></span>
+<em>Recommended practice</em>: The resulting diagnostic message should
+include the text of
+<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>
+and <code class="sourceCode cpp">msg</code>.</p>
 </div>
 </blockquote>
 </div>
@@ -1887,6 +1927,15 @@ messages. <a href="https://wg21.link/p2741r3"><div class="csl-block">https://wg2
 <div id="ref-P2758R4" class="csl-entry" role="doc-biblioentry">
 [P2758R4] Barry Revzin. 2025-01-07. Emitting messages at compile time.
 <a href="https://wg21.link/p2758r4"><div class="csl-block">https://wg21.link/p2758r4</div></a>
+</div>
+<div id="ref-P2996R9" class="csl-entry" role="doc-biblioentry">
+[P2996R9] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, Dan Katz. 2025-01-13. Reflection for
+C++26. <a href="https://wg21.link/p2996r9"><div class="csl-block">https://wg21.link/p2996r9</div></a>
+</div>
+<div id="ref-P3560R0" class="csl-entry" role="doc-biblioentry">
+[P3560R0] Barry Revzin, Peter Dimov. 2025-01-12. Error Handling in
+Reflection. <a href="https://wg21.link/p3560r0"><div class="csl-block">https://wg21.link/p3560r0</div></a>
 </div>
 </div>
 <section class="footnotes footnotes-end-of-document" role="doc-endnotes">
