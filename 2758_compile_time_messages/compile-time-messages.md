@@ -737,7 +737,7 @@ namespace std {
   constexpr bool is_constant_evaluated() noexcept;
   consteval bool is_within_lifetime(const auto*) noexcept;
 
-+ // [meta.const.msg], emitting messages at compile time
++ // [meta.const.msg], emitting messages during program translation
 + struct $tag-string$; // exposition-only
 +
 + constexpr void constexpr_print_str(string_view) noexcept;
@@ -753,7 +753,7 @@ namespace std {
 ```
 :::
 
-Add a new clause after [meta.const.eval]{.sref} named "Emitting messages at compile time":
+Add a new clause after [meta.const.eval]{.sref} named "Emitting messages during program translation":
 
 ::: std
 ::: addu
