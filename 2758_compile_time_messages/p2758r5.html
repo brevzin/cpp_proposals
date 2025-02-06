@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-02-05" />
+  <meta name="dcterms.date" content="2025-02-06" />
   <title>Emitting messages at compile time</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ time</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-02-05</td>
+    <td>2025-02-06</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1665,44 +1665,35 @@ not performed, a variable with static storage duration
 zero-initialized ([dcl.init]).</p>
 </blockquote>
 </div>
-<p>Introduce the notion of constexpr-erroneous in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>:</p>
+<p>Say that a program is ill-formed if an expression is
+constexpr-erroneous in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>:</p>
 <div class="std">
 <blockquote>
-<div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">x</a></span>
-An expression <code class="sourceCode cpp"><em>E</em></code> has
-<em>constexpr-erroneous value</em> it evaluates an invocation of <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code>
-([meta.const.eval]). It is implementation-defined whether an invocation
-of <code class="sourceCode cpp">std<span class="op">::</span>constexpr_warning_str</code>
-has a constexpr-erroneous value. <span class="draftnote" style="color: #01796F">[ Drafting note: I suspect that we will
-eventually make more things produce constexpr-erroneous values, like
-maybe calls to <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code>,
-<code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code>,
-maybe any <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>
-function, etc. ]</span></p>
-</div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">10</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">10</a></span>
 An expression <code class="sourceCode cpp"><em>E</em></code> is a
 <em>core constant expression</em> unless the evaluation of
 <code class="sourceCode cpp"><em>E</em></code> following the rules of
 the abstract machine ([intro.execution]), would evaluate one of the
 following:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(10.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(10.1)</a></span>
 […]</li>
-<li>[…]</li>
 </ul>
-<div class="addu">
+<p>[…]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">28</a></span>
+An expression or conversion is <em>manifestly constant-evaluated</em> if
+it is:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(10.32)</a></span>
-an expression with constexpr-erroneous value.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(28.1)</a></span>
+[…]</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">y</a></span>
-An expression <code class="sourceCode cpp"><em>E</em></code> is a
-<em>constexpr-erroneous expression</em> if evaluation of
-<code class="sourceCode cpp"><em>E</em></code> is not a core constant
-expression due to evaluation of an expression with constexpr-erroneous
-value.</p>
+<p>[…]</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">x</a></span>
+A program is ill-formed if a manifestly constant-evaluated expression is
+<em>constexpr-erroneous</em>. <span class="note"><span>[ <em>Note
+1:</em> </span>Such an expression is still a core constant
+expression.<span> — <em>end note</em> ]</span></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> a<span class="op">)</span> <span class="op">{</span></span>
@@ -1714,7 +1705,7 @@ value.</p>
 <span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> foo<span class="op">(</span><span class="dv">2</span><span class="op">)</span>; <span class="co">// OK, constant-intiialized</span></span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> y <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">)</span>; <span class="co">// error: the initialization of y is a constexpr-erroneous expression</span></span></code></pre></div>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> y <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">)</span>; <span class="co">// error: the initialization of y is constexpr-erroneous</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -1847,7 +1838,10 @@ if provided, and <code class="sourceCode cpp">msg</code>.</p>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">9</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
-issued. Otherwise, no effect.</p>
+issued. It is implemention-defined whether a manifestly
+constant-evaluated call to
+<code class="sourceCode cpp">constexpr_warning_str</code> is
+constexpr-erroneous ([expr.const]). Otherwise, no effect.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">10</a></span>
 <em>Recommended practice</em>: Implementations should issue a warning
 and provide a mechanism allowing users to either opt in or opt out of
@@ -1860,9 +1854,8 @@ and <code class="sourceCode cpp">msg</code>.</p>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">11</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
-issued <span class="note"><span>[ <em>Note 1:</em> </span>evaluation of
-such a call is constexpr-erroneous ([expr.const])<span> — <em>end
-note</em> ]</span></span>. Otherwise, no effect.</p>
+issued and evaluation of such a call is constexpr-erroneous
+([expr.const]). Otherwise, no effect.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">12</a></span>
 <em>Recommended practice</em>: The resulting diagnostic message should
 include the text of

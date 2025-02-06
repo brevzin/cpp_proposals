@@ -669,22 +669,23 @@ Alter how static initialization works to ensure there's no fallback to runtime i
 [2]{.pnum} *Constant initialization* is performed if a variable with static or thread storage duration is constant-initialized ([expr.const]). [If the full-expression of the initialization of the variable is a constexpr-erroneous expression ([expr.const]), the program is ill-formed. Otherwise, if]{.addu} [If]{.rm} constant initialization is not performed, a variable with static storage duration ([basic.stc.static]) or thread storage duration ([basic.stc.thread]) is zero-initialized ([dcl.init]).
 :::
 
-Introduce the notion of constexpr-erroneous in [expr.const]{.sref}:
+Say that a program is ill-formed if an expression is constexpr-erroneous in [expr.const]{.sref}:
 
 ::: std
-::: addu
-[x]{.pnum} An expression `$E$` has *constexpr-erroneous value* it evaluates an invocation of `std::constexpr_error_str` ([meta.const.eval]). It is implementation-defined whether an invocation of `std::constexpr_warning_str` has a constexpr-erroneous value. [I suspect that we will eventually make more things produce constexpr-erroneous values, like maybe calls to `std::terminate()`, `std::unreachable()`, maybe any `[[noreturn]]` function, etc.]{.draftnote}
-:::
-
 [10]{.pnum} An expression `$E$` is a *core constant expression* unless the evaluation of `$E$` following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
 
 * [10.1]{.pnum} [...]
-* [...]
+
+[...]
+
+[28]{.pnum} An expression or conversion is *manifestly constant-evaluated* if it is:
+
+* [28.1]{.pnum} [...]
+
+[...]
 
 ::: addu
-* [10.32]{.pnum} an expression with constexpr-erroneous value.
-
-[y]{.pnum} An expression `$E$` is a *constexpr-erroneous expression* if evaluation of `$E$` is not a core constant expression due to evaluation of an expression with constexpr-erroneous value.
+[x]{.pnum} A program is ill-formed if a manifestly constant-evaluated expression is *constexpr-erroneous*. [Such an expression is still a core constant expression.]{.note}
 
 ::: example
 ```cpp
@@ -697,7 +698,7 @@ constexpr int foo(int a) {
 }
 
 int x = foo(2); // OK, constant-intiialized
-int y = foo(0); // error: the initialization of y is a constexpr-erroneous expression
+int y = foo(0); // error: the initialization of y is constexpr-erroneous
 ```
 :::
 
@@ -800,14 +801,14 @@ constexpr void constexpr_print_str($tag-string$ tag, u8string_view msg) noexcept
 constexpr void constexpr_warning_str($tag-string$ tag, string_view msg) noexcept;
 constexpr void constexpr_warning_str($tag-string$ tag, u8string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued. Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued. It is implemention-defined whether a manifestly constant-evaluated call to `constexpr_warning_str` is constexpr-erroneous ([expr.const]). Otherwise, no effect.
 
 [#]{.pnum} *Recommended practice*: Implementations should issue a warning and provide a mechanism allowing users to either opt in or opt out of such warnings based on the value of `$tag$.$str$`. The resulting diagnostic message should include the text of `$tag$.$str$` and `msg`.
 ```
 constexpr void constexpr_error_str($tag-string$ tag, string_view msg) noexcept;
 constexpr void constexpr_error_str($tag-string$ tag, u8string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued [evaluation of such a call is constexpr-erroneous ([expr.const])]{.note}. Otherwise, no effect.
+[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued and evaluation of such a call is constexpr-erroneous ([expr.const]). Otherwise, no effect.
 
 [#]{.pnum} *Recommended practice*: The resulting diagnostic message should include the text of `$tag$.$str$` and `msg`.
 :::
