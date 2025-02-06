@@ -3470,7 +3470,9 @@ Add a new section for consteval block scopes following [basic.scope.lambda]{.sre
 consteval {
   int x;
   consteval {
-    int x;  // different consteval block scope than x
+  int x; // #1
+  consteval {
+    int x;  // OK, distinct variable from #1
   }
 }
 ```
