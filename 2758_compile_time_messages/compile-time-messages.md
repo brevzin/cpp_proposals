@@ -698,7 +698,7 @@ constexpr int foo(int a) {
 }
 
 int x = foo(2); // OK, constant-initialized
-int y = foo(0); // error: the initialization of y is constexpr-erroneous
+int y = foo(0); // error: reject-zero, can't call with a == 0
 ```
 :::
 
