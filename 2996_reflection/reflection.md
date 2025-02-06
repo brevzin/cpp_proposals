@@ -4486,13 +4486,12 @@ struct Cls {
 };
 
 struct S6;
-consteval {
+consteval { // #1
   struct S7;
-  consteval {
+  consteval { // #2
     define_aggregate(^^S6, {});
-      // error: lambda associated with outer consteval block encloses
-      // inner consteval block but not S6
-    define_aggregate(^^S7, {});  // OK
+      // error: consteval block #1 encloses consteval block #2 but not S6
+    define_aggregate(^^S7, {});  // OK, consteval block #1 encloses both #2 and S7
   }
 }
 ```
