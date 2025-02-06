@@ -697,7 +697,7 @@ constexpr int foo(int a) {
   return a;
 }
 
-int x = foo(2); // OK, constant-intiialized
+int x = foo(2); // OK, constant-initialized
 int y = foo(0); // error: the initialization of y is constexpr-erroneous
 ```
 :::
