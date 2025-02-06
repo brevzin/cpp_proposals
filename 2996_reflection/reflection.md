@@ -7481,7 +7481,7 @@ Add a new Annex C entry:
 ::: std
 **Affected subclause**: [lex.operators]
 
-**Change**: Operations mixing a value of an enumeration type and a value of a different enumeration type or of a floating-point type are no longer valid.
+**Change**: New operator `^^`.
 
 **Rationale**: Required for new features.
 
