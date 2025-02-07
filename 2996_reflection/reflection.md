@@ -3387,6 +3387,21 @@ Modify paragraph 6 to cover splicing of structured bindings:
 
 :::
 
+Modify paragraph 10.1 to prevent `*this` from being _odr-usable_ in a consteval block:
+
+::: std
+[10]{.pnum} A local entity ([basic.pre]) is _odr-usable_ in a scope ([basic.scope.scope]) if
+
+- [#.#]{.pnum} either the local entity is not `*this`, or an enclosing class[, consteval block,]{.addu} or non-lambda function parameter scope exists and, if the innermost such scope is a function parameter scope, it corresponds to a non-static member function, and
+- [#.#]{.pnum} for each intervening scope ([basic.scope.scope]) between the point at which the entity is introduced and the scope (where `*this` is considered to be introduced within the innermost enclosing class or non-lambda function defintion scope), either:
+  - [#.#.#]{.pnum} the intervening scope is a block scope, or
+  - [#.#.#]{.pnum} the intervening scope is the function parameter scope of a `$lambda-expression$` or `$requires-expression$`, or
+  - [#.#.#]{.pnum} the intervening scope is the lambda scope of a `$lambda-expression$` that has a `$simple-capture$` naming the entity or has a `$capture-default$`, and the block scope of the `$lambda-expression$` is also an intervening scope.
+
+If a local entity is odr-used in a scope in which it is not odr-usable, the program is ill-formed.
+
+:::
+
 Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 
 ::: std
@@ -3438,6 +3453,31 @@ Change bullet 4.2 to refer to the declaration of a "type alias" instead of a `$t
 ::: std
 [4.2]{.pnum} one declares a type (not a [`$typedef-name$`]{.rm} [type alias]{.addu}) and the other declares a variable, non-static data member other than an anonymous union ([class.union.anon]{.sref}), enumerator, function, or function template, or
 
+:::
+
+### 6.4.5+ [basic.scope.consteval] Consteval block scope {-}
+
+Add a new section for consteval block scopes following [basic.scope.lambda]{.sref}:
+
+::: std
+::: addu
+**Consteval block scope   [basic.scope.consteval]**
+
+[#]{.pnum} A `$consteval-block-declaration$` `C` introduces a _consteval block scope_ that includes the `$compound-statement$` of `C`.
+
+::: example
+```cpp
+consteval {
+  int x;
+  consteval {
+  int x; // #1
+  consteval {
+    int x;  // OK, distinct variable from #1
+  }
+}
+```
+:::
+:::
 :::
 
 ### [basic.lookup.general]{.sref} General {-}
@@ -3962,6 +4002,38 @@ void g() {
 :::
 :::
 
+### [expr.prim.req.type]{.sref} Type requirements
+
+Allow splices in type requirements:
+
+::: std
+```diff
+  $type-requirement$:
+    typename $nested-name-specifier$@~_opt_~@ $type-name$ ;
++   typename $splice-specifier$
++   typename $splice-specialization-specifier$
+```
+
+[1]{.pnum} A `$type-requirement$` asserts the validity of a type. The component names [(if any)]{.addu} of a `$type-requirement$` are those of its `$nested-name-specifier$` [(if any)]{.rm} and `$type-name$`.
+
+::: example
+```cpp
+template<typename  T, typename T::type = 0> struct S;
+template<typename T> using Ref = T&;
+
+template<typename T> concept C = requires {
+  typename T::inner;        // required nested member name
+  typename S<T>;            // required valid ([temp.names]) template-id;
+                            // fails if T::type does not exist as a type to which 0 can be implicitly converted
+  typename Ref<T>;          // required alias template substitution, fails if T is void
+  typename [:T::r1:];       // fails if T::r is not a reflection of a type
+  typename [:T::r2:]<int>;  // fails if T::r2 is not a reflection of a template T for
+                            // which T<int> is a type
+};
+```
+:::
+:::
+
 ### 7.5.8* [expr.prim.splice] Expression splicing {-}
 
 Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
@@ -4194,9 +4266,10 @@ consteval void g(std::meta::info r, X<false> xv) {
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$class-name$` or an `$enum-name$`, `$R$` represents the denoted type.
 - [#.#]{.pnum} Otherwise, the `$qualified-reflection-name$` shall be an `$id-expression$` `$I$` and `$R$` is `^^ $I$` (see below).
 
-[#]{.pnum} A `$reflect-expression$` of the form `^^ $type-id$` represents an entity determined as follows:
+[#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $type-id$` represents an entity determined as follows:
 
-- [#.#]{.pnum} If the `$type-id$` names a type alias that is a specialization of an alias template, `$R$` represents that type alias.
+- [#.#]{.pnum} If the `$type-id$` designates a placeholder type, `$R$` is ill-formed.
+- [#.#]{.pnum} Otherwise, if the `$type-id$` names a type alias that is a specialization of an alias template, `$R$` represents that type alias.
 - [#.#]{.pnum} Otherwise, `$R$` represents the type denoted by the `$type-id$`.
 
 [All other cases for `^^ $type-id$` are covered by `$qualified-reflection-name$`.]{.ednote}
@@ -4274,6 +4347,24 @@ Add a new paragraph between paragraphs 5 and 6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
+Modify paragraph 4 to account for local variables in consteval block scopes:
+
+::: std
+[4]{.pnum} An object `$o$` is _constexpr-referenceable_ from a point `$P$` if
+
+- [#.#]{.pnum} `$o$` has static storage duration, or
+- [#.#]{.pnum} `$o$` has automatic storage duration, and letting `v` denote
+  - [#.#.#]{.pnum} the variable corresponding to `$o$`'s complete object or
+  - [#.#.#]{.pnum} the variable whose lifetime that of `$o$` is extended,
+
+  the smallest scope enclosing `v` and the smallest scope enclosing `$P$` that are neither
+  - [#.#.#]{.pnum} block scopes nor
+  - [#.#.#]{.pnum} function parameter scopes associated with a `$requirement-parameter-list$`
+
+  are the same function parameter [or consteval block scope]{.addu}.
+
+:::
+
 Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production of injected declarations from any core constant expression that isn't a consteval block.
 
 ::: std
@@ -4337,6 +4428,16 @@ or a prvalue core constant expression whose value satisfies the following constr
 
 :::
 
+Add consteval block scopes to the scopes that introduce an immediate function context:
+
+::: std
+[24]{.pnum} An expression or conversion is in an _immediate function context_ if it is potentially evaluated and either:
+
+- [#.#]{.pnum} its innermost enclosing non-block scope is [either]{.addu} a function parameter scope of an immediate function [or a consteval block scope]{.addu},
+- [#.#]{.pnum} [...]
+
+:::
+
 Modify (and clean up) the definition of _immediate-escalating expression_ in paragraph 25 to also apply to expressions of consteval-only type.
 
 ::: std
@@ -4370,8 +4471,9 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [#]{.pnum} Let `$C$` be a `$consteval-block-declaration$` whose evaluating expression produces an injected declaration `$D$` ([expr.const]). The program is ill-formed if a scope encloses exactly one of `$C$` or `$D$` that is either
 
-* [#.#]{.pnum} a function parameter scope, or
-* [#.#]{.pnum} a class scope.
+* [#.#]{.pnum} a function parameter scope,
+* [#.#]{.pnum} a class scope, or
+* [#.#]{.pnum} a consteval block scope.
 
 ::: example
 ```cpp
@@ -4415,6 +4517,16 @@ struct Cls {
   consteval { complete_type(^^S5); }
     // error: S5 is not enclosed by class Cls
 };
+
+struct S6;
+consteval { // #1
+  struct S7;
+  consteval { // #2
+    define_aggregate(^^S6, {});
+      // error: consteval block #1 encloses consteval block #2 but not S6
+    define_aggregate(^^S7, {});  // OK, consteval block #1 encloses both #2 and S7
+  }
+}
 ```
 :::
 
@@ -4484,12 +4596,13 @@ Insert the following after paragraph 13 in relation to consteval blocks:
 [13]{.pnum} *Recommended practice*: When a `$static_assert-declaration$` fails, [...]
 
 ::: addu
-[*]{.pnum} The _evaluating expression_ of a `$consteval-block-declaration$` is
+[*]{.pnum} The _evaluating expression_ of a `$consteval-block-declaration$` is an expression whose evaluation has the same associated side effects as the `$postfix-expression$`
+
 ```cpp
 [] -> void consteval $compound-statement$ ()
 ```
 
-[*]{.pnum} The evaluating expression of a `$consteval-block-declaration$` shall be a constant expression ([expr.const]).
+The evaluating expression shall be a constant expression ([expr.const]).
 
 [The evaluating expression of a `$consteval-block-declaration$` can produce injected declarations as side effects ([expr.const]).]{.note}
 :::
@@ -4636,7 +4749,7 @@ using alias = [:^^S::type:];    // OK, type-only context
 ```
 :::
 
-[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specifier$`, the `$splice-specifier$` shall designate a type, a primary class template, an alias template, or a concept. The `$splice-type-specifier$` designates the same entity as the `$splice-specifier$`.
+[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specifier$`, the `$splice-specifier$` shall designate a type, a primary class template, an alias template, or a type concept. The `$splice-type-specifier$` designates the same entity as the `$splice-specifier$`.
 
 [#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template, an alias template, or a type concept (call it `$T$`). If `$T$` designates a primary class template or an alias template, the `$splice-type-specifier$` designates the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`. Otherwise, the `$splice-specifier$` shall appear as a `$type-constraint$`.
 
@@ -4783,7 +4896,7 @@ Modify the grammar for `$namespace-alias-definition$` in paragraph 1, and clarif
       $nested-name-specifier$@~_opt_~@ $namespace-name$
 ```
 
-[The `$splice-specifier$` (if any) shall either designate a namespace or be dependent.]{.addu}
+[The `$splice-specifier$` (if any) shall designate a namespace.]{.addu}
 :::
 
 Remove the details about what the `$namespace-alias$` denotes; this will fall out from the "underlying entity" of the namespace alias defined below:
@@ -5428,13 +5541,6 @@ template<typename T> void f() {
 :::
 
 ### [temp.dep.type]{.sref} Dependent types {-}
-
-Account for dependent `$splice-specifier$`s in paragraph 7.
-
-::: std
-[7]{.pnum} An initializer is dependent if any constituent expression ([intro.execution]{.sref}) of the initializer is type-dependent. A placeholder type ([dcl.spec.auto.general]{.sref}) is dependent if it designates a type deduced from a dependent initializer [or if its `$type-constraint$` (if any) contains a dependent `$splice-specifier$` ([temp.dep.splice])]{.addu}.
-
-:::
 
 Apply a drive-by fix to paragraph 8 to account for placeholders for deduced class types whose template is dependent, while extending the definition to apply to `$splice-specifier$`s.
 
