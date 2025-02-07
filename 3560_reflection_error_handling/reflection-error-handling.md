@@ -1,6 +1,6 @@
 ---
 title: "Error Handling in Reflection"
-document: P3560R0
+document: P3560R1
 date: today
 audience: EWG, LEWG
 author:
@@ -12,9 +12,13 @@ toc: true
 tag: reflection
 ---
 
+# Revision History
+
+Since [@P3560R0], after discussion in an SG16 telecon, we changed the proposed API to be able to have a `string_view` constructor and `string` accessor. See [here](#post-sg16-telecon)
+
 # Introduction
 
-In [@P2996R8]{.title}, we had to answer the question of what the error handling mechanism should be. We considered four options:
+In [@P2996R9]{.title}, we had to answer the question of what the error handling mechanism should be. We considered four options:
 
 1. Returning an invalid reflection (similar to `NaN` for floating point)
 2. Returning a `std::expected<T, E>` for some reflection-specific error type `E`
@@ -197,6 +201,49 @@ Whether this is a problem worth worrying about is up for debate. The principled 
 
 But the second reason for our not proposing the additional `string_view` constructor is that it's easy to add at a later date.
 
+## Post-SG16 Telecon
+
+After the SG16 telecon on February 5th, 2025, which discussed the question of encoding above and whether we want `string_view` or `u8string_view` construction and access, we think the more usable API might be more like:
+
+::: std
+```cpp
+namespace std::meta {
+
+class exception
+{
+private:
+  u8string $what_$;         // exposition only
+  info $from_$;             // exposition only
+  source_location $where_$; // exposition only
+
+public:
+  consteval exception(u8string_view what, info from,
+    source_location where = source_location::current()) noexcept
+    : $what_$(what), $from_$(from), $where_$(where) {}
+
+  consteval exception(string_view what, info from,
+    source_location where = source_location::current()) noexcept
+    : $what_$($ordinary-to-u8$(what)), $from_$(from), $where_$(where) {}
+
+  consteval u8string_view u8what() const noexcept {
+    return $what_$;
+  }
+  consteval string what() const noexcept {
+    return $u8-to-ordinary$($what_$);
+  }
+
+  // ...
+};
+
+}
+```
+:::
+
+where `what()` fails to be constant if it cannot transcode. It would be nice if we had at least `$u8-to-ordinary$` and `$ordinary-to-u8$` already specified and present but, well, today is better than tomorrow.
+
+This gives us a maximally usable API — since the standard library has plenty of support for `string` formatting and that can be used here, the conversion from ordinary to UTF-8 is fine. It does still mean that attempting to call `what()` could fail, but... so be it.
+
+
 ## Single or Multiple Types
 
 We are proposing a single exception type. The runtime analogy is `std::system_error` as opposed to a hierarchy of exception types.
@@ -297,13 +344,17 @@ public:
   consteval exception(u8string_view what, info from,
     source_location where = source_location::current()) noexcept;
 
+  consteval exception(string_view what, info from,
+    source_location where = source_location::current()) noexcept;
+
   exception(exception const&) = default;
   exception(exception&&) = default;
 
   exception& operator=(exception const&) = default;
   exception& operator=(exception&&) = default;
 
-  consteval u8string_view what() const noexcept;
+  consteval u8string_view u8what() const noexcept;
+  consteval string what() const noexcept;
   consteval info from() const noexcept;
   consteval source_location where() const noexcept;
 };
@@ -319,10 +370,25 @@ consteval exception(u8string_view what, info from,
 [#]{.pnum} *Effects*: Initializes `$what_$` with `what`, `$from_$` with `from` and `$where_$` with `where`.
 
 ```cpp
-consteval u8string_view what() const noexcept;
+consteval exception(string_view what, info from,
+    source_location where = source_location::current()) noexcept;
+```
+
+[#]{.pnum} *Effects*: Initializes `$what_$` with `what`, transcoded from the ordinary literal encoding to UTF-8, `$from_$` with `from` and `$where_$` with `where`.
+
+```cpp
+consteval u8string_view u8what() const noexcept;
 ```
 
 [#]{.pnum} *Returns*: `$what_$`.
+
+```cpp
+consteval string what() const noexcept;
+```
+
+[#]{.pnum} *Constant When*: `$what_$` can be represented in the ordinary literal encoding.
+
+[#]{.pnum} *Returns*: `$what_$`, converted to the ordinary literal encoding.
 
 ```cpp
 consteval info from() const noexcept;
@@ -663,4 +729,14 @@ consteval info data_member_spec(info type,
   - [#.#.#]{.pnum} `options.alignment` does not contain a value,
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
   - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value.
+:::
+
+## Feature-Test Macro
+
+Bump `__cpp_lib_reflection` in [version.syn]{.sref} (which isn't there yet) to some new value:
+
+::: std
+```diff
++ #define __cpp_lib_reflection 2025XXL // also in <meta>
+```
 :::
