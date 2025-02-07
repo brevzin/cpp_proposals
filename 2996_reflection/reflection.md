@@ -4002,6 +4002,38 @@ void g() {
 :::
 :::
 
+### [expr.prim.req.type]{.sref} Type requirements
+
+Allow splices in type requirements:
+
+::: std
+```diff
+  $type-requirement$:
+    typename $nested-name-specifier$@~_opt_~@ $type-name$ ;
++   typename $splice-specifier$
++   typename $splice-specialization-specifier$
+```
+
+[1]{.pnum} A `$type-requirement$` asserts the validity of a type. The component names [(if any)]{.addu} of a `$type-requirement$` are those of its `$nested-name-specifier$` [(if any)]{.rm} and `$type-name$`.
+
+::: example
+```cpp
+template<typename  T, typename T::type = 0> struct S;
+template<typename T> using Ref = T&;
+
+template<typename T> concept C = requires {
+  typename T::inner;        // required nested member name
+  typename S<T>;            // required valid ([temp.names]) template-id;
+                            // fails if T::type does not exist as a type to which 0 can be implicitly converted
+  typename Ref<T>;          // required alias template substitution, fails if T is void
+  typename [:T::r1:];       // fails if T::r is not a reflection of a type
+  typename [:T::r2:]<int>;  // fails if T::r2 is not a reflection of a template T for
+                            // which T<int> is a type
+};
+```
+:::
+:::
+
 ### 7.5.8* [expr.prim.splice] Expression splicing {-}
 
 Add a new subsection of [expr.prim]{.sref} following [expr.prim.req]{.sref}
@@ -4234,9 +4266,10 @@ consteval void g(std::meta::info r, X<false> xv) {
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$class-name$` or an `$enum-name$`, `$R$` represents the denoted type.
 - [#.#]{.pnum} Otherwise, the `$qualified-reflection-name$` shall be an `$id-expression$` `$I$` and `$R$` is `^^ $I$` (see below).
 
-[#]{.pnum} A `$reflect-expression$` of the form `^^ $type-id$` represents an entity determined as follows:
+[#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $type-id$` represents an entity determined as follows:
 
-- [#.#]{.pnum} If the `$type-id$` names a type alias that is a specialization of an alias template, `$R$` represents that type alias.
+- [#.#]{.pnum} If the `$type-id$` designates a placeholder type, `$R$` is ill-formed.
+- [#.#]{.pnum} Otherwise, if the `$type-id$` names a type alias that is a specialization of an alias template, `$R$` represents that type alias.
 - [#.#]{.pnum} Otherwise, `$R$` represents the type denoted by the `$type-id$`.
 
 [All other cases for `^^ $type-id$` are covered by `$qualified-reflection-name$`.]{.ednote}
