@@ -4017,7 +4017,7 @@ Allow splices in type requirements:
 [1]{.pnum} A `$type-requirement$` asserts the validity of a type. The component names [(if any)]{.addu} of a `$type-requirement$` are those of its `$nested-name-specifier$` [(if any)]{.rm} and `$type-name$`.
 
 ::: example
-```cpp
+```diff
 template<typename  T, typename T::type = 0> struct S;
 template<typename T> using Ref = T&;
 
@@ -4026,9 +4026,9 @@ template<typename T> concept C = requires {
   typename S<T>;            // required valid ([temp.names]) template-id;
                             // fails if T::type does not exist as a type to which 0 can be implicitly converted
   typename Ref<T>;          // required alias template substitution, fails if T is void
-  typename [:T::r1:];       // fails if T::r is not a reflection of a type
-  typename [:T::r2:]<int>;  // fails if T::r2 is not a reflection of a template T for
-                            // which T<int> is a type
++ typename [:T::r1:];       // fails if T::r is not a reflection of a type
++ typename [:T::r2:]<int>;  // fails if T::r2 is not a reflection of a template T for
++                           // which T<int> is a type
 };
 ```
 :::
