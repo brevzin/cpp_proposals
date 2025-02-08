@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-24" />
+  <meta name="dcterms.date" content="2025-02-08" />
   <title>Reflection of Templates</title>
   <style>
       code{white-space: pre-wrap;}
@@ -565,7 +565,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-24</td>
+    <td>2025-02-08</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -685,6 +685,8 @@ identifiers as token sequences</li>
 token sequences</li>
 <li>added <em>replacement</em> and <em>projection</em> as fundamental
 transformations</li>
+<li>replaced “token sequence” with “construct sequence” throughout to
+keep in sync with <span class="citation" data-cites="P3294R3"><a href="#ref-P3294R3" role="doc-biblioref"><strong>P3294R3?</strong></a></span>.</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="motivation"><span class="header-section-number">2</span>
 Motivation<a href="#motivation" class="self-link"></a></h1>
@@ -697,7 +699,7 @@ definition. Although <span class="citation" data-cites="P2996R7"><a href="https:
 <code class="sourceCode cpp">members_of</code> metafunction includes
 template members (function template and class template declarations),
 that proposal does not offer primitives for reflection of template
-declarations themselves. In this proposal, we aim to define a
+declarations themselves. In this proposal we aim to define a
 comprehensive API for reflection of C++ templates.</p>
 <p>A powerful archetypal motivator—argued in <span class="citation" data-cites="P3157R1"><a href="https://wg21.link/p3157r1" role="doc-biblioref">[P3157R1]</a></span> and at length in the CppCon
 2024 <a href="https://youtube.com/watch?v=H3IdVM4xoCU">talk</a>
@@ -796,32 +798,157 @@ within.) Therefore, to the extent that reflection of C++ declarations is
 deemed useful, reflection of templates is essential.</p>
 <p>Given that many elements of a template cannot be semantically
 analyzed early (at template definition time), this proposal adopts a
-two-pronged strategy for reflecting components of template
-declarations:</p>
-<ul>
-<li>template parameter names and function parameter names can be
-reflected as <em>token sequences</em>, as proposed in <span class="citation" data-cites="P3294R2"><a href="https://wg21.link/p3294r2" role="doc-biblioref">[P3294R2]</a></span>;</li>
-<li>the other elements of a template declaration—constraints, predicate
-in the
-<code class="sourceCode cpp"><span class="kw">noexcept</span></code> or
-<code class="sourceCode cpp"><span class="kw">explicit</span></code>
-specifiers, default template arguments, and default function
-arguments—are kept together with the template declaration;</li>
-<li>new declarations are obtained from existing declarations in a
-functional manner, and the “deltas” are expressed as token
-sequences.</li>
-</ul>
+simple and robust strategy for reflecting components of template
+declarations. First and foremost, the unit of reflection for template
+declarations is the entire declaration (as opposed to parts of the
+declaration, such as the
+<code class="sourceCode cpp"><span class="kw">requires</span></code>
+clause or the
+<code class="sourceCode cpp"><span class="kw">noexcept</span></code>
+clause). This keeps the complexity of template declarations encapsulated
+within the reflection handle and away from user code—at user level,
+there’s never a need to parse a declaration and seldom a need to compose
+a complex template declaration from scratch. Our proposed metafunction
+<code class="sourceCode cpp">declaration_of<span class="op">(</span><em>h</em><span class="op">)</span></code>
+yields a reflection of the declaration of an entity reflected by
+<code class="sourceCode cpp"><em>h</em></code>, suitable for injection.
+As a trivial example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> f<span class="op">(</span>T, <span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Equivalent to a (re)declaration of f.</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span> \<span class="op">(</span>declaration_of<span class="op">(^^</span>f<span class="op">))</span>; <span class="op">})</span>;</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>The
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+block above injects a declaration of
+<code class="sourceCode cpp">f</code> within the current namespace,
+which is correct but hardly useful. This brings us to the second
+important element of this proposal’s strategy: new declarations are
+obtained in a functional manner by calling metafunctions against
+reflections of existing declarations (i.e., obtained by means of
+<code class="sourceCode cpp">declaration_of</code>). As another example,
+consider we want to declare another function
+<code class="sourceCode cpp">g</code> that has the same signature as
+<code class="sourceCode cpp">f</code>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> f<span class="op">(</span>T, <span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Equivalent to the declaration:</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// template &lt;typename T&gt; void g(T);</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span> \<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(^^</span>f<span class="op">)</span>, <span class="st">&quot;g&quot;</span><span class="op">))</span>; <span class="op">})</span>;</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>One immediate question is—why couldn’t we simply write <code class="sourceCode cpp">set_name<span class="op">(^^</span>f, <span class="st">&quot;g&quot;</span><span class="op">)</span></code>
+instead of <code class="sourceCode cpp">set_name<span class="op">(</span>declaration_of<span class="op">(^^</span>f<span class="op">)</span>, <span class="st">&quot;g&quot;</span><span class="op">)</span></code>?
+Clearly the <code class="sourceCode cpp">set_name</code> metafunction
+could easily be made to work in both cases. We consider the longer form
+clearer; a casual read of <code class="sourceCode cpp">set_name<span class="op">(^^</span>f, <span class="st">&quot;g&quot;</span><span class="op">)</span></code>
+may leave the impression that the metafunction modifies the actual
+function <code class="sourceCode cpp">f</code>. Throughout this proposal
+we foster <code class="sourceCode cpp">declaration_of</code> as a means
+to obtain a “copy” of a declaration, which can be subsequently
+manipulated and spliced back into code.</p>
+<p>Last but not least, let’s take a look at generating an actual
+definition for <code class="sourceCode cpp">g</code>, which will
+illustrate the third and last essential element of the strategy espoused
+by this proposal: handling parameter names of declarations. Assume, for
+example, we simply want <code class="sourceCode cpp">g</code> to forward
+its arguments transparently to <code class="sourceCode cpp">f</code>.
+From within <code class="sourceCode cpp">g</code>, we’d need to call
+<code class="sourceCode cpp">f<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">)&gt;(</span>x<span class="op">)</span>, std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>y<span class="op">)&gt;(</span>y<span class="op">))</span></code>,
+where <code class="sourceCode cpp">x</code> and
+<code class="sourceCode cpp">y</code> are the names of
+<code class="sourceCode cpp">g</code>’s parameters, and rely on
+deduction. A more general approach would be to use <code class="sourceCode cpp">f<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+instead of <code class="sourceCode cpp">f</code> to make sure the
+correct instantiation of <code class="sourceCode cpp">f</code> is called
+(without relying on template argument deduction), so we’ll focus on
+generating the latter code. Either way, the task immediately raises the
+question of name assignment and lookup—where do we take the names
+<code class="sourceCode cpp">T</code>,
+<code class="sourceCode cpp">x</code>, and
+<code class="sourceCode cpp">y</code> from? To make matters even more
+challenging, note that the function parameters do not even have names in
+the declaration of <code class="sourceCode cpp">f</code> that we started
+with, so <code class="sourceCode cpp">x</code> and
+<code class="sourceCode cpp">y</code> are nowhere to be found—reflection
+must synthesize them.</p>
+<p>For handling template parameter and function parameter names, this
+proposal fosters metafunctions that reflect parameter lists wholesale
+instead of naming schemata or conventions. Each (template and function)
+parameter list can be reflected as an <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+object that can be manipulated and spliced into generated code, as shown
+below:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> f<span class="op">(</span>T, <span class="dt">int</span><span class="op">)</span>;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Equivalent to the definition:</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// template &lt;typename T&gt; void g(T x, int y) {</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">//   return f&lt;T&gt;(std::forward&lt;decltype(x)&gt;(x), std::forward&lt;decltype(y)&gt;(y));</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">// }</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    \<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(^^</span>f<span class="op">)</span>, <span class="st">&quot;g&quot;</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> f<span class="op">&lt;</span>\<span class="op">(</span>template_parameter_list<span class="op">(^^</span>f<span class="op">))&gt;(</span>\<span class="op">(</span>forward_parameter_list<span class="op">(^^</span>f<span class="op">)))</span>;</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>The proposed <code class="sourceCode cpp">template_parameter_list<span class="op">(</span>rt<span class="op">)</span></code>
+primitive reflects (as a spliceable <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+object) the parameter list of a template reflected by
+<code class="sourceCode cpp">rt</code>. Splicing the resulting
+reflection handle results in a copy of the parameter list, with commas
+and ellipses inserted as appropriate. The names of the parameters are
+autogenerated (user code can consider them unambiguous) and in error
+messages the compiler may stylize them as
+<code class="sourceCode cpp">_T0</code>,
+<code class="sourceCode cpp">_T1</code>,
+<code class="sourceCode cpp">__p0</code>,
+<code class="sourceCode cpp">__p1</code>, etc. Given that the parameter
+names are specific to a given declaration, they can be used only in a
+definition obtained from
+<code class="sourceCode cpp">declaration_of</code> for the same
+declaration.</p>
+<p>Similarly, the proposed <code class="sourceCode cpp">parameter_list<span class="op">(</span>rf<span class="op">)</span></code>
+metafunction offers a comma-separated list of the function or function
+template reflected by <code class="sourceCode cpp">rf</code>, suitable
+for splicing. Two important additional cases are also supported:
+<code class="sourceCode cpp">forward_parameter_list</code> (used above)
+and <code class="sourceCode cpp">move_parameter_list</code>, which pass
+the parameters through
+<code class="sourceCode cpp">std<span class="op">::</span>forward</code>
+and
+<code class="sourceCode cpp">std<span class="op">::</span>move</code>,
+respectably. Splicing the <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+returned by these functions allows generated code to access parameters
+of a function created by using <code class="sourceCode cpp">declaration_of<span class="op">(</span>rf<span class="op">)</span></code>,
+as illustrated above. Again, the names of the parameters are
+compiler-generated and can be considered world-unique.</p>
 <p>The initial proposal <span class="citation" data-cites="P3420R0"><a href="https://wg21.link/p3420r0" role="doc-biblioref">[P3420R0]</a></span> allowed accessing all parts of
-a template definition as token sequences. However, for some
+a template definition as construct sequences. However, for some
 implementations performing such extrication was deemed difficult. Also,
 separating parts of a function declaration made it difficult to define
-how names are looked up after splicing.</p>
+how names are looked up after splicing. The current approach—reflecting
+entire declarations, creating new declarations from the reflection of
+existing ones, and accessing parameters implicitly—eschews many of the
+original proposal’s issues without giving away flexibility.</p>
 <p>We paid special attention to preserve the spirit and design style of
 <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span> and to ensure seamless
 interoperation with it.</p>
 <h2 data-number="2.1" id="example-logging-and-forwarding"><span class="header-section-number">2.1</span> Example: Logging and
 Forwarding<a href="#example-logging-and-forwarding" class="self-link"></a></h2>
-<p>As a conceptual stylized example, consider the matter of creating a
+<p>As a more elaborate example, consider the matter of creating a
 function template
 <code class="sourceCode cpp">logged<span class="op">::</span>func</code>
 for any free function template <code class="sourceCode cpp">func</code>
@@ -834,118 +961,88 @@ the matter for function templates because it is more difficult (and more
 complete) than the case of simple functions.</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Widget <span class="op">{}</span>;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> std<span class="op">::</span>is_copy_constructible_v<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value, Widget<span class="op">&amp;)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> logger<span class="op">(</span><span class="kw">const</span> Ts<span class="op">&amp;..</span> values<span class="op">)</span>;</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Introspection will add declarations here.</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> logged <span class="op">{</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> Widget <span class="op">{}</span>;  <span class="co">// for exposition purposes</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">// Given a function func, create a function logged::func that logs arguments.</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> make_logged<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info f<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  namespace_inject<span class="op">(^^::</span>logged, <span class="op">^^{</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">)):]</span> <span class="op">{</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>      logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span> <span class="op">+</span> identifier_of<span class="op">(</span>f<span class="op">)</span> <span class="op">+</span> <span class="st">&quot;(&quot;</span>, \tokens<span class="op">(</span>parameter_list<span class="op">(</span>f<span class="op">))</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="op">[:</span>f<span class="op">:]&lt;</span>\tokens<span class="op">(</span>template_parameter_list<span class="op">(</span>f<span class="op">))&gt;(</span>\tokens<span class="op">(</span>forward_parameter_list<span class="op">(</span>f<span class="op">)))</span>;</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>  make_logged<span class="op">(^^</span>fun<span class="op">)</span>;</span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent hand-written code:</span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">// namespace logged {</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">//     template &lt;typename T&gt;</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">//     requires std::is_copy_constructible_v&lt;T&gt;</span></span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="co">//     void fun(const T&amp; value, const ::Widget&amp; __p0) {</span></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="co">//         logger(&quot;Call to &quot;, &quot;fun&quot;, &quot;(&quot;, value, __p0, &quot;)&quot;);</span></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co">//         return fun&lt;T&gt;(std::forward&lt;T&gt;(value), std::forward&lt;T&gt;(__p0));</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="co">//     }</span></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="co">// }</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Widget <span class="op">{}</span>;  <span class="co">// for exposition purposes</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> std<span class="op">::</span>is_copy_constructible_v<span class="op">&lt;</span>T<span class="op">&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value, Widget<span class="op">&amp;)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> logger<span class="op">(</span><span class="kw">const</span> Ts<span class="op">&amp;..</span> values<span class="op">)</span>;</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Introspection will add declarations here.</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> logged <span class="op">{</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> Widget <span class="op">{}</span>;  <span class="co">// for exposition purposes</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">// Given a function func, create a function logged::func that logs arguments.</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> make_logged<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  namespace_inject<span class="op">(^^::</span>logged, <span class="op">^^{</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    \<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>      logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span> <span class="op">+</span> identifier_of<span class="op">(</span>f<span class="op">)</span> <span class="op">+</span> <span class="st">&quot;(&quot;</span>, \<span class="op">(</span>parameter_list<span class="op">(</span>f<span class="op">))</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="op">[:</span>f<span class="op">:]&lt;</span>\<span class="op">(</span>template_parameter_list<span class="op">(</span>f<span class="op">))&gt;(</span>\<span class="op">(</span>forward_parameter_list<span class="op">(</span>f<span class="op">)))</span>;</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  make_logged<span class="op">(^^</span>fun<span class="op">)</span>;</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent hand-written code:</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="co">// namespace logged {</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="co">//     template &lt;typename T&gt;</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="co">//     requires std::is_copy_constructible_v&lt;T&gt;</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="co">//     void fun(const T&amp; __p0, const ::Widget&amp; __p1) {</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="co">//         logger(&quot;Call to &quot;, &quot;fun&quot;, &quot;(&quot;, _p0, __p1, &quot;)&quot;);</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="co">//         return ::fun&lt;T&gt;(std::forward&lt;decltype(__p0)&gt;(__p0), std::forward&lt;decltype(__p1)&gt;(__p1));</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="co">//     }</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a><span class="co">// }</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>The code uses <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>namespace_inject</code>
-as defined in <span class="citation" data-cites="P3294R1"><a href="https://wg21.link/p3294r1" role="doc-biblioref">[P3294R1]</a></span> to create a function
+as defined in <span class="citation" data-cites="P3294R2"><a href="https://wg21.link/p3294r2" role="doc-biblioref">[P3294R2]</a></span> to create a function
 definition from a token sequence in a given namespace, in this case
-<code class="sourceCode cpp">logged</code>. We identify a few high-level
-metafunctions that facilitate such manipulation of template
-declarations. First, <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>declaration_of<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info f<span class="op">)</span></code>
-returns a reflection handle (i.e. an <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
-value) corresponding to the declaration (prototype) of the function
-template reflected by <code class="sourceCode cpp">f</code>. The
-template parameters,
+<code class="sourceCode cpp">logged</code>. The generative side of the
+code uses again <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>declaration_of</code>
+to get a reflection handle corresponding to the declaration of the
+function template reflected by <code class="sourceCode cpp">f</code>.
+The template parameters,
 <code class="sourceCode cpp"><span class="kw">requires</span></code> and
 <code class="sourceCode cpp"><span class="kw">noexcept</span></code>
 clauses (if present), function parameters, and return type are all part
-of the returned reflection. Most importantly, the declaration can be
-modified and spliced back into code.</p>
+of the returned reflection handle. Most importantly, the declaration can
+be modified and spliced back into code.</p>
 <p>Names used in <code class="sourceCode cpp">declaration_of</code> are
 handled in a hygienic manner that prevents unintended binding. All
 non-dependent names are looked up in the original declaration. Thus,
-even if namespace <code class="sourceCode cpp">logged</code> defines a
+although namespace <code class="sourceCode cpp">logged</code> defines a
 type called <code class="sourceCode cpp">Widget</code>, the declaration
 returned by <code class="sourceCode cpp">declaration_of</code> uses the
 same <code class="sourceCode cpp">Widget</code> as the original
 declaration (which is why we used
 <code class="sourceCode cpp"><span class="op">::</span>Widget</code> in
 the comment representing equivalent code). Dependent names are, as
-expected, not looked up. The name of the function itself also
+expected, not looked up. The name of the function itself also carries
 information about what scope <code class="sourceCode cpp">f</code> was
 defined in (in our example the global namespace), but the primitive
 <code class="sourceCode cpp">namespace_inject</code> ignores that
 information and injects a new function of the same name in the given
 namespace.</p>
-<p>The metafunction <code class="sourceCode cpp">template_parameter_list<span class="op">(</span>f<span class="op">)</span></code>
-returns, for the reflection <code class="sourceCode cpp">f</code> of a
-function template, a token sequence consisting of the comma-separated
-list of that function’s template parameters. That token sequence can be
-spliced in code that generates the instantiation of <code class="sourceCode cpp"><span class="op">[:</span>f<span class="op">:]</span></code>
-or a template with similar parameters. The names of the parameters are
-implementation-defined and bear no relationship with the user-given
-parameter names in the declaration of
-<code class="sourceCode cpp">f</code>; this avoids possible ambiguities
-created by duplicate declarations and also sidesteps awkward issues such
-as handling unnamed parameters. User code may assume each parameter name
-is world-unique, which implies that <code class="sourceCode cpp">template_parameter_list<span class="op">(</span>f<span class="op">)</span></code>
-is meaningful only from within a declaration created with
-<code class="sourceCode cpp">declaration_of</code> (or from within the
-function reflected by <code class="sourceCode cpp">f</code> itself).</p>
-<p>Next, <code class="sourceCode cpp">parameter_list<span class="op">(</span>f<span class="op">)</span></code>
-produces a token sequence consisting of the comma-separated list of the
-parameters of <code class="sourceCode cpp">f</code>, with pack expansion
-suffix where applicable. The list can be spliced in code that passes the
-function parameters to another function call. In our case,
-<code class="sourceCode cpp">parameter_list</code> is used to pass all
-parameters to template function
-<code class="sourceCode cpp">logger</code>. Just like with
-<code class="sourceCode cpp">template_parameter_list</code>, the
-parameter names are chosen by the implementation and can be considered
-world-unique.</p>
-<p>Finally, <code class="sourceCode cpp">forward_parameter_list<span class="op">(</span>f<span class="op">)</span></code>
-creates the tokens of a call to the function reflected by
-<code class="sourceCode cpp">f</code> with the appropriate insertion of
-calls to
-<code class="sourceCode cpp">std<span class="op">::</span>forward</code>,
-again with pack expansion suffix where appropriate. The example uses
-<code class="sourceCode cpp">forward_parameter_list</code> to pass the
-generated function’s arguments down to the implementation.</p>
+<p>The rest of the <code class="sourceCode cpp">make_logged</code>
+metafunction uses
+<code class="sourceCode cpp">template_parameter_list</code>,
+<code class="sourceCode cpp">parameter_list</code>, and
+<code class="sourceCode cpp">forward_parameter_list</code> in concert to
+first issue a call to <code class="sourceCode cpp">logger</code> and
+then forward the call to the original function.</p>
 <p>To recap, we propose generating new functions (or function templates)
 from existing ones by splicing
 <code class="sourceCode cpp">declaration_of</code> for copying the
-function prototype, followed by the new function body as a token
-sequence. To access and pass around template parameters (when
-appropriate) and function parameters, we propose the helper
-metafunctions
+function prototype, followed by the new function body as a construct
+sequence. To access and pass around template parameters and function
+parameters (when appropriate), we propose the helper metafunctions
 <code class="sourceCode cpp">template_parameter_list</code>,
 <code class="sourceCode cpp">parameter_list</code>, and
 <code class="sourceCode cpp">forward_parameter_list</code>. These
@@ -964,44 +1061,44 @@ public members of
 and insert appropriate copies of declarations.</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> A <span class="op">=</span> std<span class="op">::</span>allocator<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> logging_vector <span class="op">{</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;</span> data;</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">:</span> get_public_members<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;))</span> <span class="op">{</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> <span class="op">(</span>is_type_alias<span class="op">(</span>r<span class="op">)</span> <span class="op">||</span> is_class_type<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span> <span class="kw">using</span> \id<span class="op">(</span>identifier_of<span class="op">(</span>r<span class="op">))</span> <span class="op">=</span> <span class="op">[:</span>\<span class="op">(</span>r<span class="op">):]</span>; <span class="op">})</span>;</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>is_function<span class="op">(</span>r<span class="op">)</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>is_special_member_function<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>          <span class="op">[:</span>\<span class="op">(</span>declaration_of<span class="op">(</span>r<span class="op">)):]</span> <span class="op">{</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>            logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, display_string_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>, <span class="st">&quot;::&quot;</span>,</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>              identifier_of<span class="op">(</span>r<span class="op">)</span>, <span class="st">&quot;(&quot;</span>, \tokens<span class="op">(</span>parameter_list<span class="op">(</span>r<span class="op">))</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> data<span class="op">.[:</span>r<span class="op">:](</span>\tokens<span class="op">(</span>forward_param_list_of<span class="op">(</span>r<span class="op">)))</span>;</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>is_function_template<span class="op">(</span>r<span class="op">)</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>is_constructor<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>          <span class="op">[:</span>\<span class="op">(</span>declaration_of<span class="op">(</span>r<span class="op">)):]</span> <span class="op">{</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>            logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, identifier_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>, <span class="st">&quot;::&quot;</span>,</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>              identifier_of<span class="op">(</span>r<span class="op">)</span>, <span class="st">&quot;(&quot;</span>, \tokens<span class="op">(</span>parameter_list<span class="op">(</span>r<span class="op">))</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> data<span class="op">.</span><span class="kw">template</span> <span class="op">[:</span>r<span class="op">:]&lt;</span>\tokens<span class="op">(</span>template_parameter_list<span class="op">(</span>r<span class="op">))&gt;(</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>              \tokens<span class="op">(</span>forward_parameters_list<span class="op">(</span>r<span class="op">))</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>            <span class="op">)</span>;</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>is_constructor<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>          <span class="op">[:</span>\<span class="op">(</span>declaration_of<span class="op">(</span>r<span class="op">)):]</span> <span class="op">:</span> data<span class="op">(</span>\tokens<span class="op">(</span>forward_parameters_list<span class="op">(</span>r<span class="op">)))</span> <span class="op">{}</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Ignore other nested declarations.</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> A <span class="op">=</span> std<span class="op">::</span>allocator<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> logging_vector <span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;</span> data;</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> <span class="kw">namespace</span> std<span class="op">::</span>meta;</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">:</span> get_public_members<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;))</span> <span class="op">{</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> <span class="op">(</span>is_type_alias<span class="op">(</span>r<span class="op">)</span> <span class="op">||</span> is_class_type<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span> <span class="kw">using</span> \id<span class="op">(</span>identifier_of<span class="op">(</span>r<span class="op">))</span> <span class="op">=</span> \<span class="op">(</span>r<span class="op">)</span>; <span class="op">})</span>;</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>is_function<span class="op">(</span>r<span class="op">)</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>is_special_member_function<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>          \<span class="op">(</span>declaration_of<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, display_string_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>, <span class="st">&quot;::&quot;</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>              identifier_of<span class="op">(</span>r<span class="op">)</span>, <span class="st">&quot;(&quot;</span>, \<span class="op">(</span>parameter_list<span class="op">(</span>r<span class="op">))</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> data<span class="op">.[:</span>r<span class="op">:](</span>\<span class="op">(</span>forward_param_list_of<span class="op">(</span>r<span class="op">)))</span>;</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>is_function_template<span class="op">(</span>r<span class="op">)</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>is_constructor<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>          \<span class="op">(</span>declaration_of<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>            logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, display_string_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>, <span class="st">&quot;::&quot;</span>,</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>              identifier_of<span class="op">(</span>r<span class="op">)</span>, <span class="st">&quot;(&quot;</span>, \<span class="op">(</span>parameter_list<span class="op">(</span>r<span class="op">))</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> data<span class="op">.</span><span class="kw">template</span> <span class="op">[:</span>r<span class="op">:]&lt;</span>\<span class="op">(</span>template_parameter_list<span class="op">(</span>r<span class="op">))&gt;(</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>              \<span class="op">(</span>forward_parameters_list<span class="op">(</span>r<span class="op">))</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>            <span class="op">)</span>;</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>is_constructor<span class="op">(</span>r<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>          \<span class="op">(</span>declaration_of<span class="op">(</span>r<span class="op">))</span> <span class="op">:</span> data<span class="op">(</span>\<span class="op">(</span>forward_parameters_list<span class="op">(</span>r<span class="op">)))</span> <span class="op">{}</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Ignore other nested declarations.</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>      <span class="op">}</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>(Refer to <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span> for metafunctions
@@ -1082,16 +1179,16 @@ The example as written above will generate code equivalent to the
 following:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> A<span class="op">&gt;</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> logging_vector <span class="op">{</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> swap<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;&amp;</span> other<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, <span class="st">&quot;std::vector&lt;T, A&gt;&quot;</span>, <span class="st">&quot;::&quot;</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;swap&quot;</span>, <span class="st">&quot;(&quot;</span>, other, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> data<span class="op">.</span>swap<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>other<span class="op">)&gt;(</span>other<span class="op">))</span>;</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> A<span class="op">&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> logging_vector <span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> swap<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;&amp;</span> other<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, <span class="st">&quot;std::vector&lt;T, A&gt;&quot;</span>, <span class="st">&quot;::&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;swap&quot;</span>, <span class="st">&quot;(&quot;</span>, other, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> data<span class="op">.</span>swap<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>other<span class="op">)&gt;(</span>other<span class="op">))</span>;</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The declaration is technically correct, but not what was intended. We
@@ -1100,11 +1197,11 @@ another instance of <code class="sourceCode cpp">logging_vector</code>,
 i.e., <code class="sourceCode cpp"><span class="dt">void</span> swap<span class="op">(</span>logging_vector<span class="op">&lt;</span>T, A<span class="op">&gt;&amp;)</span></code>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> swap<span class="op">(</span>logging_vector<span class="op">&lt;</span>T, A<span class="op">&gt;&amp;</span> other<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, <span class="st">&quot;std::vector&lt;T, A&gt;&quot;</span>, <span class="st">&quot;::&quot;</span>,</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;swap&quot;</span>, <span class="st">&quot;(&quot;</span>, other<span class="op">.</span>data, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> data<span class="op">.</span>swap<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>other<span class="op">)&gt;(</span>other<span class="op">).</span>data<span class="op">)</span>;</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  <span class="dt">void</span> swap<span class="op">(</span>logging_vector<span class="op">&lt;</span>T, A<span class="op">&gt;&amp;</span> other<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, <span class="st">&quot;std::vector&lt;T, A&gt;&quot;</span>, <span class="st">&quot;::&quot;</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;swap&quot;</span>, <span class="st">&quot;(&quot;</span>, other<span class="op">.</span>data, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> data<span class="op">.</span>swap<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>other<span class="op">)&gt;(</span>other<span class="op">).</span>data<span class="op">)</span>;</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>There are two fundamental transformation we need to perform to morph
@@ -1131,7 +1228,7 @@ renaming</a> notion found in lambda calculus. To that end we define
 signature:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>info replace<span class="op">(</span>info declaration, info replace_this, info with_this<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>info replace<span class="op">(</span>info declaration, info replace_this, info with_this<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The metafunction returns a new declaration with the replacements
@@ -1146,22 +1243,22 @@ To effect projection, user code defines a <em>projection
 function</em>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Inside logging_vector&#39;s definition</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> X<span class="op">&gt;</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> project<span class="op">(</span>X<span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_same_v<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>X<span class="op">&gt;</span>, std<span class="op">::</span>logging_vector<span class="op">&gt;)</span> <span class="op">{</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">.</span>data<span class="op">)&gt;(</span>x<span class="op">.</span>data<span class="op">)</span>;</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span>X<span class="op">&gt;(</span>x<span class="op">)</span>;</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Inside logging_vector&#39;s definition</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> X<span class="op">&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> project<span class="op">(</span>X<span class="op">&amp;&amp;</span> x<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>std<span class="op">::</span>is_same_v<span class="op">&lt;</span>remove_cvref_t<span class="op">&lt;</span>X<span class="op">&gt;</span>, std<span class="op">::</span>logging_vector<span class="op">&gt;)</span> <span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>x<span class="op">.</span>data<span class="op">)&gt;(</span>x<span class="op">.</span>data<span class="op">)</span>;</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> std<span class="op">::</span>forward<span class="op">&lt;</span>X<span class="op">&gt;(</span>x<span class="op">)</span>;</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>We then propose a standard metafunction that applies a projection
 function to each parameter of a function:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>info project_parameters<span class="op">(</span>info declaration, info projection_function<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>info project_parameters<span class="op">(</span>info declaration, info projection_function<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Armed with these artifacts, we can have reflection generate proper
@@ -1170,16 +1267,16 @@ forwarding functions from existing member functions of
 like this:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>        <span class="co">// For member functions of std::vector&lt;T, A&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> my_decl <span class="op">=</span> replace<span class="op">(</span>declaration_of<span class="op">(</span>r<span class="op">)</span>, <span class="op">^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;</span>, <span class="op">^^</span>logging_vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>;</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> my_params <span class="op">=</span> project_parameters<span class="op">(</span>r, <span class="op">^^</span>project<span class="op">)</span>;</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>          <span class="op">[:</span>\<span class="op">(</span>decl<span class="op">):]</span> <span class="op">{</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, identifier_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>, <span class="st">&quot;::&quot;</span>,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>              identifier_of<span class="op">(</span>r<span class="op">)</span>, <span class="st">&quot;(&quot;</span>, \tokens<span class="op">(</span>my_params<span class="op">)</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> data<span class="op">.[:</span>r<span class="op">:](</span>forward_param_list_of<span class="op">(</span>my_params<span class="op">))</span>;</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>        <span class="co">// For member functions of std::vector&lt;T, A&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> my_decl <span class="op">=</span> replace<span class="op">(</span>declaration_of<span class="op">(</span>r<span class="op">)</span>, <span class="op">^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;</span>, <span class="op">^^</span>logging_vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>;</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> my_params <span class="op">=</span> project_parameters<span class="op">(</span>r, <span class="op">^^</span>project<span class="op">)</span>;</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        queue_injection<span class="op">(^^{</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>          <span class="op">[:</span>\<span class="op">(</span>decl<span class="op">):]</span> <span class="op">{</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>            logger<span class="op">(</span><span class="st">&quot;Calling &quot;</span>, identifier_of<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;)</span>, <span class="st">&quot;::&quot;</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>              identifier_of<span class="op">(</span>r<span class="op">)</span>, <span class="st">&quot;(&quot;</span>, \tokens<span class="op">(</span>my_params<span class="op">)</span>, <span class="st">&quot;)&quot;</span><span class="op">)</span>;</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> data<span class="op">.[:</span>r<span class="op">:](</span>forward_param_list_of<span class="op">(</span>my_params<span class="op">))</span>;</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>          <span class="op">}</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The code for member function templates is similar. One notable detail
@@ -1252,73 +1349,73 @@ declarations with metafunctions proposed in P2996, to which we propose
 extended semantics.</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Returns the reflection of the declaration of a template</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> declaration_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Replacement</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> replace<span class="op">(</span>info declaration, info replace_this, info with_this<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Projection</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> project_parameters<span class="op">(</span>info declaration, info projection_function<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Returns given declaration with a changed name</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_name<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">//  Multiple explicit specializations and/or partial specializations</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> template_alternatives_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Template parameters vector</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> template_parameters_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Comma-separated template parameter list</span></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> template_parameter_list<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Attributes - extension of semantics in P3385</span></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> attributes_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_attribute<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> remove_attribute<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Template-level requires clause</span></span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_requires_clause<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_requires_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_requires_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Is this the reflection of the primary template declaration?</span></span>
-<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_primary_template<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Overloads of a given function name</span></span>
-<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> overloads_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
-<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Inline specifier present?</span></span>
-<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_inline<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>    <span class="co">// cvref qualifiers and others - extensions of semantics in P2996</span></span>
-<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_const<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_explicit<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_volatile<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_rvalue_reference_qualified<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_lvalue_reference_qualified<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_static_member<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> has_static_linkage<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_noexcept<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>    <span class="co">// predicate for `noexcept`</span></span>
-<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_noexcept_clause<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_noexcept_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_noexcept_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>    <span class="co">// `explicit` present? - extension of P2996</span></span>
-<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>    <span class="co">// predicate for `explicit`</span></span>
-<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_explicit_clause<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_explicit_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_explicit_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>    <span class="co">// `constexpr` present?</span></span>
-<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_declared_constexpr<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>    <span class="co">// `consteval` present?</span></span>
-<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_declared_consteval<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
-<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Function template parameters</span></span>
-<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> parameters_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
-<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> parameter_list<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
-<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> forward_parameter_list<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
-<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>    <span class="co">//</span></span>
-<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_trailing_requires_clause<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_trailing_requires_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_trailing_requires_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
-<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Returns the reflection of the declaration of a template</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> declaration_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Replacement</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> replace<span class="op">(</span>info declaration, info replace_this, info with_this<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Projection</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> project_parameters<span class="op">(</span>info declaration, info projection_function<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Returns given declaration with a changed name</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_name<span class="op">(</span>info, string_view<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">//  Multiple explicit specializations and/or partial specializations</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> template_alternatives_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Template parameters vector</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> template_parameters_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Comma-separated template parameter list</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> template_parameter_list<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Attributes - extension of semantics in P3385</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> attributes_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_attribute<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> remove_attribute<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Template-level requires clause</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_requires_clause<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_requires_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_requires_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Is this the reflection of the primary template declaration?</span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_primary_template<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Overloads of a given function name</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> overloads_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Inline specifier present?</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_inline<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>    <span class="co">// cvref qualifiers and others - extensions of semantics in P2996</span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_const<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_explicit<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_volatile<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_rvalue_reference_qualified<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_lvalue_reference_qualified<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_static_member<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> has_static_linkage<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_noexcept<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>    <span class="co">// predicate for `noexcept`</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_noexcept_clause<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_noexcept_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_noexcept_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>    <span class="co">// `explicit` present? - extension of P2996</span></span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>    <span class="co">// predicate for `explicit`</span></span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_explicit_clause<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_explicit_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_explicit_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>    <span class="co">// `constexpr` present?</span></span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_declared_constexpr<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>    <span class="co">// `consteval` present?</span></span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> is_declared_consteval<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span>;</span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Function template parameters</span></span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> parameters_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> parameter_list<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> forward_parameter_list<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span>;</span>
+<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>    <span class="co">//</span></span>
+<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> set_trailing_requires_clause<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_trailing_requires_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> add_trailing_requires_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span> <span class="op">-&gt;</span> info;</span>
+<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <h3 data-number="3.1.1" id="declaration_of"><span class="header-section-number">3.1.1</span>
 <code class="sourceCode cpp">declaration_of</code><a href="#declaration_of" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> declaration_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> declaration_of<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Returns the reflection of the declaration of a type or template.
@@ -1330,7 +1427,7 @@ slightly modified declaration before splicing it.</p>
 <code class="sourceCode cpp">set_name</code><a href="#set_name" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>info set_name<span class="op">(</span>info, string_view new_name<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>info set_name<span class="op">(</span>info, string_view new_name<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Given a reflection, returns a reflection that is identical except for
@@ -1338,30 +1435,30 @@ the name which is <code class="sourceCode cpp">new_name</code>.
 Example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> f <span class="op">=</span> <span class="op">^^</span>fun;</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">)</span>, <span class="st">&quot;my_fun&quot;</span><span class="op">)):]</span> <span class="op">{</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="op">[:</span>f<span class="op">:]&lt;</span>\tokens<span class="op">(</span>template_parameters_of<span class="op">(</span>f<span class="op">))&gt;(</span>\tokens<span class="op">(</span>forward_parameter_list<span class="op">(</span>f<span class="op">)))</span>;</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent code:</span></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co">// template &lt;typename T&gt;</span></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co">// void my_fun(const T&amp; value) {</span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co">//   return fun&lt;T&gt;(value);</span></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co">// }</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> f <span class="op">=</span> <span class="op">^^</span>fun;</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">)</span>, <span class="st">&quot;my_fun&quot;</span><span class="op">)):]</span> <span class="op">{</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="op">[:</span>f<span class="op">:]&lt;</span>\tokens<span class="op">(</span>template_parameters_of<span class="op">(</span>f<span class="op">))&gt;(</span>\tokens<span class="op">(</span>forward_parameter_list<span class="op">(</span>f<span class="op">)))</span>;</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent code:</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co">// template &lt;typename T&gt;</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co">// void my_fun(const T&amp; value) {</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="co">//   return fun&lt;T&gt;(value);</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co">// }</span></span></code></pre></div>
 </blockquote>
 </div>
 <h3 data-number="3.1.3" id="template_alternatives_of"><span class="header-section-number">3.1.3</span>
 <code class="sourceCode cpp">template_alternatives_of</code><a href="#template_alternatives_of" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> template_alternatives_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> template_alternatives_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>In addition to general template declarations, a class template or a
@@ -1369,12 +1466,12 @@ variable template may declare explicit specializations and/or partial
 specializations. Example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Primary template declaration</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">typename</span> A, <span class="kw">auto</span> x<span class="op">&gt;</span> <span class="kw">class</span> C;</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Explicit specialization</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">class</span> C<span class="op">&lt;</span><span class="dt">int</span>, std<span class="op">::</span>allocator, <span class="dv">42</span><span class="op">&gt;</span> <span class="op">{}</span>;</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Partial specialization</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">class</span> C<span class="op">&lt;</span>T, std<span class="op">::</span>allocator, <span class="dv">100</span><span class="op">&gt;</span> <span class="op">{}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Primary template declaration</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span><span class="op">&gt;</span> <span class="kw">typename</span> A, <span class="kw">auto</span> x<span class="op">&gt;</span> <span class="kw">class</span> C;</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Explicit specialization</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">class</span> C<span class="op">&lt;</span><span class="dt">int</span>, std<span class="op">::</span>allocator, <span class="dv">42</span><span class="op">&gt;</span> <span class="op">{}</span>;</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Partial specialization</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">class</span> C<span class="op">&lt;</span>T, std<span class="op">::</span>allocator, <span class="dv">100</span><span class="op">&gt;</span> <span class="op">{}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Each specialization must be accessible for reflection in separation
@@ -1398,14 +1495,14 @@ Declarations are returned in syntactic order. This is important because
 a specialization may depend on a previous one, as shown below:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Primary declaration</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">struct</span> A <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Explicit specialization</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> A<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Explicit specialization, depends on the previous one</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> A<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">:</span> A<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Partial specialization, may depend on both previous ones</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span> <span class="kw">struct</span> A<span class="op">&lt;</span>std<span class="op">::</span>tuple<span class="op">&lt;</span>T, U<span class="op">&gt;&gt;</span> <span class="op">:</span> A<span class="op">&lt;</span>T<span class="op">&gt;</span>, A<span class="op">&lt;</span>U<span class="op">&gt;</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Primary declaration</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">struct</span> A <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Explicit specialization</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> A<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Explicit specialization, depends on the previous one</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">struct</span> A<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">:</span> A<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Partial specialization, may depend on both previous ones</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span> <span class="kw">struct</span> A<span class="op">&lt;</span>std<span class="op">::</span>tuple<span class="op">&lt;</span>T, U<span class="op">&gt;&gt;</span> <span class="op">:</span> A<span class="op">&lt;</span>T<span class="op">&gt;</span>, A<span class="op">&lt;</span>U<span class="op">&gt;</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>As a consequence of the source-level ordering, the primary
@@ -1413,21 +1510,21 @@ declaration’s reflection is always the first element of the returned
 vector. Example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">class</span> C;</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">class</span> C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{}</span>;</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">class</span> C<span class="op">&lt;</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, T<span class="op">&gt;&gt;</span> <span class="op">{}</span>;</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Get reflections for the primary and the two specializations</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> template_alternatives_of<span class="op">(^^</span>C<span class="op">)</span>;</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>r<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>r<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">==</span> <span class="op">^^</span>C<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">class</span> C;</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">class</span> C<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="op">{}</span>;</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">class</span> C<span class="op">&lt;</span>std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span>, T<span class="op">&gt;&gt;</span> <span class="op">{}</span>;</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Get reflections for the primary and the two specializations</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> template_alternatives_of<span class="op">(^^</span>C<span class="op">)</span>;</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>r<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>r<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">==</span> <span class="op">^^</span>C<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <h3 data-number="3.1.4" id="template_parameters_of"><span class="header-section-number">3.1.4</span>
 <code class="sourceCode cpp">template_parameters_of</code><a href="#template_parameters_of" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> template_parameters_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> template_parameters_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Given the reflection of a template,
@@ -1449,12 +1546,12 @@ and <code class="sourceCode cpp"><span class="op">^^{</span>_T2<span class="op">
 empty vector:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">class</span> A;</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">class</span> A<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>;</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">// r refers to A&lt;int&gt;</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> template_alternatives_of<span class="op">(^^</span>A<span class="op">)[</span><span class="dv">1</span><span class="op">]</span>;  <span class="co">// pick specialization</span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>template_parameters_of<span class="op">(</span>r<span class="op">).</span>empty<span class="op">())</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">class</span> A;</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">class</span> A<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>;</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co">// r refers to A&lt;int&gt;</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> template_alternatives_of<span class="op">(^^</span>A<span class="op">)[</span><span class="dv">1</span><span class="op">]</span>;  <span class="co">// pick specialization</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>template_parameters_of<span class="op">(</span>r<span class="op">).</span>empty<span class="op">())</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>For partial specializations of class templates,
@@ -1463,10 +1560,10 @@ parameters of the partial specialization (not those of the primary
 template). For example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">class</span> A;</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span> <span class="kw">class</span> A<span class="op">&lt;</span>std<span class="op">::</span>tuple<span class="op">&lt;</span>T, U<span class="op">&gt;&gt;</span>;</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> template_alternatives_of<span class="op">(^^</span>A<span class="op">)[</span><span class="dv">1</span><span class="op">]</span>;  <span class="co">// pick specialization</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>template_parameters_of<span class="op">(</span>r<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">class</span> A;</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T, <span class="kw">typename</span> U<span class="op">&gt;</span> <span class="kw">class</span> A<span class="op">&lt;</span>std<span class="op">::</span>tuple<span class="op">&lt;</span>T, U<span class="op">&gt;&gt;</span>;</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> template_alternatives_of<span class="op">(^^</span>A<span class="op">)[</span><span class="dv">1</span><span class="op">]</span>;  <span class="co">// pick specialization</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>template_parameters_of<span class="op">(</span>r<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Given a class template <code class="sourceCode cpp">A</code> that has
@@ -1482,7 +1579,7 @@ fails to evaluate to a constant expression.</p>
 <code class="sourceCode cpp">template_parameter_list</code><a href="#template_parameter_list" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> template_parameter_list<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> template_parameter_list<span class="op">(</span>info<span class="op">)</span> <span class="op">-&gt;</span> info;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Returns the result of
@@ -1496,9 +1593,9 @@ followed by
 <code class="sourceCode cpp">remove_attribute</code><a href="#attributes_of-add_attribute-remove_attribute" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> attributes_of<span class="op">(</span>info<span class="op">)</span>;</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>info add_attribute<span class="op">(</span>info, info<span class="op">)</span>;</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>info remove_attribute<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> attributes_of<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>info add_attribute<span class="op">(</span>info, info<span class="op">)</span>;</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>info remove_attribute<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p><code class="sourceCode cpp">attributes_of</code> returns all
@@ -1524,9 +1621,9 @@ returned.</p>
 <code class="sourceCode cpp">add_requires_clause_disjunction</code><a href="#set_requires_clause-add_requires_clause_conjunction-add_requires_clause_disjunction" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>info set_requires_clause<span class="op">(</span>info, info<span class="op">)</span>;</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>info add_requires_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span>;</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>info add_requires_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>info set_requires_clause<span class="op">(</span>info, info<span class="op">)</span>;</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>info add_requires_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span>;</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>info add_requires_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Given the reflection of a template,
@@ -1539,22 +1636,22 @@ existing
 clause in the template, if any, is ignored. Example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">64</span><span class="op">)</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> f <span class="op">=</span> <span class="op">^^</span>fun;</span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>set_requires_clause<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">)</span>, <span class="st">&quot;my_fun&quot;</span><span class="op">))</span>,</span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">^^{</span> <span class="kw">sizeof</span><span class="op">(</span>\tokens<span class="op">(</span>template_parameters_of<span class="op">(</span>f<span class="op">)[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">==</span> <span class="dv">128</span> <span class="op">}):]</span>;</span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent code:</span></span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="co">// template &lt;typename T&gt;</span></span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="co">// requires (sizeof(T) == 128)</span></span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="co">// void my_fun(const T&amp; value);</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">64</span><span class="op">)</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> f <span class="op">=</span> <span class="op">^^</span>fun;</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>set_requires_clause<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">)</span>, <span class="st">&quot;my_fun&quot;</span><span class="op">))</span>,</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">^^{</span> <span class="kw">sizeof</span><span class="op">(</span>\tokens<span class="op">(</span>template_parameters_of<span class="op">(</span>f<span class="op">)[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">==</span> <span class="dv">128</span> <span class="op">}):]</span>;</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent code:</span></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a><span class="co">// template &lt;typename T&gt;</span></span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a><span class="co">// requires (sizeof(T) == 128)</span></span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a><span class="co">// void my_fun(const T&amp; value);</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>The functions
@@ -1579,7 +1676,7 @@ fails to evaluate to a constant expression.</p>
 <code class="sourceCode cpp">is_primary_template</code><a href="#is_primary_template" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_primary_template<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_primary_template<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Returns
@@ -1594,19 +1691,19 @@ primary template and its explicit specializations or partial
 specializations. For example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">&gt;</span> <span class="kw">class</span> A;</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">class</span> A<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>;</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>is_primary_template<span class="op">(^^</span>A<span class="op">))</span>;</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>is_primary_template<span class="op">(</span>template_alternatives_of<span class="op">(^^</span>A<span class="op">)[</span><span class="dv">0</span><span class="op">]))</span>;</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>is_primary_template<span class="op">(</span>template_alternatives_of<span class="op">(^^</span>A<span class="op">)[</span><span class="dv">1</span><span class="op">]))</span>;</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>is_primary_template<span class="op">(^^</span><span class="dt">int</span><span class="op">))</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">&gt;</span> <span class="kw">class</span> A;</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;&gt;</span> <span class="kw">class</span> A<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span>;</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>is_primary_template<span class="op">(^^</span>A<span class="op">))</span>;</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>is_primary_template<span class="op">(</span>template_alternatives_of<span class="op">(^^</span>A<span class="op">)[</span><span class="dv">0</span><span class="op">]))</span>;</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>is_primary_template<span class="op">(</span>template_alternatives_of<span class="op">(^^</span>A<span class="op">)[</span><span class="dv">1</span><span class="op">]))</span>;</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>is_primary_template<span class="op">(^^</span><span class="dt">int</span><span class="op">))</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <h3 data-number="3.1.9" id="overloads_of"><span class="header-section-number">3.1.9</span>
 <code class="sourceCode cpp">overloads_of</code><a href="#overloads_of" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> overloads_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> overloads_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Returns an array of all overloads of a given function, usually passed
@@ -1617,11 +1714,11 @@ functions from function templates,
 <code class="sourceCode cpp">is_function_template</code> (<span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span>) can be used. Example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span>;</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> f<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;)</span>;</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Name f has two overloads present.</span></span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>overloads_of<span class="op">(^^</span>f<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span>;</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="dt">void</span> f<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;)</span>;</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Name f has two overloads present.</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>overloads_of<span class="op">(^^</span>f<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The order of overloads in the results is the same as encountered in
@@ -1645,7 +1742,7 @@ for all appropriate values of <code class="sourceCode cpp">i</code>.</p>
 <code class="sourceCode cpp">is_inline</code><a href="#is_inline" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_inline<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_inline<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Returns
@@ -1669,14 +1766,14 @@ possible to migrate this metafunction to a future revision of P2996.</p>
 <code class="sourceCode cpp">is_noexcept</code><a href="#is_const-is_explicit-is_volatile-is_rvalue_reference_qualified-is_lvalue_reference_qualified-is_static_member-has_static_linkage-is_noexcept" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_const<span class="op">(</span>info<span class="op">)</span>;</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_explicit<span class="op">(</span>info<span class="op">)</span>;</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_volatile<span class="op">(</span>info<span class="op">)</span>;</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_rvalue_reference_qualified<span class="op">(</span>info<span class="op">)</span>;</span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_lvalue_reference_qualified<span class="op">(</span>info<span class="op">)</span>;</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_static_member<span class="op">(</span>info<span class="op">)</span>;</span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> has_static_linkage<span class="op">(</span>info<span class="op">)</span></span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_noexcept<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_const<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_explicit<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_volatile<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_rvalue_reference_qualified<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_lvalue_reference_qualified<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_static_member<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> has_static_linkage<span class="op">(</span>info<span class="op">)</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_noexcept<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Extends the homonym metafunctions defined by <span class="citation" data-cites="P2996R7"><a href="https://wg21.link/p2996r7" role="doc-biblioref">[P2996R7]</a></span> to function templates.</p>
@@ -1693,9 +1790,9 @@ clause, respectively, is predicated.</p>
 <code class="sourceCode cpp">add_noexcept_clause_disjunction</code><a href="#set_noexcept_clause-add_noexcept_clause_conjunction-add_noexcept_clause_disjunction" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>info set_noexcept_clause<span class="op">(</span>info, info<span class="op">)</span>;</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>info add_noexcept_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span>;</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>info add_noexcept_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>info set_noexcept_clause<span class="op">(</span>info, info<span class="op">)</span>;</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>info add_noexcept_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span>;</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>info add_noexcept_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Given the reflection of a template,
@@ -1708,22 +1805,22 @@ existing
 clause in the template, if any, is ignored. Example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="kw">noexcept</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">64</span><span class="op">)</span></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> f <span class="op">=</span> <span class="op">^^</span>fun;</span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span></span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>set_noexcept_clause<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">)</span>, <span class="st">&quot;my_fun&quot;</span><span class="op">))</span>,</span>
-<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">^^{</span> <span class="kw">sizeof</span><span class="op">(</span>\tokens<span class="op">(</span>template_parameters_of<span class="op">(</span>f<span class="op">)[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">==</span> <span class="dv">128</span> <span class="op">}):]</span>;</span>
-<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
-<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent code:</span></span>
-<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a><span class="co">// template &lt;typename T&gt;</span></span>
-<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a><span class="co">// noexcept (sizeof(T) == 128)</span></span>
-<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a><span class="co">// void my_fun(const T&amp; value);</span></span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="kw">noexcept</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">64</span><span class="op">)</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> f <span class="op">=</span> <span class="op">^^</span>fun;</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>set_noexcept_clause<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">)</span>, <span class="st">&quot;my_fun&quot;</span><span class="op">))</span>,</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">^^{</span> <span class="kw">sizeof</span><span class="op">(</span>\tokens<span class="op">(</span>template_parameters_of<span class="op">(</span>f<span class="op">)[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">==</span> <span class="dv">128</span> <span class="op">}):]</span>;</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent code:</span></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a><span class="co">// template &lt;typename T&gt;</span></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a><span class="co">// noexcept (sizeof(T) == 128)</span></span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a><span class="co">// void my_fun(const T&amp; value);</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>The functions
@@ -1750,9 +1847,9 @@ fails to evaluate to a constant expression.</p>
 <code class="sourceCode cpp">add_explicit_clause_disjunction</code><a href="#set_explicit_clause-add_explicit_clause_conjunction-add_explicit_clause_disjunction" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>info set_explicit_clause<span class="op">(</span>info, info<span class="op">)</span>;</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>info add_explicit_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span>;</span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>info add_explicit_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>info set_explicit_clause<span class="op">(</span>info, info<span class="op">)</span>;</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>info add_explicit_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span>;</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>info add_explicit_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Given the reflection of a template,
@@ -1786,8 +1883,8 @@ fails to evaluate to a constant expression.</p>
 <code class="sourceCode cpp">is_declared_consteval</code><a href="#is_declared_constexpr-is_declared_consteval" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_declared_constexpr<span class="op">(</span>info<span class="op">)</span>;</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_declared_consteval<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_declared_constexpr<span class="op">(</span>info<span class="op">)</span>;</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> is_declared_consteval<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Returns
@@ -1802,7 +1899,7 @@ respectively. In all other cases, returns
 <code class="sourceCode cpp">parameters_of</code><a href="#parameters_of" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> parameters_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>vector<span class="op">&lt;</span>info<span class="op">&gt;</span> parameters_of<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Returns an array of token sequences containing the parameter names of
@@ -1824,7 +1921,7 @@ etc).</p>
 <code class="sourceCode cpp">parameter_list</code><a href="#parameter_list" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>info parameter_list<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>info parameter_list<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Convenience function that returns the parameters returned by
@@ -1834,7 +1931,7 @@ comma-separated list. The result is returned as a token sequence.</p>
 <code class="sourceCode cpp">forward_parameter_list</code><a href="#forward_parameter_list" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>info forward_parameter_list<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>info forward_parameter_list<span class="op">(</span>info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Convenience function that returns the parameters returned by
@@ -1848,9 +1945,9 @@ spliced in a call to foward all parameters to another function.</p>
 <code class="sourceCode cpp">add_trailing_requires_clause_disjunction</code><a href="#set_trailing_requires_clause-add_trailing_requires_clause_conjunction-add_trailing_requires_clause_disjunction" class="self-link"></a></h3>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>info set_trailing_requires_clause<span class="op">(</span>info, info<span class="op">)</span>;</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>info add_trailing_requires_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span>;</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>info add_trailing_requires_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>info set_trailing_requires_clause<span class="op">(</span>info, info<span class="op">)</span>;</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>info add_trailing_requires_clause_conjunction<span class="op">(</span>info, info<span class="op">)</span>;</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>info add_trailing_requires_clause_disjunction<span class="op">(</span>info, info<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Given the reflection of a template,
@@ -1863,22 +1960,22 @@ existing
 clause in the template, if any, is ignored. Example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">64</span><span class="op">)</span></span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> f <span class="op">=</span> <span class="op">^^</span>fun;</span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span></span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>set_trailing_requires_clause<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">)</span>, <span class="st">&quot;my_fun&quot;</span><span class="op">))</span>,</span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">^^{</span> <span class="kw">sizeof</span><span class="op">(</span>\tokens<span class="op">(</span>template_parameters_of<span class="op">(</span>f<span class="op">)[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">==</span> <span class="dv">128</span> <span class="op">}):]</span>;</span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent code:</span></span>
-<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a><span class="co">// template &lt;typename T&gt;</span></span>
-<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="co">// requires (sizeof(T) == 128)</span></span>
-<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a><span class="co">// void my_fun(const T&amp; value);</span></span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="kw">requires</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">64</span><span class="op">)</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fun<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> value<span class="op">)</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> f <span class="op">=</span> <span class="op">^^</span>fun;</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  queue_injection<span class="op">(^^{</span></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[:</span>\<span class="op">(</span>set_trailing_requires_clause<span class="op">(</span>set_name<span class="op">(</span>declaration_of<span class="op">(</span>f<span class="op">)</span>, <span class="st">&quot;my_fun&quot;</span><span class="op">))</span>,</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">^^{</span> <span class="kw">sizeof</span><span class="op">(</span>\tokens<span class="op">(</span>template_parameters_of<span class="op">(</span>f<span class="op">)[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">==</span> <span class="dv">128</span> <span class="op">}):]</span>;</span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Equivalent code:</span></span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a><span class="co">// template &lt;typename T&gt;</span></span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a><span class="co">// requires (sizeof(T) == 128)</span></span>
+<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a><span class="co">// void my_fun(const T&amp; value);</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>The functions <code class="sourceCode cpp">add_trailing_requires_clause_conjunction</code>
@@ -1927,11 +2024,11 @@ members in lexical order. Otherwise, attempts to implement
 templates. Consider:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Container <span class="op">{</span></span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> size_type <span class="op">=</span> <span class="dt">size_t</span>;</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    size_type size<span class="op">()</span> <span class="kw">const</span>;</span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Container <span class="op">{</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> size_type <span class="op">=</span> <span class="dt">size_t</span>;</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    size_type size<span class="op">()</span> <span class="kw">const</span>;</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="future-work"><span class="header-section-number">5</span> Future
@@ -1959,10 +2056,6 @@ Reflection in Reflection for C++26. <a href="https://wg21.link/p3096r3"><div cla
 <div id="ref-P3157R1" class="csl-entry" role="doc-biblioentry">
 [P3157R1] Andrei Alexandrescu, Barry Revzin, Bryce Lelbach, Michael
 Garland. 2024-05-22. Generative Extensions for Reflection. <a href="https://wg21.link/p3157r1"><div class="csl-block">https://wg21.link/p3157r1</div></a>
-</div>
-<div id="ref-P3294R1" class="csl-entry" role="doc-biblioentry">
-[P3294R1] Barry Revzin, Andrei Alexandrescu, Daveed Vandevoorde.
-2024-07-16. Code Injection with Token Sequences. <a href="https://wg21.link/p3294r1"><div class="csl-block">https://wg21.link/p3294r1</div></a>
 </div>
 <div id="ref-P3294R2" class="csl-entry" role="doc-biblioentry">
 [P3294R2] Andrei Alexandrescu, Barry Revzin, and Daveed Vandevoorde.

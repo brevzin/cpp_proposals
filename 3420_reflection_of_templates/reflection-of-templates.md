@@ -25,10 +25,11 @@ Since [@P3420R0]:
 - for implementation friendliness, removed metafunctions returning code that potentially contains a mix of dependent and non-dependent identifiers as token sequences
 - consequently, no need for the "as-if" rule for compiler-returned token sequences
 - added _replacement_ and _projection_ as fundamental transformations
+- replaced "token sequence" with "construct sequence" throughout to keep in sync with [@P3294R3].
 
 # Motivation
 
-A key trait that makes a reflection facility powerful is *completeness*&mdash;the ability to reflect the entire source language. Current proposals facilitate reflection of certain declarations in a namespace or a `struct`/`class`/`union` definition. Although [@P2996R7]'s `members_of` metafunction includes template members (function template and class template declarations), that proposal does not offer primitives for reflection of template declarations themselves. In this proposal, we aim to define a comprehensive API for reflection of C++ templates.
+A key trait that makes a reflection facility powerful is *completeness*&mdash;the ability to reflect the entire source language. Current proposals facilitate reflection of certain declarations in a namespace or a `struct`/`class`/`union` definition. Although [@P2996R7]'s `members_of` metafunction includes template members (function template and class template declarations), that proposal does not offer primitives for reflection of template declarations themselves. In this proposal we aim to define a comprehensive API for reflection of C++ templates.
 
 A powerful archetypal motivator&mdash;argued in [@P3157R1] and at length in the CppCon 2024 [talk](https://youtube.com/watch?v=H3IdVM4xoCU) "Reflection Is Not Contemplation"&mdash;is the *identity* metafunction. This function, given a class type, creates a replica of it, crucially providing the ability to make minute changes to the copy, such as changing its name, adding or removing members, changing the signature of existing member functions, and so on. By means of example:
 
@@ -82,22 +83,65 @@ In order to reflect on nontrivial C++ code and splice it back with controlled mo
 
 Conversely, reflection code would be seriously hamstrung if it lacked the ability to reflect on template code (and subsequently manipulate and generate related code), especially because templates are ubiquitous in today's C++ codebases. Furthermore, limiting reflection to instantiations of class templates (which would fit the charter of P2996) does not suffice because class templates commonly define inner function templates (e.g., every instantiation of `std::vector` defines several constructor templates and other function templates such as `insert` and `emplace_back`). (Nontemplate classes may, of course, also define class templates and function templates within.) Therefore, to the extent that reflection of C++ declarations is deemed useful, reflection of templates is essential.
 
-Given that many elements of a template cannot be semantically analyzed early (at template definition time), this proposal adopts a two-pronged strategy for reflecting components of template declarations:
+Given that many elements of a template cannot be semantically analyzed early (at template definition time), this proposal adopts a simple and robust strategy for reflecting components of template declarations. First and foremost, the unit of reflection for template declarations is the entire declaration (as opposed to parts of the declaration, such as the `requires` clause or the `noexcept` clause). This keeps the complexity of template declarations encapsulated within the reflection handle and away from user code&mdash;at user level, there's never a need to parse a declaration and seldom a need to compose a complex template declaration from scratch. Our proposed metafunction `declaration_of($h$)` yields a reflection of the declaration of an entity reflected by `$h$`, suitable for injection. As a trivial example:
 
-- template parameter names and function parameter names can be reflected as *token sequences*, as proposed in [@P3294R2];
-- the other elements of a template declaration&mdash;constraints, predicate in the `noexcept` or `explicit` specifiers, default template arguments, and default function arguments&mdash;are kept together with the template declaration;
-- new declarations are obtained from existing declarations in a functional manner, and the "deltas" are expressed as token sequences.
+```cpp
+template <typename T> void f(T, int);
+consteval {
+  using namespace std::meta;
+  // Equivalent to a (re)declaration of f.
+  queue_injection(^^{ \(declaration_of(^^f)); });
+}
+```
 
-The initial proposal [@P3420R0] allowed accessing all parts of a template definition as token sequences. However, for some implementations performing such extrication was deemed difficult. Also, separating parts of a function declaration made it difficult to define how names are looked up after splicing.
+The `consteval` block above injects a declaration of `f` within the current namespace, which is correct but hardly useful. This brings us to the second important element of this proposal's strategy: new declarations are obtained in a functional manner by calling metafunctions against reflections of existing declarations (i.e., obtained by means of `declaration_of`). As another example, consider we want to declare another function `g` that has the same signature as `f`:
+
+```cpp
+template <typename T> void f(T, int);
+consteval {
+  using namespace std::meta;
+  // Equivalent to the declaration:
+  // template <typename T> void g(T);
+  queue_injection(^^{ \(set_name(declaration_of(^^f), "g")); });
+}
+```
+
+One immediate question is&mdash;why couldn't we simply write `set_name(^^f, "g")` instead of `set_name(declaration_of(^^f), "g")`? Clearly the `set_name` metafunction could easily be made to work in both cases. We consider the longer form clearer; a casual read of `set_name(^^f, "g")` may leave the impression that the metafunction modifies the actual function `f`. Throughout this proposal we foster `declaration_of` as a means to obtain a "copy" of a declaration, which can be subsequently manipulated and spliced back into code.
+
+Last but not least, let's take a look at generating an actual definition for `g`, which will illustrate the third and last essential element of the strategy espoused by this proposal: handling parameter names of declarations. Assume, for example, we simply want `g` to forward its arguments transparently to `f`. From within `g`, we'd need to call `f(std::forward<decltype(x)>(x), std::forward<decltype(y)>(y))`, where `x` and `y` are the names of `g`'s parameters, and rely on deduction. A more general approach would be to use `f<T>` instead of `f` to make sure the correct instantiation of `f` is called (without relying on template argument deduction), so we'll focus on generating the latter code. Either way, the task immediately raises the question of name assignment and lookup&mdash;where do we take the names `T`, `x`, and `y` from? To make matters even more challenging, note that the function parameters do not even have names in the declaration of `f` that we started with, so `x` and `y` are nowhere to be found&mdash;reflection must synthesize them.
+
+For handling template parameter and function parameter names, this proposal fosters metafunctions that reflect parameter lists wholesale instead of naming schemata or conventions. Each (template and function) parameter list can be reflected as an `std::meta::info` object that can be manipulated and spliced into generated code, as shown below:
+
+```cpp
+template <typename T> void f(T, int);
+consteval {
+  using namespace std::meta;
+  // Equivalent to the definition:
+  // template <typename T> void g(T x, int y) {
+  //   return f<T>(std::forward<decltype(x)>(x), std::forward<decltype(y)>(y));
+  // }
+  queue_injection(^^{
+    \(set_name(declaration_of(^^f), "g")) {
+      return f<\(template_parameter_list(^^f))>(\(forward_parameter_list(^^f)));
+    }
+  });
+}
+```
+
+The proposed `template_parameter_list(rt)` primitive reflects (as a spliceable `std::meta::info` object) the parameter list of a template reflected by `rt`. Splicing the resulting reflection handle results in a copy of the parameter list, with commas and ellipses inserted as appropriate. The names of the parameters are autogenerated (user code can consider them unambiguous) and in error messages the compiler may stylize them as `_T0`, `_T1`, `__p0`, `__p1`, etc. Given that the parameter names are specific to a given declaration, they can be used only in a definition obtained from `declaration_of` for the same declaration.
+
+Similarly, the proposed `parameter_list(rf)` metafunction offers a comma-separated list of the function or function template reflected by `rf`, suitable for splicing. Two important additional cases are also supported: `forward_parameter_list` (used above) and `move_parameter_list`, which pass the parameters through `std::forward` and `std::move`, respectably. Splicing the `std::meta::info` returned by these functions allows generated code to access parameters of a function created by using `declaration_of(rf)`, as illustrated above. Again, the names of the parameters are compiler-generated and can be considered world-unique.
+
+The initial proposal [@P3420R0] allowed accessing all parts of a template definition as construct sequences. However, for some implementations performing such extrication was deemed difficult. Also, separating parts of a function declaration made it difficult to define how names are looked up after splicing. The current approach&mdash;reflecting entire declarations, creating new declarations from the reflection of existing ones, and accessing parameters implicitly&mdash;eschews many of the original proposal's issues without giving away flexibility.
 
 We paid special attention to preserve the spirit and design style of [@P2996R7] and to ensure seamless interoperation with it.
 
 ## Example: Logging and Forwarding
 
-As a conceptual stylized example, consider the matter of creating a function template `logged::func` for any free function template `func` in such a way that `logged::func` has the same signature and semantics as `func`, with the added behavior that it logs the call and its parameters prior to execution. We illustrate the matter for function templates because it is more difficult (and more complete) than the case of simple functions.
+As a more elaborate example, consider the matter of creating a function template `logged::func` for any free function template `func` in such a way that `logged::func` has the same signature and semantics as `func`, with the added behavior that it logs the call and its parameters prior to execution. We illustrate the matter for function templates because it is more difficult (and more complete) than the case of simple functions.
 
 ```cpp
-struct Widget {};
+struct Widget {};  // for exposition purposes
 
 template <typename T>
 requires std::is_copy_constructible_v<T>
@@ -115,9 +159,9 @@ namespace logged {
 consteval void make_logged(std::meta::info f) {
   using namespace std::meta;
   namespace_inject(^^::logged, ^^{
-    [:\(declaration_of(f)):] {
-      logger("Calling " + identifier_of(f) + "(", \tokens(parameter_list(f)), ")");
-      return [:f:]<\tokens(template_parameter_list(f))>(\tokens(forward_parameter_list(f)));
+    \(declaration_of(f)) {
+      logger("Calling " + identifier_of(f) + "(", \(parameter_list(f)), ")");
+      return [:f:]<\(template_parameter_list(f))>(\(forward_parameter_list(f)));
     }
   });
 }
@@ -130,24 +174,20 @@ consteval {
 // namespace logged {
 //     template <typename T>
 //     requires std::is_copy_constructible_v<T>
-//     void fun(const T& value, const ::Widget& __p0) {
-//         logger("Call to ", "fun", "(", value, __p0, ")");
-//         return fun<T>(std::forward<T>(value), std::forward<T>(__p0));
+//     void fun(const T& __p0, const ::Widget& __p1) {
+//         logger("Call to ", "fun", "(", _p0, __p1, ")");
+//         return ::fun<T>(std::forward<decltype(__p0)>(__p0), std::forward<decltype(__p1)>(__p1));
 //     }
 // }
 ```
 
-The code uses `std::meta::namespace_inject` as defined in [@P3294R1] to create a function definition from a token sequence in a given namespace, in this case `logged`. We identify a few high-level metafunctions that facilitate such manipulation of template declarations. First, `std::meta::declaration_of(std::meta::info f)` returns a reflection handle (i.e. an `std::meta::info` value) corresponding to the declaration (prototype) of the function template reflected by `f`. The template parameters, `requires` and `noexcept` clauses (if present), function parameters, and return type are all part of the returned reflection. Most importantly, the declaration can be modified and spliced back into code.
+The code uses `std::meta::namespace_inject` as defined in [@P3294R2] to create a function definition from a token sequence in a given namespace, in this case `logged`. The generative side of the code uses again `std::meta::declaration_of` to get a reflection handle corresponding to the declaration of the function template reflected by `f`. The template parameters, `requires` and `noexcept` clauses (if present), function parameters, and return type are all part of the returned reflection handle. Most importantly, the declaration can be modified and spliced back into code.
 
-Names used in `declaration_of` are handled in a hygienic manner that prevents unintended binding. All non-dependent names are looked up in the original declaration. Thus, even if namespace `logged` defines a type called `Widget`, the declaration returned by `declaration_of` uses the same `Widget` as the original declaration (which is why we used `::Widget` in the comment representing equivalent code). Dependent names are, as expected, not looked up. The name of the function itself also information about what scope `f` was defined in (in our example the global namespace), but the primitive `namespace_inject` ignores that information and injects a new function of the same name in the given namespace.
+Names used in `declaration_of` are handled in a hygienic manner that prevents unintended binding. All non-dependent names are looked up in the original declaration. Thus, although namespace `logged` defines a type called `Widget`, the declaration returned by `declaration_of` uses the same `Widget` as the original declaration (which is why we used `::Widget` in the comment representing equivalent code). Dependent names are, as expected, not looked up. The name of the function itself also carries information about what scope `f` was defined in (in our example the global namespace), but the primitive `namespace_inject` ignores that information and injects a new function of the same name in the given namespace.
 
-The metafunction `template_parameter_list(f)` returns, for the reflection `f` of a function template, a token sequence consisting of the comma-separated list of that function's template parameters. That token sequence can be spliced in code that generates the instantiation of `[:f:]` or a template with similar parameters. The names of the parameters are implementation-defined and bear no relationship with the user-given parameter names in the declaration of `f`; this avoids possible ambiguities created by duplicate declarations and also sidesteps awkward issues such as handling unnamed parameters. User code may assume each parameter name is world-unique, which implies that `template_parameter_list(f)` is meaningful only from within a declaration created with `declaration_of` (or from within the function reflected by `f` itself).
+The rest of the `make_logged` metafunction uses `template_parameter_list`, `parameter_list`, and `forward_parameter_list` in concert to first issue a call to `logger` and then forward the call to the original function.
 
-Next, `parameter_list(f)` produces a token sequence consisting of the comma-separated list of the parameters of `f`, with pack expansion suffix where applicable. The list can be spliced in code that passes the function parameters to another function call. In our case, `parameter_list` is used to pass all parameters to template function `logger`. Just like with `template_parameter_list`, the parameter names are chosen by the implementation and can be considered world-unique.
-
-Finally, `forward_parameter_list(f)` creates the tokens of a call to the function reflected by `f` with the appropriate insertion of calls to `std::forward`, again with pack expansion suffix where appropriate. The example uses `forward_parameter_list` to pass the generated function's arguments down to the implementation.
-
-To recap, we propose generating new functions (or function templates) from existing ones by splicing `declaration_of` for copying the function prototype, followed by the new function body as a token sequence. To access and pass around template parameters (when appropriate) and function parameters, we propose the helper metafunctions `template_parameter_list`, `parameter_list`, and `forward_parameter_list`. These primitives allow manipulating parameters without needing to name them explicitly.
+To recap, we propose generating new functions (or function templates) from existing ones by splicing `declaration_of` for copying the function prototype, followed by the new function body as a construct sequence. To access and pass around template parameters and function parameters (when appropriate), we propose the helper metafunctions `template_parameter_list`, `parameter_list`, and `forward_parameter_list`. These primitives allow manipulating parameters without needing to name them explicitly.
 
 ## Example: `logging_vector`
 
@@ -163,28 +203,28 @@ public:
   consteval {
     template for (constexpr auto r : get_public_members(^^std::vector<T, A>)) {
       if (is_type_alias(r) || is_class_type(r)) {
-        queue_injection(^^{ using \id(identifier_of(r)) = [:\(r):]; });
+        queue_injection(^^{ using \id(identifier_of(r)) = \(r); });
       } else if (is_function(r) && !is_special_member_function(r)) {
         queue_injection(^^{
-          [:\(declaration_of(r)):] {
+          \(declaration_of(r)) {
             logger("Calling ", display_string_of(^^std::vector<T, A>), "::",
-              identifier_of(r), "(", \tokens(parameter_list(r)), ")");
-            return data.[:r:](\tokens(forward_param_list_of(r)));
+              identifier_of(r), "(", \(parameter_list(r)), ")");
+            return data.[:r:](\(forward_param_list_of(r)));
           }
         });
       } else if (is_function_template(r) && !is_constructor(r)) {
         queue_injection(^^{
-          [:\(declaration_of(r)):] {
-            logger("Calling ", identifier_of(^^std::vector<T, A>), "::",
-              identifier_of(r), "(", \tokens(parameter_list(r)), ")");
-            return data.template [:r:]<\tokens(template_parameter_list(r))>(
-              \tokens(forward_parameters_list(r))
+          \(declaration_of(r)) {
+            logger("Calling ", display_string_of(^^std::vector<T, A>), "::",
+              identifier_of(r), "(", \(parameter_list(r)), ")");
+            return data.template [:r:]<\(template_parameter_list(r))>(
+              \(forward_parameters_list(r))
             );
           }
         });
       } else if (is_constructor(r)) {
         queue_injection(^^{
-          [:\(declaration_of(r)):] : data(\tokens(forward_parameters_list(r))) {}
+          \(declaration_of(r)) : data(\(forward_parameters_list(r))) {}
         });
       } else {
         // Ignore other nested declarations.
@@ -322,7 +362,7 @@ namespace std::meta {
     // Projection
     consteval auto project_parameters(info declaration, info projection_function) -> info;
     // Returns given declaration with a changed name
-    consteval auto set_name(info) -> info;
+    consteval auto set_name(info, string_view) -> info;
     //  Multiple explicit specializations and/or partial specializations
     consteval auto template_alternatives_of(info) -> vector<info>;
     // Template parameters vector
