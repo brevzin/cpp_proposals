@@ -6371,8 +6371,10 @@ consteval bool has_identifier(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then `true` when either the `$class-name$` of `$C$` is an identifier or `$C$` has a typedef name for linkage purposes. Otherwise, `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function. Otherwise, `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template. Otherwise, `false`.
-* [#.#]{.pnum} Otherwise, if `r` represents variable or a type alias, then `!has_template_arguments(r)`.
-* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, enumerator, non-static data member, template, namespace, or namespace alias, then `true`. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, then `false` if the declaration of that variable was expanded from a function parameter pack. Otherwise, `!has_template_arguments(r)`.
+* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, then `false` if the declaration of that structured binding was expanded from a structured binding pack. Otherwise, `true`.
+* [#.#]{.pnum} Otherwise, if `r` represents a type alias, then `!has_template_arguments(r)`.
+* [#.#]{.pnum} Otherwise, if `r` represents a enumerator, non-static data member, template, namespace, or namespace alias, then `true`. Otherwise, `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `has_identifier(type_of(r))`.
 * [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); `$N$ != -1`.
 
