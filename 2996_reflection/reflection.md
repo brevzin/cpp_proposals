@@ -2,7 +2,7 @@
 title: "Reflection for C++26"
 document: D2996R10
 date: today
-audience: CWG, LEWG, LWG
+audience: CWG, EWG, LWG
 author:
     - name: Wyatt Childers
       email: <wcc@edg.com>
@@ -23,6 +23,87 @@ toc: true
 toc-depth: 4
 tag: reflection
 ---
+
+# Design changes since P2996R4
+
+[@P2996R4] was forwarded to CWG in St. Louis (June 2024). In the time since, a few minor design changes have been shown to be necessary. We wish to now confirm these changes with EWG, as we believe there to be good likelihood that P2996 could reach Plenary in Hagenberg. The changes may be divided into two categories:
+
+- Changes to the core features introduced by the proposal, and
+- Changes to the rules for "injected declarations" (which in P2996 are only produced by `define_aggregate`).
+
+This distinction is a worthwhile one because a separate paper, [@P3569R0], seeks to split injected declarations (and the `define_aggregate` function) from P2996. While the P2996 authors' individual feelings vary, we do not collectively strongly oppose this suggestion - so long as both papers continue to target C++26 with the same priority. In this manner, we believe that P2996 can reach Plenary during Hagenberg, whereas the Injected Declarations paper can be ready for Sofia.
+
+Since this separation has not yet been brought to vote, we here include all design changes to P2996, such as it is, that have arisen since [@P2996R4] was approved in St. Louis. We believe that all such changes are minor and well-motivated; we hope you agree.
+
+## Changes to the core reflection proposal since P2996R4
+
+One small change is needed to the reflection operator.
+
+- [1]{.pnum} Application of the `^^` operator to a non-type template parameter
+  - **P2996R4**: Applying `^^` to a non-type template parameter, or to a `$pack-index-expression$`, gave a reflection of the value or object computed or designated by the operand ([expr.reflect]/10).
+  - **D2996R10**: Applying `^^` to such expressions is ill-formed ([expr.reflect]/6.4).
+  - **Rationale**: The operand following the `^^` of a `$reflect-expression$` is an unevaluated operand ([expr.context/1], [expr.reflect]/6.4). Supporting this necessarily requires that we evaluate said operand, which is at odds with its specification. Introducing some sort of "conditionally evaluated" operand machinery would be novel and unnecessary.
+  - **Instead**: Just use `std::meta::reflect_value` or `std::meta::reflect_object`, as appropriate.
+
+A few changes are needed to "consteval-only types" to ensure that objects of such types cannot reach runtime.
+
+- [#]{.pnum} Relaxed linkage restrictions on objects of consteval-only types
+  - **P2996R4**: Rigid rules prevented objects of consteval-only type from having module or external linkage ([basic.link]/4.9, [basic.types.general]).
+    - Included static data members, etc. Quite strict.
+  - **D2996R10**: All such restrictions have been removed.
+  - **Rationale**: Implementation experience at the intersection of modules and reflection proved that reflections can be imported across TUs and modules without issue.
+    - Try it with [Clang](https://godbolt.org/z/Y8cdd9sGo).
+
+- [#]{.pnum} Immediate-escalation of expressions of consteval-only type
+  - **D2996R10**: Every expression of consteval-only type is _immediate-escalating_ ([expr.const]/25).
+  - **Rationale**: Prevent any need for `std::meta::info` to persist to runtime (e.g., passing a reference to a `constexpr std::meta::info` to a runtime function).
+  - Fully implemented; try it with Clang [here](https://godbolt.org/z/5sfe7vdzE) and [here](https://godbolt.org/z/T3MY1Yqo4).
+
+- [#]{.pnum} Immediate-escalation of non-constexpr variables of consteval-only type
+  - **D2996R10**: Immediate-escalating functions containing non-constexpr variables of consteval-only type are immediate functions ([expr.const]/27.2.2).
+  - **Rationale**: Prevents default-constructed variables of consteval-only type (for which an expression does not necessarily appear) from reaching runtime.
+  - Fully implemented; try it with [Clang](https://godbolt.org/z/3asrnK13G).
+
+- [#]{.pnum} No "erasure" of consteval-only-ness from results of constant expressions.
+  - **D2996R10**: Pointer or reference results of constant expressions must have consteval-only type whenever the object that they point or reference into does.
+    - e.g., A `void *` pointer to a `constexpr std::meta::info` cannot be a result of a constant expression.
+  - Fully implemented; try it with [Clang](https://godbolt.org/z/n47ona1db).
+  - Still fine to type erase _within_ a constant expression (as seen [here](https://godbolt.org/z/E4faezfr3)).
+
+Only one small change is needed for splicers.
+
+- [#]{.pnum} A slight syntactic change is needed for template splicers.
+  - **P2994R4**: `$splice-template-name$` handled template splicers.
+    - Not the best distinction between "names" and "entities" (naturally, CWG set us straight ❤️).
+    - Wasn't entirely clear how some cases (e.g., CTAD, placeholder types) were supposed to work.
+  - **D2996R10**: Type template splicers are folded into `$splice-type-specifier$` ([dcl.type.splice]). Simple rule:
+    - Splicing a template as a type is spelled `typename [:R:]`.
+    - Splicing a template as an expression is spelled `template [:R:]`.
+  - Try it on godbolt with [Clang](https://godbolt.org/z/GKj5of839).
+
+## Changes to injected declarations since P2996R4
+
+Our framework for code injection as performed by `define_aggregate` has evolved quite a bit since P2996R4. When the evaluation of an expression calls `define_aggregate`, we say that the evaluation produces an _injected declaration_ of the completed type (try it on [godbolt](https://godbolt.org/z/PTeb9qqcW)).
+
+- [1]{.pnum} Recent revisions lock down the context from which `define_aggregate` can be called.
+  - **P2996R4**: `constexpr` variable initializers, immediate invocations, `$constant-expression$`s, `if constexpr` conditions ([expr.const]/21).
+  - **D2996R10**: Only from `consteval` blocks ([dcl.pre]). No other expressions that would evaluate `define_aggregate` can qualify as core constant expressions ([expr.const/10.27+]).
+  - **Rationale**: Other constructs have proven unsuitable for code injection due to e.g., template instantiation behavior, immediate-escalating expression behavior, etc.
+  - Fully implemented with Clang.
+
+- [#]{.pnum} The scope that a given expression can inject a declaration _into_ has been constrained.
+  - **P2996R4**: The wild west: No restrictions.
+  - **D2996R10**: No intervening function or class scope is allowed between the `consteval` block and the target scope of the injected declaration ([expr.const]/29).
+  - **Rationale**: Prevents the program from being able to use `define_aggregate` to observe failed substitutions, overload resolution order, etc.
+  - Fully implemented in Clang.
+
+- [#]{.pnum} Strengthening order of evaluation for core constant expressions removes the need for more IFNDR.
+  - **D2996R10**: During the evaluation of an expression as a core constant expresison, suboperands and subexpressions that are otherwise unsequenced or indeterminately sequenced are evaluated in lexical order.
+    - All four implementations already conform to this rule, and representatives of each have expressed that they have no concerns.
+
+The effort to bring reflection to C++ dates at least as far back as 2003 ([@N1471]). In the time since, the C++ community has unceasingly clamored for a robust reflection framework. P2996 stands on the shoulders of many papers that came before it, including (but not limited to) the influential proposals from the authors whose work produced the Reflection TS. We have the opportunity, this week, to bring this 21+ year journey to a historic close.
+
+Help us bring the world joy. Help us bring Reflection to C++26 this week. ❤️
 
 # Revision History
 
@@ -3759,15 +3840,6 @@ Add a new paragraph to the end of [intro.execution] specifying a stronger sequen
 ::: addu
 [12+]{.pnum} During the evaluation of an expression as a core constant expression ([expr.const]), evaluations of operands of individual operators and of subexpressions of individual expresssions that are otherwise either unsequenced or indeterminately sequenced are evaluated in lexical order.
 :::
-
-:::
-
-### [basic.start.static]{.sref} Static initialization {-}
-
-Clarify in paragraph 1 that variables with static storage duration can be initialized during translation.
-
-::: std
-[1]{.pnum} Variables with static storage duration are initialized [either during translation or]{.addu} as a consequence of program initiation. Variables with thread storage duration are initialized as a consequence of thread execution. Within each of these phases of initiation, initialization occurs as follows.
 
 :::
 
