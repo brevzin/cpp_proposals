@@ -3843,15 +3843,6 @@ Add a new paragraph to the end of [intro.execution] specifying a stronger sequen
 
 :::
 
-### [basic.start.static]{.sref} Static initialization {-}
-
-Clarify in paragraph 1 that variables with static storage duration can be initialized during translation.
-
-::: std
-[1]{.pnum} Variables with static storage duration are initialized [either during translation or]{.addu} as a consequence of program initiation. Variables with thread storage duration are initialized as a consequence of thread execution. Within each of these phases of initiation, initialization occurs as follows.
-
-:::
-
 ### [basic.lval]{.sref} Value category {-}
 
 Apply a drive-by fix to bullet 1.1 clarifying that a glvalue can also determine the identity of a non-static data member.
