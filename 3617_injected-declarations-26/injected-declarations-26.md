@@ -1275,6 +1275,311 @@ Replace `$static_assert-declaration$` with `$vacant-declaration$` in paragraph 1
 
 ## Library
 
+### [meta.reflection.synop] Header `<meta>` synopsis {-}
+
+Add new functions to `<meta>`
+
+::: std
+**Header `<meta>` synopsis**
+```diff
+#include <initializer_list>
+
+namespace std::meta {
+  // ...
+
+  // [meta.reflection.result], expression result reflection
+  template<class T>
+    consteval info reflect_value(const T& value);
+  template<class T>
+    consteval info reflect_object(T& object);
+  template<class T>
+    consteval info reflect_function(T& fn);
+
++ // [meta.reflection.define.aggregate], class definition generation
++ struct data_member_options;
++ consteval info data_member_spec(info type,
++                                 data_member_options options);
++ consteval bool is_data_member_spec(info r);
++ template <reflection_range R = initializer_list<info>>
++ consteval info define_aggregate(info type_class, R&&);
+
+  // [meta.reflection.annotation], annotation reflection
+ consteval vector<info> annotations_of(info item);
+ consteval vector<info> annotations_of(info item, info type);
+
+ template<class T>
+   consteval optional<T> annotation_of(info item);
+
+ template<class T>
+   consteval bool has_annotation(info item);
+ template<class T>
+   consteval bool has_annotation(info item, T const& value);
+
++ consteval info annotate(info item, info value, source_location loc = source_location::current());
+
+  // [meta.reflection.unary.cat], primary type categories
+  consteval bool is_void_type(info type);
+  consteval bool is_null_pointer_type(info type);
+  consteval bool is_integral_type(info type);
+  // ...
+}
+```
+:::
+
+### [meta.reflection.names] Reflection names and locations {-}
+
+::: std
+```cpp
+consteval bool has_identifier(info r);
+```
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` is an unnamed entity other than a class that has a typedef name for linkage purposes ([dcl.typedef]{.sref}), then `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then `true` when either the `$class-name$` of `$C$` is an identifier or `$C$` has a typedef name for linkage purposes. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, then `false` if the declaration of that variable was expanded from a function parameter pack. Otherwise, `!has_template_arguments(r)`.
+* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, then `false` if the declaration of that structured binding was expanded from a structured binding pack. Otherwise, `true`.
+* [#.#]{.pnum} Otherwise, if `r` represents a type alias, then `!has_template_arguments(r)`.
+* [#.#]{.pnum} Otherwise, if `r` represents a enumerator, non-static data member, template, namespace, or namespace alias, then `true`. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `has_identifier(type_of(r))`.
+
+::: addu
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); `$N$ != -1`.
+:::
+
+```cpp
+consteval string_view identifier_of(info r);
+consteval u8string_view u8identifier_of(info r);
+```
+
+[#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary literal encoding.
+
+[#]{.pnum} *Constant When*: `has_identifier(r)` is `true` and the identifier that would be returned (see below) is representable by `$E$`.
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type, then either the typedef name for linkage purposes or the identifier introduced by the declaration of the represented type.
+* [#.#]{.pnum} Otherwise, if `r` represents an entity, then the identifier introduced by the declaration of that entity.
+* [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `identifier_of(type_of(r))` or `u8identifier_of(type_of(r))`, respectively.
+
+::: addu
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); a `string` or `u8string` respectively containing the identifier `$N$` encoded with `$E$`.
+:::
+
+```cpp
+consteval source_location source_location_of(info r);
+```
+
+[7]{.pnum} *Returns*: If `r` represents a value, a non-class type, [or]{.rm} the global namespace, [or a data member description,]{.addu} then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
+:::
+
+### [meta.reflection.queries] Reflection queries {-}
+
+::: std
+```cpp
+consteval bool is_bit_field(info r);
+```
+
+[9]{.pnum} *Returns*: `true` if `r` represents a bit-field[, or if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}) for which `$W$` is not `-1`. Otherwise, `false`]{.addu}.
+
+```cpp
+consteval info type_of(info r);
+```
+
+[33]{.pnum} *Constant When*: `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, [or]{.rm} direct base class relationship[, or data member description]{.addu}.
+
+[#]{.pnum} *Returns*: If `r` represents an entity, object, or value, then a reflection of the type of what is represented by `r`. Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class. [Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), a reflection of the type `$T$`.]{.addu}
+:::
+
+### [meta.reflection.layout] Reflection layout queries {-}
+
+::: std
+```cpp
+consteval size_t size_of(info r);
+```
+
+[5]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, [or]{.rm} direct base class relationship, [or data member description]{.addu}. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+
+[#]{.pnum} *Returns*: If `r` represents a non-static data member whose corresponding subobject has type `$T$`, [or a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}),]{.addu} then `sizeof($T$)`. Otherwise, if `dealias(r)` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
+
+[The subobject corresponding to a non-static data member of reference type has the same size and alignment as the corresponding pointer type.]{.note}
+
+```cpp
+consteval size_t alignment_of(info r);
+```
+
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, [or]{.rm} direct base class relationship, [or data member description]{.addu}. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `dealias(r)` represents a type, variable, or object, then the alignment requirement of the entity or object.
+* [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `alignment_of(type_of(r))`.
+* [#.#]{.pnum} Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`.
+
+::: addu
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}). If `$A$ != 1`, then the value `$A$`. Otherwise `alignof($T$)`.
+:::
+
+```cpp
+consteval size_t bit_size_of(info r);
+```
+
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, unnamed bit-field, [or]{.rm} direct base class relationship[, or data member description]{.addu}. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+
+[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a bit-field or unnamed bit-field with width `$W$`, then `$W$`. [If `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), then `$W$` if `$W$ != -1`, otherwise `sizeof($T$) * CHAR_BIT`.]{.addu} Otherwise, `CHAR_BIT * size_of(r)`.
+:::
+
+### [meta.reflection.define.aggregate] Reflection class definition generation  {-}
+
+::: std
+::: addu
+
+[1]{.pnum} The classes `data_member_options` and `name_type` are consteval-only types ([basic.types.general]), and are not a structural types ([temp.param]).
+
+```cpp
+struct data_member_options {
+  struct name_type {
+    template<class T> requires constructible_from<u8string, T>
+      consteval name_type(T &&);
+
+    template<class T> requires constructible_from<string, T>
+      consteval name_type(T &&);
+
+    variant<u8string, string> $contents$;    // $exposition only$
+  };
+
+  optional<name_type> name;
+  optional<int> alignment;
+  optional<int> bit_width;
+  bool no_unique_address = false;
+};
+```
+
+```cpp
+template <class T> requires constructible_from<u8string, T>
+consteval data_member_options::name_type(T&& value);
+```
+
+[#]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value)`.
+
+```cpp
+template<class T> requires constructible_from<string, T>
+consteval data_member_options::name_type(T&& value);
+```
+[#]{.pnum} *Effects*: Initializes `$contents$` with `string(value)`.
+
+::: note
+`name_type` provides a simple inner class that can be implicitly constructed from anything convertible to `string` or `u8string`. This allows a `data_member_spec` to accept an ordinary string literal (or `string_view`, `string`, etc) or a UTF-8 string literal (or `u8string_view`, `u8string`, etc) equally well.
+
+```cpp
+constexpr auto mem1 = data_member_spec(^^int, {.name="ordinary_literal_encoding"});
+constexpr auto mem2 = data_member_spec(^^int, {.name=u8"utf8_encoding"});
+```
+
+:::
+
+```cpp
+consteval info data_member_spec(info type,
+                                data_member_options options);
+```
+[#]{.pnum} *Constant When*:
+
+- [#.#]{.pnum} `dealias(type)` represents a type `cv $T$` where `$T$` is either an object type or a reference type;
+- [#.#]{.pnum} if `options.name` contains a value, then:
+  - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier when interpreted with UTF-8, or
+  - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier when interpreted with the ordinary literal encoding;
+- [#.#]{.pnum} otherwise, if `options.name` does not contain a value, then `options.bit_width` contains a value;
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`; and
+- [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
+  - [#.#.#]{.pnum} `is_integral_type(type) || is_enumeration_type(type)` is `true`,
+  - [#.#.#]{.pnum} `options.alignment` does not contain a value,
+  - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
+  - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value.
+
+[#]{.pnum} *Returns*: A reflection of a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}) where
+
+- [#.#]{.pnum} `$T$` is the type or type alias represented by `type`,
+- [#.#]{.pnum} `$N$` is either the identifier encoded by `options.name` or `-1` if `options.name` is empty,
+- [#.#]{.pnum} `$A$` is either the alignment value held by `options.alignment` or `-1` if `options.alignment` is empty,
+- [#.#]{.pnum} `$W$` is either the value held by `options.bit_width` or `-1` if `options.bit_width` is empty, and
+- [#.#]{.pnum} `$NUA$` is the value held by `options.no_unique_address`.
+
+[#]{.pnum} [The returned reflection value is primarily useful in conjunction with `define_aggregate`. Certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`) can also be used to query the characteristics indicated by the arguments provided to `data_member_spec`.]{.note}
+
+```cpp
+consteval bool is_data_member_spec(info r);
+```
+
+[#]{.pnum} *Returns*: `true` if `r` represents a data member description. Otherwise, `false`.
+
+```c++
+  template <reflection_range R = initializer_list<info>>
+  consteval info define_aggregate(info class_type, R&& mdescrs);
+```
+
+[#]{.pnum} *Constant When*: Letting `$C$` be the class represented by `class_type` and `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
+
+- [#.#]{.pnum} `$C$` is incomplete from every point in the evaluation context;
+- [#.#]{.pnum} `$C$` is not a class being defined;
+- [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@` in `mdescrs`;
+- [#.#]{.pnum} the type represented by `type_of(@$r$~$K$~@)` is a complete type for every `@$r$~$K$~@` in `mdescrs`; and
+- [#.#]{.pnum} for every pair 0 ≤ `$K$` < `$L$` < `mdescrs.size()`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then either `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true` or `u8identifier_of(@$r$~$K$~@) == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
+
+[`$C$` could be a class template specialization for which there is a reachable definition of the primary class template. In this case, an explicit specialization is injected.]{.note}
+
+[#]{.pnum} Let {`@$t$~k~@`} be a sequence of reflections and {`@$o$~k~@`} be a sequence of `data_member_options` values such that
+
+    data_member_spec(@$t$~$k$~@, @$o$~$k$~@) == @$r$~$k$~@
+
+for every `@$r$~$k$~@` in `mdescrs`.
+
+[#]{.pnum} *Effects*:
+Produces an injected declaration `$D$` ([expr.const]) that provides a definition for `$C$` with properties as follows:
+
+- [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
+- [#.#]{.pnum} The locus of `$D$` follows immediately after the core constant expression currently under evaluation.
+- [#.#]{.pnum} If `$C$` is a specialization, that is not a local class, of templated class `$T$`; then `$D$` is is an explicit specialization of `$T$`.
+- [#.#]{.pnum} `$D$` contains a public non-static data member or unnamed bit-field corresponding to each reflection value `@$r$~$K$~@` in `mdescrs`. For every other `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
+- [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@` is declared with the type or type alias represented by `@$t$~$K$~@`.
+- [#.#]{.pnum} A non-static data member corresponding to a reflection `@$r$~$K$~@` for which `@$o$~$K$~@.no_unique_address` is `true` is declared with the attribute `[[no_unique_address]]`.
+- [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to a reflection `@$r$~$K$~@` for which `@$o$~$K$~@.bit_width` contains a value is declared as a bit-field whose width is that value.
+- [#.#]{.pnum} A non-static data member corresponding to a reflection `@$r$~$K$~@` for which `@$o$~$K$~@.alignment` contains a value is declared with the `$alignment-specifier$` `alignas(@$o$~$K$~@.alignment)`.
+- [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to a reflection `@$r$~$K$~@` is declared with a name determined as follows:
+  - If `@$o$~$K$~@.name` does not contain a value, an unnamed bit-field is declared.
+  - Otherwise, the name of the non-static data member is the identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
+- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially default constructible, then `$D$` has a user-provided default constructor which has no effect. [If P3074 is adopted, do not include this bullet.]{.draftnote}
+- [#.#]{.pnum} If `$C$` is a union type for which any of its members are not trivially destructible, then `$D$` has a user-provided destructor which has no effect. [If P3074 is adopted, do not include this bullet.]{.draftnote}
+
+[#]{.pnum} *Returns*: `class_type`.
+
+:::
+:::
+
+### [meta.reflection.annotation] Annotation reflection {-}
+
+Add the new function at the end of [meta.reflection.annotation]:
+
+::: std
+::: addu
+```cpp
+consteval info annotate(info item, info value, source_location loc = source_location::current());
+```
+
+[14]{.pnum} *Constant When*:
+
+* [#.#]{.pnum} `dealias(item)` represents a class type, variable, function, or a namespace; and
+* [#.#]{.pnum} `value` reprents a value.
+
+[#]{.pnum} *Effects*: Produces an injected declaration ([expr.const]) at location `loc` redeclaring the entity represented by `dealias(item)`. That injected declaration is annotated by `value` and its locus is immediately following the manifestly constant-evaluated expression currently under evaluation.
+
+[#]{.pnum} *Returns*: `dealias(item)`.
+:::
+:::
+
+
 ---
 references:
   - id: P2996R10

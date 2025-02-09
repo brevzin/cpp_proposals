@@ -652,7 +652,22 @@ Expressions<span></span></a></li>
 <span>[class.union.anon]</span></span> Anonymous
 unions<span></span></a></li>
 </ul></li>
-<li><a href="#library" id="toc-library"><span class="toc-section-number">4.2</span> Library<span></span></a></li>
+<li><a href="#library" id="toc-library"><span class="toc-section-number">4.2</span> Library<span></span></a>
+<ul>
+<li><a href="#meta.reflection.synop-header-meta-synopsis" id="toc-meta.reflection.synop-header-meta-synopsis">[meta.reflection.synop]
+Header <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code>
+synopsis<span></span></a></li>
+<li><a href="#meta.reflection.names-reflection-names-and-locations" id="toc-meta.reflection.names-reflection-names-and-locations">[meta.reflection.names]
+Reflection names and locations<span></span></a></li>
+<li><a href="#meta.reflection.queries-reflection-queries" id="toc-meta.reflection.queries-reflection-queries">[meta.reflection.queries]
+Reflection queries<span></span></a></li>
+<li><a href="#meta.reflection.layout-reflection-layout-queries" id="toc-meta.reflection.layout-reflection-layout-queries">[meta.reflection.layout]
+Reflection layout queries<span></span></a></li>
+<li><a href="#meta.reflection.define.aggregate-reflection-class-definition-generation" id="toc-meta.reflection.define.aggregate-reflection-class-definition-generation">[meta.reflection.define.aggregate]
+Reflection class definition generation<span></span></a></li>
+<li><a href="#meta.reflection.annotation-annotation-reflection" id="toc-meta.reflection.annotation-annotation-reflection">[meta.reflection.annotation]
+Annotation reflection<span></span></a></li>
+</ul></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
@@ -2411,6 +2426,659 @@ data members or be a <span class="rm" style="color: #bf0303"><del><span><code cl
 </blockquote>
 </div>
 <h2 data-number="4.2" id="library"><span class="header-section-number">4.2</span> Library<a href="#library" class="self-link"></a></h2>
+<h3 class="unnumbered" id="meta.reflection.synop-header-meta-synopsis">[meta.reflection.synop]
+Header <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code>
+synopsis<a href="#meta.reflection.synop-header-meta-synopsis" class="self-link"></a></h3>
+<p>Add new functions to <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code></p>
+<div class="std">
+<blockquote>
+<p><strong>Header <code class="sourceCode cpp"><span class="op">&lt;</span>meta<span class="op">&gt;</span></code>
+synopsis</strong></p>
+<div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>#include &lt;initializer_list&gt;</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.result], expression result reflection</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    consteval info reflect_value(const T&amp; value);</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>    consteval info reflect_object(T&amp; object);</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>    consteval info reflect_function(T&amp; fn);</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.reflection.define.aggregate], class definition generation</span></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct data_member_options;</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval info data_member_spec(info type,</span></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a><span class="va">+                                 data_member_options options);</span></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool is_data_member_spec(info r);</span></span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a><span class="va">+ template &lt;reflection_range R = initializer_list&lt;info&gt;&gt;</span></span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval info define_aggregate(info type_class, R&amp;&amp;);</span></span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.annotation], annotation reflection</span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a> consteval vector&lt;info&gt; annotations_of(info item);</span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a> consteval vector&lt;info&gt; annotations_of(info item, info type);</span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a> template&lt;class T&gt;</span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>   consteval optional&lt;T&gt; annotation_of(info item);</span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a> template&lt;class T&gt;</span>
+<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>   consteval bool has_annotation(info item);</span>
+<span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a> template&lt;class T&gt;</span>
+<span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a>   consteval bool has_annotation(info item, T const&amp; value);</span>
+<span id="cb32-33"><a href="#cb32-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-34"><a href="#cb32-34" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval info annotate(info item, info value, source_location loc = source_location::current());</span></span>
+<span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-36"><a href="#cb32-36" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.unary.cat], primary type categories</span>
+<span id="cb32-37"><a href="#cb32-37" aria-hidden="true" tabindex="-1"></a>  consteval bool is_void_type(info type);</span>
+<span id="cb32-38"><a href="#cb32-38" aria-hidden="true" tabindex="-1"></a>  consteval bool is_null_pointer_type(info type);</span>
+<span id="cb32-39"><a href="#cb32-39" aria-hidden="true" tabindex="-1"></a>  consteval bool is_integral_type(info type);</span>
+<span id="cb32-40"><a href="#cb32-40" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb32-41"><a href="#cb32-41" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<h3 class="unnumbered" id="meta.reflection.names-reflection-names-and-locations">[meta.reflection.names]
+Reflection names and locations<a href="#meta.reflection.names-reflection-names-and-locations" class="self-link"></a></h3>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_identifier<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_75" id="pnum_75">1</a></span>
+<em>Returns</em>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_76" id="pnum_76">(1.1)</a></span>
+If <code class="sourceCode cpp">r</code> is an unnamed entity other than
+a class that has a typedef name for linkage purposes (<span>9.2.4 <a href="https://wg21.link/dcl.typedef">[dcl.typedef]</a></span>), then
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_77" id="pnum_77">(1.2)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a class
+type <code class="sourceCode cpp"><em>C</em></code>, then
+<code class="sourceCode cpp"><span class="kw">true</span></code> when
+either the <code class="sourceCode cpp"><em>class-name</em></code> of
+<code class="sourceCode cpp"><em>C</em></code> is an identifier or
+<code class="sourceCode cpp"><em>C</em></code> has a typedef name for
+linkage purposes. Otherwise,
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_78" id="pnum_78">(1.3)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a
+function, then
+<code class="sourceCode cpp"><span class="kw">true</span></code> if the
+function is not a function template specialization, constructor,
+destructor, operator function, or conversion function. Otherwise,
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_79" id="pnum_79">(1.4)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a
+function template, then
+<code class="sourceCode cpp"><span class="kw">true</span></code> if
+<code class="sourceCode cpp">r</code> does not represent a constructor
+template, operator function template, or conversion function template.
+Otherwise,
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_80" id="pnum_80">(1.5)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a
+variable, then
+<code class="sourceCode cpp"><span class="kw">false</span></code> if the
+declaration of that variable was expanded from a function parameter
+pack. Otherwise, <code class="sourceCode cpp"><span class="op">!</span>has_template_arguments<span class="op">(</span>r<span class="op">)</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_81" id="pnum_81">(1.6)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a
+structured binding, then
+<code class="sourceCode cpp"><span class="kw">false</span></code> if the
+declaration of that structured binding was expanded from a structured
+binding pack. Otherwise,
+<code class="sourceCode cpp"><span class="kw">true</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_82" id="pnum_82">(1.7)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a type
+alias, then <code class="sourceCode cpp"><span class="op">!</span>has_template_arguments<span class="op">(</span>r<span class="op">)</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_83" id="pnum_83">(1.8)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a
+enumerator, non-static data member, template, namespace, or namespace
+alias, then
+<code class="sourceCode cpp"><span class="kw">true</span></code>.
+Otherwise,
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_84" id="pnum_84">(1.9)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a direct
+base class relationship, then <code class="sourceCode cpp">has_identifier<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">))</span></code>.</li>
+</ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_85" id="pnum_85">(1.10)</a></span>
+Otherwise, <code class="sourceCode cpp">r</code> represents a data
+member description (<code class="sourceCode cpp"><em>T</em></code>,
+<code class="sourceCode cpp"><em>N</em></code>,
+<code class="sourceCode cpp"><em>A</em></code>,
+<code class="sourceCode cpp"><em>W</em></code>,
+<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>);
+<code class="sourceCode cpp"><em>N</em> <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span></code>.</li>
+</ul>
+</div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> string_view identifier_of<span class="op">(</span>info r<span class="op">)</span>;</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> u8string_view u8identifier_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_86" id="pnum_86">2</a></span>
+Let <em>E</em> be UTF-8 if returning a
+<code class="sourceCode cpp">u8string_view</code>, and otherwise the
+ordinary literal encoding.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_87" id="pnum_87">3</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">has_identifier<span class="op">(</span>r<span class="op">)</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code> and
+the identifier that would be returned (see below) is representable by
+<code class="sourceCode cpp"><em>E</em></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_88" id="pnum_88">4</a></span>
+<em>Returns</em>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_89" id="pnum_89">(4.1)</a></span>
+If <code class="sourceCode cpp">r</code> represents a literal operator
+or literal operator template, then the
+<code class="sourceCode cpp"><em>ud-suffix</em></code> of the operator
+or operator template.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_90" id="pnum_90">(4.2)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a class
+type, then either the typedef name for linkage purposes or the
+identifier introduced by the declaration of the represented type.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_91" id="pnum_91">(4.3)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents an
+entity, then the identifier introduced by the declaration of that
+entity.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_92" id="pnum_92">(4.4)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a direct
+base class relationship, then <code class="sourceCode cpp">identifier_of<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">))</span></code>
+or <code class="sourceCode cpp">u8identifier_of<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">))</span></code>,
+respectively.</li>
+</ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_93" id="pnum_93">(4.5)</a></span>
+Otherwise, <code class="sourceCode cpp">r</code> represents a data
+member description (<code class="sourceCode cpp"><em>T</em></code>,
+<code class="sourceCode cpp"><em>N</em></code>,
+<code class="sourceCode cpp"><em>A</em></code>,
+<code class="sourceCode cpp"><em>W</em></code>,
+<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>);
+a <code class="sourceCode cpp">string</code> or
+<code class="sourceCode cpp">u8string</code> respectively containing the
+identifier <code class="sourceCode cpp"><em>N</em></code> encoded with
+<code class="sourceCode cpp"><em>E</em></code>.</li>
+</ul>
+</div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> source_location source_location_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_94" id="pnum_94">7</a></span>
+<em>Returns</em>: If <code class="sourceCode cpp">r</code> represents a
+value, a non-class type, <span class="rm" style="color: #bf0303"><del>or</del></span> the global namespace, <span class="addu">or a data member description,</span> then <code class="sourceCode cpp">source_location<span class="op">{}</span></code>.
+Otherwise, an implementation-defined
+<code class="sourceCode cpp">source_location</code> value.</p>
+</blockquote>
+</div>
+<h3 class="unnumbered" id="meta.reflection.queries-reflection-queries">[meta.reflection.queries]
+Reflection queries<a href="#meta.reflection.queries-reflection-queries" class="self-link"></a></h3>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_bit_field<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_95" id="pnum_95">9</a></span>
+<em>Returns</em>:
+<code class="sourceCode cpp"><span class="kw">true</span></code> if
+<code class="sourceCode cpp">r</code> represents a bit-field<span class="addu">, or if <code class="sourceCode cpp">r</code> represents a
+data member description (<code class="sourceCode cpp"><em>T</em></code>,
+<code class="sourceCode cpp"><em>N</em></code>,
+<code class="sourceCode cpp"><em>A</em></code>,
+<code class="sourceCode cpp"><em>W</em></code>,
+<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>)
+for which <code class="sourceCode cpp"><em>W</em></code> is not <code class="sourceCode cpp"><span class="op">-</span><span class="dv">1</span></code>.
+Otherwise,
+<code class="sourceCode cpp"><span class="kw">false</span></code></span>.</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_96" id="pnum_96">33</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">r</code> represents
+a value, object, variable, function that is not a constructor or
+destructor, enumerator, non-static data member, bit-field, <span class="rm" style="color: #bf0303"><del>or</del></span> direct base class
+relationship<span class="addu">, or data member description</span>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_97" id="pnum_97">34</a></span>
+<em>Returns</em>: If <code class="sourceCode cpp">r</code> represents an
+entity, object, or value, then a reflection of the type of what is
+represented by <code class="sourceCode cpp">r</code>. Otherwise, if
+<code class="sourceCode cpp">r</code> represents a direct base class
+relationship, then a reflection of the type of the direct base class.
+<span class="addu">Otherwise, for a data member description
+(<code class="sourceCode cpp"><em>T</em></code>,
+<code class="sourceCode cpp"><em>N</em></code>,
+<code class="sourceCode cpp"><em>A</em></code>,
+<code class="sourceCode cpp"><em>W</em></code>,
+<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>),
+a reflection of the type
+<code class="sourceCode cpp"><em>T</em></code>.</span></p>
+</blockquote>
+</div>
+<h3 class="unnumbered" id="meta.reflection.layout-reflection-layout-queries">[meta.reflection.layout]
+Reflection layout queries<a href="#meta.reflection.layout-reflection-layout-queries" class="self-link"></a></h3>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> size_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_98" id="pnum_98">5</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+is a reflection of a type, object, value, variable of non-reference
+type, non-static data member, <span class="rm" style="color: #bf0303"><del>or</del></span> direct base class
+relationship, <span class="addu">or data member description</span>. If
+<code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+represents a type <code class="sourceCode cpp"><em>T</em></code>, there
+is a point within the evaluation context from which
+<code class="sourceCode cpp"><em>T</em></code> is not incomplete.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_99" id="pnum_99">6</a></span>
+<em>Returns</em>: If <code class="sourceCode cpp">r</code> represents a
+non-static data member whose corresponding subobject has type
+<code class="sourceCode cpp"><em>T</em></code>, <span class="addu">or a
+data member description (<code class="sourceCode cpp"><em>T</em></code>,
+<code class="sourceCode cpp"><em>N</em></code>,
+<code class="sourceCode cpp"><em>A</em></code>,
+<code class="sourceCode cpp"><em>W</em></code>,
+<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>),</span>
+then <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span><em>T</em><span class="op">)</span></code>.
+Otherwise, if <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+represents a type <code class="sourceCode cpp">T</code>, then <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span></code>.
+Otherwise, <code class="sourceCode cpp">size_of<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">))</span></code>.</p>
+<p><span class="note"><span>[ <em>Note 1:</em> </span>The subobject
+corresponding to a non-static data member of reference type has the same
+size and alignment as the corresponding pointer type.<span> — <em>end
+note</em> ]</span></span></p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> alignment_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_100" id="pnum_100">7</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+is a reflection representing a type, object, variable, non-static data
+member that is not a bit-field, <span class="rm" style="color: #bf0303"><del>or</del></span> direct base class
+relationship, <span class="addu">or data member description</span>. If
+<code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+represents a type <code class="sourceCode cpp"><em>T</em></code>, there
+is a point within the evaluation context from which
+<code class="sourceCode cpp"><em>T</em></code> is not incomplete.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_101" id="pnum_101">8</a></span>
+<em>Returns</em>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_102" id="pnum_102">(8.1)</a></span>
+If <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+represents a type, variable, or object, then the alignment requirement
+of the entity or object.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_103" id="pnum_103">(8.2)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a direct
+base class relationship, then <code class="sourceCode cpp">alignment_of<span class="op">(</span>type_of<span class="op">(</span>r<span class="op">))</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_104" id="pnum_104">(8.3)</a></span>
+Otherwise, if <code class="sourceCode cpp">r</code> represents a
+non-static data member, then the alignment requirement of the subobject
+associated with the represented entity within any object of type <code class="sourceCode cpp">parent_of<span class="op">(</span>r<span class="op">)</span></code>.</li>
+</ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_105" id="pnum_105">(8.4)</a></span>
+Otherwise, <code class="sourceCode cpp">r</code> represents a data
+member description (<code class="sourceCode cpp"><em>T</em></code>,
+<code class="sourceCode cpp"><em>N</em></code>,
+<code class="sourceCode cpp"><em>A</em></code>,
+<code class="sourceCode cpp"><em>W</em></code>,
+<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>).
+If <code class="sourceCode cpp"><em>A</em> <span class="op">!=</span> <span class="dv">1</span></code>,
+then the value <code class="sourceCode cpp"><em>A</em></code>. Otherwise
+<code class="sourceCode cpp"><span class="kw">alignof</span><span class="op">(</span><em>T</em><span class="op">)</span></code>.</li>
+</ul>
+</div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> bit_size_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_106" id="pnum_106">9</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+is a reflection of a type, object, value, variable of non-reference
+type, non-static data member, unnamed bit-field, <span class="rm" style="color: #bf0303"><del>or</del></span> direct base class
+relationship<span class="addu">, or data member description</span>. If
+<code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+represents a type <code class="sourceCode cpp"><em>T</em></code>, there
+is a point within the evaluation context from which
+<code class="sourceCode cpp"><em>T</em></code> is not incomplete.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_107" id="pnum_107">10</a></span>
+<em>Returns</em>: If <code class="sourceCode cpp">r</code> represents a
+non-static data member that is a bit-field or unnamed bit-field with
+width <code class="sourceCode cpp"><em>W</em></code>, then
+<code class="sourceCode cpp"><em>W</em></code>. <span class="addu">If
+<code class="sourceCode cpp">r</code> represents a data member
+description (<code class="sourceCode cpp"><em>T</em></code>,
+<code class="sourceCode cpp"><em>N</em></code>,
+<code class="sourceCode cpp"><em>A</em></code>,
+<code class="sourceCode cpp"><em>W</em></code>,
+<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>),
+then <code class="sourceCode cpp"><em>W</em></code> if <code class="sourceCode cpp"><em>W</em> <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span></code>,
+otherwise <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span><em>T</em><span class="op">)</span> <span class="op">*</span> CHAR_BIT</code>.</span>
+Otherwise, <code class="sourceCode cpp">CHAR_BIT <span class="op">*</span> size_of<span class="op">(</span>r<span class="op">)</span></code>.</p>
+</blockquote>
+</div>
+<h3 class="unnumbered" id="meta.reflection.define.aggregate-reflection-class-definition-generation">[meta.reflection.define.aggregate]
+Reflection class definition generation<a href="#meta.reflection.define.aggregate-reflection-class-definition-generation" class="self-link"></a></h3>
+<div class="std">
+<blockquote>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_108" id="pnum_108">1</a></span>
+The classes <code class="sourceCode cpp">data_member_options</code> and
+<code class="sourceCode cpp">name_type</code> are consteval-only types
+([basic.types.general]), and are not a structural types
+([temp.param]).</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> data_member_options <span class="op">{</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> name_type <span class="op">{</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>u8string, T<span class="op">&gt;</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>      <span class="kw">consteval</span> name_type<span class="op">(</span>T <span class="op">&amp;&amp;)</span>;</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>string, T<span class="op">&gt;</span></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">consteval</span> name_type<span class="op">(</span>T <span class="op">&amp;&amp;)</span>;</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>    variant<span class="op">&lt;</span>u8string, string<span class="op">&gt;</span> <em>contents</em>;    <span class="co">// <em>exposition only</em></span></span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>  optional<span class="op">&lt;</span>name_type<span class="op">&gt;</span> name;</span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>  optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> alignment;</span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a>  optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> bit_width;</span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a>  <span class="dt">bool</span> no_unique_address <span class="op">=</span> <span class="kw">false</span>;</span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>u8string, T<span class="op">&gt;</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> data_member_options<span class="op">::</span>name_type<span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_109" id="pnum_109">2</a></span>
+<em>Effects</em>: Initializes
+<code class="sourceCode cpp"><em>contents</em></code> with <code class="sourceCode cpp">u8string<span class="op">(</span>value<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>string, T<span class="op">&gt;</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> data_member_options<span class="op">::</span>name_type<span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_110" id="pnum_110">3</a></span>
+<em>Effects</em>: Initializes
+<code class="sourceCode cpp"><em>contents</em></code> with <code class="sourceCode cpp">string<span class="op">(</span>value<span class="op">)</span></code>.</p>
+<div class="note">
+<p><span>[ <em>Note 1:</em>
+</span><code class="sourceCode cpp">name_type</code> provides a simple
+inner class that can be implicitly constructed from anything convertible
+to <code class="sourceCode cpp">string</code> or
+<code class="sourceCode cpp">u8string</code>. This allows a
+<code class="sourceCode cpp">data_member_spec</code> to accept an
+ordinary string literal (or
+<code class="sourceCode cpp">string_view</code>,
+<code class="sourceCode cpp">string</code>, etc) or a UTF-8 string
+literal (or <code class="sourceCode cpp">u8string_view</code>,
+<code class="sourceCode cpp">u8string</code>, etc) equally well.</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> mem1 <span class="op">=</span> data_member_spec<span class="op">(^^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">&quot;ordinary_literal_encoding&quot;</span><span class="op">})</span>;</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> mem2 <span class="op">=</span> data_member_spec<span class="op">(^^</span><span class="dt">int</span>, <span class="op">{.</span>name<span class="op">=</span><span class="st">u8&quot;utf8_encoding&quot;</span><span class="op">})</span>;</span></code></pre></div>
+<span> — <em>end note</em> ]</span>
+</div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info data_member_spec<span class="op">(</span>info type,</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>                                data_member_options options<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_111" id="pnum_111">4</a></span>
+<em>Constant When</em>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_112" id="pnum_112">(4.1)</a></span>
+<code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
+represents a type <code class="sourceCode cpp">cv <em>T</em></code>
+where <code class="sourceCode cpp"><em>T</em></code> is either an object
+type or a reference type;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_113" id="pnum_113">(4.2)</a></span>
+if
+<code class="sourceCode cpp">options<span class="op">.</span>name</code>
+contains a value, then:
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_114" id="pnum_114">(4.2.1)</a></span>
+<code class="sourceCode cpp">holds_alternative<span class="op">&lt;</span>u8string<span class="op">&gt;(</span>options<span class="op">.</span>name<span class="op">-&gt;</span><em>contents</em><span class="op">)</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code> and
+<code class="sourceCode cpp">get<span class="op">&lt;</span>u8string<span class="op">&gt;(</span>options<span class="op">.</span>name<span class="op">-&gt;</span><em>contents</em><span class="op">)</span></code>
+contains a valid identifier when interpreted with UTF-8, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_115" id="pnum_115">(4.2.2)</a></span>
+<code class="sourceCode cpp">holds_alternative<span class="op">&lt;</span>string<span class="op">&gt;(</span>options<span class="op">.</span>name<span class="op">-&gt;</span><em>contents</em><span class="op">)</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code> and
+<code class="sourceCode cpp">get<span class="op">&lt;</span>string<span class="op">&gt;(</span>options<span class="op">.</span>name<span class="op">-&gt;</span><em>contents</em><span class="op">)</span></code>
+contains a valid identifier when interpreted with the ordinary literal
+encoding;</li>
+</ul></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_116" id="pnum_116">(4.3)</a></span>
+otherwise, if
+<code class="sourceCode cpp">options<span class="op">.</span>name</code>
+does not contain a value, then <code class="sourceCode cpp">options<span class="op">.</span>bit_width</code>
+contains a value;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_117" id="pnum_117">(4.4)</a></span>
+if <code class="sourceCode cpp">options<span class="op">.</span>alignment</code>
+contains a value, it is an alignment value ([basic.align]) not less than
+<code class="sourceCode cpp">alignment_of<span class="op">(</span>type<span class="op">)</span></code>;
+and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_118" id="pnum_118">(4.5)</a></span>
+if <code class="sourceCode cpp">options<span class="op">.</span>bit_width</code>
+contains a value <code class="sourceCode cpp"><em>V</em></code>, then
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_119" id="pnum_119">(4.5.1)</a></span>
+<code class="sourceCode cpp">is_integral_type<span class="op">(</span>type<span class="op">)</span> <span class="op">||</span> is_enumeration_type<span class="op">(</span>type<span class="op">)</span></code>
+is
+<code class="sourceCode cpp"><span class="kw">true</span></code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_120" id="pnum_120">(4.5.2)</a></span>
+<code class="sourceCode cpp">options<span class="op">.</span>alignment</code>
+does not contain a value,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_121" id="pnum_121">(4.5.3)</a></span>
+<code class="sourceCode cpp">options<span class="op">.</span>no_unique_address</code>
+is <code class="sourceCode cpp"><span class="kw">false</span></code>,
+and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_122" id="pnum_122">(4.5.4)</a></span>
+if <code class="sourceCode cpp"><em>V</em></code> equals
+<code class="sourceCode cpp"><span class="dv">0</span></code> then
+<code class="sourceCode cpp">options<span class="op">.</span>name</code>
+does not contain a value.</li>
+</ul></li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_123" id="pnum_123">5</a></span>
+<em>Returns</em>: A reflection of a data member description
+(<code class="sourceCode cpp"><em>T</em></code>,
+<code class="sourceCode cpp"><em>N</em></code>,
+<code class="sourceCode cpp"><em>A</em></code>,
+<code class="sourceCode cpp"><em>W</em></code>,
+<code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>)
+where</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_124" id="pnum_124">(5.1)</a></span>
+<code class="sourceCode cpp"><em>T</em></code> is the type or type alias
+represented by <code class="sourceCode cpp">type</code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_125" id="pnum_125">(5.2)</a></span>
+<code class="sourceCode cpp"><em>N</em></code> is either the identifier
+encoded by
+<code class="sourceCode cpp">options<span class="op">.</span>name</code>
+or <code class="sourceCode cpp"><span class="op">-</span><span class="dv">1</span></code>
+if
+<code class="sourceCode cpp">options<span class="op">.</span>name</code>
+is empty,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_126" id="pnum_126">(5.3)</a></span>
+<code class="sourceCode cpp"><em>A</em></code> is either the alignment
+value held by <code class="sourceCode cpp">options<span class="op">.</span>alignment</code>
+or <code class="sourceCode cpp"><span class="op">-</span><span class="dv">1</span></code>
+if <code class="sourceCode cpp">options<span class="op">.</span>alignment</code>
+is empty,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_127" id="pnum_127">(5.4)</a></span>
+<code class="sourceCode cpp"><em>W</em></code> is either the value held
+by <code class="sourceCode cpp">options<span class="op">.</span>bit_width</code>
+or <code class="sourceCode cpp"><span class="op">-</span><span class="dv">1</span></code>
+if <code class="sourceCode cpp">options<span class="op">.</span>bit_width</code>
+is empty, and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_128" id="pnum_128">(5.5)</a></span>
+<code class="sourceCode cpp"><em>NUA</em></code> is the value held by
+<code class="sourceCode cpp">options<span class="op">.</span>no_unique_address</code>.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_129" id="pnum_129">6</a></span>
+<span class="note"><span>[ <em>Note 2:</em> </span>The returned
+reflection value is primarily useful in conjunction with
+<code class="sourceCode cpp">define_aggregate</code>. Certain other
+functions in
+<code class="sourceCode cpp">std<span class="op">::</span>meta</code>
+(e.g., <code class="sourceCode cpp">type_of</code>,
+<code class="sourceCode cpp">identifier_of</code>) can also be used to
+query the characteristics indicated by the arguments provided to
+<code class="sourceCode cpp">data_member_spec</code>.<span> — <em>end
+note</em> ]</span></span></p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_data_member_spec<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_130" id="pnum_130">7</a></span>
+<em>Returns</em>:
+<code class="sourceCode cpp"><span class="kw">true</span></code> if
+<code class="sourceCode cpp">r</code> represents a data member
+description. Otherwise,
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info define_aggregate<span class="op">(</span>info class_type, R<span class="op">&amp;&amp;</span> mdescrs<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_131" id="pnum_131">8</a></span>
+<em>Constant When</em>: Letting
+<code class="sourceCode cpp"><em>C</em></code> be the class represented
+by <code class="sourceCode cpp">class_type</code> and
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> be the
+<code class="sourceCode cpp"><em>K</em></code><sup>th</sup> reflection
+value in <code class="sourceCode cpp">mdescrs</code>,</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_132" id="pnum_132">(8.1)</a></span>
+<code class="sourceCode cpp"><em>C</em></code> is incomplete from every
+point in the evaluation context;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_133" id="pnum_133">(8.2)</a></span>
+<code class="sourceCode cpp"><em>C</em></code> is not a class being
+defined;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_134" id="pnum_134">(8.3)</a></span>
+<code class="sourceCode cpp">is_data_member_spec<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">)</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code> for
+every
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> in
+<code class="sourceCode cpp">mdescrs</code>;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_135" id="pnum_135">(8.4)</a></span>
+the type represented by <code class="sourceCode cpp">type_of<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">)</span></code>
+is a complete type for every
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> in
+<code class="sourceCode cpp">mdescrs</code>; and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_136" id="pnum_136">(8.5)</a></span>
+for every pair 0 ≤ <code class="sourceCode cpp"><em>K</em></code> &lt;
+<code class="sourceCode cpp"><em>L</em></code> &lt; <code class="sourceCode cpp">mdescrs<span class="op">.</span>size<span class="op">()</span></code>,
+if <code class="sourceCode cpp">has_identifier<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">)</span> <span class="op">&amp;&amp;</span> has_identifier<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>L</em></span></sub><span class="op">)</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code>,
+then either <code class="sourceCode cpp">u8identifier_of<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">)</span> <span class="op">!=</span> u8identifier_of<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>L</em></span></sub><span class="op">)</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code> or
+<code class="sourceCode cpp">u8identifier_of<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">)</span> <span class="op">==</span> <span class="st">u8&quot;_&quot;</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code>.
+<span class="note"><span>[ <em>Note 3:</em> </span>Every provided
+identifier is unique or <code class="sourceCode cpp"><span class="st">&quot;_&quot;</span></code>.<span>
+— <em>end note</em> ]</span></span></li>
+</ul>
+<p><span class="note"><span>[ <em>Note 4:</em>
+</span><code class="sourceCode cpp"><em>C</em></code> could be a class
+template specialization for which there is a reachable definition of the
+primary class template. In this case, an explicit specialization is
+injected.<span> — <em>end note</em> ]</span></span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_137" id="pnum_137">9</a></span>
+Let
+{<code class="sourceCode cpp"><span class="math inline"><em>t</em></span><sub>k</sub></code>}
+be a sequence of reflections and
+{<code class="sourceCode cpp"><span class="math inline"><em>o</em></span><sub>k</sub></code>}
+be a sequence of <code class="sourceCode cpp">data_member_options</code>
+values such that</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>data_member_spec(<span class="math inline"><em>t</em></span><sub><span class="math inline"><em>k</em></span></sub>, <span class="math inline"><em>o</em></span><sub><span class="math inline"><em>k</em></span></sub>) == <span class="math inline"><em>r</em></span><sub><span class="math inline"><em>k</em></span></sub></span></code></pre></div>
+<p>for every
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>k</em></span></sub></code> in
+<code class="sourceCode cpp">mdescrs</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_138" id="pnum_138">10</a></span>
+<em>Effects</em>: Produces an injected declaration
+<code class="sourceCode cpp"><em>D</em></code> ([expr.const]) that
+provides a definition for <code class="sourceCode cpp"><em>C</em></code>
+with properties as follows:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_139" id="pnum_139">(10.1)</a></span>
+The target scope of <code class="sourceCode cpp"><em>D</em></code> is
+the scope to which <code class="sourceCode cpp"><em>C</em></code>
+belongs ([basic.scope.scope]).</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_140" id="pnum_140">(10.2)</a></span>
+The locus of <code class="sourceCode cpp"><em>D</em></code> follows
+immediately after the core constant expression currently under
+evaluation.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_141" id="pnum_141">(10.3)</a></span>
+If <code class="sourceCode cpp"><em>C</em></code> is a specialization,
+that is not a local class, of templated class
+<code class="sourceCode cpp"><em>T</em></code>; then
+<code class="sourceCode cpp"><em>D</em></code> is is an explicit
+specialization of <code class="sourceCode cpp"><em>T</em></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_142" id="pnum_142">(10.4)</a></span>
+<code class="sourceCode cpp"><em>D</em></code> contains a public
+non-static data member or unnamed bit-field corresponding to each
+reflection value
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> in
+<code class="sourceCode cpp">mdescrs</code>. For every other
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>L</em></span></sub></code> in
+<code class="sourceCode cpp">mdescrs</code> such that
+<code class="sourceCode cpp"><em>K</em> <span class="op">&lt;</span> <em>L</em></code>,
+the declaration of
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> precedes the
+declaration of
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>L</em></span></sub></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_143" id="pnum_143">(10.5)</a></span>
+A non-static data member or unnamed bit-field corresponding to each
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is declared with the
+type or type alias represented by
+<code class="sourceCode cpp"><span class="math inline"><em>t</em></span><sub><span class="math inline"><em>K</em></span></sub></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_144" id="pnum_144">(10.6)</a></span>
+A non-static data member corresponding to a reflection
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> for which <code class="sourceCode cpp"><span class="math inline"><em>o</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">.</span>no_unique_address</code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code> is
+declared with the attribute <code class="sourceCode cpp"><span class="op">[[</span><span class="at">no_unique_address</span><span class="op">]]</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_145" id="pnum_145">(10.7)</a></span>
+A non-static data member or unnamed bit-field corresponding to a
+reflection
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> for which <code class="sourceCode cpp"><span class="math inline"><em>o</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">.</span>bit_width</code>
+contains a value is declared as a bit-field whose width is that
+value.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_146" id="pnum_146">(10.8)</a></span>
+A non-static data member corresponding to a reflection
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> for which <code class="sourceCode cpp"><span class="math inline"><em>o</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">.</span>alignment</code>
+contains a value is declared with the
+<code class="sourceCode cpp"><em>alignment-specifier</em></code> <code class="sourceCode cpp"><span class="kw">alignas</span><span class="op">(</span><span class="math inline"><em>o</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">.</span>alignment<span class="op">)</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_147" id="pnum_147">(10.9)</a></span>
+A non-static data member or unnamed bit-field corresponding to a
+reflection
+<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is declared with a
+name determined as follows:
+<ul>
+<li>If <code class="sourceCode cpp"><span class="math inline"><em>o</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">.</span>name</code>
+does not contain a value, an unnamed bit-field is declared.</li>
+<li>Otherwise, the name of the non-static data member is the identifier
+determined by the character sequence encoded by <code class="sourceCode cpp">u8identifier_of<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">)</span></code>
+in UTF-8.</li>
+</ul></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_148" id="pnum_148">(10.10)</a></span>
+If <code class="sourceCode cpp"><em>C</em></code> is a union type for
+which any of its members are not trivially default constructible, then
+<code class="sourceCode cpp"><em>D</em></code> has a user-provided
+default constructor which has no effect. <span class="draftnote" style="color: #01796F">[ Drafting note: If P3074 is adopted, do not
+include this bullet. ]</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_149" id="pnum_149">(10.11)</a></span>
+If <code class="sourceCode cpp"><em>C</em></code> is a union type for
+which any of its members are not trivially destructible, then
+<code class="sourceCode cpp"><em>D</em></code> has a user-provided
+destructor which has no effect. <span class="draftnote" style="color: #01796F">[ Drafting note: If P3074 is adopted, do not
+include this bullet. ]</span></li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_150" id="pnum_150">11</a></span>
+<em>Returns</em>: <code class="sourceCode cpp">class_type</code>.</p>
+</div>
+</blockquote>
+</div>
+<h3 class="unnumbered" id="meta.reflection.annotation-annotation-reflection">[meta.reflection.annotation]
+Annotation reflection<a href="#meta.reflection.annotation-annotation-reflection" class="self-link"></a></h3>
+<p>Add the new function at the end of [meta.reflection.annotation]:</p>
+<div class="std">
+<blockquote>
+<div class="addu">
+<div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info annotate<span class="op">(</span>info item, info value, source_location loc <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_151" id="pnum_151">14</a></span>
+<em>Constant When</em>:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_152" id="pnum_152">(14.1)</a></span>
+<code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>
+represents a class type, variable, function, or a namespace; and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_153" id="pnum_153">(14.2)</a></span>
+<code class="sourceCode cpp">value</code> reprents a value.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_154" id="pnum_154">15</a></span>
+<em>Effects</em>: Produces an injected declaration ([expr.const]) at
+location <code class="sourceCode cpp">loc</code> redeclaring the entity
+represented by <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>.
+That injected declaration is annotated by
+<code class="sourceCode cpp">value</code> and its locus is immediately
+following the manifestly constant-evaluated expression currently under
+evaluation.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_155" id="pnum_155">16</a></span>
+<em>Returns</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>.</p>
+</div>
+</blockquote>
+</div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
