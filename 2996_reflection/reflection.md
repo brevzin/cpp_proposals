@@ -4344,11 +4344,14 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} A `$reflect-expression$` of the form `^^ ::` represents the global namespace.
 
-[#]{.pnum} If a `$reflect-expression$` `$R$` matches the form `^^ $qualified-reflection-name$`, it is interpreted as such and represents the entity named by the `$identifier$` of `R` as follows:
+[#]{.pnum} If a `$reflect-expression$` `$R$` matches the form `^^ $qualified-reflection-name$`, it is interpreted as such and its representation is determined as follows:
 
 - [#.#]{.pnum} If the `$identifier$` is a `$namespace-name$` that names a namespace alias ([namespace.alias]), `$R$` represents that namespace alias. For any other `$namespace-name$`, `$R$` represents the denoted namespace.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$concept-name$` ([temp.concept]), `$R$` represents the denoted concept.
-- [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$template-name$` ([temp.names]) that is an injected-class-name ([class.pre]), the injected-class-name is instead considered a `$type-name$` ([temp.local]) and `$R$` represents the class template specialization so named. For any other `$template-name$` denoting a primary class template, function template, primary variable template, or alias template, `$R$` represents that template.
+- [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$template-name$` ([temp.names]), then
+  - [#.#.#]{.pnum} If the `$template-name$` is an injected-class-name ([class.pre]), then all of the injected-class-names that are found shall refer to the same class template specialization. The injected-class-name is instead considered a `$type-name$` ([temp.local]) and `$R$` represents the class template specialization so named.
+  - [#.#.#]{.pnum} Otherwise, if the `$template-name$` denotes a function template `$F$`, then the `$template-name$` interpreted as an `$id-expression$` shall denote an overload set containing only `$F$`. `$R$` represents `$F$`.
+  - [#.#.#]{.pnum} Otherwise, if the `$template-name$` denotes a primary class template, primary variable template, or alias template, `$R$` represents that template.
 
 - [#.#]{.pnum} Otherwise, if the `$identifier$` names a type alias that was introduced by the declaration of a template parameter, `$R$` represents the underlying entity of that type alias. For any other `$identifier$` that names a type alias, `$R$` represents that type alias.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$class-name$` or an `$enum-name$`, `$R$` represents the denoted type.
