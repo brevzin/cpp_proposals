@@ -1542,7 +1542,7 @@ The expression `^^::` evaluates to a reflection of the global namespace. When th
 When the operand is an `$id-expression$`, the resulting value is a reflection of the designated entity found by lookup. This might be any of:
 
 - a variable, static data member, or structured binding
-- a function (or member function)
+- a function (including member functions)
 - a non-static data member
 - a primary template or primary member template
 - an enumerator
@@ -4276,6 +4276,7 @@ $reflect-expression$:
 
 $qualified-reflection-name$:
   $nested-name-specifier$@~_opt_~@ $identifier$
+  $nested-name-specifier$ template $identifier$
 ```
 
 [#]{.pnum} The unary `^^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]{.sref}).
@@ -4308,11 +4309,12 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 - [#.#]{.pnum} If the `$identifier$` is a `$namespace-name$` that names a namespace alias ([namespace.alias]), `$R$` represents that namespace alias. For any other `$namespace-name$`, `$R$` represents the denoted namespace.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$concept-name$` ([temp.concept]), `$R$` represents the denoted concept.
-- [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$template-name$` ([temp.names]), then
-  - [#.#.#]{.pnum} If the `$template-name$` is an injected-class-name ([class.pre]), then all of the injected-class-names that are found shall refer to the same class template specialization. The injected-class-name is instead considered a `$type-name$` ([temp.local]) and `$R$` represents the class template specialization so named.
-  - [#.#.#]{.pnum} Otherwise, if the `$template-name$` denotes a function template `$F$`, then the `$template-name$` interpreted as an `$id-expression$` shall denote an overload set containing only `$F$`. `$R$` represents `$F$`.
+- [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$template-name$` ([temp.names]), the representation of `$R$` is determined as follows:
+  - [#.#.#]{.pnum} If the `$template-name$` names an injected-class-name ([class.pre]), then:
+    - [#.#.#.#]{.pnum} If the `$qualified-reflection-name$` is of the form `$nested-name-specifier$ template $identifier$`, then `$R$` represents the class template named by the injected-class-name.
+    - [#.#.#.#]{.pnum} Otherwise, the injected-class-name shall be unambiguous when considered as a `$type-name$` and `$R$` represents the class template specialization so named.
+  - [#.#.#]{.pnum} Otherwise, if the `$template-name$` names a function template `$F$`, then the `$template-name$` interpreted as an `$id-expression$` shall denote an overload set containing only `$F$`. `$R$` represents `$F$`.
   - [#.#.#]{.pnum} Otherwise, if the `$template-name$` denotes a primary class template, primary variable template, or alias template, `$R$` represents that template.
-
 - [#.#]{.pnum} Otherwise, if the `$identifier$` names a type alias that was introduced by the declaration of a template parameter, `$R$` represents the underlying entity of that type alias. For any other `$identifier$` that names a type alias, `$R$` represents that type alias.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$class-name$` or an `$enum-name$`, `$R$` represents the denoted type.
 - [#.#]{.pnum} Otherwise, the `$qualified-reflection-name$` shall be an `$id-expression$` `$I$` and `$R$` is `^^ $I$` (see below).
@@ -4406,7 +4408,7 @@ Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production 
 [...]
 
 - [#.27]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) expression, `typeid` ([expr.typeid]) expression, or `$new-expression$` ([expr.new]) that would throw an exception where no definition of the exception type is reachable;
-- [[#.27+]{.pnum} an expression that would produce an injected declaration, unless `$E$` is the corresponding expression of a `$consteval-block-declaration$` ([dcl.pre]);]{.addu}
+- [[#.27+]{.pnum} an expression that would produce an injected declaration (see below), unless `$E$` is the corresponding expression of a `$consteval-block-declaration$` ([dcl.pre]);]{.addu}
 - [#.28]{.pnum} an `$asm-declaration$` ([dcl.asm]);
 - [#.#]{.pnum} [...]
 
@@ -5706,15 +5708,15 @@ Add a new paragraph to cover dependent splice template arguments.
 
 :::
 
-### 13.8.3.6 [temp.dep.alias] Dependent aliases {-}
+### 13.8.3.6 [temp.dep.namespace] Dependent namespaces {-}
 
-Add a new section to cover dependent type aliases and namespace aliases.
+Add a new section to cover dependent namespace aliases.
 
 ::: std
 ::: addu
-[1]{.pnum} A type alias is dependent if its underlying entity is a dependent type.
+**Dependent namespaces   [temp.dep.namespace]**
 
-[2]{.pnum} A namespace alias is dependent if it is introduced by a `$namespace-alias-definition$` whose `$nested-name-specifier$` or `$splice-specifier$` is dependent. A `$namespace-name$` is dependent if it names a dependent namespace alias.
+[1]{.pnum} A namespace alias is dependent if it is introduced by a `$namespace-alias-definition$` whose `$nested-name-specifier$` or `$splice-specifier$` is dependent. A `$namespace-name$` is dependent if it names a dependent namespace alias.
 
 ::: example
 ```cpp
@@ -5728,6 +5730,38 @@ namespace NS {
 }
 
 int a = fn<^^NS>();
+```
+:::
+
+:::
+:::
+
+### 13.8.3.7 [temp.dep.concept] Dependent concepts {-}
+
+Add a new section to cover dependent concepts.
+
+::: std
+:::addu
+**Dependent concepts   [temp.dep.concept]**
+
+[1]{.pnum} A concept is dependent if it is designated by a dependent `$splice-specifier$`. A `$concept-name$` is dependent if its lookup context is dependent.
+
+[2]{.pnum} The program is ill-formed if any construct names or designates a dependent concept.
+
+::: example
+```cpp
+template <std::meta::info C, std::meta::info N>
+struct S {
+  void f() requires template [:C:]<S> {}       // error: concept designated by dependent splice
+  void g() requires [:N:]::template C<S> {}    // error: dependent concept-name
+};
+
+namespace NS {
+  template <typename>
+  concept C = requires { requires true; };
+}
+
+S<^^NS::C, ^^NS> s;
 ```
 :::
 
@@ -6978,9 +7012,9 @@ template <class T>
 
 [#]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} If `r` represents a non-static data member of a class `C` with type `X`, then when `T` is `X C::*` and `r` does not represent a bit-field.
-- [#.#]{.pnum} Otherwise, if `r` represents an implicit object member function of class `C` with type `F` or `F noexcept`, then when `T` is `F C::*`.
-- [#.#]{.pnum} Otherwise, `r` represents a function, static member function, or explicit object member function of function type `F` or `F noexcept`, then when `T` is `F*`.
+- [#.#]{.pnum} `r` represents a non-static data member of a class `C` with type `X`, and `T` is `X C::*` and `r` does not represent a bit-field,
+- [#.#]{.pnum} `r` represents an implicit object member function of class `C` with type `F` or `F noexcept`, and `T` is `F C::*`, or
+- [#.#]{.pnum} `r` represents a non-member function, static member function, or explicit object member function of function type `F` or `F noexcept`, and `T` is `F*`.
 
 [#]{.pnum} *Returns*:
 
