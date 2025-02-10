@@ -5714,7 +5714,7 @@ Add a new section to cover dependent type aliases and namespace aliases.
 ::: addu
 [1]{.pnum} A type alias is dependent if its underlying entity is a dependent type.
 
-[2]{.pnum} A namespace alias is dependent if it is introduced by a `$namespace-alias-definition$` containing a dependent `$nested-name-specifier$` or a dependent `$splice-specifier$`. A `$namespace-name$` is dependent if it names a dependent namespace alias.
+[2]{.pnum} A namespace alias is dependent if it is introduced by a `$namespace-alias-definition$` whose `$nested-name-specifier$` or `$splice-specifier$` is dependent. A `$namespace-name$` is dependent if it names a dependent namespace alias.
 
 ::: example
 ```cpp
