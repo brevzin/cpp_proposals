@@ -1542,7 +1542,7 @@ The expression `^^::` evaluates to a reflection of the global namespace. When th
 When the operand is an `$id-expression$`, the resulting value is a reflection of the designated entity found by lookup. This might be any of:
 
 - a variable, static data member, or structured binding
-- a function or member function
+- a function (or member function)
 - a non-static data member
 - a primary template or primary member template
 - an enumerator
@@ -1617,7 +1617,7 @@ In the same way that `&C::mem` can produce a pointer, pointer to member data, po
 *  Otherwise if `r` is a reflection of a non-static data member, `&[:r:]` is a pointer to data member.
 *  Otherwise, if `r` is a reflection of a static member function, a function, or a non-static member function with an explicit object parameter, `&[:r:]` is a pointer to function
 *  Otherwise, if `r` is a reflection of a non-static member function with an implicit object parameter, `&[:r:]` is a pointer to member function.
-*  Otherwise, if `r` is a reflection of a function template or member function template, `&[:r:]` is the address of that overload set - which would then require external context to resolve as usual.
+*  Otherwise, if `r` is a reflection of a function template, `&[:r:]` is the address of that overload set - which would then require external context to resolve as usual.
 
 For most members, this doesn't even require any additional wording since that's just what you get when you take the address of the splice based on the current rules we have today.
 
@@ -1883,7 +1883,7 @@ namespace std {
 In our initial proposal a value of type `std::meta::info` can represent:
 
   - any (C++) type and type alias
-  - any function or member function
+  - any function (or member function)
   - any variable, static data member, or structured binding
   - any non-static data member
   - any enumerator
@@ -6494,7 +6494,7 @@ consteval bool is_explicit(info r);
 consteval bool is_noexcept(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a `noexcept` function type or a function or member function with a non-throwing exception specification ([except.spec]). Otherwise, `false`. [If `r` represents a function template that is declared `noexcept`, `is_noexcept(r)` is still `false` because in general such queries for templates cannot be answered.]{.note}
+[#]{.pnum} *Returns*: `true` if `r` represents a `noexcept` function type or a function with a non-throwing exception specification ([except.spec]). Otherwise, `false`. [If `r` represents a function template that is declared `noexcept`, `is_noexcept(r)` is still `false` because in general such queries for templates cannot be answered.]{.note}
 
 ```cpp
 consteval bool is_bit_field(info r);
@@ -7010,7 +7010,7 @@ template <class T>
 [#]{.pnum} *Effects*:
 
 - [#]{.pnum} If `T` is a reference type, then equivalent to `return $extract-ref$<T>(r);`
-- [#]{.pnum} Otherwise, if `r` represents a function, non-static data member, or member function, equivalent to `return $extract-member-or-function$<T>(r);`
+- [#]{.pnum} Otherwise, if `r` represents a function or non-static data member, equivalent to `return $extract-member-or-function$<T>(r);`
 - [#]{.pnum} Otherwise, equivalent to `return $extract-value$<T>(value_of(r))`
 
 :::
