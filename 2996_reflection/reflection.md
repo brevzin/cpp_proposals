@@ -3277,7 +3277,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
   - [7-8.#]{.pnum} either that `$consteval-block-declaration$` or the template definition from which it is instantiated is reachable from
 
     - [7-8.#.#]{.pnum} `$P$`, or
-    - [7-8.#.#]{.pnum} a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.
+    - [7-8.#.#]{.pnum} a point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
 
 ::: example
 ```cpp
@@ -3380,7 +3380,7 @@ Modify the third sentence of paragraph 1 to clarify that type aliases are now en
 
 :::
 
-Since namespace aliases are now entities but their declarations are not definitions, add `$namespace-alias-definition$` to the list of declarations in paragraph 2, just before `$using-declaration$`. Also replace `$static_assert-declaration$` and `$empty-declaration$` with `$vacant-decalaration$`, which also encompasses consteval blocks:
+Since namespace aliases are now entities but their declarations are not definitions, add `$namespace-alias-definition$` to the list of declarations in paragraph 2, just before `$using-declaration$`. Also replace `$static_assert-declaration$` and `$empty-declaration$` with `$vacuous-decalaration$`, which also encompasses consteval blocks:
 
 ::: std
 [2]{.pnum} Each entity declared by a `$declaration$` is also _defined_ by that declaration unless:
@@ -3393,7 +3393,7 @@ Since namespace aliases are now entities but their declarations are not definiti
 * [[2.11-]{.pnum} it is a `$namespace-alias-definition$` ([namespace.alias]),]{.addu}
 * [2.11]{.pnum} it is a `$using-declaration$` ([namespace.udecl]),
 * [2.12]{.pnum} it is a `$deduction-guide$` ([temp.deduct.guide]),
-* [2.13]{.pnum} it is a [`$static_assert-declaration$`]{.rm} [`$vacant-declaration$`]{.addu} ([dcl.pre]),
+* [2.13]{.pnum} it is a [`$static_assert-declaration$`]{.rm} [`$vacuous-declaration$`]{.addu} ([dcl.pre]),
 * [2.14]{.pnum} it is an `$attribute-declaration$` ([dcl.pre]),
 * [[2.15]{.pnum} it is an `$empty-declaration$` ([dcl.pre])]{.rm},
 
@@ -4560,7 +4560,7 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
 
-[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$` whose evaluating expression produces an injected declaration `$D$` ([expr.const]). The program is ill-formed if a scope encloses exactly one of `$C$` or `$D$` that is either
+[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose evaluating expression produces an injected declaration `$D$` ([expr.const]). The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
 
 * [#.#]{.pnum} a function parameter scope,
 * [#.#]{.pnum} a class scope, or
@@ -4611,7 +4611,7 @@ struct Cls {
 
 struct S6;
 consteval { // #1
-  struct S7;
+  struct S7; // local class
   consteval { // #2
     define_aggregate(^^S6, {});
       // error: consteval block #1 encloses consteval block #2 but not S6
@@ -4631,7 +4631,7 @@ consteval { // #1
 
 ### [dcl.pre]{.sref} Preamble {-}
 
-Introduce the non-terminal `$vacant-declaration$` in paragraph 9.1 to encompass static assertions, empty declarations, and consteval blocks:
+Introduce the non-terminal `$vacuous-declaration$` in paragraph 9.1 to encompass static assertions, empty declarations, and consteval blocks:
 
 ::: std
 ```diff
@@ -4658,9 +4658,9 @@ Introduce the non-terminal `$vacant-declaration$` in paragraph 9.1 to encompass 
 -   $static_assert-declaration$
     $alias-declaration$
     $opaque-enum-declaration$
-+   $vacant-declaration$
++   $vacuous-declaration$
 
-+ $vacant-declaration$:
++ $vacuous-declaration$:
 +    $static_assert-declaration$
 +    $empty-declaration$
 +    $consteval-block-declaration$
@@ -5132,7 +5132,7 @@ Modify the grammar for `$member-declaration$` as follows:
     $using-declaration$
     $using-enum-declaration$
 -   $static_assert-declaration$
-+   $vacant-declaration$
++   $vacuous-declaration$
     $template-declaration$
     $explicit-specialization$
     $deduction-guide$
@@ -5152,7 +5152,7 @@ Update paragraph 3 accordingly:
 * [#.#]{.pnum} a `$template-declaration$` whose declaration is one of the above,
 * [#.#]{.pnum} a [`$static_assert-declaration$`,]{.rm}
 * [#.#]{.pnum} a `$using-declaration$` ([namespace.udecl]) , or
-* [#.#]{.pnum} [an `$empty-declaration$`.]{.rm} [a `$vacant-declaration$`.]{.addu}
+* [#.#]{.pnum} [an `$empty-declaration$`.]{.rm} [a `$vacuous-declaration$`.]{.addu}
 
 :::
 
@@ -5196,10 +5196,10 @@ Data member descriptions are represented by reflections ([basic.fundamental]{.sr
 
 ### [class.union.anon]{.sref} Anonymous unions {-}
 
-Replace `$static_assert-declaration$` with `$vacant-declaration$` in paragraph 1. [This refactor allows putting in an `$empty-declaration$` into an anonymous union, which is kind of a consistency drive by with other classes.]{.ednote}
+Replace `$static_assert-declaration$` with `$vacuous-declaration$` in paragraph 1. [This refactor allows putting in an `$empty-declaration$` into an anonymous union, which is kind of a consistency drive by with other classes.]{.ednote}
 
 ::: std
-[1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacant-declaration$`]{.addu}.  [...]
+[1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacuous-declaration$`]{.addu}.  [...]
 
 :::
 

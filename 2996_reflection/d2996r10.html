@@ -5666,9 +5666,9 @@ from</p>
 <code class="sourceCode cpp"><em>P</em></code>, or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(7-8.2.2)</a></span>
 a point immediately following the
-<code class="sourceCode cpp"><em>class-specifier</em></code> of a class
-for which <code class="sourceCode cpp"><em>P</em></code> is in a
-complete-class context.</li>
+<code class="sourceCode cpp"><em>class-specifier</em></code> of the
+outermost class for which <code class="sourceCode cpp"><em>P</em></code>
+is in a complete-class context.</li>
 </ul></li>
 </ul>
 <div class="example">
@@ -5858,7 +5858,7 @@ to the list of declarations in paragraph 2, just before
 replace
 <code class="sourceCode cpp"><em>static_assert-declaration</em></code>
 and <code class="sourceCode cpp"><em>empty-declaration</em></code> with
-<code class="sourceCode cpp"><em>vacant-decalaration</em></code>, which
+<code class="sourceCode cpp"><em>vacuous-decalaration</em></code>, which
 also encompasses consteval blocks:</p>
 <div class="std">
 <blockquote>
@@ -5888,7 +5888,7 @@ it is a <code class="sourceCode cpp"><em>deduction-guide</em></code>
 ([temp.deduct.guide]),</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(2.13)</a></span>
 it is a <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>static_assert-declaration</em></code></span></del></span>
-<span class="addu"><code class="sourceCode cpp"><em>vacant-declaration</em></code></span>
+<span class="addu"><code class="sourceCode cpp"><em>vacuous-declaration</em></code></span>
 ([dcl.pre]),</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(2.14)</a></span>
 it is an
@@ -8149,12 +8149,14 @@ concerning reachability apply to synthesized points (<span>10.7 <a href="https:/
 — <em>end note</em> ]</span></span></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_245" id="pnum_245">29</a></span>
 Let <code class="sourceCode cpp"><em>C</em></code> be a
-<code class="sourceCode cpp"><em>consteval-block-declaration</em></code>
-whose evaluating expression produces an injected declaration
-<code class="sourceCode cpp"><em>D</em></code> ([expr.const]). The
-program is ill-formed if a scope encloses exactly one of
+<code class="sourceCode cpp"><em>consteval-block-declaration</em></code>,
+the evaluation of whose evaluating expression produces an injected
+declaration <code class="sourceCode cpp"><em>D</em></code>
+([expr.const]). The program is ill-formed if a scope
+<code class="sourceCode cpp"><em>S</em></code> encloses exactly one of
 <code class="sourceCode cpp"><em>C</em></code> or
-<code class="sourceCode cpp"><em>D</em></code> that is either</p>
+<code class="sourceCode cpp"><em>D</em></code> where
+<code class="sourceCode cpp"><em>S</em></code> is</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_246" id="pnum_246">(29.1)</a></span>
 a function parameter scope,</li>
@@ -8208,7 +8210,7 @@ a consteval block scope.</li>
 <span id="cb132-41"><a href="#cb132-41" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb132-42"><a href="#cb132-42" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> S6;</span>
 <span id="cb132-43"><a href="#cb132-43" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span> <span class="co">// #1</span></span>
-<span id="cb132-44"><a href="#cb132-44" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> S7;</span>
+<span id="cb132-44"><a href="#cb132-44" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> S7; <span class="co">// local class</span></span>
 <span id="cb132-45"><a href="#cb132-45" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="op">{</span> <span class="co">// #2</span></span>
 <span id="cb132-46"><a href="#cb132-46" aria-hidden="true" tabindex="-1"></a>    define_aggregate<span class="op">(^^</span>S6, <span class="op">{})</span>;</span>
 <span id="cb132-47"><a href="#cb132-47" aria-hidden="true" tabindex="-1"></a>      <span class="co">// error: consteval block #1 encloses consteval block #2 but not S6</span></span>
@@ -8240,7 +8242,7 @@ produced by evaluations sequenced before
 </div>
 <h3 class="unnumbered" id="dcl.pre-preamble"><span>9.1 <a href="https://wg21.link/dcl.pre">[dcl.pre]</a></span> Preamble<a href="#dcl.pre-preamble" class="self-link"></a></h3>
 <p>Introduce the non-terminal
-<code class="sourceCode cpp"><em>vacant-declaration</em></code> in
+<code class="sourceCode cpp"><em>vacuous-declaration</em></code> in
 paragraph 9.1 to encompass static assertions, empty declarations, and
 consteval blocks:</p>
 <div class="std">
@@ -8269,9 +8271,9 @@ consteval blocks:</p>
 <span id="cb133-21"><a href="#cb133-21" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>static_assert-declaration</em></span></span>
 <span id="cb133-22"><a href="#cb133-22" aria-hidden="true" tabindex="-1"></a>    <em>alias-declaration</em></span>
 <span id="cb133-23"><a href="#cb133-23" aria-hidden="true" tabindex="-1"></a>    <em>opaque-enum-declaration</em></span>
-<span id="cb133-24"><a href="#cb133-24" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>vacant-declaration</em></span></span>
+<span id="cb133-24"><a href="#cb133-24" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>vacuous-declaration</em></span></span>
 <span id="cb133-25"><a href="#cb133-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb133-26"><a href="#cb133-26" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>vacant-declaration</em>:</span></span>
+<span id="cb133-26"><a href="#cb133-26" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>vacuous-declaration</em>:</span></span>
 <span id="cb133-27"><a href="#cb133-27" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>static_assert-declaration</em></span></span>
 <span id="cb133-28"><a href="#cb133-28" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>empty-declaration</em></span></span>
 <span id="cb133-29"><a href="#cb133-29" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>consteval-block-declaration</em></span></span>
@@ -9142,7 +9144,7 @@ follows:</p>
 <span id="cb148-5"><a href="#cb148-5" aria-hidden="true" tabindex="-1"></a>    <em>using-declaration</em></span>
 <span id="cb148-6"><a href="#cb148-6" aria-hidden="true" tabindex="-1"></a>    <em>using-enum-declaration</em></span>
 <span id="cb148-7"><a href="#cb148-7" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>static_assert-declaration</em></span></span>
-<span id="cb148-8"><a href="#cb148-8" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>vacant-declaration</em></span></span>
+<span id="cb148-8"><a href="#cb148-8" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>vacuous-declaration</em></span></span>
 <span id="cb148-9"><a href="#cb148-9" aria-hidden="true" tabindex="-1"></a>    <em>template-declaration</em></span>
 <span id="cb148-10"><a href="#cb148-10" aria-hidden="true" tabindex="-1"></a>    <em>explicit-specialization</em></span>
 <span id="cb148-11"><a href="#cb148-11" aria-hidden="true" tabindex="-1"></a>    <em>deduction-guide</em></span>
@@ -9176,7 +9178,7 @@ a <code class="sourceCode cpp"><em>using-declaration</em></code>
 <span class="rm" style="color: #bf0303"><del>an
 <span><code class="sourceCode default"><em>empty-declaration</em></code></span>.</del></span>
 <span class="addu">a
-<code class="sourceCode cpp"><em>vacant-declaration</em></code>.</span></li>
+<code class="sourceCode cpp"><em>vacuous-declaration</em></code>.</span></li>
 </ul>
 </blockquote>
 </div>
@@ -9282,7 +9284,7 @@ note</em> ]</span></p>
 Anonymous unions<a href="#class.union.anon-anonymous-unions" class="self-link"></a></h3>
 <p>Replace
 <code class="sourceCode cpp"><em>static_assert-declaration</em></code>
-with <code class="sourceCode cpp"><em>vacant-declaration</em></code> in
+with <code class="sourceCode cpp"><em>vacuous-declaration</em></code> in
 paragraph 1. <span class="ednote" style="color: #0000ff">[ Editor&#39;s
 note: This refactor allows putting in an
 <code class="sourceCode default"><em>empty-declaration</em></code> into
@@ -9295,7 +9297,7 @@ classes. ]</span></p>
 in the <code class="sourceCode cpp"><em>member-specification</em></code>
 of an anonymous union shall either define one or more public non-static
 data members or be a <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>static_assert-declaration</em></code></span></del></span>
-<span class="addu"><code class="sourceCode cpp"><em>vacant-declaration</em></code></span>.
+<span class="addu"><code class="sourceCode cpp"><em>vacuous-declaration</em></code></span>.
 […]</p>
 </blockquote>
 </div>
