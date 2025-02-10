@@ -3273,7 +3273,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 ::: addu
   During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). Constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating an expression `$E$` as a full-expression is complete if and only if
 
-  - [7-8.#]{.pnum} `$E$` is the evaluating expression of a `$consteval-block-declaration$` ([dcl.pre]), and
+  - [7-8.#]{.pnum} `$E$` is the expression corresponding to a `$consteval-block-declaration$` ([dcl.pre]), and
   - [7-8.#]{.pnum} either that `$consteval-block-declaration$` or the template definition from which it is instantiated is reachable from
 
     - [7-8.#.#]{.pnum} `$P$`, or
@@ -3288,7 +3288,7 @@ class S {
     void fn() {
       /* p1 */ Incomplete i; // OK, constructs at P1 are analyzed in a context where the side effect of
                              // the call to define_aggregate is evaluated because:
-                             // * E is the evaluating expression of a consteval block, and
+                             // * E is the expression corresponding to a consteval block, and
                              // * P1 is in a complete-class context of S and the consteval block
                              //   is reachable from P3.
     }
@@ -3484,21 +3484,6 @@ Modify paragraph 6 to cover splicing of structured bindings:
 
 :::
 
-Modify paragraph 10.1 to prevent `*this` from being _odr-usable_ in a consteval block:
-
-::: std
-[10]{.pnum} A local entity ([basic.pre]) is _odr-usable_ in a scope ([basic.scope.scope]) if
-
-- [#.#]{.pnum} either the local entity is not `*this`, or an enclosing class[, consteval block,]{.addu} or non-lambda function parameter scope exists and, if the innermost such scope is a function parameter scope, it corresponds to a non-static member function, and
-- [#.#]{.pnum} for each intervening scope ([basic.scope.scope]) between the point at which the entity is introduced and the scope (where `*this` is considered to be introduced within the innermost enclosing class or non-lambda function defintion scope), either:
-  - [#.#.#]{.pnum} the intervening scope is a block scope, or
-  - [#.#.#]{.pnum} the intervening scope is the function parameter scope of a `$lambda-expression$` or `$requires-expression$`, or
-  - [#.#.#]{.pnum} the intervening scope is the lambda scope of a `$lambda-expression$` that has a `$simple-capture$` naming the entity or has a `$capture-default$`, and the block scope of the `$lambda-expression$` is also an intervening scope.
-
-If a local entity is odr-used in a scope in which it is not odr-usable, the program is ill-formed.
-
-:::
-
 Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 
 ::: std
@@ -3550,31 +3535,6 @@ Change bullet 4.2 to refer to the declaration of a "type alias" instead of a `$t
 ::: std
 [4.2]{.pnum} one declares a type (not a [`$typedef-name$`]{.rm} [type alias]{.addu}) and the other declares a variable, non-static data member other than an anonymous union ([class.union.anon]{.sref}), enumerator, function, or function template, or
 
-:::
-
-### 6.4.5+ [basic.scope.consteval] Consteval block scope {-}
-
-Add a new section for consteval block scopes following [basic.scope.lambda]{.sref}:
-
-::: std
-::: addu
-**Consteval block scope   [basic.scope.consteval]**
-
-[#]{.pnum} A `$consteval-block-declaration$` `C` introduces a _consteval block scope_ that includes the `$compound-statement$` of `C`.
-
-::: example
-```cpp
-consteval {
-  int x;
-  consteval {
-  int x; // #1
-  consteval {
-    int x;  // OK, distinct variable from #1
-  }
-}
-```
-:::
-:::
 :::
 
 ### [basic.lookup.general]{.sref} General {-}
@@ -4438,24 +4398,6 @@ Add a new paragraph between paragraphs 5 and 6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
-Modify paragraph 4 to account for local variables in consteval block scopes:
-
-::: std
-[4]{.pnum} An object `$o$` is _constexpr-referenceable_ from a point `$P$` if
-
-- [#.#]{.pnum} `$o$` has static storage duration, or
-- [#.#]{.pnum} `$o$` has automatic storage duration, and letting `v` denote
-  - [#.#.#]{.pnum} the variable corresponding to `$o$`'s complete object or
-  - [#.#.#]{.pnum} the variable whose lifetime that of `$o$` is extended,
-
-  the smallest scope enclosing `v` and the smallest scope enclosing `$P$` that are neither
-  - [#.#.#]{.pnum} block scopes nor
-  - [#.#.#]{.pnum} function parameter scopes associated with a `$requirement-parameter-list$`
-
-  are the same function parameter [or consteval block scope]{.addu}.
-
-:::
-
 Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production of injected declarations from any core constant expression that isn't a consteval block.
 
 ::: std
@@ -4464,7 +4406,7 @@ Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production 
 [...]
 
 - [#.27]{.pnum} a `dynamic_cast` ([expr.dynamic.cast]) expression, `typeid` ([expr.typeid]) expression, or `$new-expression$` ([expr.new]) that would throw an exception where no definition of the exception type is reachable;
-- [[#.27+]{.pnum} an expression that would produce an injected declaration, unless `$E$` is the evaluating expression of a `$consteval-block-declaration$` ([dcl.pre]);]{.addu}
+- [[#.27+]{.pnum} an expression that would produce an injected declaration, unless `$E$` is the corresponding expression of a `$consteval-block-declaration$` ([dcl.pre]);]{.addu}
 - [#.28]{.pnum} an `$asm-declaration$` ([dcl.asm]);
 - [#.#]{.pnum} [...]
 
@@ -4519,16 +4461,6 @@ or a prvalue core constant expression whose value satisfies the following constr
 
 :::
 
-Add consteval block scopes to the scopes that introduce an immediate function context:
-
-::: std
-[24]{.pnum} An expression or conversion is in an _immediate function context_ if it is potentially evaluated and either:
-
-- [#.#]{.pnum} its innermost enclosing non-block scope is [either]{.addu} a function parameter scope of an immediate function [or a consteval block scope]{.addu},
-- [#.#]{.pnum} [...]
-
-:::
-
 Modify (and clean up) the definition of _immediate-escalating expression_ in paragraph 25 to also apply to expressions of consteval-only type.
 
 ::: std
@@ -4560,11 +4492,10 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
 
-[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose evaluating expression produces an injected declaration `$D$` ([expr.const]). The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
+[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration `$D$` ([expr.const]). The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
 
-* [#.#]{.pnum} a function parameter scope,
-* [#.#]{.pnum} a class scope, or
-* [#.#]{.pnum} a consteval block scope.
+* [#.#]{.pnum} a function parameter scope, or
+* [#.#]{.pnum} a class scope.
 
 ::: example
 ```cpp
@@ -4687,15 +4618,19 @@ Insert the following after paragraph 13 in relation to consteval blocks:
 [13]{.pnum} *Recommended practice*: When a `$static_assert-declaration$` fails, [...]
 
 ::: addu
-[*]{.pnum} The _evaluating expression_ of a `$consteval-block-declaration$` is an expression whose evaluation has the same associated side effects as the `$postfix-expression$`
+[*]{.pnum} For a `$consteval-block-declaration$` `$D$`, the expression `$E$` corresponding to `$D$` is:
 
 ```cpp
 [] -> void consteval $compound-statement$ ()
 ```
 
-The evaluating expression shall be a constant expression ([expr.const]).
+`$D$` is equivalent to:
 
-[The evaluating expression of a `$consteval-block-declaration$` can produce injected declarations as side effects ([expr.const]).]{.note}
+```cpp
+static_assert(($E$, true));
+```
+
+[Evaluating a `$consteval-block-declaration$` can produce injected declarations as side effects ([expr.const]).]{.note}
 :::
 
 [14]{.pnum} An `$empty-declaration$` has no effect.
