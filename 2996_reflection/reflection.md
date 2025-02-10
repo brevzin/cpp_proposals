@@ -4370,7 +4370,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member, `$R$` represents that entity.
 
-  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
+  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s, non-type template parameters, and `$id-expression$`s of the form `X::template Y`]{.note}
 
   The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}).
 
