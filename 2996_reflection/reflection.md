@@ -1553,6 +1553,7 @@ Earlier revisions of this paper allowed for taking the reflection of any `$cast-
 
 This paper does, however, support reflections of _values_ and of _objects_ (including subobjects). Such reflections arise naturally when iterating over template arguments.
 
+::: std
 ```cpp
 template <int P1, const int &P2> void fn() {}
 
@@ -1566,6 +1567,7 @@ static_assert(!is_variable(template_arguments_of(spec)[1]));
 static_assert([:template_arguments_of(spec)[0]:] == 1);
 static_assert(&[:template_arguments_of(spec)[1]:] == &p[1]);
 ```
+:::
 
 Such reflections cannot generally be obtained using the `^^`-operator, but the `std::meta::reflect_value` and `std::meta::reflect_object` functions make it easy to reflect particular values or objects. The `std::meta::value_of` metafunction can also be used to map a reflection of an object to a reflection of its value.
 
@@ -1690,6 +1692,7 @@ Iterating over the members of a class (e.g., using `std::meta::members_of`) allo
 
 #### Splicing namespaces in namespace definitions
 
+::: std
 ```cpp
 namespace A {}
 constexpr std::meta::info NS_A = ^^A;
@@ -1700,11 +1703,13 @@ namespace B {
   }
 }
 ```
+:::
 
 We found no satisfying answer as to how to interpret examples like the one given above. Neither did we find motivating use cases: many of the "interesting" uses for reflections of namespaces are either to introspect their members, or to pass them as template arguments - but the above example does nothing to help with introspection, and neither can namespaces be reopened within any dependent context. Rather than choose between unintuitive options for a syntax without a motivating use case, we are disallowing splicers from appearing in the opening of a namespace.
 
 #### Splicing namespaces in using-directives and using-enum-declarators
 
+::: std
 ```cpp
 template <std::meta::info R> void fn1() {
   using enum [:R:]::EnumCls;  // #1
@@ -1715,11 +1720,13 @@ template <std::meta::info R> void fn2() {
   // ...
 }
 ```
+:::
 
 C++20 already disallowed dependent enumeration types from appearing in _using-enum-declarators_ (as in #1), as it would otherwise force the parser to consider every subsequent identifier as possibly a member of the substituted enumeration type. We extend this limitation to splices of dependent reflections of enumeration types, and further disallow the use of dependent reflections of namespaces in _using-directives_ (as in #2) following the same principle.
 
 #### Splicing concepts in declarations of template parameters
 
+::: std
 ```cpp
 template <typename T> concept C = requires { requires true; };
 
@@ -1727,17 +1734,20 @@ template <std::meta::info R> struct Outer {
   template <template [:R:] S> struct Inner { /* ... */ };
 };
 ```
+:::
 
 What kind of parameter is `S`? If `R` represents a class template, then it is a non-type template parameter of deduced type, but if `R` represents a concept, it is a type template parameter. There is no other circumstance in the language for which it is not possible to decide at parse time whether a template parameter is a type or a non-type, and we don't wish to introduce one for this use case.
 
 The most obvious solution would be to introduce a `concept [:R:]` syntax that requires that `R` reflect a concept, and while this could be added going forward, we weren't convinced of its value at this time - especially since the above can easily be rewritten:
 
+::: std
 ```cpp
 template <std::meta::info R> struct Outer {
   template <typename T> requires template [:R:]<T>
   struct Inner { /* ... */ };
 };
 ```
+:::
 
 We are resolving this ambiguity by simply disallowing a reflection of a concept, whether dependent or otherwise, from being spliced in the declaration of a template parameter (thus in the above example, the parser can assume that `S` is a non-type parameter).
 
@@ -2036,18 +2046,18 @@ void g() {
 
 Hence this proposal also introduces constraints on constant evaluation as follows...
 
-First, we identify a subset of manifestly constant-evaluated expressions and conversions characterized by the fact that their evaluation must occur and must succeed in a valid C++ program: We call these _plainly constant-evaluated_.
+First, consteval blocks (from [@P3289R1]) have the property that their evaluation must occur and must succeed in a valid C++ program.
 We require that a programmer can count on those evaluations occurring exactly once and completing at translation time.
 
-Second, we sequence plainly constant-evaluated expressions and conversions within the lexical order.
-Specifically, we require that the evaluation of a non-dependent plainly constant-evaluated expression or conversion occurs before the implementation checks the validity of source constructs lexically following that expression or conversion.
+Second, we sequence consteval blocks within the lexical order.
+Specifically, we require that the evaluation of a non-dependent consteval block occurs before the implementation checks the validity of source constructs lexically following them.
 
 Those constraints are mostly intuitive, but they are a significant change to the underlying principles of the current standard in this respect.
 
-[@P2758R1] ("Emitting messages at compile time") also has to deal with side effects during constant evaluation.
+[@P2758R4]{.title} also has to deal with side effects during constant evaluation.
 However, those effects ("output") are of a slightly different nature in the sense that they can be buffered until a manifestly constant-evaluated expression/conversion has completed.
 "Buffering" a class type completion is not practical (e.g., because other metafunctions may well depend on the completed class type).
-Still, we are not aware of incompatibilities between our proposal and [@P2758R1].
+Still, we are not aware of incompatibilities between our proposal and P2758.
 
 
 ### Error-Handling in Reflection
@@ -2443,6 +2453,7 @@ This machinery is "off in the weeds" of technicalities related to modules, looku
 
 The advancement of this proposal through WG21 has naturally led to increased scrutiny of the mechanisms here proposed. One such area is the possibility of leveraging injected declarations to observe failed template substitutions. Consider the following example:
 
+::: std
 ```cpp
 struct S;
 
@@ -2465,11 +2476,13 @@ template <typename> struct TCls {
 static_assert(TCls<void>::sfn());
 static_assert(is_complete_type(^^S));
 ```
+:::
 
 The above example observes the effects of the failed substitution of `#1` by way of the completeness of `S`. Such tricks can be used to observe implementation details, like the order in which overloads are checked, that may be unportable (and which implementations might desire to change over time).
 
 Our proposed solution, specified in [expr.const]/23.2, is to make it ill-formed to produce an injected declaration from a manifestly constant-evaluated expression _inside of_ an instantiation to _outside of_ that instantiation, or visa versa. Because that expression in the example above (`define_aggregate(^^S, {})`) is within the instantiation of the requires clause of `TCls<void>::sfn`, and the target scope of the injected declaration is outside of that same instantiaton, the example becomes ill-formed (diagnostic required). Note that this does not prevent writing `consteval` function templates that wrap `define_aggregate`:
 
+::: std
 ```cpp
 template <std::meta::info R> consteval bool tfn() {
   define_aggregate(R, {});
@@ -2481,9 +2494,11 @@ constexpr bool b = tfn<^^S>();
   // OK, both manifestly constant-evaluated expression tfn<^^S>() and target scope of
   // injected declaration for 'S' are in the global namespace
 ```
+:::
 
 Nor does this rule prevent a class template from producing a declaration whose target scope is the same specialization.
 
+::: std
 ```cpp
 template <typename> struct TCls1 {
   struct Incomplete;
@@ -2510,6 +2525,7 @@ template <typename T> struct TCls2 {
 
 static_assert(TCls<void>::sfn());
 ```
+:::
 
 Athough the instantiation of `TCls1<void>` in the requires-clause of `#1` causes an injected declaration to be produced, it is not discernibly a side-effect of the failed substitution: Observing the side effect will first require one to write (some moral  equivalent of) `TCLs1<void>::Incomplete`, the act of which would otherwise itself trigger the same side-effect.
 
