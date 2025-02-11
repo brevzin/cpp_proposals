@@ -6736,7 +6736,7 @@ consteval bool $has-type$(info r); // exposition only
 consteval info type_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `$has-type$(r)`.
+[#]{.pnum} *Constant When*: `$has-type$(r)` is `true`.
 
 [#]{.pnum} *Returns*: If `r` represents an entity, object, or value, then a reflection of the type of what is represented by `r`. Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class. Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), a reflection of the type `$T$`.
 
@@ -6772,7 +6772,7 @@ consteval info value_of(info r);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type
+* [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type.
 * [#.#]{.pnum} Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator.
 * [#.#]{.pnum} Otherwise, `r`.
 
