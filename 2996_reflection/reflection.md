@@ -4745,6 +4745,34 @@ void f() {
 
 :::
 
+### [dcl.spec.auto.general]{.sref} Placeholder type specifiers {-}
+
+Extend the wording in [dcl.spec.auto.general]{.sref}/13 to account for splicing:
+
+::: std
+[13]{.pnum} If a variable or function with an undeduced placeholder type is [either]{.addu} named by an expression ([basic.def.odr]) [or designated by a `$splice-specifier$` in an expression]{.addu}, the program is ill-formed. Once a non-discarded `return` statement has been seen in a function, however, the return type deduced from that statement can be used in the rest of the function, including in other `return` statements.
+
+::: example
+```diff
+  auto n = n;                     // error: n's initializer refers to n
+  auto f();
+  void g() { &f; }                // error: f's return type is unknown
+  auto sum(int i) {
+    if (i == 1)
+      return i;                   // sum's return type is int
+    else
+      return sum(i-1)+i;          // OK, sum's return type has been deduced
+  }
+
++ auto f2() {
++   int x;
++   return [:std::meta::parent_of(^^x):](); // error: f2's return type is unknown
++ }
+```
+:::
+:::
+
+
 ### 9.2.9.8+ [dcl.type.splice] Type splicing {-}
 
 Add a new subsection of ([dcl.type]{.sref}) following ([dcl.type.class.deduct]{.sref}).
@@ -4829,16 +4857,18 @@ Modify paragraph 9 to allow reflections of non-static data members to appear in 
 
 [...]
 
-A non-static member shall not appear in a default argument unless it appears as the `$id-expression$` of a class member access expression ([expr.ref]) [or `$reflect-expression$` ([expr.reflect])]{.addu} or unless it is used to form a pointer to member ([expr.unary.op]).
+A non-static member shall not appear[, or be designated by a `$splice-specifier$`,]{.addu} in a default argument unless it appears as the `$id-expression$` of a class member access expression ([expr.ref]) [or `$reflect-expression$` ([expr.reflect])]{.addu} or unless it is used to form a pointer to member ([expr.unary.op]).
 
 ::: example8
 ```cpp
 int b;
 class X {
   int a;
-  int mem1(int i = a);    // error: non-static member `a` used as default argument
-  int mem2(int i = b);    // OK; use `X::b`
+  int mem1(int i = a);    // error: non-static member a used as default argument
+  int mem2(int i = b);    // OK; use X::b
   @[`consteval void mem3(std::meta::info r = ^^a) {};    // OK`]{.addu}@
+  @[`int mem4(int i = [:^^a:]); // error: non-static member a designated in default argument`]{.addu}@
+
   static int b;
 }
 ```
