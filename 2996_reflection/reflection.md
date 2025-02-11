@@ -6568,12 +6568,6 @@ consteval bool is_enumerator(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents an enumerator. Otherwise, `false`.
 
 ```cpp
-consteval bool $has-type$(info r); // exposition only
-```
-
-[#]{.pnum} *Returns*: `true` if  `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, direct base class relationship, or data member description. Otherwise, `false`.
-
-```cpp
 consteval bool is_const(info r);
 consteval bool is_volatile(info r);
 ```
@@ -6624,7 +6618,7 @@ consteval bool is_complete_type(info r);
 consteval bool has_complete_definition(info r);
 ```
 
-[#]{.pnum} Returns: `true` if `r` represents a function, class type, or enumeration type, such that no entities not already declared may be introduced within the scope of the entity represented by `r`. Otherwise `false`.
+[#]{.pnum} Returns: `true` if `r` represents a function, class type, or enumeration type, such that no entities not already declared may be introduced within the scope of the entity represented by `r`. Otherwise, `true` if `r` represents a variable whose definition is reachable from some point in the evaluation context. Otherwise `false`.
 
 ```cpp
 consteval bool is_namespace(info r);
@@ -6731,6 +6725,12 @@ consteval bool has_default_member_initializer(info r);
 ```
 
 [#]{.pnum} *Returns*: `true` if `r` represents a non-static data member that has a default member initializer. Otherwise, `false`.
+
+```cpp
+consteval bool $has-type$(info r); // exposition only
+```
+
+[#]{.pnum} *Returns*: `true` if  `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, direct base class relationship, or data member description. Otherwise, `false`.
 
 ```cpp
 consteval info type_of(info r);
