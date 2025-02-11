@@ -5738,7 +5738,7 @@ int a = fn<^^NS>();
 
 ### 13.8.3.7 [temp.dep.concept] Dependent concepts {-}
 
-Add a new section to cover dependent concepts.
+Add a new section to cover dependent concepts. [With [@P2841R6]{.title} in flight, if that paper merges, this wording might need to be more specific than simply saying "dependent concept" and might need something like "splice-dependent" instead. But that's not a concern for today.]{.draftnote}
 
 ::: std
 :::addu
@@ -5754,6 +5754,11 @@ template <std::meta::info C, std::meta::info N>
 struct S {
   void f() requires template [:C:]<S> {}       // error: concept designated by dependent splice
   void g() requires [:N:]::template C<S> {}    // error: dependent concept-name
+  template <class T>
+  bool h() {
+    return std::meta::extract<bool>(           // ok, C is dependent but not via splice
+      std::meta::substitute(C, {^^T}));
+  }
 };
 
 namespace NS {
@@ -7012,9 +7017,9 @@ template <class T>
 
 [#]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} `r` represents a non-static data member of a class `C` with type `X`, and `T` is `X C::*` and `r` does not represent a bit-field,
-- [#.#]{.pnum} `r` represents an implicit object member function of class `C` with type `F` or `F noexcept`, and `T` is `F C::*`, or
-- [#.#]{.pnum} `r` represents a non-member function, static member function, or explicit object member function of function type `F` or `F noexcept`, and `T` is `F*`.
+- [#.#]{.pnum} `r` represents a non-static data member of a class `C` with type `X` and `T` is `X C::*` and `r` does not represent a bit-field;
+- [#.#]{.pnum} `r` represents an implicit object member function of class `C` with type `F` or `F noexcept` and `T` is `F C::*`; or
+- [#.#]{.pnum} `r` represents a non-member function, static member function, or explicit object member function of function type `F` or `F noexcept` and `T` is `F*`.
 
 [#]{.pnum} *Returns*:
 
