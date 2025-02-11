@@ -1,6 +1,6 @@
 ---
 title: "trivial `union`s (was `std::uninitialized<T>`)"
-document: P3074R5
+document: P3074R6
 date: today
 audience: EWG
 author:
@@ -531,7 +531,7 @@ I was able to compile Clang with this update successfully, which wasn't particul
 Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be removed because such cases become trivially default constructible too]{.ednote}
 
 ::: std
-[2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if [`X` is a non-union class and]{.addu}:
+[2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if [`X` is a non-union class and]{.addu}
 
 * [2.1]{.pnum} any non-static data member with no default member initializer ([class.mem]) is of reference type,
 * [2.2]{.pnum} any non-variant non-static data member of const-qualified type (or possibly multi-dimensional array thereof) with no brace-or-equal-initializer is not const-default-constructible ([dcl.init]),
@@ -539,7 +539,7 @@ Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be rem
 * [2.4]{.pnum} [`X` is a non-union class and all members of any anonymous union member are of const-qualified type (or possibly multi-dimensional array thereof)]{.rm},
 * [2.5]{.pnum} any potentially constructed subobject, except for a non-static data member with a brace-or-equal-initializer [or a variant member of a union where another non-static data member has a brace-or-equal-initializer]{.rm}, has class type `M` (or possibly multi-dimensional array thereof) and overload resolution ([over.match]) as applied to find `M`'s corresponding constructor either does not result in a usable candidate ([over.match.general]) [or, in the case of a variant member, selects a non-trivial function,]{.rm} or
 
-[3]{.pnum} A default constructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
+[3]{.pnum} A default constructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if[:]{.rm}
 
 * [3.1]{.pnum} [its class]{.rm} [`X`]{.addu} has no virtual functions ([class.virtual]) and no virtual base classes ([class.mi]), and
 * [3.2]{.pnum} no non-static data member of [its class]{.rm} [`X`]{.addu} has a default member initializer ([class.mem]), and
@@ -554,20 +554,20 @@ Otherwise, the default constructor is *non-trivial*.
 Change [class.dtor]{.sref}/7-8:
 
 ::: std
-[7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if:
+[7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if[:]{.rm}
 
 * [7.1]{.pnum} [`X` is a non-union class and]{.addu} any potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) [and]{.rm} [where]{.addu} `M` has a destructor that is deleted or is inaccessible from the defaulted destructor [or, in the case of a variant member, is non-trivial]{.rm},
 
 ::: addu
-* [7.x]{.pnum} `X` is a union and either:
+* [7.x]{.pnum} `X` is a union and either
 
-    * [#.x.#]{.pnum} `X` has a user-provided default constructor, or
-    * [#.x.#]{.pnum} `X` has a variant member `M` where `M` has a default member initializer and `M` has a destructor that is deleted, inaccessible from the defaulted destructor, or non-trivial,
+    * [#.x.#]{.pnum} `X` does not have a default constructor that is defaulted on its first declaration,
+    * [#.x.#]{.pnum} `X` has a variant member `V` of class type `M` (or possibly multi-dimensional array thereof) where `V` has a default member initializer and `M` has a destructor that is non-trivial, deleted, or inaccessible from the defaulted destructor,
 :::
 
 * [7.2]{.pnum} or, for a virtual destructor, lookup of the non-array deallocation function results in an ambiguity or in a function that is deleted or inaccessible from the defaulted destructor.
 
-[8]{.pnum} A destructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if:
+[8]{.pnum} A destructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if[:]{.rm}
 
 * [8.1]{.pnum} the destructor is not virtual,
 * [8.2]{.pnum} all of the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial destructors, and
@@ -597,7 +597,7 @@ Add a new macro to [cpp.predefined]{.sref}:
 
 ::: {.std .ins}
 ```
-__cpp_trivial_union 2024XXL
+__cpp_trivial_union 2025XXL
 ```
 :::
 
@@ -606,6 +606,6 @@ And update the macro for `inplace_vector` in [version.syn]{.sref}:
 ::: std
 ```diff
 - #define __cpp_lib_inplace_vector 202406L // also in <inplace_vector>
-+ #define __cpp_lib_inplace_vector 2024XXL // also in <inplace_vector>
++ #define __cpp_lib_inplace_vector 2025XXL // also in <inplace_vector>
 ```
 :::
