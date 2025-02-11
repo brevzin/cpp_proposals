@@ -3985,6 +3985,18 @@ Break the next paragraph into a bulleted list, extend it to also cover splices, 
 
 :::
 
+### [expr.prim.lambda.closure]{.sref} Closure types {-}
+
+We have to say that a closure type is not complete until the `}`:
+
+::: std
+[1]{.pnum} The type of a lambda-expression (which is also the type of the closure object) is a unique, unnamed non-union class type, called the closure type, whose properties are described below.
+
+::: addu
+[x]{.pnum} The closure type is not complete until the end of its corresponding `$compound-statement$`.
+:::
+:::
+
 ### [expr.prim.lambda.capture]{.sref} Captures {-}
 
 Modify bullet 7.1 as follows:
@@ -4329,7 +4341,9 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
 
-  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
+  * [#.#]{.pnum} If the `$id-expression$` is `__func__`, `$R$` is ill-formed.
+
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
@@ -4609,7 +4623,7 @@ Insert the following after paragraph 13 in relation to consteval blocks:
 [*]{.pnum} For a `$consteval-block-declaration$` `$D$`, the expression `$E$` corresponding to `$D$` is:
 
 ```cpp
-[] -> void consteval $compound-statement$ ()
+[] -> void static consteval $compound-statement$ ()
 ```
 
 `$D$` is equivalent to:
@@ -4887,6 +4901,16 @@ Change paragraphs 6-8 of [dcl.init.general]{.sref} [No changes are necessary for
 If a program calls for the default-initialization of an object of a const-qualified type `T`, `T` shall be [`std::meta::info` or]{.addu} a const-default-constructible class type, or array thereof.
 
 [9]{.pnum} To value-initialize an object of type T means: [...]
+:::
+
+### [dcl.fct.def.general]{.sref} Function definitions {-}
+
+Disallow using `__func__` in a `consteval` block:
+
+::: std
+[7]{.pnum} A *function-local predefined variable* is a variable with static storage duration that is implicitly defined in a function parameter scope[, other than the function parameter scope of the expression corresponding to a `$consteval-block-declaration$`]{.addu}.
+
+[8]{.pnum} The function-local predefined variable __func__ is defined as if a definition of the form [...]
 :::
 
 ### [dcl.fct.def.delete]{.sref} Deleted definitions {-}
@@ -5309,15 +5333,14 @@ Extend `$type-parameter$` to permit `$splice-specifier$`s as default template ar
   $type-constraint$:
       $nested-name-specifier$@~_opt_~@ $concept-name$
       $nested-name-specifier$@~_opt_~@ $concept-name$ < $template-argument-list$@~_opt_~@>
-+     $splice-type-specifier$
 ```
 :::
 
-Add a paragraph after paragraph 3 to restrict which `$splice-type-specifier$`s form `$type-constraint$`s.
+Add a paragraph after paragraph 3 to disallow dependent concepts being used in a `$type-constraint$`:
 
 ::: std
 ::: addu
-[3+]{.pnum} A `$type-constraint$` of the form `$splice-type-specifier$` shall not appear in a `$type-parameter$`. The `$splice-type-specifier$` (if any) shall contain a `$splice-specifier$` that either designates a type concept or is dependent.
+[3+]{.pnum} The `$nested-name-specifier$`, if any, shall not contain a `$splice-specifier$`.
 :::
 :::
 
@@ -5768,43 +5791,6 @@ int a = fn<^^NS>();
 :::
 :::
 
-### 13.8.3.7 [temp.dep.concept] Dependent concepts {-}
-
-Add a new section to cover dependent concepts. [With [@P2841R6]{.title} in flight, if that paper merges, this wording might need to be more specific than simply saying "dependent concept" and might need something like "splice-dependent" instead. But that's not a concern for today.]{.draftnote}
-
-::: std
-:::addu
-**Dependent concepts   [temp.dep.concept]**
-
-[1]{.pnum} A concept is dependent if it is designated by a dependent `$splice-specifier$`. A `$concept-name$` is dependent if its lookup context is dependent.
-
-[2]{.pnum} The program is ill-formed if any construct names or designates a dependent concept.
-
-::: example
-```cpp
-template <std::meta::info C, std::meta::info N>
-struct S {
-  void f() requires template [:C:]<S> {}       // error: concept designated by dependent splice
-  void g() requires [:N:]::template C<S> {}    // error: dependent concept-name
-  template <class T>
-  bool h() {
-    return std::meta::extract<bool>(           // ok, C is dependent but not via splice
-      std::meta::substitute(C, {^^T}));
-  }
-};
-
-namespace NS {
-  template <typename>
-  concept C = requires { requires true; };
-}
-
-S<^^NS::C, ^^NS> s;
-```
-:::
-
-:::
-:::
-
 ### [temp.expl.spec]{.sref} Explicit specialization {-}
 
 Modify paragraph 9 to allow `$splice-specialization-specifier$`s to be used like incompletely-defined classes.
@@ -5925,7 +5911,7 @@ Unless F is designated an *addressable function*, the behavior of a C++ program 
 [6a]{.pnum}
 Let F denote a standard library function or function template.
 Unless F is designated addressable function, it is unspecified if or how a reflection value designating the associated entity can be formed.
-[For example, `std::meta::members_of` might not return reflections of standard functions that an implementation handles through an extra-linguistic mechanism.]{.note}
+[For example, it is possible that `std::meta::members_of` will not return reflections of standard library functions that an implementation handles through an extra-linguistic mechanism.]{.note}
 
 [6b]{.pnum}
 Let `C` denote a standard library class or class template specialization. It is unspecified if or how a reflection value can be formed to any private member of `C`, or what the names of such members may be.
@@ -6341,10 +6327,10 @@ namespace std::meta {
 
 [2]{.pnum} The behavior of any function specified in namespace `std::meta` is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
 
-[Values of type `std::meta::info` may represent implementation-defined constructs ([basic.fundamental]{.sref}).]{.note}
+[Values of type `std::meta::info` can represent implementation-specific constructs ([basic.fundamental]{.sref}).]{.note}
 
 ::: note
- The behavior of many of the functions specified in namespace `std::meta` have semantics that would be affected by the completeness of class types represented by reflection values. For such functions, for any reflection `r` such that `dealias(r)` represents a specialization of a templated class with a reachable definition, the specialization is implicitly instantiated ([temp.inst]).
+ The behavior of many of the functions specified in namespace `std::meta` have semantics that can be affected by the completeness of class types represented by reflection values. For such functions, for any reflection `r` such that `dealias(r)` represents a specialization of a templated class with a reachable definition, the specialization is implicitly instantiated ([temp.inst]).
 
 ::: example
 ```cpp
@@ -6468,15 +6454,15 @@ consteval bool has_identifier(info r);
 
 * [#.#]{.pnum} If `r` represents an entity that has a typedef name for linkage purposes ([dcl.typedef]), then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents an unnamed entity, then `false`.
-* [#.#]{.pnum} Otherwise, if `r` represents a class type `$C$`, then `true` if the `$class-name$` of `$C$` is an identifier. Otherwise, `false`.
-* [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if the function is not a function template specialization, constructor, destructor, operator function, or conversion function. Otherwise, `false`.
-* [#.#]{.pnum} Otherwise, if `r` represents a function template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template. Otherwise, `false`.
-* [#.#]{.pnum} Otherwise, if `r` represents a variable, then `false` if the declaration of that variable was expanded from a function parameter pack. Otherwise, `!has_template_arguments(r)`.
-* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, then `false` if the declaration of that structured binding was expanded from a structured binding pack. Otherwise, `true`.
+* [#.#]{.pnum} Otherwise, if `r` represents a class type, then `!has_template_arguments(r)`.
+* [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if `!has_template_arguments(r)` and the function is not a constructor, destructor, operator function, or conversion function. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, then `false` if the declaration of that variable was instantiated from a function parameter pack. Otherwise, `!has_template_arguments(r)`.
+* [#.#]{.pnum} Otherwise, if `r` represents a structured binding, then `false` if the declaration of that structured binding was instantiated from a structured binding pack. Otherwise, `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a type alias, then `!has_template_arguments(r)`.
-* [#.#]{.pnum} Otherwise, if `r` represents a enumerator, non-static data member, template, namespace, or namespace alias, then `true`.
+* [#.#]{.pnum} Otherwise, if `r` represents a enumerator, non-static data member, namespace, or namespace alias, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `has_identifier(type_of(r))`.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); `$N$` is not `-1`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); `true` if `$N$` is not `-1`. Otherwise, `false`.
 
 ```cpp
 consteval string_view identifier_of(info r);
@@ -6487,14 +6473,13 @@ consteval u8string_view u8identifier_of(info r);
 
 [#]{.pnum} *Constant When*: `has_identifier(r)` is `true` and the identifier that would be returned (see below) is representable by `$E$`.
 
-[#]{.pnum} *Returns*:
+[#]{.pnum} *Returns*: An NTMBS, encoded with `$E$`, determined as follows:
 
 * [#.#]{.pnum} If `r` represents an entity with a typedef name for linkage purposes, then that name.
 * [#.#]{.pnum} Otherwise, if `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template.
-* [#.#]{.pnum} Otherwise, if `r` represents a class type, then the identifier introduced by the declaration of the represented type.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity, then the identifier introduced by the declaration of that entity.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `identifier_of(type_of(r))` or `u8identifier_of(type_of(r))`, respectively.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); a `string_view` or `u8string_view` respectively containing the identifier `$N$` encoded with `$E$`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); a `string_view` or `u8string_view`, respectively, containing the identifier `$N$`.
 
 ```cpp
 consteval string_view display_string_of(info r);
@@ -6509,9 +6494,9 @@ consteval u8string_view u8display_string_of(info r);
 consteval source_location source_location_of(info r);
 ```
 
-[#]{.pnum} *Returns*: If `r` represents a value, a non-class type, the global namespace, or a data member description, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
+[#]{.pnum} *Returns*: If `r` represents a value, a type other than a class type or an enumeration type, the global namespace, or a data member description, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
 
-[#]{.pnum} *Recommended practice*: If `r` represents an entity, name, or direct base class relationship that was introduced by a declaration, implementations should return a value corresponding to a declaration of the represented construct that is reachable from the evaluation construct. If there are multiple such declarations and one is a definition, a value corresponding to the definition is preferred.
+[#]{.pnum} *Recommended practice*: If `r` represents an entity with a definition that is reachable from the evaluation context, a value corresponding to a definition should be returned.
 :::
 :::
 
