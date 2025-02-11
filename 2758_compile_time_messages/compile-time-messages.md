@@ -685,7 +685,7 @@ Say that a program is ill-formed if an expression is constexpr-erroneous in [exp
 [...]
 
 ::: addu
-[x]{.pnum} A program is ill-formed if a manifestly constant-evaluated expression is *constexpr-erroneous*. [Such an expression is still a core constant expression.]{.note}
+[x]{.pnum} A program is ill-formed if a *constexpr-erroneous* expression is evaluated in a context that is manifestly constant-evaluated. [Such an expression is still a core constant expression.]{.note}
 
 ::: example
 ```cpp
