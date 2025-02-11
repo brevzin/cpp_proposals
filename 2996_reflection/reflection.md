@@ -2848,7 +2848,7 @@ Reflections of structured bindings shall not appear in the returned vector.
 
 The template `bases_of` returns the direct base classes of the class type represented by its first argument, in declaration order.
 
-`static_data_members_of` and `nonstatic_data_members_of` return reflections of the static and non-static data members, in order, respectively.
+`static_data_members_of` and `nonstatic_data_members_of` return reflections of the static and non-static data members, preserving their order, respectively.
 
 `enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
 
@@ -5072,6 +5072,22 @@ Modify the definition of reachability to account for injected declarations:
 * [#.#]{.pnum} `$D$` is not discarded ([module.global.frag]{.sref}), appears in a translation unit that is reachable from `$P$`, and does not appear within a _private-module-fragment_.
 :::
 
+::: example
+```cpp
+class S {
+  class Incomplete;
+
+  /* P1 */ consteval {
+    // OK, n == 7. The member Incomplete::x members-of-precedes the synthesized point P2 associated
+    // with the injected declaration produced by the call to define_aggregate.
+    int n = members_of(
+        define_aggregate(^^Incomplete, {data_member_spec(^^int, {.name="x"})})
+      ).size();
+  }
+}; /* P2 */
+```
+:::
+
 ### [class.mem.general]{.sref} General {-}
 
 Modify the grammar for `$member-declaration$` as follows:
@@ -6691,11 +6707,6 @@ consteval bool is_concept(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents a function template, variable template, class template, alias template, conversion function template, operator function template, literal operator template, constructor template, or concept respectively. Otherwise, `false`.
 
 ```cpp
-consteval bool has_template_arguments(info r);
-```
-[#]{.pnum} *Returns*: `true` if `r` represents a specialization of a function template, variable template, class template, or an alias template. Otherwise, `false`.
-
-```cpp
 consteval bool is_value(info r);
 consteval bool is_object(info r);
 ```
@@ -6786,6 +6797,12 @@ static_assert(^^x != ^^y);                         // OK, x and y are different 
 static_assert(value_of(^^x) == value_of(^^y));     // OK, both value_of(^^x) and value_of(^^y) represent
                                                  // the value 0
 static_assert(value_of(^^x) == reflect_value(0)); // OK, likewise
+
+info fn() {
+  constexpr int x = 42;
+  return ^^x;
+}
+info r = value_of(fn());  // error: x is outside its lifetime
 ```
 :::
 
@@ -6816,12 +6833,24 @@ static_assert(dealias(^^Y) == ^^int);
 :::
 
 ```cpp
+consteval bool has_template_arguments(info r);
+```
+[#]{.pnum} *Returns*: `true` if `r` represents a specialization of a function template, variable template, class template, or an alias template. Otherwise, `false`.
+
+```cpp
 consteval info template_of(info r);
+```
+
+[#]{.pnum} *Constant When*: `has_template_arguments(r)` is `true`.
+
+[#]{.pnum} *Returns*: A reflection of the primary template of the specialization represented by `r`.
+
+```cpp
 consteval vector<info> template_arguments_of(info r);
 ```
 [#]{.pnum} *Constant When*: `has_template_arguments(r)` is `true`.
 
-[#]{.pnum} *Returns*: A reflection of the primary template of `r`, and the reflections of the template arguments of the specialization represented by `r`, respectively.
+[#]{.pnum} *Returns*: A `vector` containing reflections of the template arguments of the template specialization represented by `r`, in the order they appear in the corresponding template argument list.
 
 [#]{.pnum}
 
@@ -6842,7 +6871,7 @@ static_assert(template_arguments_of(^^PairPtr<int>).size() == 1);
 :::
 :::
 
-### [meta.reflection.member.queries], Reflection member queries  {-}
+### [meta.reflection.member.queries] Reflection member queries  {-}
 
 ::: std
 ::: addu
@@ -6850,14 +6879,9 @@ static_assert(template_arguments_of(^^PairPtr<int>).size() == 1);
 consteval vector<info> members_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
 
-[#]{.pnum} A member of either
-
-* [#.#]{.pnum} a class that is not a closure type, or
-* [#.#]{.pnum} a namespace
-
-is _members-of-representable_ if it is not a specialization of a template and if it is
+[#]{.pnum} A member of either a class that is not a closure type or a namespace is _members-of-representable_ if it is not a specialization of a template and if it is
 
 * [#.#]{.pnum} a class that is not a closure type,
 * [#.#]{.pnum} a type alias,
@@ -6868,35 +6892,28 @@ is _members-of-representable_ if it is not a specialization of a template and if
 * [#.#]{.pnum} a namespace, or
 * [#.#]{.pnum} a namespace alias.
 
-A member of a closure type is members-of-representable if it is
+A member of a closure type is members-of-representable if it is a function call operator or function call operator template. It is implementation-defined whether other members of closure types are members-of-representable.
 
-* [#.#]{.pnum} a function call operator or function call operator template, or
-* [#.#]{.pnum} a conversion function or conversion function template.
-
-It is implementation-defined whether other members of closure types are _members-of-representable_.
-
-[Counterexamples of members-of-representable members include: injected class names, partial template specializations, friend declarations, static assertions, and non-static data members of closure types that correspond to captured entities.]{.note}
+[Examples of members that are not members-of-representable include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
 
 [3]{.pnum} A member `$M$` of a class or namespace _members-of-precedes_ a point `$P$` if a declaration of `$M$` precedes either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.
 
 [#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that members-of-precede some point in the evaluation context ([expr.const]).
 If `r` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
-Class members and unnamed bit-fields are indexed in the order in which they are declared, but the order of namespace members is unspecified.
-[Base classes are not members. Implicitly-declared special members appear after any user-declared members.]{.note}
+Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared.
+[Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
 
 ::: example
 ```cpp
-class S {
-  class Incomplete;
+class B {};
 
-  /* P1 */ consteval {
-    // OK, n == 7. The member Incomplete::x members-of-precedes the synthesized point P2 associated
-    // with the injected declaration produced by the call to define_aggregate.
-    int n = members_of(
-        define_aggregate(^^Incomplete, {data_member_spec(^^int, {.name="x"})})
-      ).size();
-  }
-}; /* P2 */
+struct S : B {
+  class I;
+
+  int m;
+};
+
+static_assert(members_of(^^S).size() == 8);  // 6 special members, 2 members, does not include base
 ```
 :::
 
@@ -6907,7 +6924,7 @@ consteval vector<info> bases_of(info type);
 [#]{.pnum} *Constant When*: `dealias(type)` is a reflection representing a complete class type.
 
 [#]{.pnum} *Returns*: Let `C` be the type represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships, if any, of `C`.
-The direct base class relationships are indexed in the order in which the corresponding base classes appear in the *base-specifier-list* of `C`.
+The direct base class relationships appear in the order in which the corresponding base classes appear in the *base-specifier-list* of `C`.
 
 ```cpp
 consteval vector<info> static_data_members_of(info type);
@@ -6915,7 +6932,7 @@ consteval vector<info> static_data_members_of(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_variable(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_variable(e)` is `true`, preserving their order.
 
 ```cpp
 consteval vector<info> nonstatic_data_members_of(info type);
@@ -6923,7 +6940,7 @@ consteval vector<info> nonstatic_data_members_of(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_nonstatic_data_member(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_nonstatic_data_member(e)` is `true`, preserving their order.
 
 ```cpp
 consteval vector<info> enumerators_of(info type_enum);
@@ -6939,7 +6956,7 @@ consteval vector<info> get_public_members(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_public(e)` is `true`, preserving their order.
 
 ```cpp
 consteval vector<info> get_public_bases(info type);
@@ -6947,7 +6964,7 @@ consteval vector<info> get_public_bases(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `bases_of(type)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `bases_of(type)` such that `is_public(e)` is `true`, preserving their order.
 
 ```cpp
 consteval vector<info> get_public_static_data_members(info type);
@@ -6955,7 +6972,7 @@ consteval vector<info> get_public_static_data_members(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `static_data_members_of(type)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `static_data_members_of(type)` such that `is_public(e)` is `true`, preserving their order.
 
 ```cpp
 consteval vector<info> get_public_nonstatic_data_members(info type);
@@ -6963,7 +6980,7 @@ consteval vector<info> get_public_nonstatic_data_members(info type);
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, in order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, preserving their order.
 
 :::
 :::
@@ -7009,7 +7026,7 @@ consteval size_t alignment_of(info r);
 * [#.#]{.pnum} If `dealias(r)` represents a type, variable, or object, then the alignment requirement of the entity or object.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `alignment_of(type_of(r))`.
 * [#.#]{.pnum} Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}). If `$A$ != 1`, then the value `$A$`. Otherwise `alignof($T$)`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}). If `$A$` is not `-1`, then the value `$A$`. Otherwise `alignof($T$)`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
@@ -7017,7 +7034,7 @@ consteval size_t bit_size_of(info r);
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, unnamed bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a bit-field or unnamed bit-field with width `$W$`, then `$W$`. If `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), then `$W$` if `$W$` does not equal  `-1`, otherwise `sizeof($T$) * CHAR_BIT`. Otherwise, `CHAR_BIT * size_of(r)`.
+[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a bit-field or unnamed bit-field with width `$W$`, then `$W$`. If `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), then `$W$` if `$W$` is not `-1`, otherwise `sizeof($T$) * CHAR_BIT`. Otherwise, `CHAR_BIT * size_of(r)`.
 :::
 :::
 
