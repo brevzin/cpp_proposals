@@ -4281,7 +4281,7 @@ $qualified-reflection-name$:
 
 [#]{.pnum} The unary `^^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]{.sref}).
 
-[Constructs not described by this document can also be represented by reflections, and can appear as operands of `$reflect-expression$`s.]{.note}
+[This document places no restriction on representing, by reflections, constructs not described by this document or using such constructs as operands of `$reflect-expression$`s.]{.note}
 
 [#]{.pnum} A `$reflect-expression$` is parsed as the longest possible sequence of tokens that could syntactically form a `$reflect-expression$`.
 
