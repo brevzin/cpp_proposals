@@ -5860,9 +5860,8 @@ to the list of declarations in paragraph 2, just before
 <code class="sourceCode cpp"><em>using-declaration</em></code>. Also
 replace
 <code class="sourceCode cpp"><em>static_assert-declaration</em></code>
-and <code class="sourceCode cpp"><em>empty-declaration</em></code> with
-<code class="sourceCode cpp"><em>vacuous-decalaration</em></code>, which
-also encompasses consteval blocks:</p>
+with <code class="sourceCode cpp"><em>vacuous-decalaration</em></code>,
+which also encompasses consteval blocks:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">2</a></span>
@@ -5897,10 +5896,9 @@ it is a <span class="rm" style="color: #bf0303"><del><span><code class="sourceCo
 it is an
 <code class="sourceCode cpp"><em>attribute-declaration</em></code>
 ([dcl.pre]),</li>
-<li><span class="rm" style="color: #bf0303"><del><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(2.15)</a></span>
-it is an
-<span><code class="sourceCode default"><em>empty-declaration</em></code></span>
-([dcl.pre])</del></span>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(2.15)</a></span>
+it is an <code class="sourceCode cpp"><em>empty-declaration</em></code>
+([dcl.pre]){.rm},</li>
 </ul>
 <p>[…]</p>
 </blockquote>
@@ -8134,42 +8132,28 @@ consteval blocks:</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb132"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>  <em>name-declaration</em>:</span>
-<span id="cb132-2"><a href="#cb132-2" aria-hidden="true" tabindex="-1"></a>    <em>block-declaration</em></span>
-<span id="cb132-3"><a href="#cb132-3" aria-hidden="true" tabindex="-1"></a>    <em>nodeclspec-function-declaration</em></span>
-<span id="cb132-4"><a href="#cb132-4" aria-hidden="true" tabindex="-1"></a>    <em>function-definition</em></span>
-<span id="cb132-5"><a href="#cb132-5" aria-hidden="true" tabindex="-1"></a>    <em>friend-type-declaration</em></span>
-<span id="cb132-6"><a href="#cb132-6" aria-hidden="true" tabindex="-1"></a>    <em>template-declaration</em></span>
-<span id="cb132-7"><a href="#cb132-7" aria-hidden="true" tabindex="-1"></a>    <em>deduction-guide</em></span>
-<span id="cb132-8"><a href="#cb132-8" aria-hidden="true" tabindex="-1"></a>    <em>linkage-specification</em></span>
-<span id="cb132-9"><a href="#cb132-9" aria-hidden="true" tabindex="-1"></a>    <em>namespace-definition</em></span>
-<span id="cb132-10"><a href="#cb132-10" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>empty-declaration</em></span></span>
-<span id="cb132-11"><a href="#cb132-11" aria-hidden="true" tabindex="-1"></a>    <em>attribute-declaration</em></span>
-<span id="cb132-12"><a href="#cb132-12" aria-hidden="true" tabindex="-1"></a>    <em>module-import-declaration</em></span>
-<span id="cb132-13"><a href="#cb132-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb132-14"><a href="#cb132-14" aria-hidden="true" tabindex="-1"></a>  <em>block-declaration</em>:</span>
-<span id="cb132-15"><a href="#cb132-15" aria-hidden="true" tabindex="-1"></a>    <em>simple-declaration</em></span>
-<span id="cb132-16"><a href="#cb132-16" aria-hidden="true" tabindex="-1"></a>    <em>asm-declaration</em></span>
-<span id="cb132-17"><a href="#cb132-17" aria-hidden="true" tabindex="-1"></a>    <em>namespace-alias-definition</em></span>
-<span id="cb132-18"><a href="#cb132-18" aria-hidden="true" tabindex="-1"></a>    <em>using-declaration</em></span>
-<span id="cb132-19"><a href="#cb132-19" aria-hidden="true" tabindex="-1"></a>    <em>using-enum-declaration</em></span>
-<span id="cb132-20"><a href="#cb132-20" aria-hidden="true" tabindex="-1"></a>    <em>using-directive</em></span>
-<span id="cb132-21"><a href="#cb132-21" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>static_assert-declaration</em></span></span>
-<span id="cb132-22"><a href="#cb132-22" aria-hidden="true" tabindex="-1"></a>    <em>alias-declaration</em></span>
-<span id="cb132-23"><a href="#cb132-23" aria-hidden="true" tabindex="-1"></a>    <em>opaque-enum-declaration</em></span>
-<span id="cb132-24"><a href="#cb132-24" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>vacuous-declaration</em></span></span>
-<span id="cb132-25"><a href="#cb132-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb132-26"><a href="#cb132-26" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>vacuous-declaration</em>:</span></span>
-<span id="cb132-27"><a href="#cb132-27" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>static_assert-declaration</em></span></span>
-<span id="cb132-28"><a href="#cb132-28" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>empty-declaration</em></span></span>
-<span id="cb132-29"><a href="#cb132-29" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>consteval-block-declaration</em></span></span>
-<span id="cb132-30"><a href="#cb132-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb132-31"><a href="#cb132-31" aria-hidden="true" tabindex="-1"></a>  <em>static_assert-declaration</em>:</span>
-<span id="cb132-32"><a href="#cb132-32" aria-hidden="true" tabindex="-1"></a>    static_assert ( <em>constant-expression</em> ) ;</span>
-<span id="cb132-33"><a href="#cb132-33" aria-hidden="true" tabindex="-1"></a>    static_assert ( <em>constant-expression</em> , <em>static_assert-message</em> ) ;</span>
-<span id="cb132-34"><a href="#cb132-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb132-35"><a href="#cb132-35" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>consteval-block-declaration</em>:</span></span>
-<span id="cb132-36"><a href="#cb132-36" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval <em>compound-statement</em></span></span></code></pre></div>
+<div class="sourceCode" id="cb132"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>  <em>block-declaration</em>:</span>
+<span id="cb132-2"><a href="#cb132-2" aria-hidden="true" tabindex="-1"></a>    <em>simple-declaration</em></span>
+<span id="cb132-3"><a href="#cb132-3" aria-hidden="true" tabindex="-1"></a>    <em>asm-declaration</em></span>
+<span id="cb132-4"><a href="#cb132-4" aria-hidden="true" tabindex="-1"></a>    <em>namespace-alias-definition</em></span>
+<span id="cb132-5"><a href="#cb132-5" aria-hidden="true" tabindex="-1"></a>    <em>using-declaration</em></span>
+<span id="cb132-6"><a href="#cb132-6" aria-hidden="true" tabindex="-1"></a>    <em>using-enum-declaration</em></span>
+<span id="cb132-7"><a href="#cb132-7" aria-hidden="true" tabindex="-1"></a>    <em>using-directive</em></span>
+<span id="cb132-8"><a href="#cb132-8" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>static_assert-declaration</em></span></span>
+<span id="cb132-9"><a href="#cb132-9" aria-hidden="true" tabindex="-1"></a>    <em>alias-declaration</em></span>
+<span id="cb132-10"><a href="#cb132-10" aria-hidden="true" tabindex="-1"></a>    <em>opaque-enum-declaration</em></span>
+<span id="cb132-11"><a href="#cb132-11" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>vacuous-declaration</em></span></span>
+<span id="cb132-12"><a href="#cb132-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb132-13"><a href="#cb132-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>vacuous-declaration</em>:</span></span>
+<span id="cb132-14"><a href="#cb132-14" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>static_assert-declaration</em></span></span>
+<span id="cb132-15"><a href="#cb132-15" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>consteval-block-declaration</em></span></span>
+<span id="cb132-16"><a href="#cb132-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb132-17"><a href="#cb132-17" aria-hidden="true" tabindex="-1"></a>  <em>static_assert-declaration</em>:</span>
+<span id="cb132-18"><a href="#cb132-18" aria-hidden="true" tabindex="-1"></a>    static_assert ( <em>constant-expression</em> ) ;</span>
+<span id="cb132-19"><a href="#cb132-19" aria-hidden="true" tabindex="-1"></a>    static_assert ( <em>constant-expression</em> , <em>static_assert-message</em> ) ;</span>
+<span id="cb132-20"><a href="#cb132-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb132-21"><a href="#cb132-21" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>consteval-block-declaration</em>:</span></span>
+<span id="cb132-22"><a href="#cb132-22" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval <em>compound-statement</em></span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9079,7 +9063,7 @@ follows:</p>
 <span id="cb149-11"><a href="#cb149-11" aria-hidden="true" tabindex="-1"></a>    <em>deduction-guide</em></span>
 <span id="cb149-12"><a href="#cb149-12" aria-hidden="true" tabindex="-1"></a>    <em>alias-declaration</em></span>
 <span id="cb149-13"><a href="#cb149-13" aria-hidden="true" tabindex="-1"></a>    <em>opaque-enum-declaration</em></span>
-<span id="cb149-14"><a href="#cb149-14" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>empty-declaration</em></span></span></code></pre></div>
+<span id="cb149-14"><a href="#cb149-14" aria-hidden="true" tabindex="-1"></a>    <em>empty-declaration</em></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -9099,15 +9083,13 @@ a <code class="sourceCode cpp"><em>deduction-guide</em></code>
 a <code class="sourceCode cpp"><em>template-declaration</em></code>
 whose declaration is one of the above,</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_295" id="pnum_295">(3.4)</a></span>
-a <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>static_assert-declaration</em></code></span>,</del></span></li>
+a <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>static_assert-declaration</em></code></span>,</del></span>
+<span class="addu"><code class="sourceCode cpp"><em>vacuous-declaration</em></code></span></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_296" id="pnum_296">(3.5)</a></span>
 a <code class="sourceCode cpp"><em>using-declaration</em></code>
 ([namespace.udecl]) , or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_297" id="pnum_297">(3.6)</a></span>
-<span class="rm" style="color: #bf0303"><del>an
-<span><code class="sourceCode default"><em>empty-declaration</em></code></span>.</del></span>
-<span class="addu">a
-<code class="sourceCode cpp"><em>vacuous-declaration</em></code>.</span></li>
+an <code class="sourceCode cpp"><em>empty-declaration</em></code>.</li>
 </ul>
 </blockquote>
 </div>
@@ -9214,11 +9196,7 @@ Anonymous unions<a href="#class.union.anon-anonymous-unions" class="self-link"><
 <p>Replace
 <code class="sourceCode cpp"><em>static_assert-declaration</em></code>
 with <code class="sourceCode cpp"><em>vacuous-declaration</em></code> in
-paragraph 1. <span class="ednote" style="color: #0000ff">[ Editor&#39;s
-note: This refactor allows putting in an
-<code class="sourceCode default"><em>empty-declaration</em></code> into
-an anonymous union, which is kind of a consistency drive by with other
-classes. ]</span></p>
+paragraph 1.</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_310" id="pnum_310">1</a></span>

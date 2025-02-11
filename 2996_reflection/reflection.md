@@ -3380,7 +3380,7 @@ Modify the third sentence of paragraph 1 to clarify that type aliases are now en
 
 :::
 
-Since namespace aliases are now entities but their declarations are not definitions, add `$namespace-alias-definition$` to the list of declarations in paragraph 2, just before `$using-declaration$`. Also replace `$static_assert-declaration$` and `$empty-declaration$` with `$vacuous-decalaration$`, which also encompasses consteval blocks:
+Since namespace aliases are now entities but their declarations are not definitions, add `$namespace-alias-definition$` to the list of declarations in paragraph 2, just before `$using-declaration$`. Also replace `$static_assert-declaration$` with `$vacuous-decalaration$`, which also encompasses consteval blocks:
 
 ::: std
 [2]{.pnum} Each entity declared by a `$declaration$` is also _defined_ by that declaration unless:
@@ -3395,7 +3395,7 @@ Since namespace aliases are now entities but their declarations are not definiti
 * [2.12]{.pnum} it is a `$deduction-guide$` ([temp.deduct.guide]),
 * [2.13]{.pnum} it is a [`$static_assert-declaration$`]{.rm} [`$vacuous-declaration$`]{.addu} ([dcl.pre]),
 * [2.14]{.pnum} it is an `$attribute-declaration$` ([dcl.pre]),
-* [[2.15]{.pnum} it is an `$empty-declaration$` ([dcl.pre])]{.rm},
+* [2.15]{.pnum} it is an `$empty-declaration$` ([dcl.pre]){.rm},
 
 [...]
 
@@ -4568,19 +4568,6 @@ Introduce the non-terminal `$vacuous-declaration$` in paragraph 9.1 to encompass
 
 ::: std
 ```diff
-  $name-declaration$:
-    $block-declaration$
-    $nodeclspec-function-declaration$
-    $function-definition$
-    $friend-type-declaration$
-    $template-declaration$
-    $deduction-guide$
-    $linkage-specification$
-    $namespace-definition$
--   $empty-declaration$
-    $attribute-declaration$
-    $module-import-declaration$
-
   $block-declaration$:
     $simple-declaration$
     $asm-declaration$
@@ -4595,7 +4582,6 @@ Introduce the non-terminal `$vacuous-declaration$` in paragraph 9.1 to encompass
 
 + $vacuous-declaration$:
 +    $static_assert-declaration$
-+    $empty-declaration$
 +    $consteval-block-declaration$
 
   $static_assert-declaration$:
@@ -5105,7 +5091,7 @@ Modify the grammar for `$member-declaration$` as follows:
     $deduction-guide$
     $alias-declaration$
     $opaque-enum-declaration$
--   $empty-declaration$
+    $empty-declaration$
 ```
 :::
 
@@ -5117,9 +5103,9 @@ Update paragraph 3 accordingly:
 * [#.#]{.pnum} a friend declaration ([class.friend]),
 * [#.#]{.pnum} a `$deduction-guide$` ([temp.deduct.guide]),
 * [#.#]{.pnum} a `$template-declaration$` whose declaration is one of the above,
-* [#.#]{.pnum} a [`$static_assert-declaration$`,]{.rm}
+* [#.#]{.pnum} a [`$static_assert-declaration$`,]{.rm} [`$vacuous-declaration$`]{.addu}
 * [#.#]{.pnum} a `$using-declaration$` ([namespace.udecl]) , or
-* [#.#]{.pnum} [an `$empty-declaration$`.]{.rm} [a `$vacuous-declaration$`.]{.addu}
+* [#.#]{.pnum} an `$empty-declaration$`.
 
 :::
 
@@ -5163,7 +5149,7 @@ Data member descriptions are represented by reflections ([basic.fundamental]{.sr
 
 ### [class.union.anon]{.sref} Anonymous unions {-}
 
-Replace `$static_assert-declaration$` with `$vacuous-declaration$` in paragraph 1. [This refactor allows putting in an `$empty-declaration$` into an anonymous union, which is kind of a consistency drive by with other classes.]{.ednote}
+Replace `$static_assert-declaration$` with `$vacuous-declaration$` in paragraph 1.
 
 ::: std
 [1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacuous-declaration$`]{.addu}.  [...]
