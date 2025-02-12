@@ -615,15 +615,7 @@ namespace std::meta {
 
   // [meta.reflection.annotation], annotation reflection
 + consteval vector<info> annotations_of(info item);
-+ consteval vector<info> annotations_of(info item, info type);
-+
-+ template<class T>
-+   consteval optional<T> annotation_of(info item);
-+
-+ template<class T>
-+   consteval bool has_annotation(info item);
-+ template<class T>
-+   consteval bool has_annotation(info item, T const& value);
++ consteval vector<info> annotations_of_with_type(info item, info type);
 +
 +  consteval info annotate(info item, info value, source_location loc = source_location::current());
 }

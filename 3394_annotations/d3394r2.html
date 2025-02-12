@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-01-29" />
+  <meta name="dcterms.date" content="2025-02-12" />
   <title>Annotations for Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-01-29</td>
+    <td>2025-02-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -631,25 +631,28 @@ Exploring<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P3394R1">[<a href="https://wg21.link/p3394r1" role="doc-biblioref">P3394R1</a>]</span>:</p>
+<p>Since <span class="citation" data-cites="P3394R1"><a href="https://wg21.link/p3394r1" role="doc-biblioref">[P3394R1]</a></span>:</p>
 <ul>
 <li>loosened the P2996 scope restrictions around injected declarations:
 allow the definition of an entity to produce injected declaration of
 itself</li>
 </ul>
-<p>Since <span class="citation" data-cites="P3394R0">[<a href="https://wg21.link/p3394r0" role="doc-biblioref">P3394R0</a>]</span>:</p>
+<p>Since <span class="citation" data-cites="P3394R0"><a href="https://wg21.link/p3394r0" role="doc-biblioref">[P3394R0]</a></span>:</p>
 <ul>
 <li>added wording</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>Ever since writing <span class="title"><span class="citation" data-cites="P1240R0">[<a href="https://wg21.link/p1240r0" role="doc-biblioref">P1240R0</a>]</span></span>, but more so since <span class="title"><span class="citation" data-cites="P2996R0">[<a href="https://wg21.link/p2996r0" role="doc-biblioref">P2996R0</a>]</span></span>, we have been requested
-to add a capability to annotate declarations in a way that reflection
-can observe. For example, Jeremy Ong presented compelling arguments in a
+<p>Ever since writing <span class="title"><span class="citation" data-cites="P1240R0"><a href="https://wg21.link/p1240r0" role="doc-biblioref">[P1240R0] (Scalable Reflection in
+C++)</a></span></span>, but more so since <span class="title"><span class="citation" data-cites="P2996R0"><a href="https://wg21.link/p2996r0" role="doc-biblioref">[P2996R0]
+(Reflection for C++26)</a></span></span>, we have been requested to add
+a capability to annotate declarations in a way that reflection can
+observe. For example, Jeremy Ong presented compelling arguments in a
 post to the <a href="https://lists.isocpp.org/sg7/2023/10/0450.php">SG7
 reflector</a>. Corentin Jabot also noticed the need while P1240 was
-evolving and wrote <span class="title"><span class="citation" data-cites="P1887R0">[<a href="https://wg21.link/p1887r0" role="doc-biblioref">P1887R0</a>]</span></span>, which proposes syntax
-not entirely unlike what we present here.</p>
+evolving and wrote <span class="title"><span class="citation" data-cites="P1887R0"><a href="https://wg21.link/p1887r0" role="doc-biblioref">[P1887R0] (Typesafe Reflection on
+attributes)</a></span></span>, which proposes syntax not entirely unlike
+what we present here.</p>
 <p>In early versions of P2996 (and P1240 before that), a workaround was
 to encode properties in the template arguments of alias template
 specializations:</p>
@@ -1213,9 +1216,9 @@ on classes, this would be before the class is complete or after the
 class is complete. Before completeness allows the class to observe the
 annotation during instantiation. After completeness allows the
 annotation callback to observe properties of the type. In some sense,
-Herb Sutter’s <span class="title"><span class="citation" data-cites="P0707R4">[<a href="https://wg21.link/p0707r4" role="doc-biblioref">P0707R4</a>]</span></span> was adding annotations
-on classes, invoked on class completeness, that allow mutation of the
-class.</p>
+Herb Sutter’s <span class="title"><span class="citation" data-cites="P0707R4"><a href="https://wg21.link/p0707r4" role="doc-biblioref">[P0707R4] (Metaclasses: Generative
+C++)</a></span></span> was adding annotations on classes, invoked on
+class completeness, that allow mutation of the class.</p>
 <p>One concrete, simpler example. We can, with this proposal as-is,
 create a <code class="sourceCode cpp">Debug</code> annotation that a
 user can add to their type and a specialization of <code class="sourceCode cpp">std<span class="op">::</span>formatter</code> for
@@ -1253,7 +1256,8 @@ annotation to, at the point of completion of
 <code class="sourceCode cpp">Point</code>, inject an explicit
 specialization of <code class="sourceCode cpp">std<span class="op">::</span>formatter</code>.
 This would rely both on the ability for the annotation to be called back
-and language support for such injection (see <span class="title"><span class="citation" data-cites="P3294R2">[<a href="https://wg21.link/p3294r2" role="doc-biblioref">P3294R2</a>]</span></span>).</p>
+and language support for such injection (see <span class="title"><span class="citation" data-cites="P3294R2"><a href="https://wg21.link/p3294r2" role="doc-biblioref">[P3294R2] (Code
+Injection with Token Sequences)</a></span></span>).</p>
 <p>There are still open questions as to how to handle such callbacks.
 Does an annotation that gets called back merit different syntax from an
 annotation that doesn’t? Can it mutate the entity that it is attached
@@ -1268,7 +1272,7 @@ would cause <code class="sourceCode cpp">X_handler<span class="op">(...)</span><
 be invoked when an entity is first declared with an annotation of type
 <code class="sourceCode cpp">X</code>).</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>The wording is relative to <span class="citation" data-cites="P2996R9">[<a href="https://wg21.link/p2996r9" role="doc-biblioref">P2996R9</a>]</span>.</p>
+<p>The wording is relative to <span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span>.</p>
 <h2 data-number="5.1" id="language"><span class="header-section-number">5.1</span> Language<a href="#language" class="self-link"></a></h2>
 <p>Change <span>6.8.2 <a href="https://wg21.link/basic.fundamental">[basic.fundamental]</a></span>
 to add “annotation” to the list of reflection kinds:</p>
@@ -1456,18 +1460,10 @@ synopsis:</p>
 <span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.annotation], annotation reflection</span>
 <span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; annotations_of(info item);</span></span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; annotations_of(info item, info type);</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; annotations_of_with_type(info item, info type);</span></span>
 <span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval optional&lt;T&gt; annotation_of(info item);</span></span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval bool has_annotation(info item);</span></span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval bool has_annotation(info item, T const&amp; value);</span></span>
-<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a><span class="va">+  consteval info annotate(info item, info value, source_location loc = source_location::current());</span></span>
-<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="va">+  consteval info annotate(info item, info value, source_location loc = source_location::current());</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1811,12 +1807,12 @@ C++26. <a href="https://wg21.link/p2996r9"><div class="csl-block">https://wg21.l
 2024-10-15. Code Injection with Token Sequences. <a href="https://wg21.link/p3294r2"><div class="csl-block">https://wg21.link/p3294r2</div></a>
 </div>
 <div id="ref-P3394R0" class="csl-entry" role="doc-biblioentry">
-[P3394R0] Daveed Vandevoorde, Wyatt Childers, Barry Revzin, Dan Katz.
-2024-10-14. Annotations for Reflection. <a href="https://wg21.link/p3394r0"><div class="csl-block">https://wg21.link/p3394r0</div></a>
+[P3394R0] Daveed Vandevoorde, Wyatt Childers, Dan Katz,. 2024-10-14.
+Annotations for Reflection. <a href="https://wg21.link/p3394r0"><div class="csl-block">https://wg21.link/p3394r0</div></a>
 </div>
 <div id="ref-P3394R1" class="csl-entry" role="doc-biblioentry">
-[P3394R1] Daveed Vandevoorde, Wyatt Childers, Barry Revzin, Dan Katz.
-2025-01-12. Annotations for Reflection. <a href="https://wg21.link/p3394r1"><div class="csl-block">https://wg21.link/p3394r1</div></a>
+[P3394R1] Daveed Vandevoorde, Wyatt Childers, Dan Katz, Barry Revzin.
+2025-01-13. Annotations for Reflection. <a href="https://wg21.link/p3394r1"><div class="csl-block">https://wg21.link/p3394r1</div></a>
 </div>
 </div>
 </div>
