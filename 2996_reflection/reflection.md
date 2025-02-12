@@ -4341,7 +4341,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
+  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
@@ -6800,8 +6800,8 @@ consteval info parent_of(info r);
 [#]{.pnum} *Returns*:
 
 - [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, then a reflection representing the innermost enclosing anonymous union.
-- [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is respectively the innermost such scope enclosing the first declaration of what is represented by `r`.
-  - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(^^$E$)`.
+- [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is, respectively, the innermost such scope enclosing the first declaration of what is represented by `r`.
+  - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(parent_of(^^$E$))`.
   - [#.#]{.pnum} Otherwise, `^^$E$`.
 
 ```cpp
