@@ -6871,9 +6871,17 @@ consteval vector<info> members_of(info r);
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
 
-[#]{.pnum} A member of either a class that is not a closure type or a namespace is _members-of-representable_ if it is not a specialization of a template and if it is
+[#]{.pnum} A member `$M$` of either a class or namespace `$Q$` is _members-of-eligible_ if
 
-* [#.#]{.pnum} a class that is not a closure type,
+* [#.#]{.pnum} `$M$` is not a closure type,
+* [#.#]{.pnum} either `$Q$` is a namespace or `$Q$` is a class type and `$M$` is a direct member of `$Q$` ([class.member.general]), and
+* [#.#]{.pnum} if `$Q$` is a closure type, then `$M$` is a function call operator or function call operator template.
+
+It is implementation-defined whether other members of closure types are members-of-eligible.
+
+[#]{.pnum} A member of either a class or a namespace is _members-of-representable_ if it is members-of-eligible, it is not a specialization of a template, and it is
+
+* [#.#]{.pnum} a class or enumeration type,
 * [#.#]{.pnum} a type alias,
 * [#.#]{.pnum} a primary class template, function template, primary variable template, alias template, or concept,
 * [#.#]{.pnum} a variable or reference,
@@ -6881,8 +6889,6 @@ consteval vector<info> members_of(info r);
 * [#.#]{.pnum} a non-static data member or unnamed bit-field, other than members of an anonymous union that is directly or indirectly members-of-representable,
 * [#.#]{.pnum} a namespace, or
 * [#.#]{.pnum} a namespace alias.
-
-A member of a closure type is members-of-representable if it is a function call operator or function call operator template. It is implementation-defined whether other members of closure types are members-of-representable.
 
 [Examples of members that are not members-of-representable include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
 
@@ -6999,9 +7005,9 @@ consteval member_offset offset_of(info r);
 consteval size_t size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member whose corresponding subobject has type `$T$`, or a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), then `sizeof($T$)`. Otherwise, if `dealias(r)` represents a type `T`, then `sizeof(T)`. Otherwise, `size_of(type_of(r))`.
+[#]{.pnum} *Returns*: If `r` represents a non-static data member whose corresponding subobject has type `$T$`, or a data member description (`$TR$`, `$N$`, `$A$`, `$W$`, `$NUA$`) where the corresponding subobject of `$TR$` would have type `$T$` ([class.mem.general]{.sref}), then `sizeof($T$)`. Otherwise, if `dealias(r)` represents a type `$T$`, then `sizeof($T$)`. Otherwise, `size_of(type_of(r))`.
 
 [The subobject corresponding to a non-static data member of reference type has the same size and alignment as the corresponding pointer type.]{.note}
 
@@ -7009,14 +7015,14 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 
 [#]{.pnum} *Returns*:
 
 * [#.#]{.pnum} If `dealias(r)` represents a type, variable, or object, then the alignment requirement of the entity or object.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `alignment_of(type_of(r))`.
 * [#.#]{.pnum} Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}). If `$A$` is not `-1`, then the value `$A$`. Otherwise `alignof($T$)`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$TR$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}). If `$A$` is not `-1`, then the value `$A$`. Otherwise `alignof($T$)` where the corresponding subobject of `$TR$` would have type `$T$`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
@@ -7024,7 +7030,11 @@ consteval size_t bit_size_of(info r);
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, unnamed bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a bit-field or unnamed bit-field with width `$W$`, then `$W$`. If `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), then `$W$` if `$W$` is not `-1`, otherwise `sizeof($T$) * CHAR_BIT`. Otherwise, `CHAR_BIT * size_of(r)`.
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents a non-static data member that is a bit-field or an unnamed bit-field with width `$W$`, then `$W$`.
+* [#.#]{.pnum} Otherwise, if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}) and `$W$` is not `-1`, then `$W$`.
+* [#.#]{.pnum} Otherwise, `CHAR_BIT * size_of(r)`.
 :::
 :::
 
@@ -7033,7 +7043,7 @@ consteval size_t bit_size_of(info r);
 
 ::: std
 ::: addu
-[1]{.pnum} The `extract` function template may be used to extract a value out of a reflection when the type is known.
+[1]{.pnum} The `extract` function template may be used to extract a value out of a reflection when its type is known.
 
 [#]{.pnum} The following are defined for exposition only to aid in the specification of `extract`:
 ```cpp
@@ -7054,7 +7064,7 @@ template <class T>
 
 [#]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} `r` represents a non-static data member of a class `C` with type `X` and `T` is `X C::*` and `r` does not represent a bit-field;
+- [#.#]{.pnum} `r` represents a non-static data member that is not a bit-field of a class `C` with type `X` and `T` is `X C::*`;
 - [#.#]{.pnum} `r` represents an implicit object member function of class `C` with type `F` or `F noexcept` and `T` is `F C::*`; or
 - [#.#]{.pnum} `r` represents a non-member function, static member function, or explicit object member function of function type `F` or `F noexcept` and `T` is `F*`.
 
@@ -7065,7 +7075,7 @@ template <class T>
 
 ```cpp
 template <class T>
-  consteval T $extract-val$(info r); // exposition only
+  consteval T $extract-value$(info r); // exposition only
 ```
 
 [#]{.pnum} Let `U` be the type of the value that `r` represents.
@@ -7083,11 +7093,17 @@ template <class T>
   consteval T extract(info r);
 ```
 
-[#]{.pnum} *Effects*:
+[#]{.pnum} *Effects*: Equivalent to:
 
-- [#]{.pnum} If `T` is a reference type, then equivalent to `return $extract-ref$<T>(r);`
-- [#]{.pnum} Otherwise, if `r` represents a function or non-static data member, equivalent to `return $extract-member-or-function$<T>(r);`
-- [#]{.pnum} Otherwise, equivalent to `return $extract-value$<T>(value_of(r));`
+```cpp
+if (is_reference_type(^^T)) {
+  return $extract-ref$<T>(r);
+} else if (is_nonstatic_data_member(r) || is_function(r)) {
+  return $extract-member-or-function$<T>(r);
+} else {
+  return $extract-value$<T>(value_of(r));
+}
+```
 
 :::
 :::
@@ -7136,6 +7152,15 @@ consteval info substitute(info templ, R&& arguments);
 
 ::: std
 ::: addu
+[#]{.pnum} An object is *meta-reflectable* if it:
+
+  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
+  - [#.#]{.pnum} is not a string literal object ([lex.string]),
+  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]),
+  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]),
+  - [#.#]{.pnum} is not a subobject ([intro.object]) of one of the above, and
+  - [#.#]{.pnum} is constexpr-referenceable from a program point in a namespace scope ([expr.const]).
+
 ```cpp
 template <typename T>
   consteval info reflect_value(const T& expr);
@@ -7145,13 +7170,11 @@ template <typename T>
 
 [#]{.pnum} Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
 
-[#]{.pnum} *Constant When*: `$V$` satisfies the constraints for a value computed by a prvalue constant expression and no constituent reference of `$V$` refers to, or constituent value of `$V$` is a pointer to:
+[#]{.pnum} *Constant When*:
 
-  - [#.#]{.pnum} a temporary object ([class.temporary]),
-  - [#.#]{.pnum} a string literal object ([lex.string]),
-  - [#.#]{.pnum} the result of a `typeid` expression ([expr.typeid]),
-  - [#.#]{.pnum} an object associated with a predefined `__func__` variable ([dcl.fct.def.general]), or
-  - [#.#]{.pnum} an object that is not constexpr-representable from a program point in a namespace scope.
+* [#.#]{.pnum} `$V$` satisfies the constraints for a value computed by a prvalue constant expression,
+* [#.#]{.pnum} no constituent reference of `$V$` refers to an object that is not meta-reflectable, and
+* [#.#]{.pnum} no constituent value of `$V$` of pointer type is a pointer to an object that is not meta-reflectable.
 
 [#]{.pnum} *Returns*: A reflection of `$V$`. The type of the represented value is the cv-unqualified version of `T`.
 
@@ -7162,13 +7185,7 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is not a function type.
 
-[#]{.pnum} *Constant When*: `expr` designates an object or function that
-
-  - [#.#]{.pnum} is constexpr-representable from a program point in a namespace scope ([expr.const]),
-  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
-  - [#.#]{.pnum} is not a string literal object ([lex.string]),
-  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
-  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
+[#]{.pnum} *Constant When*: `expr` designates a meta-reflectable object.
 
 [#]{.pnum} *Returns*: A reflection of the object designated by `expr`.
 
