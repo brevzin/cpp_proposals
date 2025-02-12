@@ -70,7 +70,7 @@ A few changes are needed to "consteval-only types" to ensure that objects of suc
   - Fully implemented; try it with [Clang](https://godbolt.org/z/n47ona1db).
   - Still fine to type erase _within_ a constant expression (as seen [here](https://godbolt.org/z/E4faezfr3)).
 
-Only one small change is needed for splicers.
+Two changes are needed for splicers.
 
 - [#]{.pnum} A slight syntactic change is needed for template splicers.
   - **P2994R4**: `$splice-template-name$` handled template splicers.
@@ -80,6 +80,12 @@ Only one small change is needed for splicers.
     - Splicing a template as a type is spelled `typename [:R:]`.
     - Splicing a template as an expression is spelled `template [:R:]`.
   - Try it on godbolt with [Clang](https://godbolt.org/z/GKj5of839).
+
+- [#]{.pnum} Reflections of concepts cannot be spliced.
+  - **P2996R4**: Concepts could be spliced within both `$type-constraint$`s and `$concept-id$`s.
+  - **D2996R10**: Splicing a concept is ill-formed.
+  - **Rationale**: [@P2841] has already done the work to figure out dependent concepts. CWG requested that we wait for that to land first, and revisit concept splicers in a future paper.
+  - **Instead**: For the case of a `$concept-id$`, `substitute` can still check whether a concept is satisfied by a template argument list.
 
 ## Changes to injected declarations since P2996R4
 
@@ -119,6 +125,7 @@ Since [@P2996R9]:
   * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
   * producing an injected declaration from a non-plainly constant-evaluated context is prohibited for core constant expressions, rather than rendering the program ill-formed
   * do not specify `sizeof(std::meta::info)`
+  * removed concept splicers
 * library wording updates
   * add `<meta>` to [headers]
   * fix definition of "Constant When" (use "constant subexpression" in lieu of "core constant expression")
@@ -3277,7 +3284,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
   - [7-8.#]{.pnum} either that `$consteval-block-declaration$` or the template definition from which it is instantiated is reachable from
 
     - [7-8.#.#]{.pnum} `$P$`, or
-    - [7-8.#.#]{.pnum} a point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
+    - [7-8.#.#]{.pnum} the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
 
 ::: example
 ```cpp
@@ -4152,8 +4159,6 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, if `$T$` is a primary variable template, the expression is an lvalue referring to the same object associated with `$S$` and has the same type as `$S$`.
 
-* [#.#]{.pnum} Otherwise, if `$T$` is a concept, the expression is a prvalue that computes the same boolean value as the `$concept-id$` formed by `$S$`.
-
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
 [Access checking of class members occurs during lookup, and therefore does not pertain to splicing.]{.note}
@@ -4805,9 +4810,9 @@ using alias = [:^^S::type:];    // OK, type-only context
 ```
 :::
 
-[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specifier$`, the `$splice-specifier$` shall designate a type, a primary class template, an alias template, or a type concept. The `$splice-type-specifier$` designates the same entity as the `$splice-specifier$`.
+[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specifier$`, the `$splice-specifier$` shall designate a type, a primary class template, or an alias template. The `$splice-type-specifier$` designates the same entity as the `$splice-specifier$`.
 
-[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template, an alias template, or a type concept (call it `$T$`). If `$T$` designates a primary class template or an alias template, the `$splice-type-specifier$` designates the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`. Otherwise, the `$splice-specifier$` shall appear as a `$type-constraint$`.
+[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template. The `$splice-type-specifier$` designates the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`.
 
 :::
 :::
@@ -5340,7 +5345,7 @@ Add a paragraph after paragraph 3 to disallow dependent concepts being used in a
 
 ::: std
 ::: addu
-[3+]{.pnum} The `$nested-name-specifier$`, if any, shall not be depenent.
+[3+]{.pnum} The `$nested-name-specifier$`, if any, shall not be dependent.
 :::
 :::
 
@@ -5510,15 +5515,6 @@ Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 
 ::: std
 [1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be [the name of]{.rm} a class template or an alias template, expressed as [an]{.addu} `$id-expression$` [or a `$splice-template-argument$`]{.addu}. Only primary templates are considered when matching the template argument with the corresponding parameter; partial specializations are not considered even if their parameter lists match that of the template template parameter.
-:::
-
-### [temp.constr.normal]{.sref} Constraint normalization {-}
-
-Include a reference to `$splice-expression$`s in Note 1.
-
-::: std
-[Normalization of `$constraint-expression$`s is performed when determining the associated constraints ([temp.constr.constr]) of a declaration and when evaluating the value of an `$id-expression$` [or `$splice-expression$`]{.addu} that names a concept specialization ([expr.prim.id] [, [expr.prim.splice]]{.addu})]{.note1}
-
 :::
 
 ### [temp.type]{.sref} Type equivalence {-}
@@ -5729,22 +5725,19 @@ Add a new subsection of [temp.dep]{.sref} following [temp.dep.constexpr]{.sref},
 
 :::example
 ```cpp
-template <auto T, auto NS, auto C, auto V>
+template <auto T, auto NS>
 void fn() {
-  using a = [:T:]<0>;  // [:T:] and [:T:]<V> are dependent
+  using a = [:T:]<1>;  // [:T:] and [:T:]<1> are dependent
 
-  static_assert(template [:C:]<typename [:NS:]::template TCls<0>>);
-    // [:C:] and [:NS:] are dependent
+  static_assert([:NS:]::template TCls<1>::v == a::v); // [:NS:] is dependent
 }
 
 namespace NS {
-template <auto V> struct TCls {};
-template <typename> concept Concept = requires { requires true; };
+template <auto V> struct TCls { static constexpr int v = V; };
 }
 
 int main() {
-  static constexpr int v = 1;
-  fn<^^NS::TCls, ^^NS, ^^NS::Concept, ^^v>();
+  fn<^^NS::TCls, ^^NS>();
 }
 ```
 
@@ -6799,7 +6792,7 @@ consteval info parent_of(info r);
 
 [#]{.pnum} *Returns*:
 
-- [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, then a reflection representing the innermost enclosing anonymous union.
+- [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, or an unnamed bit-field declared within the `$member-specification$` of such a union, then a reflection representing the innermost enclosing anonymous union.
 - [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is, respectively, the innermost such scope enclosing the first declaration of what is represented by `r`.
   - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(parent_of(^^$E$))`.
   - [#.#]{.pnum} Otherwise, `^^$E$`.
@@ -6874,7 +6867,8 @@ consteval vector<info> members_of(info r);
 [#]{.pnum} A member `$M$` of either a class or namespace `$Q$` is _members-of-eligible_ if
 
 * [#.#]{.pnum} `$M$` is not a closure type,
-* [#.#]{.pnum} either `$Q$` is a namespace or `$Q$` is a class type and `$M$` is a direct member of `$Q$` ([class.member.general]), and
+* [#.#]{.pnum} if `$Q$` is a class, then `$M$` is a direct member of `$Q$` ([class.member.general]),
+* [#.#]{.pnum} if `$Q$` is a namespace, then there is a declaration `$D$` of `$M$` reachable from some point in the evaluation context for which there is no class scope or function parameter scope that intervenes between `$D$` and the namespace scope of `$Q$`, and
 * [#.#]{.pnum} if `$Q$` is a closure type, then `$M$` is a function call operator or function call operator template.
 
 It is implementation-defined whether other members of closure types are members-of-eligible.
@@ -6890,12 +6884,12 @@ It is implementation-defined whether other members of closure types are members-
 * [#.#]{.pnum} a namespace, or
 * [#.#]{.pnum} a namespace alias.
 
-[Examples of members that are not members-of-representable include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
+[Examples of members that are not members-of-representable include: injected class names, enumerators, partial template specializations, friend declarations, and static assertions.]{.note}
 
-[3]{.pnum} A member `$M$` of a class or namespace _members-of-precedes_ a point `$P$` if a declaration of `$M$` precedes either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.
+[3]{.pnum} A member `$M$` of a class or namespace _members-of-precedes_ a point `$P$` if a declaration of `$M$` precedes either `$P$` or the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that members-of-precede some point in the evaluation context ([expr.const]).
-If `r` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members `$M$` of the entity represented by `r` that members-of-precede some point in the evaluation context ([expr.const]).
+If `r` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields `$B$` declared within the `$member-specification$` of `$C$`.
 Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared.
 [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
 
