@@ -70,7 +70,7 @@ A few changes are needed to "consteval-only types" to ensure that objects of suc
   - Fully implemented; try it with [Clang](https://godbolt.org/z/n47ona1db).
   - Still fine to type erase _within_ a constant expression (as seen [here](https://godbolt.org/z/E4faezfr3)).
 
-Only one small change is needed for splicers.
+Two changes are needed for splicers.
 
 - [#]{.pnum} A slight syntactic change is needed for template splicers.
   - **P2994R4**: `$splice-template-name$` handled template splicers.
@@ -80,6 +80,12 @@ Only one small change is needed for splicers.
     - Splicing a template as a type is spelled `typename [:R:]`.
     - Splicing a template as an expression is spelled `template [:R:]`.
   - Try it on godbolt with [Clang](https://godbolt.org/z/GKj5of839).
+
+- [#]{.pnum} Reflections of concepts cannot be spliced.
+  - **P2996R4**: Concepts could be spliced within both `$type-constraint$`s and `$concept-id$`s.
+  - **D2996R10**: Splicing a concept is ill-formed.
+  - **Rationale**: [@P2841] has already done the work to figure out dependent concepts. CWG requested that we wait for that to land first, and revisit concept splicers in a future paper.
+  - **Instead**: For the case of a `$concept-id$`, `substitute` can still check whether a concept is satisfied by a template argument list.
 
 ## Changes to injected declarations since P2996R4
 
@@ -119,11 +125,13 @@ Since [@P2996R9]:
   * prefer "core constant expressions" to "manifestly constant-evaluated expression" in several places
   * producing an injected declaration from a non-plainly constant-evaluated context is prohibited for core constant expressions, rather than rendering the program ill-formed
   * do not specify `sizeof(std::meta::info)`
+  * removed concept splicers
 * library wording updates
   * add `<meta>` to [headers]
   * fix definition of "Constant When" (use "constant subexpression" in lieu of "core constant expression")
   * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
   * template specializations and non-static data members of closure types are not _members-of-representable_
+  * integrated [@P3547R1] following its approval in EWG/LEWG
 
 Since [@P2996R8]:
 
@@ -2582,11 +2590,6 @@ namespace std::meta {
   consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
   consteval auto enumerators_of(info type_enum) -> vector<info>;
 
-  consteval auto get_public_members(info type) -> vector<info>;
-  consteval auto get_public_static_data_members(info type) -> vector<info>;
-  consteval auto get_public_nonstatic_data_members(info type) -> vector<info>;
-  consteval auto get_public_bases(info type) -> vector<info>;
-
   // @[substitute](#substitute)@
   template <reflection_range R = initializer_list<info>>
     consteval auto can_substitute(info templ, R&& args) -> bool;
@@ -2832,11 +2835,6 @@ namespace std::meta {
   consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
 
   consteval auto enumerators_of(info type_enum) -> vector<info>;
-
-  consteval auto get_public_members(info type_class) -> vector<info>;
-  consteval auto get_public_static_data_members(info type_class) -> vector<info>;
-  consteval auto get_public_nonstatic_data_members(info type_class) -> vector<info>;
-  consteval auto get_public_bases(info type_class) -> vector<info>;
 }
 ```
 :::
@@ -2851,10 +2849,6 @@ The template `bases_of` returns the direct base classes of the class type repres
 `static_data_members_of` and `nonstatic_data_members_of` return reflections of the static and non-static data members, preserving their order, respectively.
 
 `enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
-
-The `get_public_meow` functions are equivalent to `meow_of` functions except that they additionally filter the results on those members for which `is_public(member)` is `true`.
-The only other distinction is that `members_of` can be invoked on a namespace, while `get_public_members` can only be invoked on a class type (because it does not make sense to ask for the public members of a namespace).
-This set of functions has a distinct API by demand for ease of grepping.
 
 ### `substitute`
 
@@ -3277,7 +3271,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
   - [7-8.#]{.pnum} either that `$consteval-block-declaration$` or the template definition from which it is instantiated is reachable from
 
     - [7-8.#.#]{.pnum} `$P$`, or
-    - [7-8.#.#]{.pnum} a point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
+    - [7-8.#.#]{.pnum} the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
 
 ::: example
 ```cpp
@@ -4152,8 +4146,6 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, if `$T$` is a primary variable template, the expression is an lvalue referring to the same object associated with `$S$` and has the same type as `$S$`.
 
-* [#.#]{.pnum} Otherwise, if `$T$` is a concept, the expression is a prvalue that computes the same boolean value as the `$concept-id$` formed by `$S$`.
-
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
 [Access checking of class members occurs during lookup, and therefore does not pertain to splicing.]{.note}
@@ -4805,9 +4797,9 @@ using alias = [:^^S::type:];    // OK, type-only context
 ```
 :::
 
-[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specifier$`, the `$splice-specifier$` shall designate a type, a primary class template, an alias template, or a type concept. The `$splice-type-specifier$` designates the same entity as the `$splice-specifier$`.
+[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specifier$`, the `$splice-specifier$` shall designate a type, a primary class template, or an alias template. The `$splice-type-specifier$` designates the same entity as the `$splice-specifier$`.
 
-[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template, an alias template, or a type concept (call it `$T$`). If `$T$` designates a primary class template or an alias template, the `$splice-type-specifier$` designates the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`. Otherwise, the `$splice-specifier$` shall appear as a `$type-constraint$`.
+[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template. The `$splice-type-specifier$` designates the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`.
 
 :::
 :::
@@ -5340,7 +5332,7 @@ Add a paragraph after paragraph 3 to disallow dependent concepts being used in a
 
 ::: std
 ::: addu
-[3+]{.pnum} The `$nested-name-specifier$`, if any, shall not be depenent.
+[3+]{.pnum} The `$nested-name-specifier$`, if any, shall not be dependent.
 :::
 :::
 
@@ -5510,15 +5502,6 @@ Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
 
 ::: std
 [1]{.pnum} A `$template-argument$` for a template `$template-parameter$` shall be [the name of]{.rm} a class template or an alias template, expressed as [an]{.addu} `$id-expression$` [or a `$splice-template-argument$`]{.addu}. Only primary templates are considered when matching the template argument with the corresponding parameter; partial specializations are not considered even if their parameter lists match that of the template template parameter.
-:::
-
-### [temp.constr.normal]{.sref} Constraint normalization {-}
-
-Include a reference to `$splice-expression$`s in Note 1.
-
-::: std
-[Normalization of `$constraint-expression$`s is performed when determining the associated constraints ([temp.constr.constr]) of a declaration and when evaluating the value of an `$id-expression$` [or `$splice-expression$`]{.addu} that names a concept specialization ([expr.prim.id] [, [expr.prim.splice]]{.addu})]{.note1}
-
 :::
 
 ### [temp.type]{.sref} Type equivalence {-}
@@ -5729,22 +5712,19 @@ Add a new subsection of [temp.dep]{.sref} following [temp.dep.constexpr]{.sref},
 
 :::example
 ```cpp
-template <auto T, auto NS, auto C, auto V>
+template <auto T, auto NS>
 void fn() {
-  using a = [:T:]<0>;  // [:T:] and [:T:]<V> are dependent
+  using a = [:T:]<1>;  // [:T:] and [:T:]<1> are dependent
 
-  static_assert(template [:C:]<typename [:NS:]::template TCls<0>>);
-    // [:C:] and [:NS:] are dependent
+  static_assert([:NS:]::template TCls<1>::v == a::v); // [:NS:] is dependent
 }
 
 namespace NS {
-template <auto V> struct TCls {};
-template <typename> concept Concept = requires { requires true; };
+template <auto V> struct TCls { static constexpr int v = V; };
 }
 
 int main() {
-  static constexpr int v = 1;
-  fn<^^NS::TCls, ^^NS, ^^NS::Concept, ^^v>();
+  fn<^^NS::TCls, ^^NS>();
 }
 ```
 
@@ -6106,17 +6086,33 @@ namespace std::meta {
   consteval info template_of(info r);
   consteval vector<info> template_arguments_of(info r);
 
-  // [meta.reflection.member.queries], reflection member queries
-  consteval vector<info> members_of(info r);
-  consteval vector<info> bases_of(info type);
-  consteval vector<info> static_data_members_of(info type);
-  consteval vector<info> nonstatic_data_members_of(info type);
-  consteval vector<info> enumerators_of(info type_enum);
+  // [meta.reflection.access.context], access control context
 
-  consteval vector<info> get_public_members(info type);
-  consteval vector<info> get_public_bases(info type);
-  consteval vector<info> get_public_static_data_members(info type);
-  consteval vector<info> get_public_nonstatic_data_members(info type);
+  struct access_context {
+    static consteval access_context current() noexcept;
+    static consteval access_context unprivileged() noexcept;
+    static consteval access_context unchecked() noexcept;
+
+    consteval access_context via(info cls) const;
+
+    const info scope = ^^::;  // exposition only
+    const info naming_class = {};  // exposition only
+  };
+
+  // [meta.reflection.access.queries], member accessessibility queries
+  consteval bool is_accessible(info r, access_context ctx);
+  consteval bool has_inaccessible_nonstatic_data_members(
+      info r,
+      access_context ctx);
+  consteval bool has_inaccessible_bases(info r, access_context ctx);
+
+  // [meta.reflection.member.queries], reflection member queries
+  consteval vector<info> members_of(info r, access_context ctx);
+  consteval vector<info> bases_of(info type, access_context ctx);
+  consteval vector<info> static_data_members_of(info type, access_context ctx);
+  consteval vector<info> nonstatic_data_members_of(info type,
+                                                   access_context ctx);
+  consteval vector<info> enumerators_of(info type_enum);
 
   // [meta.reflection.layout], reflection layout queries
   struct member_offset {
@@ -6799,7 +6795,7 @@ consteval info parent_of(info r);
 
 [#]{.pnum} *Returns*:
 
-- [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, then a reflection representing the innermost enclosing anonymous union.
+- [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, or an unnamed bit-field declared within the `$member-specification$` of such a union, then a reflection representing the innermost enclosing anonymous union.
 - [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is, respectively, the innermost such scope enclosing the first declaration of what is represented by `r`.
   - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(parent_of(^^$E$))`.
   - [#.#]{.pnum} Otherwise, `^^$E$`.
@@ -6861,12 +6857,108 @@ static_assert(template_arguments_of(^^PairPtr<int>).size() == 1);
 :::
 :::
 
+## [meta.reflection.access.context] Access control context {-}
+
+::: std
+::: addu
+[1]{.pnum} The `access_context` class is a structural type that represents a namespace, class, or function from which queries pertaining to access rules may be performed, as well as the naming class ([class.access.base]), if any.
+
+```cpp
+consteval access_context access_context::current() noexcept;
+```
+
+[#]{.pnum} Let `$P$` be the program point at which `access_context::current()` is called.
+
+[#]{.pnum} *Returns*: An `access_context` whose `$naming_class$` is the null reflection and whose `$scope$` is the unique namespace, class, or function associated with the innermost namespace, class, or block scope enclosing `$P$`.
+
+```cpp
+consteval access_context access_context::unprivileged() noexcept;
+```
+
+[#]{.pnum} *Returns*: An `access_context` whose `$naming_class$` is the null reflection and whose `$scope$` is the global namespace.
+
+```cpp
+consteval access_context access_context::unchecked() noexcept;
+```
+
+[#]{.pnum} *Returns*: An `access_context` whose `$naming_class$` and `$scope$` are both the null reflection.
+
+```cpp
+consteval access_context access_context::via(info cls) const;
+```
+[#]{.pnum} *Constant When*: `cls` represents a class type.
+
+[#]{.pnum} *Returns*: An `access_context` whose `$scope$` is `this->$scope$` and whose `$naming_class$` is `cls`.
+
+:::
+:::
+
+## [meta.reflection.access.queries] Member accessibility queries {-}
+
+::: std
+::: addu
+```cpp
+consteval bool is_accessible(info r, access_context ctx);
+```
+
+[#]{.pnum} Let `$P$` be a program point that occurs in the definition of the entity represented by `ctx.$scope$`.
+
+[#]{.pnum} *Constant When*: `r` does not represent a member or unnamed bit-field of a class currently being defined.
+
+[#]{.pnum} *Returns*:
+
+- [#]{.pnum} If `ctx.$scope$` represents the null reflection, then `true`.
+- [#]{.pnum} Otherwise, if `r` represents a member of a class `$C$`, then `true` if that class member is accessible at `$P$` ([class.access.base]) when named in either
+  - [#.#]{.pnum} `C` if `ctx.$naming_class$` is the null reflection, or
+  - [#.#]{.pnum} the class represented by `ctx.$naming_classs$` otherwise.
+- [#]{.pnum} Otherwise, if `r` represents an unnamed bit-field `$B$`, then `is_accessible(^^$M$, ctx)` where `$M$` is a hypothetical member of `parent_of(r)` declared with the same rules as `$B$`.
+- [#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a base class `$B$` and a derived class `$D$`, then `true` if the base class `$B$` of `$D$` is accessible at `$P$`.
+- [#]{.pnum} Otherwise, `true`.
+
+::: note
+The definitions of when a class member or base class are accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
+:::
+
+::: example
+```cpp
+consteval access_context fn() {
+  return access_context::current();
+}
+
+class Cls {
+    int mem;
+    friend consteval access_context fn();
+public:
+    static constexpr auto r = ^^mem;
+};
+
+static_assert(is_accessible(Cls::r, fn()));  // OK
+```
+:::
+
+```cpp
+consteval bool has_inaccessible_nonstatic_data_members(
+      info r,
+      access_context ctx);
+```
+
+[#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `members_of(r, access_context::unchecked())`. Otherwise, `false`.
+
+```cpp
+consteval bool has_inaccessible_bases(info r, access_context ctx);
+```
+
+[#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `bases_of(r, access_context::unchecked())`. Otherwise, `false`.
+
+:::
+:::
+
 ### [meta.reflection.member.queries] Reflection member queries  {-}
 
 ::: std
 ::: addu
 ```cpp
-consteval vector<info> members_of(info r);
+consteval vector<info> members_of(info r, access_context ctx);
 ```
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
@@ -6874,7 +6966,8 @@ consteval vector<info> members_of(info r);
 [#]{.pnum} A member `$M$` of either a class or namespace `$Q$` is _members-of-eligible_ if
 
 * [#.#]{.pnum} `$M$` is not a closure type,
-* [#.#]{.pnum} either `$Q$` is a namespace or `$Q$` is a class type and `$M$` is a direct member of `$Q$` ([class.member.general]), and
+* [#.#]{.pnum} if `$Q$` is a class, then `$M$` is a direct member of `$Q$` ([class.member.general]),
+* [#.#]{.pnum} if `$Q$` is a namespace, then there is a declaration `$D$` of `$M$` reachable from some point in the evaluation context for which there is no class scope or function parameter scope that intervenes between `$D$` and the namespace scope of `$Q$`, and
 * [#.#]{.pnum} if `$Q$` is a closure type, then `$M$` is a function call operator or function call operator template.
 
 It is implementation-defined whether other members of closure types are members-of-eligible.
@@ -6890,12 +6983,12 @@ It is implementation-defined whether other members of closure types are members-
 * [#.#]{.pnum} a namespace, or
 * [#.#]{.pnum} a namespace alias.
 
-[Examples of members that are not members-of-representable include: injected class names, partial template specializations, friend declarations, and static assertions.]{.note}
+[Examples of members that are not members-of-representable include: injected class names, enumerators, partial template specializations, friend declarations, and static assertions.]{.note}
 
-[3]{.pnum} A member `$M$` of a class or namespace _members-of-precedes_ a point `$P$` if a declaration of `$M$` precedes either `$P$` or a point immediately following the `$class-specifier$` of a class for which `$P$` is in a complete-class context.
+[3]{.pnum} A member `$M$` of a class or namespace _members-of-precedes_ a point `$P$` if a declaration of `$M$` precedes either `$P$` or the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members of the entity represented by `r` that members-of-precede some point in the evaluation context ([expr.const]).
-If `r` represents a class `$C$`, then the vector also contains reflections representing all unnamed bit-fields declared within the member-specification of `$C$`.
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members `$M$` of the entity represented by `r` that both satisfy `is_accessible(^^$M$, ctx)` and members-of-precede some point in the evaluation context ([expr.const]).
+If `r` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields `$B$` declared within the `$member-specification$` of `$C$` that satisfy `is_accessible(^^$B$, ctx)`.
 Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared.
 [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
 
@@ -6904,39 +6997,40 @@ Reflections of class members and unnamed bit-fields that are declared appear in 
 class B {};
 
 struct S : B {
-  class I;
-
   int m;
+private:
+  class I;
 };
 
-static_assert(members_of(^^S).size() == 8);  // 6 special members, 2 members, does not include base
+static_assert(members_of(^^S, access_context::current()).size() == 7);
+  // 6 special members, 1 public member, does not include base
 ```
 :::
 
 ```cpp
-consteval vector<info> bases_of(info type);
+consteval vector<info> bases_of(info type, access_context ctx);
 ```
 
 [#]{.pnum} *Constant When*: `dealias(type)` is a reflection representing a complete class type.
 
-[#]{.pnum} *Returns*: Let `C` be the type represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships, if any, of `C`.
+[#]{.pnum} *Returns*: Let `C` be the type represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships `$B$`, if any, of `C`, that satisfy `is_accessible(^^$B$, ctx)`.
 The direct base class relationships appear in the order in which the corresponding base classes appear in the *base-specifier-list* of `C`.
 
 ```cpp
-consteval vector<info> static_data_members_of(info type);
+consteval vector<info> static_data_members_of(info type, access_context ctx);
 ```
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_variable(e)` is `true`, preserving their order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type, ctx)` such that `is_variable(e)` is `true`, preserving their order.
 
 ```cpp
-consteval vector<info> nonstatic_data_members_of(info type);
+consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
 ```
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_nonstatic_data_member(e)` is `true`, preserving their order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type, ctx)` such that `is_nonstatic_data_member(e)` is `true`, preserving their order.
 
 ```cpp
 consteval vector<info> enumerators_of(info type_enum);
@@ -6945,38 +7039,6 @@ consteval vector<info> enumerators_of(info type_enum);
 [#]{.pnum} *Constant When*: `dealias(type_enum)` represents an enumeration type and `has_complete_definition(dealias(type_enum))` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `dealias(type_enum)`, in the order in which they are declared.
-
-```cpp
-consteval vector<info> get_public_members(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_public(e)` is `true`, preserving their order.
-
-```cpp
-consteval vector<info> get_public_bases(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `bases_of(type)` such that `is_public(e)` is `true`, preserving their order.
-
-```cpp
-consteval vector<info> get_public_static_data_members(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `static_data_members_of(type)` such that `is_public(e)` is `true`, preserving their order.
-
-```cpp
-consteval vector<info> get_public_nonstatic_data_members(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, preserving their order.
 
 :::
 :::
