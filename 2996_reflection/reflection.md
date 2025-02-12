@@ -84,7 +84,7 @@ Two changes are needed for splicers.
 - [#]{.pnum} Reflections of concepts cannot be spliced.
   - **P2996R4**: Concepts could be spliced within both `$type-constraint$`s and `$concept-id$`s.
   - **D2996R10**: Splicing a concept is ill-formed.
-  - **Rationale**: [@P2841] has already done the work to figure out dependent concepts. CWG requested that we wait for that to land first, and revisit concept splicers in a future paper.
+  - **Rationale**: [@P2841R5] has already done the work to figure out dependent concepts. CWG requested that we wait for that to land first, and revisit concept splicers in a future paper.
   - **Instead**: For the case of a `$concept-id$`, `substitute` can still check whether a concept is satisfied by a template argument list.
 
 ## Changes to injected declarations since P2996R4
@@ -4004,6 +4004,20 @@ We have to say that a closure type is not complete until the `}`:
 :::
 :::
 
+And say that the call operator is a direct member:
+
+::: std
+[4]{.pnum} The closure type for a *lambda-expression* has a public inline function call operator (for a non-generic lambda) or function call operator template (for a generic lambda) ([over.call]) whose parameters and return type are those of the lambda-expression's parameter-declaration-clause and trailing-return-type respectively,  and whose template-parameter-list consists of the specified template-parameter-list, if any. [The function call operator or the function call operator template are direct members of the closure type.]{.addu} The *requires-clause* of the function call operator template [...]
+:::
+
+And that the conversion function is:
+
+::: std
+[9]{.pnum} The closure type for a non-generic lambda-expression with no lambda-capture and no explicit object parameter ([dcl.fct]) whose constraints (if any) are satisfied has a conversion function to pointer to function with C++ language linkage having the same parameter and return types as the closure type's function call operator. [The conversion function is a direct member of the closure type.]{.addu} The conversion is to “pointer to noexcept function” if the function call operator has a non-throwing exception specification.
+
+[10]{.pnum} For a generic lambda with no lambda-capture and no explicit object parameter ([dcl.fct]), the closure type has a conversion function template to pointer to function. [The conversion function template is a direct member of the closure type.]{.addu} The conversion function template has the same invented template parameter list, [...]
+:::
+
 ### [expr.prim.lambda.capture]{.sref} Captures {-}
 
 Modify bullet 7.1 as follows:
@@ -6788,14 +6802,43 @@ info r = value_of(fn());  // error: x is outside its lifetime
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias (other than `::`), type alias, or direct base class relationship.
+[#]{.pnum} *Constant When*:
+
+* [#.#]{.pnum} `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias (other than `::`), type alias, or direct base class relationship, and
+* [#.#]{.pnum} if `r` represents an entity, that entity does not have C language linkage.
+
+If `r` represents an entity with language linkage other than C or C++ language linkage, it is implementation-defined whether a call to this function is a constant subexpression.
 
 [#]{.pnum} *Returns*:
 
 - [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, or an unnamed bit-field declared within the `$member-specification$` of such a union, then a reflection representing the innermost enclosing anonymous union.
-- [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is, respectively, the innermost such scope enclosing the first declaration of what is represented by `r`.
-  - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(parent_of(^^$E$))`.
-  - [#.#]{.pnum} Otherwise, `^^$E$`.
+- [#.#]{.pnum} Otherwise, if `r` represents an enumerator, then a reflection representing the corresponding enumeration type.
+- [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a class `$D$` and a direct base class `$B$`, then a reflection representing `$D$`.
+- [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is, respectively, the innermost such scope that either is, or encloses, the target scope of a declaration of what is represented by `r`. Let `$R$` be a reflection representing `$E$`.
+  - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(parent_of($R$))`. [In this case, the first `parent_of` will be the closure type, so the second `parent_of` is necessary to give the parent of that closure type.]{.note}
+  - [#.#]{.pnum} Otherwise, `$R$`.
+
+::: example
+```cpp
+struct I { };
+
+struct F : I {
+  union {
+    int o;
+  };
+
+  enum N {
+    A
+  }
+};
+
+static_assert(parent_of(^^F) == ^^::);
+static_assert(parent_of(bases_of(^^F)[0]) == ^^F);
+static_assert(is_union_type(parent_of(^^F::o)));
+static_assert(parent_of(^^F::N) == ^^F);
+static_assert(parent_of(^^F::A) == ^^F::N);
+```
+:::
 
 ```cpp
 consteval info dealias(info r);
@@ -6866,9 +6909,9 @@ consteval vector<info> members_of(info r);
 
 [#]{.pnum} A member `$M$` of either a class or namespace `$Q$` is _members-of-eligible_ if
 
-* [#.#]{.pnum} `$M$` is not a closure type,
+* [#.#]{.pnum} `$M$` is not a closure type ([expr.prim.lambda.closure]),
 * [#.#]{.pnum} if `$Q$` is a class, then `$M$` is a direct member of `$Q$` ([class.member.general]),
-* [#.#]{.pnum} if `$Q$` is a namespace, then there is a declaration `$D$` of `$M$` reachable from some point in the evaluation context for which there is no class scope or function parameter scope that intervenes between `$D$` and the namespace scope of `$Q$`, and
+* [#.#]{.pnum} if `$Q$` is a namespace, then there is a declaration `$D$` of `$M$` reachable from some point in the evaluation context for which `$D$` inhabits the namespace scope of `$Q$`, and
 * [#.#]{.pnum} if `$Q$` is a closure type, then `$M$` is a function call operator or function call operator template.
 
 It is implementation-defined whether other members of closure types are members-of-eligible.
@@ -7050,7 +7093,7 @@ template <class T>
 
 [#]{.pnum} *Constant When*: `r` represents a variable or object of type `U` that is usable in constant expressions from some point in the evaluation context and `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`.
 
-[#]{.pnum} *Returns*: the object represented by `object_of(r)`.
+[#]{.pnum} *Returns*: A reference designating the object represented by `object_of(r)`.
 
 ```cpp
 template <class T>
@@ -7059,14 +7102,14 @@ template <class T>
 
 [#]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} `r` represents a non-static data member that is not a bit-field of a class `C` with type `X` and `T` is `X C::*`;
-- [#.#]{.pnum} `r` represents an implicit object member function of class `C` with type `F` or `F noexcept` and `T` is `F C::*`; or
+- [#.#]{.pnum} `r` represents a non-static data member with type `X`, that is not a bit-field, that is a direct member of a class `C` and `T` is `X C::*`;
+- [#.#]{.pnum} `r` represents an implicit object member function with type `F` or `F noexcept` that is a direct member of a class `C` and `T` is `F C::*`; or
 - [#.#]{.pnum} `r` represents a non-member function, static member function, or explicit object member function of function type `F` or `F noexcept` and `T` is `F*`.
 
 [#]{.pnum} *Returns*:
 
-- [#.#]{.pnum} If `T` is a pointer type, then a pointer value pointing to the entity represented by `r`.
-- [#.#]{.pnum} Otherwise, a pointer-to-member value designating the entity represented by `r`.
+- [#.#]{.pnum} If `T` is a pointer type, then a pointer value pointing to the function represented by `r`.
+- [#.#]{.pnum} Otherwise, a pointer-to-member value designating the non-static data member or function represented by `r`.
 
 ```cpp
 template <class T>
@@ -7081,7 +7124,7 @@ template <class T>
   - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
   - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value that `r` represents is convertible to `T`.
 
-[#]{.pnum} *Returns*: the value that `r` represents converted to `T`.
+[#]{.pnum} *Returns*: The value that `r` represents, converted to `T`.
 
 ```cpp
 template <class T>
