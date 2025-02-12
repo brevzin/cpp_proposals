@@ -1,6 +1,6 @@
 ---
 title: "`define_static_{string,object,array}`"
-document: P3491R1
+document: P3491R2
 date: today
 audience: LEWG
 author:
@@ -483,7 +483,10 @@ Add to [meta.syn]{.sref}:
 namespace std {
 + // [meta.string.literal], checking string literals
 + consteval bool is_string_literal(const char* p);
++ consteval bool is_string_literal(const wchar_t* p);
 + consteval bool is_string_literal(const char8_t* p);
++ consteval bool is_string_literal(const char16_t* p);
++ consteval bool is_string_literal(const char32_t* p);
 
 + // [meta.define.static], promoting to runtime storage
 + template <ranges::input_range R>
@@ -526,7 +529,7 @@ consteval const ranges::range_value_t<R>* define_static_string(R&& r);
 
 [#]{.pnum} Let `$CharT$` be `ranges::range_value_t<R>`.
 
-[#]{.pnum} *Mandates*: `$CharT$` is either `char` or `char8_t`.
+[#]{.pnum} *Mandates*: `$CharT$` is one of `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`.
 
 [#]{.pnum} Let `$V$` be the pack of elements of type `$CharT$` in `r`. If `r` is a string literal, then `$V$` does not include the trailing null terminator of `r`.
 
