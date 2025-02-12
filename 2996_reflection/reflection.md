@@ -4341,13 +4341,13 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
 
-  * [#.#]{.pnum} If the `$id-expression$` is `__func__`, `$R$` is ill-formed.
-
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member, `$R$` represents that entity.
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a function-local predefined variable ([dcl.fct.def.general]), `$R$` is ill-formed. For any other `$id-expression$` that denotes a variable, `$R$` represents that variable.
+
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a structured binding, enumerator, or non-static data member, `$R$` represents that entity.
 
   * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s, non-type template parameters, and `$id-expression$`s of the form `X::template Y`]{.note}
 
@@ -5340,7 +5340,7 @@ Add a paragraph after paragraph 3 to disallow dependent concepts being used in a
 
 ::: std
 ::: addu
-[3+]{.pnum} The `$nested-name-specifier$`, if any, shall not contain a `$splice-specifier$`.
+[3+]{.pnum} The `$nested-name-specifier$`, if any, shall not be depenent.
 :::
 :::
 
@@ -6797,7 +6797,12 @@ consteval info parent_of(info r);
 
 [#]{.pnum} *Constant When*: `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias (other than `::`), type alias, or direct base class relationship.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member that is a direct member of an anonymous union, then a reflection representing the innermost enclosing anonymous union. Otherwise, a reflection of the class, function, or namespace that is the target scope ([basic.scope.scope]) of the first declaration of what is represented by `r`.
+[#]{.pnum} *Returns*:
+
+- [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, then a reflection representing the innermost enclosing anonymous union.
+- [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is respectively the innermost such scope enclosing the first declaration of what is represented by `r`.
+  - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(^^$E$)`.
+  - [#.#]{.pnum} Otherwise, `^^$E$`.
 
 ```cpp
 consteval info dealias(info r);
