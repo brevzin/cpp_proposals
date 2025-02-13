@@ -625,6 +625,10 @@ Acknowledgements<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P2287R3"><a href="https://wg21.link/p2287r3" role="doc-biblioref">[P2287R3]</a></span>, clarify that the design
+allows you to initialize the first base class from a non-designated
+initializer but the second base class’s members indirectly. Simplified
+wording as a result.</p>
 <p><span class="citation" data-cites="P2287R2"><a href="https://wg21.link/p2287r2" role="doc-biblioref">[P2287R2]</a></span> proposed only allowing
 indirectly initializing members using the designated syntax. R3
 additionally allows directly initializing base class subobjects
@@ -816,17 +820,18 @@ works:</p>
 </blockquote>
 </div>
 <p>And in a type that has a base class that is not an aggregate, you can
-use the mix-and-match form if you use braces:</p>
+use the mix-and-match form if you use braces, but not otherwise:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">:</span> std<span class="op">::</span>string <span class="op">{</span> <span class="dt">int</span> c; <span class="op">}</span>;</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c1 <span class="op">=</span> C<span class="op">{</span><span class="st">&quot;hello&quot;</span>, <span class="op">.</span>c<span class="op">=</span><span class="dv">3</span><span class="op">}</span>; <span class="co">// ill-formed</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c2 <span class="op">=</span> C<span class="op">{{</span><span class="st">&quot;hello&quot;</span><span class="op">}</span>, <span class="op">.</span>c<span class="op">=</span><span class="dv">3</span><span class="op">}</span>;</span></code></pre></div>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c1 <span class="op">=</span> C<span class="op">{</span><span class="st">&quot;hello&quot;</span>, <span class="op">.</span>c<span class="op">=</span><span class="dv">3</span><span class="op">}</span>;    <span class="co">// ill-formed</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c2 <span class="op">=</span> C<span class="op">{{</span><span class="st">&quot;hello&quot;</span><span class="op">}</span>, <span class="op">.</span>c<span class="op">=</span><span class="dv">3</span><span class="op">}</span>;  <span class="co">// ok</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>If you have a hierarchy with repeated members, you’ll likewise have
-to use the mix-and-match form:</p>
+to use the mix-and-match form — but every base class has to be
+initialized with braces:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
@@ -835,6 +840,22 @@ to use the mix-and-match form:</p>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> e1 <span class="op">=</span> E<span class="op">{.</span>x<span class="op">=</span><span class="dv">1</span><span class="op">}</span>;         <span class="co">// initializes E::x, not D::x</span></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> e2 <span class="op">=</span> E<span class="op">{{.</span>x<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>x<span class="op">=</span><span class="dv">2</span><span class="op">}</span>; <span class="co">// initializes D::x to 1 and E::x to 2</span></span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> e3 <span class="op">=</span> E<span class="op">{</span>D<span class="op">{</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>x<span class="op">=</span><span class="dv">2</span><span class="op">}</span>;   <span class="co">// ill-formed</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>If you have two base classes, they do not need to look the same. It’s
+just that all the non-designated initializers have to be at the
+front:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> F <span class="op">{</span> <span class="dt">int</span> f; <span class="op">}</span>;</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> G <span class="op">{</span> <span class="dt">int</span> g; <span class="op">}</span>;</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> H <span class="op">:</span> F, G <span class="op">{</span> <span class="dt">int</span> h; <span class="op">}</span>;</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> h1 <span class="op">=</span> H<span class="op">{{.</span>f<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">{.</span>g<span class="op">=</span><span class="dv">2</span><span class="op">}</span>, <span class="op">.</span>h<span class="op">=</span><span class="dv">3</span><span class="op">}</span>; <span class="co">// ok</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> h2 <span class="op">=</span> H<span class="op">{{.</span>f<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="op">.</span>g<span class="op">=</span><span class="dv">2</span>, <span class="op">.</span>h<span class="op">=</span><span class="dv">3</span><span class="op">}</span>;   <span class="co">// ok, not all bases have to be the same</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> h3 <span class="op">=</span> H<span class="op">{{.</span>f<span class="op">=</span><span class="dv">1</span><span class="op">}</span>, <span class="dv">2</span>, <span class="op">.</span>h<span class="op">=</span><span class="dv">3</span><span class="op">}</span>;      <span class="co">// ill-formed — can only mix designated and non-designated if</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>                                   <span class="co">// the non-designated ones are braced-init-lists which initialize</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>                                   <span class="co">// a base class</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Coming up with a way to <em>name</em> the base class subobject of a
@@ -873,17 +894,17 @@ such that every interleaving base class is also an aggregate class. That
 is:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">:</span> A <span class="op">{</span> C<span class="op">()</span>; <span class="dt">int</span> c; <span class="op">}</span>;</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">:</span> C <span class="op">{</span> <span class="dt">int</span> d; <span class="op">}</span>;</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>A<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>;       <span class="co">// okay since C++17</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>B<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>; <span class="co">// proposed okay, &#39;a&#39; is a direct member of an aggregate class</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>               <span class="co">// and A is a direct base</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>C<span class="op">{.</span>c<span class="op">=</span><span class="dv">1</span><span class="op">}</span>;       <span class="co">// error: C is not an aggregate</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>D<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>;       <span class="co">// error: &#39;a&#39; is a direct member of an aggregate class</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>               <span class="co">// but an intermediate base class (C) is not an aggregate</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">:</span> A <span class="op">{</span> C<span class="op">()</span>; <span class="dt">int</span> c; <span class="op">}</span>;</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">:</span> C <span class="op">{</span> <span class="dt">int</span> d; <span class="op">}</span>;</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>A<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>;       <span class="co">// okay since C++17</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>B<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>b<span class="op">=</span><span class="dv">2</span><span class="op">}</span>; <span class="co">// proposed okay, &#39;a&#39; is a direct member of an aggregate class</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>               <span class="co">// and A is a direct base</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>C<span class="op">{.</span>c<span class="op">=</span><span class="dv">1</span><span class="op">}</span>;       <span class="co">// error: C is not an aggregate</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>D<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">}</span>;       <span class="co">// error: &#39;a&#39; is a direct member of an aggregate class</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>               <span class="co">// but an intermediate base class (C) is not an aggregate</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Or, put differently, every identifier shall name a non-static data
@@ -894,18 +915,18 @@ in multiple base classes, then either it’s only the most derived one
 that counts:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> X <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Y <span class="op">:</span> X <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>Y<span class="op">{.</span>x<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// initializes Y::x</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> X <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Y <span class="op">:</span> X <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>Y<span class="op">{.</span>x<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// initializes Y::x</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>or is ambiguous:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> X <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Y <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Z <span class="op">:</span> X, Y <span class="op">{</span> <span class="op">}</span>;</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>Z<span class="op">{.</span>x<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// error:: ambiguous which X</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> X <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Y <span class="op">{</span> <span class="dt">int</span> x; <span class="op">}</span>;</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Z <span class="op">:</span> X, Y <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>Z<span class="op">{.</span>x<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// error:: ambiguous which X</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>would be ill-formed on the basis that
@@ -915,15 +936,15 @@ ambiguous.</p>
 <p>There is one case I can think of where code would change meaning:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">(</span>A<span class="op">)</span>; <span class="co">// #1</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">(</span>B<span class="op">)</span>; <span class="co">// #2</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    f<span class="op">({.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">})</span>;</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">(</span>A<span class="op">)</span>; <span class="co">// #1</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">(</span>B<span class="op">)</span>; <span class="co">// #2</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    f<span class="op">({.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">})</span>;</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>In C++23, <code class="sourceCode cpp">f<span class="op">({.</span>a<span class="op">=</span><span class="dv">1</span><span class="op">})</span></code>
@@ -946,8 +967,8 @@ way to do this, but all the examples in the paper work.</p>
 simple case:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span> <span class="dt">int</span> a; <span class="op">}</span>;</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">:</span> A <span class="op">{</span> <span class="dt">int</span> b; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>In the current wording, <code class="sourceCode cpp">B</code> has two
@@ -972,7 +993,7 @@ explicitly initialized from
 this applies recursively, so given:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">:</span> B <span class="op">{</span> <span class="dt">int</span> c; <span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">:</span> B <span class="op">{</span> <span class="dt">int</span> c; <span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>With <code class="sourceCode cpp">C<span class="op">{.</span>a<span class="op">=</span><span class="dv">1</span>, <span class="op">.</span>c<span class="op">=</span><span class="dv">2</span><span class="op">}</span></code>,
@@ -1008,18 +1029,18 @@ to start with an
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>braced-init-list-list</em>:</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list</em></span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list</em> , <em>braced-init-list-list</em></span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <em>designated-initializer-list</em>:</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>designated-only-initializer-list</em></span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list-list</em> , <em>designated-only-initializer-list</em></span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>designated-only-initializer-list</em>:</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <em>designated-initializer-clause</em></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>designated-initializer-list</em> , <em>designated-initializer-clause</em></span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>designated-only-initializer-list</em> , <em>designated-initializer-clause</em></span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>braced-init-list-list</em>:</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list</em></span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list</em> , <em>braced-init-list-list</em></span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <em>designated-initializer-list</em>:</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>designated-only-initializer-list</em></span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list-list</em> , <em>designated-only-initializer-list</em></span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>designated-only-initializer-list</em>:</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <em>designated-initializer-clause</em></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>designated-initializer-list</em> , <em>designated-initializer-clause</em></span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>designated-only-initializer-list</em> , <em>designated-initializer-clause</em></span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1077,30 +1098,8 @@ the designatable member of
 (in the case of an anonymous union or a base class), that
 <code class="sourceCode cpp"><em>identifier</em></code>.</li>
 </ul>
-</div>
 <p>In either case, if there is either no such base class subobject or no
 such designatable member, the program is ill-formed.</p>
-<p>old wording here:</p>
-<div class="addu">
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(3.1.1)</a></span>
-Each <code class="sourceCode cpp"><em>braced-init-list</em></code> in
-the
-<code class="sourceCode cpp"><em>designated-initializer-list</em></code>
-shall appertain (see below) to a base class subobject of
-<code class="sourceCode cpp">C</code> and the
-<code class="sourceCode cpp"><em>identifier</em></code> in each
-<code class="sourceCode cpp"><em>designator</em></code> shall name a
-direct non-static data member of <code class="sourceCode cpp">C</code>.
-The explicitly initialized elements of the aggregate are those base
-class subobjects and direct members.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(3.1.2)</a></span>
-Otherwise, the <code class="sourceCode cpp"><em>identifier</em></code>
-in each <code class="sourceCode cpp"><em>designator</em></code> shall
-name a designatable member of the class. The explicitly initialized
-elements of the aggregate are the elements that are, or contain (in the
-case of an anonymous union or of a base class) those members.</li>
-</ul>
 </div>
 </blockquote>
 </div>
@@ -1110,120 +1109,76 @@ bullet? Expand the designated-initializer-list bullet instead of adding
 a new bullet. Probably only need to change 4.2):</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">4</a></span>
 For each explicitly initialized element:</p>
-<div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(4.0)</a></span>
-If the initializer list is a brace-enclosed
-<code class="sourceCode cpp"><em>designated-initializer-list</em></code>
-with no <code class="sourceCode cpp"><em>braced-init-list</em></code>
-and the element is a direct base class, then let
-<code class="sourceCode cpp">C</code> denote that direct base class and
-let <code class="sourceCode cpp">T</code> denote the class. The element
-is initialized from a synthesized brace-enclosed
-<em>designated-initializer-list</em> containing each <em>designator</em>
-for which lookup in <code class="sourceCode cpp">T</code> names a
-(direct or indirect) non-static data member of
-<code class="sourceCode cpp">C</code> in the same order as in the
-original <em>designated-initializer-list</em>.</li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(4.1)</a></span>
+If the element is an anonymous union member and […]</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(4.2)</a></span>
+Otherwise, if the initializer list is a brace-enclosed <code class="sourceCode cpp"><em>designated-initializer-list</em><span class="op">]</span></code>,
+<span class="addu">then</span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(4.2.1)</a></span>
+<span class="rm" style="color: #bf0303"><del>the element is initialized
+with the
+<span><code class="sourceCode default"><em>brace-or-equal-initializer</em></code></span>
+of the corresponding
+<span><code class="sourceCode default"><em>designated-initializer-clause</em></code></span></del></span>
+<span class="addu">if the corresponding initializer is a
+<code class="sourceCode cpp"><em>designated-initializer-clause</em></code>,
+the element is initialized with that
+<code class="sourceCode cpp"><em>brace-or-equal-initializer</em></code>.</span>
+If that initializer is of the form <code class="sourceCode cpp"><span class="op">=</span> <em>assignment-expression</em></code>
+and a narrowing conversion ([dcl.init.list]) is required to convert the
+expression, the program is ill-formed. <span class="note"><span>[ <em>Note 1:</em> </span>The form of the initializer
+determines whether copy-initialization or direct-initialization is
+performed.<span> — <em>end note</em> ]</span></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(4.2.2)</a></span>
+<span class="addu">otherwise, the element is initialized with the
+corresponding
+<code class="sourceCode cpp"><em>braced-init-list</em></code>.</span></li>
 </ul>
+<div class="addu">
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
-<div class="sourceCode" id="cb16"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>struct A { int a; };</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>struct B : A { int b; };</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>struct C : B { int c; };</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>// the A element is initialized from {.a=1}</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>B x = B{.a=1};</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>// the B element is initialized from {.a=2, .b=3}</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>// which leads to its A element being initialized from {.a=2}</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>C y = C{.a=2, .b=3, .c=4};</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>struct A2 : A { int a; };</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>// the A element is not explicitly initialized</span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>A2 z = {.a=1};</span></code></pre></div>
-<span> — <em>end example</em> ]</span>
-</div>
-</div>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(4.1)</a></span>
-<span class="rm" style="color: #bf0303"><del>If</del></span> <span class="addu">Otherwise, if</span> the element is an anonymous union
-[…]</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(4.2)</a></span>
-Otherwise, if the initializer list is a brace-enclosed
-<code class="sourceCode cpp"><em>designated-initializer-list</em></code>
-<span class="addu">and the element is not a base class subobject</span>,
-the element is initialized with the
-<code class="sourceCode cpp"><em>brace-or-equal-initializer</em></code>
-of the corresponding
-<code class="sourceCode cpp"><em>designated-initializer-clause</em></code>
-[…]</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(4.3)</a></span>
-Otherwise, <span class="addu">either</span> the initializer list is a
-brace-enclosed
-<code class="sourceCode cpp"><em>initializer-list</em></code> <span class="addu">or the element is a base class subobject and the
-initializer list is a brace-enclosed
-<code class="sourceCode cpp"><em>designated-initializer-list</em></code>
-which contains an
-<code class="sourceCode cpp"><em>initializer-list</em></code></span>.
-[…]</li>
-</ul>
-<div class="example2">
-<span>[ <em>Example 2:</em> </span>
-<div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>  struct base1 { int b1, b2 = 42; };</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  struct base2 {</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    base2() {</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>      b3 = 42;</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    int b3;</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  };</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  struct derived : base1, base2 {</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    int d;</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  };</span>
+<div class="sourceCode" id="cb17"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>struct A { int a; };</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>struct B : A { int b; };</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>struct C : B { int c; };</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>// the A element is initialized from {.a=1}</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>B x = B{.a=1};</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>// the B element is initialized from {.a=2, .b=3}</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>// which leads to its A element being initialized from {.a=2}</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>C y = C{.a=2, .b=3, .c=4};</span>
 <span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  derived d1{{1, 2}, {}, 4};</span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  derived d2{{}, {}, 4};</span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ derived d3{{1, 2}, {}, .d=4};</span></span></code></pre></div>
-</div>
-<p>initializes:</p>
-<ul>
-<li><code class="sourceCode cpp">d1<span class="op">.</span>b1</code>
-with <code class="sourceCode cpp"><span class="dv">1</span></code>,
-<code class="sourceCode cpp">d1<span class="op">.</span>b2</code> with
-<code class="sourceCode cpp"><span class="dv">2</span></code>,
-<code class="sourceCode cpp">d1<span class="op">.</span>b3</code> with
-<code class="sourceCode cpp"><span class="dv">42</span></code>,
-<code class="sourceCode cpp">d1<span class="op">.</span>d</code> with
-<code class="sourceCode cpp"><span class="dv">4</span></code>, <span class="rm" style="color: #bf0303"><del>and</del></span></li>
-<li><code class="sourceCode cpp">d2<span class="op">.</span>b1</code>
-with <code class="sourceCode cpp"><span class="dv">0</span></code>,
-<code class="sourceCode cpp">d2<span class="op">.</span>b2</code> with
-<code class="sourceCode cpp"><span class="dv">42</span></code>,
-<code class="sourceCode cpp">d2<span class="op">.</span>b3</code> with
-<code class="sourceCode cpp"><span class="dv">42</span></code>,
-<code class="sourceCode cpp">d2<span class="op">.</span>d</code> with
-<code class="sourceCode cpp"><span class="dv">4</span></code><span class="addu">, and</span></li>
-<li><span class="addu"><code class="sourceCode cpp">d3<span class="op">.</span>b1</code>
-with <code class="sourceCode cpp"><span class="dv">1</span></code>,
-<code class="sourceCode cpp">d3<span class="op">.</span>b2</code> with
-<code class="sourceCode cpp"><span class="dv">2</span></code>,
-<code class="sourceCode cpp">d3<span class="op">.</span>b3</code> with
-<code class="sourceCode cpp"><span class="dv">42</span></code>,
-<code class="sourceCode cpp">d3<span class="op">.</span>d</code> with
-<code class="sourceCode cpp"><span class="dv">4</span></code></span>.</li>
-</ul>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>struct A2 : A { int a; };</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>// the A element is not explicitly initialized</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>A2 z = {.a=1};</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>struct D { int d; };</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>struct E { int e; };</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>struct F : D, E { int f; };</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>// the D element is initialized from {.d=1}</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>// the E::e element is initialized from =2</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>// the F::f element is initialized from =3</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>F f = {{.d=1}, .e=2, .f=3};</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
+</div></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(4.3)</a></span>
+Otherwise, the initializer list is a brace-enclosed
+<code class="sourceCode cpp"><em>initializer-list</em></code>.
+[…]</p></li>
+</ul>
 </blockquote>
 </div>
 <p>Extend <span>9.4.5 <a href="https://wg21.link/dcl.init.list">[dcl.init.list]</a></span>/3.1:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(3.1)</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(3.1)</a></span>
 If the <em>braced-init-list</em> contains a
 <em>designated-initializer-list</em>,
 <code class="sourceCode cpp">T</code> shall be an aggregate class. The
@@ -1234,7 +1189,7 @@ in the direct non-static data members</del></span> <span class="addu">the design
 <code class="sourceCode cpp">T</code>.</span></p>
 <p>Aggregate initialization is performed ([dcl.init.aggr]).</p>
 <div class="example">
-<span>[ <em>Example 3:</em> </span>
+<span>[ <em>Example 2:</em> </span>
 <div>
 <div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>    struct A { int x; int y; int z; };</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    A a{.y = 2, .x = 1};                // error: designator order does not match declaration order</span>
@@ -1316,6 +1271,10 @@ classes. <a href="https://wg21.link/p2287r1"><div class="csl-block">https://wg21
 <div id="ref-P2287R2" class="csl-entry" role="doc-biblioentry">
 [P2287R2] Barry Revzin. 2023-03-12. Designated-initializers for base
 classes. <a href="https://wg21.link/p2287r2"><div class="csl-block">https://wg21.link/p2287r2</div></a>
+</div>
+<div id="ref-P2287R3" class="csl-entry" role="doc-biblioentry">
+[P2287R3] Barry Revzin. 2024-09-10. Designated-initializers for base
+classes. <a href="https://wg21.link/p2287r3"><div class="csl-block">https://wg21.link/p2287r3</div></a>
 </div>
 </div>
 </div>
