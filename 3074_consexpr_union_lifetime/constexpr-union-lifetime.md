@@ -1,6 +1,6 @@
 ---
 title: "trivial `union`s (was `std::uninitialized<T>`)"
-document: P3074R6
+document: D3074R7
 date: today
 audience: EWG
 author:
@@ -11,6 +11,10 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [@P3074R6], core wording updates.
+
+Since [@P3074R5], core wording updates.
 
 Since [@P3074R4], wording changes and adjusted the rule for when a [union's destructor is deleted](#constructordestructor-intention-matching)
 
@@ -561,7 +565,7 @@ Change [class.dtor]{.sref}/7-8:
 ::: addu
 * [7.x]{.pnum} `X` is a union and either
 
-    * [#.x.#]{.pnum} `X` does not have a default constructor that is defaulted on its first declaration,
+    * [#.x.#]{.pnum} `X` does not have an eligible default constructor that is trivial, or
     * [#.x.#]{.pnum} `X` has a variant member `V` of class type `M` (or possibly multi-dimensional array thereof) where `V` has a default member initializer and `M` has a destructor that is non-trivial, deleted, or inaccessible from the defaulted destructor,
 :::
 
@@ -609,3 +613,18 @@ And update the macro for `inplace_vector` in [version.syn]{.sref}:
 + #define __cpp_lib_inplace_vector 2025XXL // also in <inplace_vector>
 ```
 :::
+
+---
+references:
+    - id: P3074R6
+      citation-label: P3074R6
+      title: "trivial `union`s (was `std::uninitialized<T>`)"
+      author:
+        - family: Barry Revzin
+      issued:
+        date-parts:
+        - - 2025
+          - 02
+          - 13
+      URL: https://wg21.link/p3074r6
+---
