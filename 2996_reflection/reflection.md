@@ -131,6 +131,7 @@ Since [@P2996R9]:
   * fix definition of "Constant When" (use "constant subexpression" in lieu of "core constant expression")
   * avoid referring to "permitted results of constant expressions" in wording for `reflect_value` and `reflect_object` (term was retired by [@P2686R5])
   * template specializations and non-static data members of closure types are not _members-of-representable_
+  * integrated [@P3547R1]{.title} following its approval in (L)EWG.
 
 Since [@P2996R8]:
 
@@ -2589,11 +2590,6 @@ namespace std::meta {
   consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
   consteval auto enumerators_of(info type_enum) -> vector<info>;
 
-  consteval auto get_public_members(info type) -> vector<info>;
-  consteval auto get_public_static_data_members(info type) -> vector<info>;
-  consteval auto get_public_nonstatic_data_members(info type) -> vector<info>;
-  consteval auto get_public_bases(info type) -> vector<info>;
-
   // @[substitute](#substitute)@
   template <reflection_range R = initializer_list<info>>
     consteval auto can_substitute(info templ, R&& args) -> bool;
@@ -2839,11 +2835,6 @@ namespace std::meta {
   consteval auto nonstatic_data_members_of(info type_class) -> vector<info>;
 
   consteval auto enumerators_of(info type_enum) -> vector<info>;
-
-  consteval auto get_public_members(info type_class) -> vector<info>;
-  consteval auto get_public_static_data_members(info type_class) -> vector<info>;
-  consteval auto get_public_nonstatic_data_members(info type_class) -> vector<info>;
-  consteval auto get_public_bases(info type_class) -> vector<info>;
 }
 ```
 :::
@@ -2858,10 +2849,6 @@ The template `bases_of` returns the direct base classes of the class type repres
 `static_data_members_of` and `nonstatic_data_members_of` return reflections of the static and non-static data members, preserving their order, respectively.
 
 `enumerators_of` returns the enumerator constants of the indicated enumeration type in declaration order.
-
-The `get_public_meow` functions are equivalent to `meow_of` functions except that they additionally filter the results on those members for which `is_public(member)` is `true`.
-The only other distinction is that `members_of` can be invoked on a namespace, while `get_public_members` can only be invoked on a class type (because it does not make sense to ask for the public members of a namespace).
-This set of functions has a distinct API by demand for ease of grepping.
 
 ### `substitute`
 
@@ -6113,17 +6100,34 @@ namespace std::meta {
   consteval info template_of(info r);
   consteval vector<info> template_arguments_of(info r);
 
-  // [meta.reflection.member.queries], reflection member queries
-  consteval vector<info> members_of(info r);
-  consteval vector<info> bases_of(info type);
-  consteval vector<info> static_data_members_of(info type);
-  consteval vector<info> nonstatic_data_members_of(info type);
-  consteval vector<info> enumerators_of(info type_enum);
 
-  consteval vector<info> get_public_members(info type);
-  consteval vector<info> get_public_bases(info type);
-  consteval vector<info> get_public_static_data_members(info type);
-  consteval vector<info> get_public_nonstatic_data_members(info type);
+  // [meta.reflection.access.context], access control context
+
+  struct access_context {
+    static consteval access_context current() noexcept;
+    static consteval access_context unprivileged() noexcept;
+    static consteval access_context unchecked() noexcept;
+
+    consteval access_context via(info cls) const;
+
+  private:
+    const info $scope$ = ^^::;       // exposition only
+    const info $naming-class$ = {};  // exposition only
+  };
+
+  // [meta.reflection.access.queries], member accessessibility queries
+  consteval bool is_accessible(info r, access_context ctx);
+  consteval bool has_inaccessible_nonstatic_data_members(
+      info r,
+      access_context ctx);
+  consteval bool has_inaccessible_bases(info r, access_context ctx);
+
+  // [meta.reflection.member.queries], reflection member queries
+  consteval vector<info> members_of(info r, access_context ctx);
+  consteval vector<info> bases_of(info type, access_context ctx);
+  consteval vector<info> static_data_members_of(info type, access_context ctx);
+  consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
+  consteval vector<info> enumerators_of(info type_enum);
 
   // [meta.reflection.layout], reflection layout queries
   struct member_offset {
@@ -6897,12 +6901,109 @@ static_assert(template_arguments_of(^^PairPtr<int>).size() == 1);
 :::
 :::
 
+
+## [meta.reflection.access.context] Access control context {-}
+
+::: std
+::: addu
+[1]{.pnum} The `access_context` class is a structural type that represents a namespace, class, or function from which queries pertaining to access rules may be performed, as well as the naming class ([class.access.base]), if any.
+
+```cpp
+consteval access_context access_context::current() noexcept;
+```
+
+[#]{.pnum} Let `$P$` be the program point at which `access_context::current()` is called.
+
+[#]{.pnum} *Returns*: An `access_context` whose `$naming-class$` is the null reflection and whose `$scope$` is the unique namespace, class, or function associated with the innermost namespace, class, or block scope enclosing `$P$`.
+
+```cpp
+consteval access_context access_context::unprivileged() noexcept;
+```
+
+[#]{.pnum} *Returns*: An `access_context` whose `$naming-class$` is the null reflection and whose `$scope$` is the global namespace.
+
+```cpp
+consteval access_context access_context::unchecked() noexcept;
+```
+
+[#]{.pnum} *Returns*: An `access_context` whose `$naming-class$` and `$scope$` are both the null reflection.
+
+```cpp
+consteval access_context access_context::via(info cls) const;
+```
+[#]{.pnum} *Constant When*: `cls` represents a class type.
+
+[#]{.pnum} *Returns*: An `access_context` whose `$scope$` is `this->$scope$` and whose `$naming-class$` is `cls`.
+
+:::
+:::
+
+## [meta.reflection.access.queries] Member accessibility queries {-}
+
+::: std
+::: addu
+```cpp
+consteval bool is_accessible(info r, access_context ctx);
+```
+
+[#]{.pnum} Let `$P$` be a program point that occurs in the definition of the entity represented by `ctx.$scope$`.
+
+[#]{.pnum} *Constant When*: `r` does not represent a member or unnamed bit-field of a class currently being defined.
+
+[#]{.pnum} *Returns*:
+
+- [#]{.pnum} If `ctx.$scope$` represents the null reflection, then `true`.
+- [#]{.pnum} Otherwise, if `r` represents a member of a class `$C$`, then `true` if that class member is accessible at `$P$` ([class.access.base]) when named in either
+  - [#.#]{.pnum} `C` if `ctx.$naming-class$` is the null reflection, or
+  - [#.#]{.pnum} the class represented by `ctx.$naming-classs$` otherwise.
+- [#]{.pnum} Otherwise, if `r` represents an unnamed bit-field `$B$`, then `is_accessible(^^$M$, ctx)` where `$M$` is a hypothetical member of `parent_of(r)` declared with the same rules as `$B$`.
+- [#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a base class `$B$` and a derived class `$D$`, then `true` if the base class `$B$` of `$D$` is accessible at `$P$`.
+- [#]{.pnum} Otherwise, `true`.
+
+::: note
+The definitions of when a class member or base class are accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
+:::
+
+::: example
+```cpp
+consteval access_context fn() {
+  return access_context::current();
+}
+
+class Cls {
+    int mem;
+    friend consteval access_context fn();
+public:
+    static constexpr auto r = ^^mem;
+};
+
+static_assert(is_accessible(Cls::r, fn()));  // OK
+```
+:::
+
+```cpp
+consteval bool has_inaccessible_nonstatic_data_members(
+      info r,
+      access_context ctx);
+```
+
+[#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `members_of(r, access_context::unchecked())`. Otherwise, `false`.
+
+```cpp
+consteval bool has_inaccessible_bases(info r, access_context ctx);
+```
+
+[#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `bases_of(r, access_context::unchecked())`. Otherwise, `false`.
+
+:::
+:::
+
 ### [meta.reflection.member.queries] Reflection member queries  {-}
 
 ::: std
 ::: addu
 ```cpp
-consteval vector<info> members_of(info r);
+consteval vector<info> members_of(info r, access_context ctx);
 ```
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
@@ -6931,8 +7032,8 @@ It is implementation-defined whether other members of closure types are members-
 
 [3]{.pnum} A member `$M$` of a class or namespace _members-of-precedes_ a point `$P$` if a declaration of `$M$` precedes either `$P$` or the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members `$M$` of the entity represented by `r` that members-of-precede some point in the evaluation context ([expr.const]).
-If `r` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields `$B$` declared within the `$member-specification$` of `$C$`.
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members `$M$` of the entity represented by `r` that members-of-precede some point in the evaluation context ([expr.const]) and, letting `$ref-m$` be a reflection representing `$M$`, `is_accessible($ref-m$, ctx)` is `true`.
+If `r` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields declared within the `$member-specification$` of `$C$` such that, letting `$ref-b$` be a reflection representing that unnamed-bit-field, `is_accessible($ref-b$, ctx)` is `true`.
 Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared.
 [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
 
@@ -6941,39 +7042,41 @@ Reflections of class members and unnamed bit-fields that are declared appear in 
 class B {};
 
 struct S : B {
+private:
   class I;
-
+public:
   int m;
 };
 
-static_assert(members_of(^^S).size() == 8);  // 6 special members, 2 members, does not include base
+static_assert(members_of(^^S, access_context::current()).size() == 7);    // 6 special members, 1 public member, does not include base
+static_assert(members_of(^^S, access_context::unchecked()).size() == 8);  // all of the above, as well a reflection representing S::I
 ```
 :::
 
 ```cpp
-consteval vector<info> bases_of(info type);
+consteval vector<info> bases_of(info type, access_context ctx);
 ```
 
 [#]{.pnum} *Constant When*: `dealias(type)` is a reflection representing a complete class type.
 
-[#]{.pnum} *Returns*: Let `C` be the type represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships, if any, of `C`.
+[#]{.pnum} *Returns*: Let `C` be the type represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships, if any, of `C` such that, letting `$ref-b$` be a reflection representing that base class relationship, `is_accessible($ref-b$, ctx)` is `true`.
 The direct base class relationships appear in the order in which the corresponding base classes appear in the *base-specifier-list* of `C`.
 
 ```cpp
-consteval vector<info> static_data_members_of(info type);
+consteval vector<info> static_data_members_of(info type, access_context ctx);
 ```
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_variable(e)` is `true`, preserving their order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type, ctx)` such that `is_variable(e)` is `true`, preserving their order.
 
 ```cpp
-consteval vector<info> nonstatic_data_members_of(info type);
+consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
 ```
 
 [#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_nonstatic_data_member(e)` is `true`, preserving their order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type, ctx)` such that `is_nonstatic_data_member(e)` is `true`, preserving their order.
 
 ```cpp
 consteval vector<info> enumerators_of(info type_enum);
@@ -6982,38 +7085,6 @@ consteval vector<info> enumerators_of(info type_enum);
 [#]{.pnum} *Constant When*: `dealias(type_enum)` represents an enumeration type and `has_complete_definition(dealias(type_enum))` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `dealias(type_enum)`, in the order in which they are declared.
-
-```cpp
-consteval vector<info> get_public_members(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type)` such that `is_public(e)` is `true`, preserving their order.
-
-```cpp
-consteval vector<info> get_public_bases(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `bases_of(type)` such that `is_public(e)` is `true`, preserving their order.
-
-```cpp
-consteval vector<info> get_public_static_data_members(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `static_data_members_of(type)` such that `is_public(e)` is `true`, preserving their order.
-
-```cpp
-consteval vector<info> get_public_nonstatic_data_members(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `nonstatic_data_members_of(type)` such that `is_public(e)` is `true`, preserving their order.
 
 :::
 :::
@@ -7844,4 +7915,15 @@ references:
         month: 1
         day: 12
     URL: https://wg21.link/p2996r9
+  - id: P3547R1
+    citation-label: P3547R1
+    title: "Modeling Access Control With Reflection"
+    author:
+      - family: Dan Katz
+      - family: Ville Voutilainen
+    issued:
+      - year: 2025
+        month: 02
+        day: 09
+    URL: https://isocpp.org/files/papers/P3547R1.html
 ---
