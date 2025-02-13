@@ -4514,22 +4514,24 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
 
-[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration `$D$` ([expr.const]). The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
+[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration `$D$` ([meta.reflection.define.aggregate]). The scope of `$D$` shall not enclose `$C$`. The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
 
 * [#.#]{.pnum} a function parameter scope, or
 * [#.#]{.pnum} a class scope.
 
 ::: example
 ```cpp
-consteval void complete_type(std::meta::info r) {
-  std::meta::define_aggregate(r, {});
-}
+struct S0 {
+  consteval {
+    std::meta::define_aggregate(^^S0, {}); // error: S0 encloses the consteval block
+  }
+};
 
 struct S1;
-consteval { complete_type(^^S1); }  // OK
+consteval { std::meta::define_aggregate(^^S1, {}); }  // OK
 
 template <std::meta::info R> consteval void tfn1() {
-  complete_type(R);
+  std::meta::define_aggregate(R, {});
 }
 
 struct S2;
@@ -4537,7 +4539,7 @@ consteval { tfn1<^^S2>(); }
   // OK, tfn1<^^S2>() and S2 are enclosed by the same scope
 
 template <std::meta::info R> consteval void tfn2() {
-  consteval { complete_type(R); }
+  consteval { std::meta::define_aggregate(R, {}); }
   return b;
 }
 
@@ -4548,7 +4550,7 @@ consteval { tfn2<^^S3>(); }
 template <typename> struct TCls {
   struct S4;
   static void sfn() requires ([] {
-    consteval { complete_type(^^S4); }
+    consteval { std::meta::define_aggregate(^^S4, {}); }
     return true;
   }) { }
 };
@@ -4558,7 +4560,7 @@ consteval { TCls<void>::sfn(); }
 
 struct S5;
 struct Cls {
-  consteval { complete_type(^^S5); }
+  consteval { std::meta::define_aggregate(^^S5, {}); }
     // error: S5 is not enclosed by class Cls
 };
 
@@ -4566,9 +4568,9 @@ struct S6;
 consteval { // #1
   struct S7; // local class
   consteval { // #2
-    define_aggregate(^^S6, {});
+    std::meta::define_aggregate(^^S6, {});
       // error: consteval block #1 encloses consteval block #2 but not S6
-    define_aggregate(^^S7, {});  // OK, consteval block #1 encloses both #2 and S7
+    std::meta::define_aggregate(^^S7, {});  // OK, consteval block #1 encloses both #2 and S7
   }
 }
 ```
@@ -5171,9 +5173,9 @@ Add a new paragraph to the end of the section defining _data member description_
 [29+]{.pnum} A _data member description_ is a quintuple (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) describing the potential declaration of a nonstatic data member where
 
 - [29+.#]{.pnum} `$T$` is a type or type alias,
-- [29+.#]{.pnum} `$N$` is an `$identifier$` or `-1`,
-- [29+.#]{.pnum} `$A$` is an alignment or `-1`,
-- [29+.#]{.pnum} `$W$` is a bit-field width or `-1`, and
+- [29+.#]{.pnum} `$N$` is an `$identifier$` or ⊥,
+- [29+.#]{.pnum} `$A$` is an alignment or ⊥,
+- [29+.#]{.pnum} `$W$` is a bit-field width or ⊥, and
 - [29+.#]{.pnum} `$NUA$` is a boolean value.
 
 Two data member descriptions are equal if each of their respective components are same types, same identifiers, and equal values.
@@ -5182,9 +5184,9 @@ Two data member descriptions are equal if each of their respective components ar
 The components of a data member description describe a data member such that
 
 - [29+.#]{.pnum} its type is specified using the type or type alias given by `$T$`,
-- [29+.#]{.pnum} it is declared with the name given by `$N$` if `$N$` does not equal `-1` and is otherwise unnamed,
-- [29+.#]{.pnum} it is declared with the `$alignment-specifier$` ([dcl.align]{.sref}) given by `alignas($A$)` if `$A$` does not equal `-1` and is otherwise declared without an `$alignment-specifier$`,
-- [29+.#]{.pnum} it is a bit-field ([class.bit]{.sref}) with the width given by `$W$` if `$W$` does not equal `-1` and is otherwise not a bit-field,
+- [29+.#]{.pnum} it is declared with the name given by `$N$` if `$N$` does not equal ⊥ and is otherwise unnamed,
+- [29+.#]{.pnum} it is declared with the `$alignment-specifier$` ([dcl.align]{.sref}) given by `alignas($A$)` if `$A$` does not equal ⊥ and is otherwise declared without an `$alignment-specifier$`,
+- [29+.#]{.pnum} it is a bit-field ([class.bit]{.sref}) with the width given by `$W$` if `$W$` does not equal ⊥ and is otherwise not a bit-field,
 - [29+.#]{.pnum} it is declared with the attribute `[[no_unique_address]]` ([dcl.attr.nouniqueaddr]{.sref}) if `$NUA$` is `true` and is otherwise declared without that attribute.
 
 Data member descriptions are represented by reflections ([basic.fundamental]{.sref}) returned by `std::meta::data_member_spec` ([meta.reflection.define.aggregate]) and can be reified as data members of a class using `std::meta::define_aggregate` ([meta.reflection.define.aggregate]).
@@ -6473,7 +6475,7 @@ consteval bool has_identifier(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a type alias, then `!has_template_arguments(r)`.
 * [#.#]{.pnum} Otherwise, if `r` represents a enumerator, non-static data member, namespace, or namespace alias, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `has_identifier(type_of(r))`.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); `true` if `$N$` is not `-1`. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); `true` if `$N$` is not ⊥. Otherwise, `false`.
 
 ```cpp
 consteval string_view identifier_of(info r);
@@ -6571,7 +6573,7 @@ consteval bool is_noexcept(info r);
 consteval bool is_bit_field(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a bit-field, or if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$W$` is not `-1`. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a bit-field, or if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$W$` is not ⊥. Otherwise, `false`.
 
 ```cpp
 consteval bool is_enumerator(info r);
@@ -7131,7 +7133,7 @@ consteval size_t alignment_of(info r);
 * [#.#]{.pnum} Otherwise, if `dealias(r)` represents a variable or object, then the alignment requirement of the variable or object.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `alignment_of(type_of(r))`.
 * [#.#]{.pnum} Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$TR$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}). If `$A$` is not `-1`, then the value `$A$`. Otherwise `alignof($T$)` where the corresponding subobject of `$TR$` would have type `$T$`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$TR$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}). If `$A$` is not ⊥, then the value `$A$`. Otherwise `alignof($T$)` where the corresponding subobject of `$TR$` would have type `$T$`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
@@ -7142,7 +7144,7 @@ consteval size_t bit_size_of(info r);
 [#]{.pnum} *Returns*:
 
 * [#.#]{.pnum} If `r` represents a non-static data member that is a bit-field or an unnamed bit-field with width `$W$`, then `$W$`.
-* [#.#]{.pnum} Otherwise, if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}) and `$W$` is not `-1`, then `$W$`.
+* [#.#]{.pnum} Otherwise, if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}) and `$W$` is not ⊥, then `$W$`.
 * [#.#]{.pnum} Otherwise, `CHAR_BIT * size_of(r)`.
 :::
 :::
@@ -7252,7 +7254,7 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Returns*: `^^Z<Args...>`.
 
-[#]{.pnum} [`Z<Args..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
+[#]{.pnum} [The specialization `Z<Args..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
 
 :::
 :::
@@ -7261,14 +7263,7 @@ consteval info substitute(info templ, R&& arguments);
 
 ::: std
 ::: addu
-[#]{.pnum} An object is *meta-reflectable* if it:
-
-  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
-  - [#.#]{.pnum} is not a string literal object ([lex.string]),
-  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]),
-  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]),
-  - [#.#]{.pnum} is not a subobject ([intro.object]) of one of the above, and
-  - [#.#]{.pnum} is constexpr-referenceable from a program point in a namespace scope ([expr.const]).
+[#]{.pnum} An object `$O$` of type `$T$` is *meta-reflectable* if an lvalue expression denoting `$O$` is suitable for use as a constant template argument for a constant template parameter of type `$T$&` ([temp.arg.nontype]).
 
 ```cpp
 template <typename T>
@@ -7281,7 +7276,7 @@ template <typename T>
 
 [#]{.pnum} *Constant When*:
 
-* [#.#]{.pnum} `$V$` satisfies the constraints for a value computed by a prvalue constant expression,
+* [#.#]{.pnum} `$V$` satisfies the constraints for a value computed by a prvalue constant expression ([expr.const]),
 * [#.#]{.pnum} no constituent reference of `$V$` refers to an object that is not meta-reflectable, and
 * [#.#]{.pnum} no constituent value of `$V$` of pointer type is a pointer to an object that is not meta-reflectable.
 
@@ -7300,12 +7295,12 @@ template <typename T>
 
 ```cpp
 template <typename T>
-  consteval info reflect_function(T& expr);
+  consteval info reflect_function(T& fn);
 ```
 
 [#]{.pnum} *Mandates*: `T` is a function type.
 
-[#]{.pnum} *Returns*: `^^fn`, where `fn` is the function designated by `expr`.
+[#]{.pnum} *Returns*: A reflection of the function designated by `fn`.
 :::
 :::
 
@@ -7313,8 +7308,6 @@ template <typename T>
 
 ::: std
 ::: addu
-
-[1]{.pnum} The classes `data_member_options` and `data_member_options::$name-type$` are consteval-only types ([basic.types.general]), and are not structural types ([temp.param]).
 
 ```cpp
 struct data_member_options {
@@ -7336,26 +7329,30 @@ struct data_member_options {
 };
 ```
 
+[1]{.pnum} The classes `data_member_options` and `data_member_options::$name-type$` are consteval-only types ([basic.types.general]), and are not structural types ([temp.param]).
+
 ```cpp
 template <class T> requires constructible_from<u8string, T>
 consteval data_member_options::$name-type$(T&& value);
 ```
 
-[#]{.pnum} *Effects*: Initializes `$contents$` with `u8string(value)`.
+[#]{.pnum} *Effects*: Initializes `$contents$` with `u8string(std::forward<T>(value))`.
 
 ```cpp
 template<class T> requires constructible_from<string, T>
 consteval data_member_options::$name-type$(T&& value);
 ```
-[#]{.pnum} *Effects*: Initializes `$contents$` with `string(value)`.
+[#]{.pnum} *Effects*: Initializes `$contents$` with `string(std::forward<T>(value))`.
 
 ::: note
-`$name-type$` allows a `data_member_spec` to accept an ordinary string literal (or `string_view`, `string`, etc.) or a UTF-8 string literal (or `u8string_view`, `u8string`, etc.) equally well.
+The class `$name-type$` allows the function `data_member_spec` to accept an ordinary string literal (or `string_view`, `string`, etc.) or a UTF-8 string literal (or `u8string_view`, `u8string`, etc.) equally well.
 
+::: example
 ```cpp
 constexpr auto mem1 = data_member_spec(^^int, {.name="ordinary_literal_encoding"});
 constexpr auto mem2 = data_member_spec(^^int, {.name=u8"utf8_encoding"});
 ```
+:::
 
 :::
 
@@ -7374,18 +7371,18 @@ consteval info data_member_spec(info type,
   - [#.#.#]{.pnum} `is_integral_type(type) || is_enumeration_type(type)` is `true`,
   - [#.#.#]{.pnum} `options.alignment` does not contain a value,
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
-  - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value.
-- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`; and
+  - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value; and
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`.
 
 [#]{.pnum} *Returns*: A reflection of a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}) where
 
 - [#.#]{.pnum} `$T$` is the type represented by `delias(type)`,
-- [#.#]{.pnum} `$N$` is either the identifier encoded by `options.name` or `-1` if `options.name` does not contain a value,
-- [#.#]{.pnum} `$A$` is either the alignment value held by `options.alignment` or `-1` if `options.alignment` does not contain a value,
-- [#.#]{.pnum} `$W$` is either the value held by `options.bit_width` or `-1` if `options.bit_width` does not contain a value, and
+- [#.#]{.pnum} `$N$` is either the identifier encoded by `options.name` or ⊥ if `options.name` does not contain a value,
+- [#.#]{.pnum} `$A$` is either the alignment value held by `options.alignment` or ⊥ if `options.alignment` does not contain a value,
+- [#.#]{.pnum} `$W$` is either the value held by `options.bit_width` or ⊥ if `options.bit_width` does not contain a value, and
 - [#.#]{.pnum} `$NUA$` is the value held by `options.no_unique_address`.
 
-[#]{.pnum} [The returned reflection value is primarily useful in conjunction with `define_aggregate`. Certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`) can also be used to query the characteristics indicated by the arguments provided to `data_member_spec`.]{.note}
+[#]{.pnum} [The returned reflection value is primarily useful in conjunction with `define_aggregate`; it can also be queried by certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`).]{.note}
 
 ```cpp
 consteval bool is_data_member_spec(info r);
@@ -7400,17 +7397,15 @@ consteval bool is_data_member_spec(info r);
 
 [#]{.pnum} *Constant When*: Letting `$C$` be the class represented by `class_type` and `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`,
 
-- [#.#]{.pnum} `$C$` is incomplete from every point in the evaluation context; [`$C$` could be a class template specialization for which there is a reachable definition of the primary class template. In this case, an explicit specialization is injected.]{.note}
-- [#.#]{.pnum} `$C$` is not a class being defined;
+- [#.#]{.pnum} `$C$` is incomplete from every point in the evaluation context; [`$C$` can be a class template specialization for which there is a reachable definition of the primary class template. In this case, an explicit specialization is injected.]{.note}
 - [#.#]{.pnum} `is_data_member_spec(@$r$~$K$~@)` is `true` for every `@$r$~$K$~@`;
 - [#.#]{.pnum} `is_complete_type(type_of(@$r$~$K$~@))` is `true` for every `@$r$~$K$~@`; and
-- [#.#]{.pnum} for every pair (`@$r$~$K$~@`, `@$r$~$L$~@`) where `K < L`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then either `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true` or `u8identifier_of(@$r$~$K$~@) == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
+- [#.#]{.pnum} for every pair (`@$r$~$K$~@`, `@$r$~$L$~@`) where `K < L`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then either
 
-[#]{.pnum} Let {`@$t$~k~@`} be a sequence of reflections and {`@$o$~k~@`} be a sequence of `data_member_options` values such that
+  - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true`,
+  - [#.#.#]{.pnum} or `u8identifier_of(@$r$~$K$~@) == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
 
-    data_member_spec(@$t$~$k$~@, @$o$~$k$~@) == @$r$~$k$~@
-
-for every `@$r$~$k$~@` in `mdescrs`.
+[#]{.pnum} Let {`@$t$~k~@`} be a sequence of reflections and {`@$o$~k~@`} be a sequence of `data_member_options` values such that `data_member_spec(@$t$~$k$~@, @$o$~$k$~@) == @$r$~$k$~@` is `true` for every `@$r$~$k$~@` in `mdescrs`.
 
 [#]{.pnum} *Effects*:
 Produces an injected declaration `$D$` ([expr.const]) that provides a definition for `$C$` with properties as follows:
