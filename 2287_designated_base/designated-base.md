@@ -1,8 +1,8 @@
 ---
 title: "Designated-initializers for Base Classes"
-document: P2287R3
+document: D2287R4
 date: today
-audience: EWG
+audience: CWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -122,13 +122,13 @@ auto b = B{.a=1, .b=2};
 ```
 :::
 
-And in a type that has a base class that is not an aggregate, you can use the mix-and-match form:
+And in a type that has a base class that is not an aggregate, you can use the mix-and-match form if you use braces:
 
 ::: std
 ```cpp
 struct C : std::string { int c; };
 
-auto c1 = C{"hello", .c=3};
+auto c1 = C{"hello", .c=3}; // ill-formed
 auto c2 = C{{"hello"}, .c=3};
 ```
 :::
@@ -142,7 +142,7 @@ struct E : D { int x; };
 
 auto e1 = E{.x=1};         // initializes E::x, not D::x
 auto e2 = E{{.x=1}, .x=2}; // initializes D::x to 1 and E::x to 2
-auto e3 = E{D{1}, .x=2};   // likewise
+auto e3 = E{D{1}, .x=2};   // ill-formed
 ```
 :::
 
@@ -271,9 +271,13 @@ Change the grammar in [dcl.init.general]{.sref}/1 to allow a `$designated-initia
 
 ::: std
 ```diff
++ $braced-init-list-list$:
++   $braced-init-list$
++   $braced-init-list$ , $braced-init-list-list$
+
   $designated-initializer-list$:
 +   $designated-only-initializer-list$
-+   $initializer-list$ , $designated-only-initializer-list$
++   $braced-init-list-list$ , $designated-only-initializer-list$
 
 + $designated-only-initializer-list$:
     $designated-initializer-clause$
@@ -288,30 +292,41 @@ Add a new term after we define what an aggregate and the elements of an aggregat
 ::: addu
 [*]{.pnum} The _designatable members_ of an aggregate `T` are:
 
-* [*.1]{.pnum} For each direct base class `C` of `T` that is an aggregate class, the designatable members of `C` for which lookup for that member in `T` finds the member of `C`,
-* [*.2]{.pnum} The ordered *identifiers* in the direct non-static members of `T`.
+* [*.1]{.pnum} For each direct base class `C` of `T` that is an aggregate class, in order they appear in the `$base-specifier-list$`, the designatable members of `C` for which lookup for that member in `T` finds the member of `C`, followed by
+* [*.2]{.pnum} the direct non-static data members of `T`, in declaration order.
 :::
 :::
 
 Extend [dcl.init.aggr]{.sref}/3.1:
 
 ::: std
-[3.1]{.pnum} If the initializer list is a brace-enclosed *designated-initializer-list*, the aggregate shall be of class type[, the identifier in each designator shall name a direct non-static data member of the class, and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.]{.rm} [`C` .]{.addu}
+[3.1]{.pnum} If the initializer list is a brace-enclosed `$designated-initializer-list$`, the aggregate shall be of class type[, the identifier in each designator shall name a direct non-static data member of the class, and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.]{.rm} [`C`.]{.addu}
 
 ::: addu
-* [3.1.1]{.pnum} If the initializer list contains a `$initializer-list$`, then each `$initializer-clause$` in the `$initializer-list$` shall appertain (see below) to a base class subobject of `C` and the `$identifier$` in each `$designator$` shall name a direct non-static data member of `C`, and the explicitly initialized elements of the aggregate are those base class subobjects and direct members.
+The explicitly initialized elements of `$C$` are:
+
+* [3.1.1]{.pnum} For each `$braced-init-list$` in the `$designated-initializer-list$`, the base class subobject of `$C$` which the `$braced-init-list$` appertains to (see below), and
+* [3.1.2]{.pnum} for each `$identifier$` in the `$designated-initializer-list$`, the designatable member of `$C$` named by, or containing (in the case of an anonymous union or a base class), that `$identifier$`.
+:::
+
+In either case, if there is either no such base class subobject or no such designatable member, the program is ill-formed.
+
+old wording here:
+
+::: addu
+* [3.1.1]{.pnum} Each `$braced-init-list$` in the `$designated-initializer-list$` shall appertain (see below) to a base class subobject of `C` and the `$identifier$` in each `$designator$` shall name a direct non-static data member of `C`. The explicitly initialized elements of the aggregate are those base class subobjects and direct members.
 * [3.1.2]{.pnum} Otherwise, the `$identifier$` in each `$designator$` shall name a designatable member of the class. The explicitly initialized elements of the aggregate are the elements that are, or contain (in the case of an anonymous union or of a base class) those members.
 :::
 
 :::
 
-And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
+And extend [dcl.init.aggr]{.sref}/4 to cover base class elements (TODO: do we need this special case first bullet? Expand the designated-initializer-list bullet instead of adding a new bullet. Probably only need to change 4.2):
 
 ::: std
 [4]{.pnum} For each explicitly initialized element:
 
 ::: addu
-* [4.0]{.pnum} If the initializer list is a brace-enclosed *designated-initializer-list* with no `$initializer-list$` and the element is a direct base class, then let `C` denote that direct base class and let `T` denote the class. The element is initialized from a synthesized brace-enclosed *designated-initializer-list* containing each *designator* for which lookup in `T` names a direct or indirect non-static data member of `C` in the same order as in the original *designated-initializer-list*.
+* [4.0]{.pnum} If the initializer list is a brace-enclosed `$designated-initializer-list$` with no `$braced-init-list$` and the element is a direct base class, then let `C` denote that direct base class and let `T` denote the class. The element is initialized from a synthesized brace-enclosed *designated-initializer-list* containing each *designator* for which lookup in `T` names a (direct or indirect) non-static data member of `C` in the same order as in the original *designated-initializer-list*.
 
 ::: example
 ```
@@ -319,7 +334,7 @@ struct A { int a; };
 struct B : A { int b; };
 struct C : B { int c; };
 
-// the A element is intialized from {.a=1}
+// the A element is initialized from {.a=1}
 B x = B{.a=1};
 
 // the B element is initialized from {.a=2, .b=3}
@@ -367,7 +382,7 @@ Extend [dcl.init.list]{.sref}/3.1:
 
 ::: std
 [3.1]{.pnum} If the _braced-init-list_ contains a _designated-initializer-list_, `T` shall be an aggregate class.
-The ordered *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of [designatable members [(dcl.init.aggr)] of `T`.]{.addu}
+The ordered *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of [the ordered `$identifiers$` in the direct non-static data members]{.rm} [the designatable members [(dcl.init.aggr)] of `T`.]{.addu}
 
 Aggregate initialization is performed ([dcl.init.aggr]).
 
@@ -423,7 +438,7 @@ Bump `__cpp_­designated_­initializers` in [cpp.predefined]{.sref}:
 ::: std
 ```diff
 - __cpp_­designated_­initializers @[201707L]{.diffdel}@
-+ __cpp_­designated_­initializers @[2024XXL]{.diffins}@
++ __cpp_­designated_­initializers @[2025XXL]{.diffins}@
 ```
 :::
 
