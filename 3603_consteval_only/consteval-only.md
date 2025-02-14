@@ -251,6 +251,15 @@ static_assert(v == 1); // ok, observed mutation
 ```
 :::
 
+Alternatively, because of the potential future of consteval mutable variables, we could enforce that variables declared `consteval` must also be declared `const`. That restriction can be relaxed later. Note that this rule would only be for variables _declared_ `consteval`, not those which escalate:
+
+::: std
+```cpp
+consteval int a = 0; // ill-formed
+consteval int const b = 0; // ok
+```
+:::
+
 ## Rules around `constexpr` Variables
 
 Let's quickly consider:
