@@ -542,7 +542,7 @@ Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be rem
 * [2.3]{.pnum} [`X` is a union and all of its variant members are of const-qualified type (or possibly multi-dimensional array thereof),]{.rm}
 * [2.4]{.pnum} [`X` is a non-union class and all members of any anonymous union member are of const-qualified type (or possibly multi-dimensional array thereof)]{.rm},
 * [2.5]{.pnum} any [non-variant]{.addu} potentially constructed subobject, except for a non-static data member with a brace-or-equal-initializer [or a variant member of a union where another non-static data member has a brace-or-equal-initializer]{.rm}, has class type `M` (or possibly multi-dimensional array thereof) and overload resolution ([over.match]) as applied to find `M`'s corresponding constructor [either]{.rm} does not result in a usable candidate ([over.match.general]) [or, in the case of a variant member, selects a non-trivial function,]{.rm} or
-* [2.6]{.pnum} any potentially constructed subobject has class type `M` (or possibly multidimensional array thereof) and `M` has a destructor that is deleted or inaccessible from the defaulted default constructor.
+* [2.6]{.pnum} any potentially constructed subobject [`$S$`]{.addu} has class type `M` (or possibly multidimensional array thereof)[,]{.addu} [and]{.rm} `M` has a destructor that is deleted or inaccessible from the defaulted default constructor[, and either `$S$` is non-variant or `$S$` has a default member initializer]{.addu}.
 
 [3]{.pnum} A default constructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if[:]{.rm}
 
