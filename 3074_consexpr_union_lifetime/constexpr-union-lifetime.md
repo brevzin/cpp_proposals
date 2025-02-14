@@ -632,12 +632,11 @@ __cpp_trivial_union 2025XXL
 ```
 :::
 
-And update the macro for `inplace_vector` in [version.syn]{.sref}:
+Add a new feature-test macro for `constexpr` `<inplace_vector>` in [version.syn]{.sref}:
 
 ::: std
 ```diff
-- #define __cpp_lib_inplace_vector 202406L // also in <inplace_vector>
-+ #define __cpp_lib_inplace_vector 2025XXL // also in <inplace_vector>
++ #define __cpp_lib_constexpr_inplace_vector 2025XXL // also in <inplace_vector>
 ```
 :::
 
