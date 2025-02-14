@@ -537,7 +537,7 @@ Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be rem
 ::: std
 [2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if
 
-* [2.1]{.pnum} [`X` is a non-union class and]{.addu} any non-static data member with no default member initializer ([class.mem]) is of reference type,
+* [2.1]{.pnum} any non-static data member with no default member initializer ([class.mem]) is of reference type,
 * [2.2]{.pnum} [`X` is a non-union class and]{.addu} any non-variant non-static data member of const-qualified type (or possibly multi-dimensional array thereof) with no brace-or-equal-initializer is not const-default-constructible ([dcl.init]),
 * [2.3]{.pnum} [`X` is a union and all of its variant members are of const-qualified type (or possibly multi-dimensional array thereof),]{.rm}
 * [2.4]{.pnum} [`X` is a non-union class and all members of any anonymous union member are of const-qualified type (or possibly multi-dimensional array thereof)]{.rm},
