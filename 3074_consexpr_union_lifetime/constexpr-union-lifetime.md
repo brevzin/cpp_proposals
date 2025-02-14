@@ -600,7 +600,7 @@ union U {
   std::string s;
 };
 ```
-Since `std​::​string` ([string.classes]) declares non-trivial versions of all of the special member functions, `U` will have an implicitly deleted [default constructor,]{.rm} copy/move constructor, [and]{.addu} copy/move assignment operator[, and destructor]{.rm}.
+Since `std​::​string` ([string.classes]) declares non-trivial versions of all of the special member functions, `U` will have an implicitly deleted [default constructor,]{.rm} copy/move constructor[,]{.rm} [and]{.addu} copy/move assignment operator[, and destructor]{.rm}.
 To use `U`, some or all of these member functions must be user-provided. [The default constructor and destructor of `U` are both trivial even though `std::string` has a non-trivial default destructor and a non-trivial destructor]{.addu}
 :::
 :::
