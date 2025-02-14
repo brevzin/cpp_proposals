@@ -535,13 +535,14 @@ I was able to compile Clang with this update successfully, which wasn't particul
 Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be removed because such cases become trivially default constructible too]{.ednote}
 
 ::: std
-[2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if [`X` is a non-union class and]{.addu}
+[2]{.pnum} A defaulted default constructor for class `X` is defined as deleted if
 
-* [2.1]{.pnum} any non-static data member with no default member initializer ([class.mem]) is of reference type,
-* [2.2]{.pnum} any non-variant non-static data member of const-qualified type (or possibly multi-dimensional array thereof) with no brace-or-equal-initializer is not const-default-constructible ([dcl.init]),
+* [2.1]{.pnum} [`X` is a non-union class and]{.addu} any non-static data member with no default member initializer ([class.mem]) is of reference type,
+* [2.2]{.pnum} [`X` is a non-union class and]{.addu} any non-variant non-static data member of const-qualified type (or possibly multi-dimensional array thereof) with no brace-or-equal-initializer is not const-default-constructible ([dcl.init]),
 * [2.3]{.pnum} [`X` is a union and all of its variant members are of const-qualified type (or possibly multi-dimensional array thereof),]{.rm}
 * [2.4]{.pnum} [`X` is a non-union class and all members of any anonymous union member are of const-qualified type (or possibly multi-dimensional array thereof)]{.rm},
-* [2.5]{.pnum} any potentially constructed subobject, except for a non-static data member with a brace-or-equal-initializer [or a variant member of a union where another non-static data member has a brace-or-equal-initializer]{.rm}, has class type `M` (or possibly multi-dimensional array thereof) and overload resolution ([over.match]) as applied to find `M`'s corresponding constructor either does not result in a usable candidate ([over.match.general]) [or, in the case of a variant member, selects a non-trivial function,]{.rm} or
+* [2.5]{.pnum} any [non-variant]{.addu} potentially constructed subobject, except for a non-static data member with a brace-or-equal-initializer [or a variant member of a union where another non-static data member has a brace-or-equal-initializer]{.rm}, has class type `M` (or possibly multi-dimensional array thereof) and overload resolution ([over.match]) as applied to find `M`'s corresponding constructor [either]{.rm} does not result in a usable candidate ([over.match.general]) [or, in the case of a variant member, selects a non-trivial function,]{.rm} or
+* [2.6]{.pnum} any potentially constructed subobject has class type `M` (or possibly multidimensional array thereof) and `M` has a destructor that is deleted or inaccessible from the defaulted default constructor.
 
 [3]{.pnum} A default constructor [for a class `X`]{.addu} is *trivial* if it is not user-provided and if[:]{.rm}
 
@@ -579,6 +580,31 @@ Change [class.dtor]{.sref}/7-8:
 * [8.3]{.pnum} [either `X` is a union or]{.addu} for all of the [non-variant]{.addu} non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
 :::
 
+Update the note in [class.union.general]{.sref}/4:
+
+::: std
+[4]{.pnum} A union can have member functions (including constructors and destructors), but it shall not have virtual ([class.virtual]) functions.
+A union shall not have base classes.
+A union shall not be used as a base class.
+If a union contains a non-static data member of reference type, the program is ill-formed.
+
+::: note3
+Absent default member initializers ([class.mem]), if any non-static data member of a union has a non-trivial [default constructor ([class.default.ctor]),]{.rm} copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, [or]{.addu} move assignment operator ([class.copy.assign]), [or destructor ([class.dtor]),]{.rm} the corresponding member function of the union must be user-provided or it will be implicitly deleted ([dcl.fct.def.delete]) for the union.
+
+::: example
+Consider the following union:
+```cpp
+union U {
+  int i;
+  float f;
+  std::string s;
+};
+```
+Since `std​::​string` ([string.classes]) declares non-trivial versions of all of the special member functions, `U` will have an implicitly deleted [default constructor,]{.rm} copy/move constructor, [and]{.addu} copy/move assignment operator[, and destructor]{.rm}.
+To use `U`, some or all of these member functions must be user-provided. [The default constructor and destructor of `U` are both trivial even though `std::string` has a non-trivial default destructor and a non-trivial destructor]{.addu}
+:::
+:::
+:::
 
 ## Library Wording
 
