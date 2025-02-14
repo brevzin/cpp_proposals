@@ -553,7 +553,7 @@ Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be rem
 
 Otherwise, the default constructor is *non-trivial*.
 
-[4]{.pnum} [If a default constructor of a union or union-like class `X` is trivial, then for `U` being `X` (if `X` is a union) and for each anonymous union member `U` of `X` otherwise, if the first variant member, if any, of `U` has implicit-lifetime type ([basic.types.general]), the default constructor of `X` begins the lifetime of that member if it is not the active member of its union. [It is already the active member if `U` was value-initialized.]{.note}]{.addu} [An]{.rm} [Otherwise, an]{.addu} implicitly-defined ([dcl.fct.def.default]) default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no ctor-initializer ([class.base.init]) and an empty compound-statement.
+[4]{.pnum} [If a default constructor of a union-like class `X` is trivial, then for each union `U` that is either `X` or an anonymous union member of `X`, if the first variant member, if any, of `U` has implicit-lifetime type ([basic.types.general]), the default constructor of `X` begins the lifetime of that member if it is not the active member of its union. [It is already the active member if `U` was value-initialized.]{.note}]{.addu} [An]{.rm} [Otherwise, an]{.addu} implicitly-defined ([dcl.fct.def.default]) default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no ctor-initializer ([class.base.init]) and an empty compound-statement.
 :::
 
 Change [class.dtor]{.sref}/7-8:
@@ -566,8 +566,7 @@ Change [class.dtor]{.sref}/7-8:
 ::: addu
 * [7.x]{.pnum} `X` is a union and
 
-    * [#.x.#]{.pnum} `X` does not have an eligible default constructor,
-    * [#.x.#]{.pnum} `X` has an eligible default constructor that is not trivial, or
+    * [#.x.#]{.pnum} overload resolution to select a constructor to default-initialize an object of type `X` either fails or selects a constructor that is either deleted or not trivial, or
     * [#.x.#]{.pnum} `X` has a variant member `V` of class type `M` (or possibly multi-dimensional array thereof) where `V` has a default member initializer and `M` has a destructor that is non-trivial,
 :::
 
@@ -589,7 +588,7 @@ A union shall not be used as a base class.
 If a union contains a non-static data member of reference type, the program is ill-formed.
 
 ::: note3
-Absent default member initializers ([class.mem]), if any non-static data member of a union has a non-trivial [default constructor ([class.default.ctor]),]{.rm} copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, [or]{.addu} move assignment operator ([class.copy.assign]), [or destructor ([class.dtor]),]{.rm} the corresponding member function of the union must be user-provided or it will be implicitly deleted ([dcl.fct.def.delete]) for the union.
+[Absent default member initializers ([class.mem]), if]{.rm} [If]{.addu} any non-static data member of a union has a non-trivial [default constructor ([class.default.ctor]),]{.rm} copy constructor, move constructor ([class.copy.ctor]), copy assignment operator, [or]{.addu} move assignment operator ([class.copy.assign]), [or destructor ([class.dtor]),]{.rm} the corresponding member function of the union must be user-provided or it will be implicitly deleted ([dcl.fct.def.delete]) for the union.
 
 ::: example
 Consider the following union:
@@ -601,7 +600,7 @@ union U {
 };
 ```
 Since `std​::​string` ([string.classes]) declares non-trivial versions of all of the special member functions, `U` will have an implicitly deleted [default constructor,]{.rm} copy/move constructor[,]{.rm} [and]{.addu} copy/move assignment operator[, and destructor]{.rm}.
-To use `U`, some or all of these member functions must be user-provided. [The default constructor and destructor of `U` are both trivial even though `std::string` has a non-trivial default destructor and a non-trivial destructor]{.addu}
+[To use `U`, some or all of these member functions must be user-provided.]{.rm} [The default constructor and destructor of `U` are both trivial even though `std::string` has a non-trivial default constructor and a non-trivial destructor]{.addu}
 :::
 :::
 :::
