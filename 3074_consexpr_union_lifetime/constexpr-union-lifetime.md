@@ -561,14 +561,14 @@ Change [class.dtor]{.sref}/7-8:
 ::: std
 [7]{.pnum} A defaulted destructor for a class `X` is defined as deleted if[:]{.rm}
 
-* [7.1]{.pnum} [`X` is a non-union class and]{.addu} any potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) [and]{.rm} [where]{.addu} `M` has a destructor that is deleted or is inaccessible from the defaulted destructor [or, in the case of a variant member, is non-trivial]{.rm},
+* [7.1]{.pnum} [`X` is a non-union class and]{.addu} any [non-variant]{.addu} potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) [and]{.rm} [where]{.addu} `M` has a destructor that is deleted or is inaccessible from the defaulted destructor [or, in the case of a variant member, is non-trivial]{.rm},
 
 ::: addu
 * [7.x]{.pnum} `X` is a union and
 
     * [#.x.#]{.pnum} `X` does not have an eligible default constructor,
     * [#.x.#]{.pnum} `X` has an eligible default constructor that is not trivial, or
-    * [#.x.#]{.pnum} `X` has a variant member `V` of class type `M` (or possibly multi-dimensional array thereof) where `V` has a default member initializer and `M` has a destructor that is non-trivial, deleted, or inaccessible from the defaulted destructor,
+    * [#.x.#]{.pnum} `X` has a variant member `V` of class type `M` (or possibly multi-dimensional array thereof) where `V` has a default member initializer and `M` has a destructor that is non-trivial,
 :::
 
 * [7.2]{.pnum} or, for a virtual destructor, lookup of the non-array deallocation function results in an ambiguity or in a function that is deleted or inaccessible from the defaulted destructor.
