@@ -563,7 +563,7 @@ Change [class.dtor]{.sref}/7-8:
 * [7.1]{.pnum} [`X` is a non-union class and]{.addu} any potentially constructed subobject has class type `M` (or possibly multi-dimensional array thereof) [and]{.rm} [where]{.addu} `M` has a destructor that is deleted or is inaccessible from the defaulted destructor [or, in the case of a variant member, is non-trivial]{.rm},
 
 ::: addu
-* [7.x]{.pnum} `X` is a union and either
+* [7.x]{.pnum} `X` is a union and
 
     * [#.x.#]{.pnum} `X` does not have an eligible default constructor,
     * [#.x.#]{.pnum} `X` has an eligible default constructor that is not trivial, or
