@@ -293,26 +293,33 @@ Change the grammar in [dcl.init.general]{.sref}/1 to allow a `$designated-initia
 +   $braced-init-list$
 +   $braced-init-list$ , $braced-init-list-list$
 
++ $designated-only-initializer-list$:
++   $designated-initializer-clause$
++   $designated-only-initializer-list$ , $designated-initializer-clause$
+
   $designated-initializer-list$:
+-   $designated-initializer-clause$
+-   $designated-initializer-list$ , $designated-initializer-clause$
 +   $designated-only-initializer-list$
 +   $braced-init-list-list$ , $designated-only-initializer-list$
-
-+ $designated-only-initializer-list$:
-    $designated-initializer-clause$
--   $designated-initializer-list$ , $designated-initializer-clause$
-+   $designated-only-initializer-list$ , $designated-initializer-clause$
 ```
 :::
 
 Add a new term after we define what an aggregate and the elements of an aggregate are:
 
 ::: std
+[1]{.pnum} An *aggregate* is [...]
+
+[2]{.pnum} The *elements* of an aggregate are: [...]
+
 ::: addu
 [*]{.pnum} The _designatable members_ of an aggregate `T` are:
 
-* [*.1]{.pnum} For each direct base class `C` of `T` that is an aggregate class, in order they appear in the `$base-specifier-list$`, the designatable members of `C` for which lookup for that member in `T` finds the member of `C`, followed by
-* [*.2]{.pnum} the direct non-static data members of `T`, in declaration order.
+* [*.1]{.pnum} For each direct base class `C` of `T` that is itself an aggregate, in the order in which they appear in the `$base-specifier-list$`, the designatable members of `C` for which lookup for that member in `T` finds the member of `C`, followed by
+* [*.2]{.pnum} the direct non-static data members of `T` that are not members of an anonymous union, in declaration order.
 :::
+
+[3]{.pnum} When an aggregate is initialized [...]
 :::
 
 Extend [dcl.init.aggr]{.sref}/3.1:

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-02-13" />
+  <meta name="dcterms.date" content="2025-02-14" />
   <title>Designated-initializers for Base Classes</title>
   <style>
       code{white-space: pre-wrap;}
@@ -569,7 +569,7 @@ Base Classes</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-02-13</td>
+    <td>2025-02-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1033,14 +1033,15 @@ to start with an
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list</em></span></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list</em> , <em>braced-init-list-list</em></span></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <em>designated-initializer-list</em>:</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>designated-only-initializer-list</em></span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list-list</em> , <em>designated-only-initializer-list</em></span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>designated-only-initializer-list</em>:</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>designated-initializer-clause</em></span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>designated-only-initializer-list</em> , <em>designated-initializer-clause</em></span></span>
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>designated-only-initializer-list</em>:</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <em>designated-initializer-clause</em></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <em>designated-initializer-list</em>:</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>designated-initializer-clause</em></span></span>
 <span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>designated-initializer-list</em> , <em>designated-initializer-clause</em></span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>designated-only-initializer-list</em> , <em>designated-initializer-clause</em></span></span></code></pre></div>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>designated-only-initializer-list</em></span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="va">+   <em>braced-init-list-list</em> , <em>designated-only-initializer-list</em></span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1048,30 +1049,37 @@ to start with an
 an aggregate are:</p>
 <div class="std">
 <blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">1</a></span>
+An <em>aggregate</em> is […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">2</a></span>
+The <em>elements</em> of an aggregate are: […]</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">*</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">*</a></span>
 The <em>designatable members</em> of an aggregate
 <code class="sourceCode cpp">T</code> are:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(*.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(*.1)</a></span>
 For each direct base class <code class="sourceCode cpp">C</code> of
-<code class="sourceCode cpp">T</code> that is an aggregate class, in
-order they appear in the
+<code class="sourceCode cpp">T</code> that is itself an aggregate, in
+the order in which they appear in the
 <code class="sourceCode cpp"><em>base-specifier-list</em></code>, the
 designatable members of <code class="sourceCode cpp">C</code> for which
 lookup for that member in <code class="sourceCode cpp">T</code> finds
 the member of <code class="sourceCode cpp">C</code>, followed by</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(*.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(*.2)</a></span>
 the direct non-static data members of
-<code class="sourceCode cpp">T</code>, in declaration order.</li>
+<code class="sourceCode cpp">T</code> that are not members of an
+anonymous union, in declaration order.</li>
 </ul>
 </div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">3</a></span>
+When an aggregate is initialized […]</p>
 </blockquote>
 </div>
 <p>Extend <span>9.4.2 <a href="https://wg21.link/dcl.init.aggr">[dcl.init.aggr]</a></span>/3.1:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(3.1)</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(3.1)</a></span>
 If the initializer list is a brace-enclosed
 <code class="sourceCode cpp"><em>designated-initializer-list</em></code>,
 the aggregate shall be of class type<span class="rm" style="color: #bf0303"><del>, the identifier in each designator shall
@@ -1082,7 +1090,7 @@ contain, those members.</del></span> <span class="addu"><code class="sourceCode 
 <p>The explicitly initialized elements of
 <code class="sourceCode cpp"><em>C</em></code> are:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(3.1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(3.1.1)</a></span>
 For each <code class="sourceCode cpp"><em>braced-init-list</em></code>
 in the
 <code class="sourceCode cpp"><em>designated-initializer-list</em></code>,
@@ -1090,7 +1098,7 @@ the base class subobject of
 <code class="sourceCode cpp"><em>C</em></code> which the
 <code class="sourceCode cpp"><em>braced-init-list</em></code> appertains
 to (see below), and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(3.1.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(3.1.2)</a></span>
 for each <code class="sourceCode cpp"><em>identifier</em></code> in the
 <code class="sourceCode cpp"><em>designated-initializer-list</em></code>,
 the designatable member of
@@ -1109,16 +1117,16 @@ bullet? Expand the designated-initializer-list bullet instead of adding
 a new bullet. Probably only need to change 4.2):</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">4</a></span>
 For each explicitly initialized element:</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(4.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(4.1)</a></span>
 If the element is an anonymous union member and […]</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(4.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(4.2)</a></span>
 Otherwise, if the initializer list is a brace-enclosed <code class="sourceCode cpp"><em>designated-initializer-list</em><span class="op">]</span></code>,
 <span class="addu">then</span></p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(4.2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(4.2.1)</a></span>
 <span class="rm" style="color: #bf0303"><del>the element is initialized
 with the
 <span><code class="sourceCode default"><em>brace-or-equal-initializer</em></code></span>
@@ -1133,7 +1141,7 @@ and a narrowing conversion ([dcl.init.list]) is required to convert the
 expression, the program is ill-formed. <span class="note"><span>[ <em>Note 1:</em> </span>The form of the initializer
 determines whether copy-initialization or direct-initialization is
 performed.<span> — <em>end note</em> ]</span></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(4.2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(4.2.2)</a></span>
 <span class="addu">otherwise, the element is initialized with the
 corresponding
 <code class="sourceCode cpp"><em>braced-init-list</em></code>.</span></li>
@@ -1168,7 +1176,7 @@ corresponding
 <span> — <em>end example</em> ]</span>
 </div>
 </div></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(4.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(4.3)</a></span>
 Otherwise, the initializer list is a brace-enclosed
 <code class="sourceCode cpp"><em>initializer-list</em></code>.
 […]</p></li>
@@ -1178,7 +1186,7 @@ Otherwise, the initializer list is a brace-enclosed
 <p>Extend <span>9.4.5 <a href="https://wg21.link/dcl.init.list">[dcl.init.list]</a></span>/3.1:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(3.1)</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(3.1)</a></span>
 If the <em>braced-init-list</em> contains a
 <em>designated-initializer-list</em>,
 <code class="sourceCode cpp">T</code> shall be an aggregate class. The
