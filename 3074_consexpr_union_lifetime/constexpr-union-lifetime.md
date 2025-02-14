@@ -1,6 +1,6 @@
 ---
 title: "trivial `union`s (was `std::uninitialized<T>`)"
-document: D3074R7
+document: P3074R7
 date: today
 audience: EWG
 author:
