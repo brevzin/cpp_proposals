@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-02-13" />
+  <meta name="dcterms.date" content="2025-02-14" />
   <title>trivial unions (was std::uninitialized&lt;T&gt;)</title>
   <style>
       code{white-space: pre-wrap;}
@@ -566,11 +566,11 @@ background-color: #ffff00;
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>P3074R7 <a href="https://wg21.link/P3074">[Latest]</a> <a href="https://wg21.link/P3074/status">[Status]</a></td>
+    <td>D3074R7 <a href="https://wg21.link/P3074">[Latest]</a> <a href="https://wg21.link/P3074/status">[Status]</a></td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-02-13</td>
+    <td>2025-02-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1553,19 +1553,25 @@ all the direct base classes of <span class="rm" style="color: #bf0303"><del>its 
 default constructors, and</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(3.4)</a></span>
 <span class="addu">either <code class="sourceCode cpp">X</code> is a
-union or</span> for all the non-static data members of <span class="rm" style="color: #bf0303"><del>its class</del></span> <span class="addu"><code class="sourceCode cpp">X</code></span> that are of
+union or</span> for all the <span class="addu">non-variant</span>
+non-static data members of <span class="rm" style="color: #bf0303"><del>its class</del></span> <span class="addu"><code class="sourceCode cpp">X</code></span> that are of
 class type (or array thereof), each such class has a trivial default
 constructor.</li>
 </ul>
 <p>Otherwise, the default constructor is <em>non-trivial</em>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">4</a></span>
-<span class="addu">If a default constructor of a union
-<code class="sourceCode cpp">X</code> is trivial and the first variant
-member, if any, of <code class="sourceCode cpp">X</code> has
+<span class="addu">If a default constructor of a union or union-like
+class <code class="sourceCode cpp">X</code> is trivial, then for
+<code class="sourceCode cpp">U</code> being
+<code class="sourceCode cpp">X</code> (if
+<code class="sourceCode cpp">X</code> is a union) and for each anonymous
+union member <code class="sourceCode cpp">U</code> of
+<code class="sourceCode cpp">X</code> otherwise, if the first variant
+member, if any, of <code class="sourceCode cpp">U</code> has
 implicit-lifetime type ([basic.types.general]), the default constructor
-begins the lifetime of that member if it is not the active member of the
-union. <span class="note"><span>[ <em>Note 1:</em> </span>It is already
-the active member if <code class="sourceCode cpp">X</code> was
+of <code class="sourceCode cpp">X</code> begins the lifetime of that
+member if it is not the active member of its union. <span class="note"><span>[ <em>Note 1:</em> </span>It is already the active
+member if <code class="sourceCode cpp">U</code> was
 value-initialized.<span> — <em>end note</em> ]</span></span></span>
 <span class="rm" style="color: #bf0303"><del>An</del></span> <span class="addu">Otherwise, an</span> implicitly-defined
 ([dcl.fct.def.default]) default constructor performs the set of
@@ -1597,8 +1603,11 @@ of a variant member, is non-trivial</del></span>,</li>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(7.x.1)</a></span>
 <code class="sourceCode cpp">X</code> does not have an eligible default
-constructor that is trivial, or</li>
+constructor,</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(7.x.2)</a></span>
+<code class="sourceCode cpp">X</code> has an eligible default
+constructor that is not trivial, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(7.x.3)</a></span>
 <code class="sourceCode cpp">X</code> has a variant member
 <code class="sourceCode cpp">V</code> of class type
 <code class="sourceCode cpp">M</code> (or possibly multi-dimensional
@@ -1610,24 +1619,25 @@ defaulted destructor,</li>
 </ul>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(7.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(7.2)</a></span>
 or, for a virtual destructor, lookup of the non-array deallocation
 function results in an ambiguity or in a function that is deleted or
 inaccessible from the defaulted destructor.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">8</a></span>
 A destructor <span class="addu">for a class
 <code class="sourceCode cpp">X</code></span> is <em>trivial</em> if it
 is not user-provided and if<span class="rm" style="color: #bf0303"><del>:</del></span></p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(8.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(8.1)</a></span>
 the destructor is not virtual,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(8.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(8.2)</a></span>
 all of the direct base classes of <span class="rm" style="color: #bf0303"><del>its class</del></span> <span class="addu"><code class="sourceCode cpp">X</code></span> have trivial
 destructors, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(8.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(8.3)</a></span>
 <span class="addu">either <code class="sourceCode cpp">X</code> is a
-union or</span> for all of the non-static data members of <span class="rm" style="color: #bf0303"><del>its class</del></span> <span class="addu"><code class="sourceCode cpp">X</code></span> that are of
+union or</span> for all of the <span class="addu">non-variant</span>
+non-static data members of <span class="rm" style="color: #bf0303"><del>its class</del></span> <span class="addu"><code class="sourceCode cpp">X</code></span> that are of
 class type (or array thereof), each such class has a trivial
 destructor.</li>
 </ul>
@@ -1641,12 +1651,12 @@ fix the library to account for the new functionality.</p>
 <p>Strike <span>23.3.14.1 <a href="https://wg21.link/inplace.vector.overview">[inplace.vector.overview]</a></span>/4:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">3</a></span>
 For any <code class="sourceCode cpp">N</code>, <code class="sourceCode cpp">inplace_vector<span class="op">&lt;</span>T, N<span class="op">&gt;</span>​<span class="op">::</span>​iterator</code>
 and <code class="sourceCode cpp">inplace_vector<span class="op">&lt;</span>T, N<span class="op">&gt;</span>​<span class="op">::</span>​const_iterator</code>
 meet the constexpr iterator requirements.</p>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">4</a></span>
 For any <code class="sourceCode default">N&gt;0</code>, if
 <code class="sourceCode default">is_trivial_v&lt;T&gt;</code> is
 <code class="sourceCode default">false</code>, then no

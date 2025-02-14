@@ -1,6 +1,6 @@
 ---
 title: "trivial `union`s (was `std::uninitialized<T>`)"
-document: P3074R7
+document: D3074R7
 date: today
 audience: EWG
 author:
@@ -548,11 +548,11 @@ Change [class.default.ctor]{.sref}/2-3. [The third and fourth bullets can be rem
 * [3.1]{.pnum} [its class]{.rm} [`X`]{.addu} has no virtual functions ([class.virtual]) and no virtual base classes ([class.mi]), and
 * [3.2]{.pnum} no non-static data member of [its class]{.rm} [`X`]{.addu} has a default member initializer ([class.mem]), and
 * [3.3]{.pnum} all the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial default constructors, and
-* [3.4]{.pnum} [either `X` is a union or ]{.addu} for all the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial default constructor.
+* [3.4]{.pnum} [either `X` is a union or ]{.addu} for all the [non-variant]{.addu} non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial default constructor.
 
 Otherwise, the default constructor is *non-trivial*.
 
-[4]{.pnum} [If a default constructor of a union `X` is trivial and the first variant member, if any, of `X` has implicit-lifetime type ([basic.types.general]), the default constructor begins the lifetime of that member if it is not the active member of the union. [It is already the active member if `X` was value-initialized.]{.note}]{.addu} [An]{.rm} [Otherwise, an]{.addu} implicitly-defined ([dcl.fct.def.default]) default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no ctor-initializer ([class.base.init]) and an empty compound-statement.
+[4]{.pnum} [If a default constructor of a union or union-like class `X` is trivial, then for `U` being `X` (if `X` is a union) and for each anonymous union member `U` of `X` otherwise, if the first variant member, if any, of `U` has implicit-lifetime type ([basic.types.general]), the default constructor of `X` begins the lifetime of that member if it is not the active member of its union. [It is already the active member if `U` was value-initialized.]{.note}]{.addu} [An]{.rm} [Otherwise, an]{.addu} implicitly-defined ([dcl.fct.def.default]) default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no ctor-initializer ([class.base.init]) and an empty compound-statement.
 :::
 
 Change [class.dtor]{.sref}/7-8:
@@ -565,7 +565,8 @@ Change [class.dtor]{.sref}/7-8:
 ::: addu
 * [7.x]{.pnum} `X` is a union and either
 
-    * [#.x.#]{.pnum} `X` does not have an eligible default constructor that is trivial, or
+    * [#.x.#]{.pnum} `X` does not have an eligible default constructor,
+    * [#.x.#]{.pnum} `X` has an eligible default constructor that is not trivial, or
     * [#.x.#]{.pnum} `X` has a variant member `V` of class type `M` (or possibly multi-dimensional array thereof) where `V` has a default member initializer and `M` has a destructor that is non-trivial, deleted, or inaccessible from the defaulted destructor,
 :::
 
@@ -575,7 +576,7 @@ Change [class.dtor]{.sref}/7-8:
 
 * [8.1]{.pnum} the destructor is not virtual,
 * [8.2]{.pnum} all of the direct base classes of [its class]{.rm} [`X`]{.addu} have trivial destructors, and
-* [8.3]{.pnum} [either `X` is a union or]{.addu} for all of the non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
+* [8.3]{.pnum} [either `X` is a union or]{.addu} for all of the [non-variant]{.addu} non-static data members of [its class]{.rm} [`X`]{.addu} that are of class type (or array thereof), each such class has a trivial destructor.
 :::
 
 
