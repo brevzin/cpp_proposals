@@ -21,6 +21,7 @@ author:
 Since [@P3394R1]:
 
 - loosened the P2996 scope restrictions around injected declarations: allow the definition of an entity to produce injected declaration of itself
+- reduced library API down to just `is_annotation`, `annotations_of`, `annotations_of_with_type` (a binary function that returns a `vector<info>`), and `annotate`.
 
 Since [@P3394R0]:
 
@@ -313,12 +314,22 @@ namespace boost::json {
         requires (has_annotation(^^T, serde::derive))
     void tag_invoke(value_from_tag const&, value& v, T const& t) {
         auto& obj = v.emplace_object();
-        template for (auto M : nonstatic_data_members_of(^^T)) {
-            constexpr auto field = annotation_of<serde::rename>(M)
-                .transform([](serde::rename r){
-                    return std::string_view(r.field);
-                })
-                .value_or(identifier_of(M));
+        template for (constexpr auto M : nonstatic_data_members_of(^^T)) {
+            constexpr auto field = []{
+                std::optional<std::meta::info> res;
+                for (std::meta::info r : annotations_of_with_type(M, ^^serde::rename)) {
+                    if (res and *res != r) {
+                        throw "oops";
+                    }
+                    res = r;
+                }
+
+                return res
+                    .transform([](std::meta::info r){
+                        return std::string_view(extract<serde::rename>(r).field);
+                    })
+                    .value_or(identifier_of(M));
+            }();
 
             obj[field] = boost::json::value_from(t.[:M:]);
         }
@@ -370,15 +381,8 @@ We propose the following set of library functions to work with annotations:
 namespace std::meta {
   consteval bool is_annotation(info);
 
-  consteval vector<info> annotations_of(info item);            // (1)
-  consteval vector<info> annotations_of(info item, info type); // (2)
-  template<class T>
-    consteval optional<T> annotation_of(info item);
-
-  template<class T>
-    consteval bool has_annotation(info item);                 // (3)
-  template<class T>
-    consteval bool has_annotation(info item, T const& value); // (4)
+  consteval vector<info> annotations_of(info item);                      // (1)
+  consteval vector<info> annotations_of_with_type(info item, info type); // (2)
 
   consteval info annotate(info item,
                           info value,
@@ -388,19 +392,12 @@ namespace std::meta {
 
 `is_annotation` checks whether a particular reflection represents an annotation.
 
-We provide two overloads of `annotations_of` to retrieve all the annotations on a particular item:
+We provide two functions to retrieve all the annotations of a particular item:
 
-1. Returns all the annotations.
-2. Returns all the annotations `a` such that `type_of(a) == type`.
+1. `annotations_of(item)` returns all the annotations on `item`.
+2. `annotations_of_item_with_type(item, type)` returns all the annotations `a` on `item` such that `type_of(a) == type`.
 
-And a singular version, `annotation_of<T>`, that returns the annotation `a` such that `dealias(type_of(a)) == ^^T`. If no such annotation exists, returns `nullopt`. If more than one such annotation exists and all the values are not template-argument-equivalent, this call is not a constant expression.
-
-And then two overloads of `has_annotation` that simply checks if a given annotation exists:
-
-3. Checks if there exists an annotation `a` such that `dealias(type_of(a)) == ^^T`.
-4. Checks if there exists an annotation `a` such that `value_of(a) == reflect_value(value)`.
-
-Of these, four can be directly implemented in terms of the unary `annotations_of(item)`, but we think they'll be common enough to merit inclusion.
+In earlier revisions, these were overloads (both spelled `annotations_of`), but starting in R2 the second function was renamed to add clarity on what the second parameter actually means. There were previously additional functions proposed for ergonomic reasons, but those were removed during the [Hagenberg meeting](https://wiki.edg.com/bin/view/Wg21hagenberg2025/P3394).
 
 And lastly, `annotate` provides the ability to programmatically add an annotation to a declaration.
 
@@ -526,14 +523,13 @@ Change [basic.fundamental]{.sref} to add "annotation" to the list of reflection 
 * a description of a declaration of a non-static data member.
 :::
 
-Loosen the scope restrictions in [expr.const]/30 to allow definitions to inject declarations of the entity that they are defining.
+Loosen the scope restrictions in [expr.const]{.sref}/29 to allow definitions to inject declarations of the entity that they are defining.
 
 ::: std
-[30]{.pnum} The program is ill-formed if the evaluation of a plainly constant-evaluated expression `$P$` produces an injected declaration `$D$` such that there exists a scope that encloses exactly one of `$P$` or `$D$` that is either
+[29]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration `$D$` ([meta.reflection.define.aggregate]). [The]{.rm} [If `$D$` is a definition, then the]{.addu} scope of `$D$` shall not enclose `$C$`. The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
 
-* [#.#]{.pnum} a function parameter scope [of a function not declared by `$D$`]{.addu}, or
-* [#.#]{.pnum} a class scope [of a class not declared by `$D$`]{.addu}.
-
+* [#.#]{.pnum} a function parameter scope, or
+* [#.#]{.pnum} a class scope.
 :::
 
 Extend the grammar in [dcl.attr.grammar]{.sref}:
@@ -712,7 +708,6 @@ consteval vector<info> annotations_of(info item);
 
 [#]{.pnum} *Constant When*: `dealias(item)` represents a type, variable, function, or a namespace.
 
-
 [#]{.pnum} *Returns*: A `vector` containing the following reflections:
 
 * For each declaration `$D$` of the entity represented by `item` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of a class for which such a point is in a complete-class context,
@@ -747,72 +742,13 @@ static_assert(!extract<Option>(annotations_of(^^C::b)[0]).value);
 :::
 
 ```cpp
-consteval vector<info> annotations_of(info item, info type);
+consteval vector<info> annotations_of_with_type(info item, info type);
 ```
 
 [#]{.pnum} *Constant When*: `annotations_of(item)` is constant and `dealias(type)` is a reflection representing a complete type.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
+[#]{.pnum} *Returns* A `vector` containing each element, `e`, of `annotations_of(item)`, in order, such that `dealias(type_of(e)) == dealias(type)`.
 
-[#]{.pnum} *Returns* A `vector` containing each element, `e`, of `annotations_of(item)` such that `dealias(type_of(e)) == dealias(type)`.
-
-```cpp
-template<class T>
-  consteval optional<T> annotation_of(info item);
-```
-
-[#]{.pnum} Let `$V$` be `annotations_of(item, ^^T)`.
-
-[#]{.pnum} *Constant When*: `$V$` is a core constant expression and either:
-
-* [#.#]{.pnum} `$V$.size() <= 1`, or
-* [#.#]{.pnum} all the values of the reflections in `$V$` compare equal.
-
-[#]{.pnum} *Returns*: If `$V$.empty()`, then `std::nullopt`. Otherwise, `extract<T>($V$[0])`.
-
-```cpp
-template<class T>
-  consteval bool has_annotation(info item);
-```
-
-[#]{.pnum} *Effects*: Equivalent to `return !annotations_of(item, ^^T).empty();`
-
-```cpp
-template<class T>
-  consteval bool has_annotation(info item, T const& value);
-```
-
-[#]{.pnum} Let `$V$` be `annotations_of(item, ^^T)`.
-
-[#]{.pnum} *Constant When*: `$V$` is a core constant expression.
-
-[#]{.pnum} *Returns*: `true` if there exists a reflection `r` in `$V$` such that `value_of(r) == std::meta::reflect_value(value)`. Otherwise, `false` [This checks for template-argument-equivalence, it does not invoke either a built-in or user-provided `operator==`]{.note}.
-
-::: example
-```cpp
-struct Option {
-    int value;
-    bool operator==(const Option&) const = default;
-};
-
-struct C {
-    [[=Option{9}]] int x;
-    [[=Option{17}]] int y;
-    int z;
-};
-
-static_assert(annotation_of<Option>(^^C::x) == Option{9});
-static_assert(annotation_of<Option>(^^C::y) == Option{17});
-static_assert(!annotation_of<Option>(^^C::z));
-
-static_assert(has_annotation<Option>(^^C::x));
-static_assert(has_annotation<Option>(^^C::y));
-static_assert(!has_annotation<Option>(^^C::z));
-
-static_assert(has_annotation(^^C::x, Option{9}));
-static_assert(!has_annotation(^^C::y, Option{9}));
-```
-:::
 
 ```cpp
 consteval info annotate(info item, info value, source_location loc = source_location::current());
