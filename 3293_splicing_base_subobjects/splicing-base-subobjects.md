@@ -18,6 +18,8 @@ tag: reflection
 
 # Revision History
 
+Since [@P3293R1], updating wording and design to account for [@P3547R0]{.title}.
+
 Since [@P3293R0], noted that `&[:base:]` cannot work for virtual base classes. Talking about arrays. Added wording.
 
 # Introduction
@@ -147,23 +149,27 @@ We argue that these are the obvious, useful, and only possible meanings of these
 
 The only reason this isn't initially part of [@P2996R6] is that while there _is_ a way to access a data member of an object directly (just `obj.mem`), there is _no_ way to access a base class subobject directly outside of one of the casts described above.
 
-We then additionally propose to back `subobjects_of()` (and `get_public_subobjects()`) that [@P2996R6] removed. These were removed because iterating over _all_ the subobjects uniformly wasn't really possible until these language additions.
+We then additionally propose to back `subobjects_of()` that [@P2996R6] removed. This was removed because iterating over _all_ the subobjects uniformly wasn't really possible until these language additions.
 
 
 
 ## Wording
 
+The wording here is a diff on top of P2996.
+
 Handle base class splices in [expr.ref]{.sref}/7-8:
 
 ::: std
-[7]{.pnum} Otherwise, one of the following rules applies.
+[7]{.pnum} If `E2` designates an entity that is declared to have type "reference to `T`", then `E1.E2` is an lvalue of type `T`. In that case, if `E2` designates a static data member, `E1.E2` designates the object or function to which the reference is bound, otherwise `E1.E2` designates the object or function to which the corresponding reference member of `E1` is bound. Otherwise, one of the following rules applies.
 
-* [7.1]{.pnum} ...
-
-* [7.4]{.pnum} If E2 designates a nested type, the expression E1.E2 is ill-formed.
+* [#.#]{.pnum} If `E2` designates a static data member and the type of `E2` is `T`, then `E1.E2` is an lvalue; [...]
+* [#.#]{.pnum} Otherwise, if `E2` designates a non-static data member and the type of `E1` is "_cq1_ _vq1_ `X`", and the type of `E2` is "_cq2 vq2_ `T`", the expression designates the corresponding member subobject of the object designated by the first expression. [...]
+* [#.#]{.pnum} Otherwise, if `E2` is an overload set, [...]
+* [#.#]{.pnum} Otherwise, if `E2` designates a nested type, the expression `E1.E2` is ill-formed.
+* [#.#]{.pnum} Otherwise, if `E2` designates a member enumerator [...]
 
 ::: addu
-* [7.4b]{.pnum} If E2 designates a direct, non-virtual base class subobject `$B$` and type of `$B$` is `$T$`, the expression designates the corresponding base class subobject of the object designated by the first expression. If E1 is an lvalue, then E1.E2 is an lvalue; otherwise E1.E2 is an xvalue. The type of E1.E2 is "`$cv$ $T$`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a base class subobject.]{.note}
+* [#.#]{.pnum} Otherwise, if `E2` designates a direct, non-virtual base class relationship with base class `$B$` and type of `$B$` is `$T$`, the expression designates the corresponding base class subobject of the object designated by the first expression. If `E1` is an lvalue, then `E1.E2` is an lvalue; otherwise `E1.E2` is an xvalue. The type of `E1.E2` is "`$cv$ $T$`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a base class subobject.]{.note}
 
   ::: example
   ```cpp
@@ -176,9 +182,9 @@ Handle base class splices in [expr.ref]{.sref}/7-8:
 
   constexpr int f() {
     D d = {1, 2};
-    B& b = d.[: bases_of(^D)[0] :];
+    B& b = d.[: std::meta::bases_of(^^D)[0] :];
     b.b += 10;
-    d.[: ^D::d :] += 1;
+    d.[: ^^D::d :] += 1;
     return d.b * d.d;
   }
   static_assert(f() == 33);
@@ -186,9 +192,8 @@ Handle base class splices in [expr.ref]{.sref}/7-8:
   :::
 :::
 
-* [7.5]{.pnum} If E2 is a member enumerator and the type of E2 is T, the expression E1.E2 is a prvalue of type T whose value is the value of the enumerator.
+* [#.#]{.pnum} Otherwise, the program is ill-formed.
 
-[8]{.pnum} If `E2` designates a non-static member `$M$`, the program is ill-formed if the class of which `$M$` is directly a member is an ambiguous base ([class.member.lookup]) of the naming class ([class.access.base]) of `$M$`. [If `E2` designates a base class subobject `$B$`, the program is ill-formed if `$B$` is not a direct base class of the naming class of `$B$`.]{.addu}
 :::
 
 Handle base class pointers to members in [expr.unary.op]{.sref}:
@@ -199,32 +204,28 @@ Handle base class pointers to members in [expr.unary.op]{.sref}:
 * [#.#]{.pnum} If the operand is a `$qualified-id$` or `$splice-expression$` designating a non-static or variant member of some class `C`, other than an explicit object member function, the result has type "pointer to member of class `C` of type `T`" and designates `C::m`.
 
 ::: addu
-* [3.1+]{.pnum} If the operand is a `$splice-expression$` designated a base class subobject of some class `C` of type `T`, other than a virtual base class subobject, the result has type pointer to member of class `C` of type `T` and designates that base class subobject.
+* [3.1+]{.pnum} Otherwise, if the operand is a `$splice-expression$` designating a direct base class relationship of some class `C` with direct base class `T`, other than a virtual base class relationship, the result has type pointer to member of class `C` of type `T` and designates that base class subobject.
+
+  ::: example
+  ```cpp
+  struct B {
+    int b;
+  };
+
+  struct D : B {
+    int d;
+  };
+
+  constexpr D d = {1, 2};
+
+  constexpr int B::*pb = &[: std::meta::bases_of(^^D)[0] :];
+  static_assert(d.*pb == 1);
+  static_assert(&(d.*pb) == &static_cast<B&>(d));
+  ```
+  :::
 :::
 
 * [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]{.sref}) or function ([basic.compound]{.sref}). If the operand designates an explicit object member function ([dcl.fct]{.sref}), the operand shall be a `$qualified-id$` or a `$splice-expression$`.
-
-::: addu
-::: example
-```cpp
-struct B {
-  int b;
-};
-
-struct D : B {
-  int d;
-};
-
-constexpr D d = {1, 2};
-
-constexpr int B::*pb = &[: bases_of(^D)[0] :];
-constexpr int D::*pd = &D::d;
-
-static_assert(&(d.*pb) == &static_cast<B&>(d));
-static_assert(d.*pd == 2);
-```
-:::
-:::
 
 [4]{.pnum} A pointer to member is only formed when an explicit `&` is used and its operand is a `$qualified-id$` or `$splice-expression$` not enclosed in parentheses.
 
@@ -238,18 +239,13 @@ namespace std::meta {
   // ...
 
   // [meta.reflection.member.queries], reflection member queries
-  consteval vector<info> members_of(info r);
-  consteval vector<info> bases_of(info type);
-  consteval vector<info> static_data_members_of(info type);
-  consteval vector<info> nonstatic_data_members_of(info type);
-+ consteval vector<info> subobjects_of(info type);
+  consteval vector<info> members_of(info r, access_context ctx);
+  consteval vector<info> bases_of(info type, access_context ctx);
+  consteval vector<info> static_data_members_of(info type, access_context ctx);
+  consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
++ consteval vector<info> subobjects_of(info type, access_context ctx);
   consteval vector<info> enumerators_of(info type_enum);
 
-  consteval vector<info> get_public_members(info type);
-  consteval vector<info> get_public_static_data_members(info type);
-  consteval vector<info> get_public_nonstatic_data_members(info type);
-  consteval vector<info> get_public_bases(info type);
-+ consteval vector<info> get_public_subobjects(info type);
 
   // ...
 }
@@ -260,48 +256,30 @@ Add to [meta.reflection.member.queries] in the appropriate spot:
 
 ::: std
 ```cpp
-consteval vector<info> nonstatic_data_members_of(info type);
+consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
 ```
 
-[12]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
+[9]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
-
-[#]{.pnum} *Returns*: A `vector` containing the reflections of the direct non-static data members of the type represented by `dealias(type)`, in the order in which they are declared.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type, ctx)` such that `is_nonstatic_data_member(e)` is `true`, preserving their order.
 
 ::: addu
 ```
-consteval vector<info> subobjects_of(info type);
+consteval vector<info> subobjects_of(info type, access_context ctx);
 ```
 
-[14+1]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
+[10+1]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
 
-[14+2]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
-
-[14+3]{.pnum} *Returns*: A `vector` containing all the reflections in `bases_of(type)` followed by all the reflections in `nonstatic_data_members_of(type)`.
+[10+2]{.pnum} *Returns*: A `vector` containing each element of `bases_of(type, ctx)` followed by each element of `nonstatic_data_members_of(type, ctx)`, preserving their order.
 :::
 
 ```cpp
-consteval vector<info> get_public_bases(info type);
+consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[26]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
+[11]{.pnum} *Constant When*: `dealias(type_enum)` represents an enumeration type and `has_complete_definition(dealias(type_enum))` is `true`.
 
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
-
-[#]{.pnum} *Returns*: A `vector` containing each element, `e`, of `bases_of(type)` such that `is_public(e)` is `true`, in order.
-
-::: addu
-```cpp
-consteval vector<info> get_public_subobjects_of(info type);
-```
-
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
-
-[#]{.pnum} *Effects*: If `dealias(type)` represents a class template specialization with a reachable definition, the specialization is instantiated.
-
-[#]{.pnum} *Returns*: A `vector` containing all the reflections in `get_public_bases(type)` followed by all the reflections in `get_public_nonstatic_data_members(type)`.
-:::
+[#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `dealias(type_enum)`, in the order in which they are declared.
 
 :::
 
