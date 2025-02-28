@@ -7021,7 +7021,9 @@ It is implementation-defined whether other members of closure types are members-
 * [#.#]{.pnum} a type alias,
 * [#.#]{.pnum} a primary class template, function template, primary variable template, alias template, or concept,
 * [#.#]{.pnum} a variable or reference,
-* [#.#]{.pnum} a function whose constraints (if any) are satisfied unless it is a prospective destructor that is not a selected destructor ([class.dtor]),
+* [#.#]{.pnum} a function `$F$` for which
+  * [#.#]{.pnum} the type of `$F$` does not contain a placeholder type, and
+  * [#.#]{.pnum} the constraints (if any) of `$F$` are satisfied, unless `$F$` is a prospective destructor that is not a selected destructor ([class.dtor]),
 * [#.#]{.pnum} a non-static data member or unnamed bit-field, other than members of an anonymous union that is directly or indirectly members-of-representable,
 * [#.#]{.pnum} a namespace, or
 * [#.#]{.pnum} a namespace alias.
