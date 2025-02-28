@@ -10,6 +10,28 @@ author:
 toc: true
 ---
 
+# Revision History
+
+This revision: Rewrote the prose.
+
+[@P1306R3] Expansion over a range requires a constant expression. Added support for break and continue
+control flow during evaluation.
+
+[@P1306R2] Adoption of `template for` syntax. Added support for init-statement, folded pack expansion into
+new expansion-init-list mechanism. Updated reflection code to match P2996. Minor updates to wording:
+updated handling of switch statements, work around lack of general non-transient constexpr
+allocation, eliminated need for definition of an "intervening statement", rebased onto working draft,
+updated feature macro value, fixed typos. Addressed CWG review feedback
+
+[@P1306R1] Adopted a unified syntax for different forms of expansion statements. Further refinement of semantics
+to ensure expansion can be supported for all traversable sequences, including ranges of input iterators.
+Added discussion about `break` and `continue` within expansions.
+
+[@P1306R0] superceded and extended [@P0589R0]{.title} to work with more destructurable
+objects (e.g., classes, parameter packs). Added a separate constexpr-for variant that a) makes the loop
+variable a constant expression in each repeated expansion, and b) makes it possible to expand constexpr
+ranges. The latter feature is particularly important for static reflection.
+
 # Introduction
 
 This paper proposes a new kind of statement that enables the compile-time repetition of a statement for
@@ -17,7 +39,7 @@ each element of a tuple, array, class, range, or brace-delimited list of express
 iterating over a heterogeneous container inevitably leverage recursively instantiated templates to allow
 some part of the repeated statement to vary (e.g., by type or constant) in each instantiation.
 While such behavior can be encapsulated in a single library operation (e.g., Boost.Hana’s `for_each`) or,
-potentially in the future, using the `[:expand(...):]` construct built on top of [@P2996R9]{.title} reflection facilities,
+potentially in the future, using the `[:expand(...):]` construct built on top of [@P2996R10]{.title} reflection facilities,
 there are several reasons to prefer language support:
 
 First, repetition is a fundamental building block of algorithms, and should be expressible directly without complex template instantiation strategies.
@@ -93,13 +115,13 @@ void print_all(T const& v) {
 ```
 :::
 
-For the last row, `expand` is demonstrated in [@P2996R9], `define_static_array()` comes from [@P3491R1]{.title} and works around non-transient allocation (more on this later), and `nsdms(type)` is just shorthand for `nonstatic_data_members_of(type, std::meta::access::unprivileged())` just to help fit.
+For the last row, `expand` is demonstrated in [@P2996R10], `define_static_array()` comes from [@P3491R1]{.title} (although can be implemented purely on top of p2996) and works around non-transient allocation (more on this later), and `nsdms(type)` is just shorthand for `nonstatic_data_members_of(type, std::meta::access::unprivileged())` just to help fit.
 
 # Design
 
 The proposed design allows iterating over:
 
-* packs,
+* expression lists,
 * anything destructurable via structured bindings (i.e. tuple-like), or
 * ranges with compile-time size
 
@@ -143,7 +165,7 @@ will determine an _expansion size_ based on the `$expansion-initializer$` and th
 
 The mechanism of determining the `$additional-expansion-declarations$` (if any), the expansion size, and `$get-expr$` depends on the `$expansion-initializer$`.
 
-## Expansion over Packs
+## Expansion over Expression Lists
 
 If `$expansion-initializer$` is of the form `{ $expression-list$ }`, then:
 
@@ -203,7 +225,7 @@ void print_all(Ts... elems) {
 ```
 :::
 
-This was pointed out by Richard Smith to be ambiguous. Consider:
+This was pointed out by Richard Smith to be ambiguous [on the EWG reflector](https://lists.isocpp.org/ext/2019/07/10770.php). Consider:
 
 ::: std
 ```cpp
@@ -223,7 +245,9 @@ Consider the call `fn(array{1, 2, 3, 4}, array{1, 3, 5, 7}, array{2, 4, 6, 8})`.
 * each of the three `array` arguments (once for each invocation of the lambda), or
 * each of the four `int` elements (of a different `array` for each invocation of the lambda).
 
-Initially, support for pack iteration was dropped from the proposal entirely, but it was added back using the `$expansion-init-list$` syntax in [@P1306R2]. In addition to avoiding ambiguity, it is also broadly more useful than simply expanding over a pack since it allows ad hoc expressions.
+Initially, support for pack iteration was dropped from the proposal entirely, but it was added back using the `$expansion-init-list$` syntax in [@P1306R2].
+
+In addition to avoiding ambiguity, it is also broadly more useful than simply expanding over a pack since it allows ad hoc expressions. For instance, can add prefixes, suffixes, or even multiple packs: `{0, xs..., 1, ys..., 2}` is totally fine.
 
 ## Expansion over Ranges
 
@@ -295,7 +319,7 @@ void print_members(T const& v) {
 ```
 :::
 
-Examples like this feature prominently in [@P2996R9]. And at first glance, this seems fine. The compiler knows the length of the vector returned by `members_of(^^T)`, and can expand the body for each element. However, the expansion in question
+Examples like this feature prominently in [@P2996R10]. And at first glance, this seems fine. The compiler knows the length of the vector returned by `members_of(^^T)`, and can expand the body for each element. However, the expansion in question
 more or less requires a constexpr vector, which the language is not yet equipped to handle.
 
 We at first attempted to carve out a narrow exception from [expr.const] to permit non-transient constexpr
@@ -413,6 +437,56 @@ Earlier revisions of the paper did not support `break` or `continue` within expa
 Discussions with others have convinced us that this will not be an issue, and to give the keywords their most obvious meaning: `break` jumps to just after the end of the last expansion, whereas `continue` jumps to the start of the next
 expansion (if any).
 
+## Expansion over Types
+
+There are regular requests to support expanding over _types_ directly, rather than expressions:
+
+::: std
+```cpp
+template <typename... Ts>
+void f() {
+    // strawman syntax
+    template for (typename T : {Ts...}) {
+        do_something<T>();
+    }
+}
+```
+:::
+
+Something like this would be difficult to support directly since you can't tell that the declaration is just a type rather than an unnamed variable. But with Reflection coming, there's less motivation to come up with a way to address this problem directly since we can just iterate in the value domain:
+
+::: std
+```cpp
+template <typename... Ts>
+void f() {
+    template for (constexpr auto r : {^^Ts...}) {
+        using T = [:r:];
+        do_something<T>();
+    }
+}
+```
+:::
+
 ## Implementation experience
 
 TODO
+
+---
+references:
+  - id: P2996R10
+    citation-label: P2996R10
+    title: "Reflection for C++26"
+    author:
+      - family: Barry Revzin
+      - family: Wyatt Childers
+      - family: Peter Dimov
+      - family: Andrew Sutton
+      - family: Faisal Vali
+      - family: Daveed Vandevoorde
+      - family: Dan Katz
+    issued:
+      - year: 2025
+        month: 02
+        day: 26
+    URL: https://wg21.link/p2996r10
+---

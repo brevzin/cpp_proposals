@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-02-23" />
+  <meta name="dcterms.date" content="2025-02-27" />
   <title>Expansion Statements</title>
   <style>
       code{white-space: pre-wrap;}
@@ -568,7 +568,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-02-23</td>
+    <td>2025-02-27</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -593,27 +593,59 @@ background-color: #ffff00;
 <div id="TOC" role="doc-toc">
 <h1 id="toctitle">Contents</h1>
 <ul>
-<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
-<li><a href="#design" id="toc-design"><span class="toc-section-number">2</span> Design<span></span></a>
+<li><a href="#revision-history" id="toc-revision-history"><span class="toc-section-number">1</span> Revision
+History<span></span></a></li>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#design" id="toc-design"><span class="toc-section-number">3</span> Design<span></span></a>
 <ul>
-<li><a href="#expansion-over-packs" id="toc-expansion-over-packs"><span class="toc-section-number">2.1</span> Expansion over
-Packs<span></span></a></li>
-<li><a href="#expansion-over-ranges" id="toc-expansion-over-ranges"><span class="toc-section-number">2.2</span> Expansion over
+<li><a href="#expansion-over-expression-lists" id="toc-expansion-over-expression-lists"><span class="toc-section-number">3.1</span> Expansion over Expression
+Lists<span></span></a></li>
+<li><a href="#expansion-over-ranges" id="toc-expansion-over-ranges"><span class="toc-section-number">3.2</span> Expansion over
 Ranges<span></span></a></li>
-<li><a href="#expansion-over-tuples" id="toc-expansion-over-tuples"><span class="toc-section-number">2.3</span> Expansion over
+<li><a href="#expansion-over-tuples" id="toc-expansion-over-tuples"><span class="toc-section-number">3.3</span> Expansion over
 Tuples<span></span></a></li>
-<li><a href="#prioritizing-range-over-tuple" id="toc-prioritizing-range-over-tuple"><span class="toc-section-number">2.4</span> Prioritizing Range over
+<li><a href="#prioritizing-range-over-tuple" id="toc-prioritizing-range-over-tuple"><span class="toc-section-number">3.4</span> Prioritizing Range over
 Tuple<span></span></a></li>
-<li><a href="#break-and-continue" id="toc-break-and-continue"><span class="toc-section-number">2.5</span>
+<li><a href="#break-and-continue" id="toc-break-and-continue"><span class="toc-section-number">3.5</span>
 <code class="sourceCode cpp"><span class="cf">break</span></code> and
 <code class="sourceCode cpp"><span class="cf">continue</span></code><span></span></a></li>
-<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">2.6</span> Implementation
+<li><a href="#expansion-over-types" id="toc-expansion-over-types"><span class="toc-section-number">3.6</span> Expansion over
+Types<span></span></a></li>
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">3.7</span> Implementation
 experience<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">4</span> References<span></span></a></li>
 </ul>
 </div>
-<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
+Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>This revision: Rewrote the prose.</p>
+<p><span class="citation" data-cites="P1306R3"><a href="https://wg21.link/p1306r3" role="doc-biblioref">[P1306R3]</a></span> Expansion over a range
+requires a constant expression. Added support for break and continue
+control flow during evaluation.</p>
+<p><span class="citation" data-cites="P1306R2"><a href="https://wg21.link/p1306r2" role="doc-biblioref">[P1306R2]</a></span> Adoption of <code class="sourceCode cpp"><span class="kw">template</span> <span class="cf">for</span></code>
+syntax. Added support for init-statement, folded pack expansion into new
+expansion-init-list mechanism. Updated reflection code to match P2996.
+Minor updates to wording: updated handling of switch statements, work
+around lack of general non-transient constexpr allocation, eliminated
+need for definition of an “intervening statement”, rebased onto working
+draft, updated feature macro value, fixed typos. Addressed CWG review
+feedback</p>
+<p><span class="citation" data-cites="P1306R1"><a href="https://wg21.link/p1306r1" role="doc-biblioref">[P1306R1]</a></span> Adopted a unified syntax for
+different forms of expansion statements. Further refinement of semantics
+to ensure expansion can be supported for all traversable sequences,
+including ranges of input iterators. Added discussion about
+<code class="sourceCode cpp"><span class="cf">break</span></code> and
+<code class="sourceCode cpp"><span class="cf">continue</span></code>
+within expansions.</p>
+<p><span class="citation" data-cites="P1306R0"><a href="https://wg21.link/p1306r0" role="doc-biblioref">[P1306R0]</a></span> superceded and extended <span class="title"><span class="citation" data-cites="P0589R0"><a href="https://wg21.link/p0589r0" role="doc-biblioref">[P0589R0]
+(Tuple-based for loops)</a></span></span> to work with more
+destructurable objects (e.g., classes, parameter packs). Added a
+separate constexpr-for variant that a) makes the loop variable a
+constant expression in each repeated expansion, and b) makes it possible
+to expand constexpr ranges. The latter feature is particularly important
+for static reflection.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>This paper proposes a new kind of statement that enables the
 compile-time repetition of a statement for each element of a tuple,
@@ -624,7 +656,7 @@ statement to vary (e.g., by type or constant) in each instantiation.
 While such behavior can be encapsulated in a single library operation
 (e.g., Boost.Hana’s <code class="sourceCode cpp">for_each</code>) or,
 potentially in the future, using the <code class="sourceCode cpp"><span class="op">[:</span>expand<span class="op">(...):]</span></code>
-construct built on top of <span class="title"><span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9] (Reflection for C++26)</a></span></span>
+construct built on top of <span class="title"><span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10] (Reflection for C++26)</a></span></span>
 reflection facilities, there are several reasons to prefer language
 support:</p>
 <p>First, repetition is a fundamental building block of algorithms, and
@@ -722,16 +754,17 @@ language support to implement correctly.</p>
 </tbody>
 </table>
 <p>For the last row, <code class="sourceCode cpp">expand</code> is
-demonstrated in <span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span>, <code class="sourceCode cpp">define_static_array<span class="op">()</span></code>
+demonstrated in <span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]</a></span>, <code class="sourceCode cpp">define_static_array<span class="op">()</span></code>
 comes from <span class="title"><span class="citation" data-cites="P3491R1"><a href="https://wg21.link/p3491r1" role="doc-biblioref">[P3491R1]
-(define_static_{string,object,array})</a></span></span> and works around
-non-transient allocation (more on this later), and <code class="sourceCode cpp">nsdms<span class="op">(</span>type<span class="op">)</span></code>
+(define_static_{string,object,array})</a></span></span> (although can be
+implemented purely on top of p2996) and works around non-transient
+allocation (more on this later), and <code class="sourceCode cpp">nsdms<span class="op">(</span>type<span class="op">)</span></code>
 is just shorthand for <code class="sourceCode cpp">nonstatic_data_members_of<span class="op">(</span>type, std<span class="op">::</span>meta<span class="op">::</span>access<span class="op">::</span>unprivileged<span class="op">())</span></code>
 just to help fit.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="design"><span class="header-section-number">2</span> Design<a href="#design" class="self-link"></a></h1>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="design"><span class="header-section-number">3</span> Design<a href="#design" class="self-link"></a></h1>
 <p>The proposed design allows iterating over:</p>
 <ul>
-<li>packs,</li>
+<li>expression lists,</li>
 <li>anything destructurable via structured bindings (i.e. tuple-like),
 or</li>
 <li>ranges with compile-time size</li>
@@ -776,7 +809,8 @@ then <em>expand</em> into:</p>
 (if any), the expansion size, and
 <code class="sourceCode cpp"><em>get-expr</em></code> depends on the
 <code class="sourceCode cpp"><em>expansion-initializer</em></code>.</p>
-<h2 data-number="2.1" id="expansion-over-packs"><span class="header-section-number">2.1</span> Expansion over Packs<a href="#expansion-over-packs" class="self-link"></a></h2>
+<h2 data-number="3.1" id="expansion-over-expression-lists"><span class="header-section-number">3.1</span> Expansion over Expression
+Lists<a href="#expansion-over-expression-lists" class="self-link"></a></h2>
 <p>If <code class="sourceCode cpp"><em>expansion-initializer</em></code>
 is of the form <code class="sourceCode cpp"><span class="op">{</span> <em>expression-list</em> <span class="op">}</span></code>,
 then:</p>
@@ -859,7 +893,8 @@ proposed as:</p>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>This was pointed out by Richard Smith to be ambiguous. Consider:</p>
+<p>This was pointed out by Richard Smith to be ambiguous <a href="https://lists.isocpp.org/ext/2019/07/10770.php">on the EWG
+reflector</a>. Consider:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
@@ -886,10 +921,12 @@ invocation of the lambda).</li>
 <p>Initially, support for pack iteration was dropped from the proposal
 entirely, but it was added back using the
 <code class="sourceCode cpp"><em>expansion-init-list</em></code> syntax
-in <span class="citation" data-cites="P1306R2"><a href="https://wg21.link/p1306r2" role="doc-biblioref">[P1306R2]</a></span>. In addition to avoiding
-ambiguity, it is also broadly more useful than simply expanding over a
-pack since it allows ad hoc expressions.</p>
-<h2 data-number="2.2" id="expansion-over-ranges"><span class="header-section-number">2.2</span> Expansion over Ranges<a href="#expansion-over-ranges" class="self-link"></a></h2>
+in <span class="citation" data-cites="P1306R2"><a href="https://wg21.link/p1306r2" role="doc-biblioref">[P1306R2]</a></span>.</p>
+<p>In addition to avoiding ambiguity, it is also broadly more useful
+than simply expanding over a pack since it allows ad hoc expressions.
+For instance, can add prefixes, suffixes, or even multiple packs: <code class="sourceCode cpp"><span class="op">{</span><span class="dv">0</span>, xs<span class="op">...</span>, <span class="dv">1</span>, ys<span class="op">...</span>, <span class="dv">2</span><span class="op">}</span></code>
+is totally fine.</p>
+<h2 data-number="3.2" id="expansion-over-ranges"><span class="header-section-number">3.2</span> Expansion over Ranges<a href="#expansion-over-ranges" class="self-link"></a></h2>
 <p>If <code class="sourceCode cpp"><em>expansion-initializer</em></code>
 is a single expression that is a range, then:</p>
 <ul>
@@ -984,7 +1021,7 @@ allocation.</p>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>Examples like this feature prominently in <span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span>. And at first glance, this
+<p>Examples like this feature prominently in <span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]</a></span>. And at first glance, this
 seems fine. The compiler knows the length of the vector returned by
 <code class="sourceCode cpp">members_of<span class="op">(^^</span>T<span class="op">)</span></code>,
 and can expand the body for each element. However, the expansion in
@@ -1036,7 +1073,7 @@ compilation. It’s a much better workaround than others we have tried
 (e.g., the expand template), and if (when?) WG21 figures out how to
 support non-transient constexpr allocation, the original syntax should
 be able to “just work”.</p>
-<h2 data-number="2.3" id="expansion-over-tuples"><span class="header-section-number">2.3</span> Expansion over Tuples<a href="#expansion-over-tuples" class="self-link"></a></h2>
+<h2 data-number="3.3" id="expansion-over-tuples"><span class="header-section-number">3.3</span> Expansion over Tuples<a href="#expansion-over-tuples" class="self-link"></a></h2>
 <p>If <code class="sourceCode cpp"><em>expansion-initializer</em></code>
 is a single expression that is a range, then:</p>
 <ul>
@@ -1095,7 +1132,7 @@ lvalue. Otherwise, <code class="sourceCode cpp">std<span class="op">::</span>mov
 </tr>
 </tbody>
 </table>
-<h2 data-number="2.4" id="prioritizing-range-over-tuple"><span class="header-section-number">2.4</span> Prioritizing Range over Tuple<a href="#prioritizing-range-over-tuple" class="self-link"></a></h2>
+<h2 data-number="3.4" id="prioritizing-range-over-tuple"><span class="header-section-number">3.4</span> Prioritizing Range over Tuple<a href="#prioritizing-range-over-tuple" class="self-link"></a></h2>
 <p>Most types can either be used as a range or destructured, but not
 both. And even some that can be used in both contexts have equivalent
 meaning in both — C arrays and
@@ -1135,7 +1172,7 @@ enough to force the tuple interpretation if so desired:</p>
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<h2 data-number="2.5" id="break-and-continue"><span class="header-section-number">2.5</span>
+<h2 data-number="3.5" id="break-and-continue"><span class="header-section-number">3.5</span>
 <code class="sourceCode cpp"><span class="cf">break</span></code> and
 <code class="sourceCode cpp"><span class="cf">continue</span></code><a href="#break-and-continue" class="self-link"></a></h2>
 <p>Earlier revisions of the paper did not support
@@ -1151,11 +1188,52 @@ issue, and to give the keywords their most obvious meaning:
 to just after the end of the last expansion, whereas
 <code class="sourceCode cpp"><span class="cf">continue</span></code>
 jumps to the start of the next expansion (if any).</p>
-<h2 data-number="2.6" id="implementation-experience"><span class="header-section-number">2.6</span> Implementation experience<a href="#implementation-experience" class="self-link"></a></h2>
+<h2 data-number="3.6" id="expansion-over-types"><span class="header-section-number">3.6</span> Expansion over Types<a href="#expansion-over-types" class="self-link"></a></h2>
+<p>There are regular requests to support expanding over <em>types</em>
+directly, rather than expressions:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// strawman syntax</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">typename</span> T <span class="op">:</span> <span class="op">{</span>Ts<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>        do_something<span class="op">&lt;</span>T<span class="op">&gt;()</span>;</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Something like this would be difficult to support directly since you
+can’t tell that the declaration is just a type rather than an unnamed
+variable. But with Reflection coming, there’s less motivation to come up
+with a way to address this problem directly since we can just iterate in
+the value domain:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">:</span> <span class="op">{^^</span>Ts<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">using</span> T <span class="op">=</span> <span class="op">[:</span>r<span class="op">:]</span>;</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        do_something<span class="op">&lt;</span>T<span class="op">&gt;()</span>;</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<h2 data-number="3.7" id="implementation-experience"><span class="header-section-number">3.7</span> Implementation experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>TODO</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">4</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-P0589R0" class="csl-entry" role="doc-biblioentry">
+[P0589R0] Andrew Sutton. 2017-02-04. Tuple-based for loops. <a href="https://wg21.link/p0589r0"><div class="csl-block">https://wg21.link/p0589r0</div></a>
+</div>
+<div id="ref-P1306R0" class="csl-entry" role="doc-biblioentry">
+[P1306R0] Andrew Sutton, Sam Goodrick, Daveed Vandevoorde. 2018-10-08.
+Expansion statements. <a href="https://wg21.link/p1306r0"><div class="csl-block">https://wg21.link/p1306r0</div></a>
+</div>
+<div id="ref-P1306R1" class="csl-entry" role="doc-biblioentry">
+[P1306R1] Andrew Sutton, Sam Goodrick, Daveed Vandevoorde. 2019-01-21.
+Expansion statements. <a href="https://wg21.link/p1306r1"><div class="csl-block">https://wg21.link/p1306r1</div></a>
+</div>
 <div id="ref-P1306R2" class="csl-entry" role="doc-biblioentry">
 [P1306R2] Dan Katz, Andrew Sutton, Sam Goodrick, Daveed Vandevoorde.
 2024-05-07. Expansion statements. <a href="https://wg21.link/p1306r2"><div class="csl-block">https://wg21.link/p1306r2</div></a>
@@ -1164,10 +1242,10 @@ References<a href="#bibliography" class="self-link"></a></h1>
 [P1306R3] Dan Katz, Andrew Sutton, Sam Goodrick, Daveed Vandevoorde.
 2024-10-14. Expansion statements. <a href="https://wg21.link/p1306r3"><div class="csl-block">https://wg21.link/p1306r3</div></a>
 </div>
-<div id="ref-P2996R9" class="csl-entry" role="doc-biblioentry">
-[P2996R9] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
-Faisal Vali, Daveed Vandevoorde, Dan Katz. 2025-01-13. Reflection for
-C++26. <a href="https://wg21.link/p2996r9"><div class="csl-block">https://wg21.link/p2996r9</div></a>
+<div id="ref-P2996R10" class="csl-entry" role="doc-biblioentry">
+[P2996R10] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2025-02-26. Reflection
+for C++26. <a href="https://wg21.link/p2996r10"><div class="csl-block">https://wg21.link/p2996r10</div></a>
 </div>
 <div id="ref-P3491R1" class="csl-entry" role="doc-biblioentry">
 [P3491R1] Barry Revzin, Wyatt Childers, Peter Dimov, Daveed Vandevoorde.
