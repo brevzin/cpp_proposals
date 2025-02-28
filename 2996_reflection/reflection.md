@@ -6049,9 +6049,9 @@ namespace std::meta {
   consteval bool is_complete_type(info r);
   consteval bool has_complete_definition(info r);
 
-  consteval bool is_namespace(info r);
   consteval bool is_variable(info r);
   consteval bool is_type(info r);
+  consteval bool is_namespace(info r);
   consteval bool is_type_alias(info r);
   consteval bool is_namespace_alias(info r);
 
@@ -6611,7 +6611,7 @@ consteval bool has_thread_storage_duration(info r);
 consteval bool has_automatic_storage_duration(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents an object or variable that has static, thread, or automatic storage duration, respectively ([basic.stc]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents an object or variable that has static, thread, or automatic storage duration, respectively ([basic.stc]). Otherwise, `false`. [It is not possible to have a reflection representing an object or variable having dynamic storage duration.]{.note}
 
 ```cpp
 consteval bool has_internal_linkage(info r);
@@ -6635,20 +6635,16 @@ consteval bool has_complete_definition(info r);
 [#]{.pnum} Returns: `true` if `r` represents a function, class type, or enumeration type, such that no entities not already declared may be introduced within the scope of the entity represented by `r`. Otherwise, `true` if `r` represents a variable whose definition is reachable from some point in the evaluation context. Otherwise `false`.
 
 ```cpp
-consteval bool is_namespace(info r);
-```
-
-[#]{.pnum} *Returns*: `true` if `r` represents a namespace or namespace alias. Otherwise, `false`.
-
-```cpp
 consteval bool is_variable(info r);
 ```
 [#]{.pnum} *Returns*: `true` if `r` represents a variable. Otherwise, `false`.
 
 ```cpp
 consteval bool is_type(info r);
+consteval bool is_namespace(info r);
 ```
-[#]{.pnum} *Returns*: `true` if `r` represents an entity whose underlying entity is a type. Otherwise, `false`.
+
+[#]{.pnum} *Returns*: `true` if `r` represents an entity whose underlying entity is a type or namespace, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_type_alias(info r);
@@ -6667,7 +6663,7 @@ consteval bool is_operator_function(info r);
 consteval bool is_literal_operator(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a conversion function, operator function, or literal operator, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a function that is a conversion function ([class.conv.fct]), operator function ([over.oper]), or literal operator ([over.literal]), respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_special_member_function(info r);
@@ -6747,7 +6743,7 @@ consteval info type_of(info r);
 
 [#]{.pnum} *Constant When*: `$has-type$(r)` is `true`.
 
-[#]{.pnum} *Returns*: If `r` represents an entity, object, or value, then a reflection of the type of what is represented by `r`. Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class. Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), a reflection of the type `$T$`.
+[#]{.pnum} *Returns*: If `r` represents an value, object, or entity, then a reflection of the type of what is represented by `r`. Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class. Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), a reflection of the type `$T$`.
 
 ```cpp
 consteval info object_of(info r);
@@ -6777,12 +6773,12 @@ consteval info value_of(info r);
 
 * [#.#]{.pnum} a value,
 * [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type, and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began in the core constant expression currently under evaluation ([expr.const]), ([temp.type]).
+* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type ([temp.type]), and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began in the core constant expression currently under evaluation ([expr.const]).
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type.
-* [#.#]{.pnum} Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator.
+* [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type represented by `type_of(o)`, with the cv-qualifiers removed if this is a scalar type.
+* [#.#]{.pnum} Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. The reflected value has type represented by `type_of(r)` with the cv-qualifiers removed.
 * [#.#]{.pnum} Otherwise, `r`.
 
 ::: example
@@ -6790,10 +6786,10 @@ consteval info value_of(info r);
 constexpr int x = 0;
 constexpr int y = 0;
 
-static_assert(^^x != ^^y);                         // OK, x and y are different variables so their
-                                                 // reflections compare different
-static_assert(value_of(^^x) == value_of(^^y));     // OK, both value_of(^^x) and value_of(^^y) represent
-                                                 // the value 0
+static_assert(^^x != ^^y);                        // OK, x and y are different variables so their
+                                                  // reflections compare different
+static_assert(value_of(^^x) == value_of(^^y));    // OK, both value_of(^^x) and value_of(^^y) represent
+                                                  // the value 0
 static_assert(value_of(^^x) == reflect_value(0)); // OK, likewise
 
 info fn() {
