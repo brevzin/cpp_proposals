@@ -7248,7 +7248,7 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, values, and objects represented by the elements of `arguments`.
 
-[#]{.pnum} *Returns*: `^^Z<Args...>`.
+[#]{.pnum} *Returns*: A reflection representing `Z<Args...>`.
 
 [#]{.pnum} [The specialization `Z<Args..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
 
