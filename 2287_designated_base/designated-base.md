@@ -314,12 +314,12 @@ Add a new term after we define what an aggregate and the elements of an aggregat
 [x]{.pnum} The _designatable members_ of an aggregate `T` are:
 
 * [x.1]{.pnum} For each direct base class `C` of `T` that is itself an aggregate, in the order in which they appear in the `$base-specifier-list$`, the designatable members of `C` for which lookup for that member in `T` finds the member of `C`, followed by
-* [x.2]{.pnum} the direct non-static data members of `T` that are not members of an anonymous union, in declaration order.
+* [x.2]{.pnum} the direct non-static data members of `T`, in declaration order.
 
 [y]{.pnum} The _associated element_ of a designatable member `M` of an aggregate `T` is:
 
-* [y.1]{.pnum} `M` if `M` is an element of `T`, or
-* [y.2]{.pnum} the direct base class `C` of `T` for which `M` is a direct or indirect member.
+* [y.1]{.pnum} `M` if `M` is an element of `T`;
+* [y.2]{.pnum} otherwise, the element of `T` that contains `M`.
 :::
 
 [3]{.pnum} When an aggregate is initialized [...]
@@ -334,7 +334,7 @@ Extend [dcl.init.aggr]{.sref}/3.1:
 
 An element of `$C$` is explicitly initialized if:
 
-* [3.1.1]{.pnum} it is a base class subobject which an `$initializer-clause$` in the `$designated-initializer-list$` appertains to (see below), or
+* [3.1.1]{.pnum} it is a base class subobject which an `$initializer-clause$` in the `$designated-initializer-list$` appertains to, or
 * [3.1.2]{.pnum} it is the associated element of the designatable member of `$C$` named by an `$identifier$` in a `$designated-initializer-clause$`.
 
 If an element of `$C$` is explicitly initialized by both an `$initializer-clause$` and a `$designated-initializer-clause$`, the program is ill-formed.
