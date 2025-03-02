@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-02-14" />
+  <meta name="dcterms.date" content="2025-03-02" />
   <title>Consteval-only Values and Consteval Variables</title>
   <style>
       code{white-space: pre-wrap;}
@@ -541,9 +541,16 @@ color: #000000; background-color: #C8FFC8;
 border: 1px solid #B3EBB3;
 }
 div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
-div.std blockquote del { text-decoration: line-through;
-color: #000000; background-color: var(--diff-del);
-border: none; }
+div.rm li {
+text-decoration: line-through;
+color: #000000;
+}
+div.std blockquote del, div.rm {
+text-decoration: line-through;
+color: #000000;
+background-color: var(--diff-del);
+border: none;
+}
 code del { border: 1px solid #ECB3C7; }
 span.orange {
 background-color: #ffa500;
@@ -569,7 +576,7 @@ Consteval Variables</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-02-14</td>
+    <td>2025-03-02</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -626,7 +633,9 @@ Allocation<span></span></a></li>
 <li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">5.2</span> Feature-test
 Macro<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+<li><a href="#acknowledgments" id="toc-acknowledgments"><span class="toc-section-number">6</span>
+Acknowledgments<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">7</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="abstract"><span class="header-section-number">1</span> Abstract<a href="#abstract" class="self-link"></a></h1>
@@ -664,7 +673,7 @@ already had this rule.</p>
 variable whose value is <code class="sourceCode cpp">add</code>, you
 also cannot use it as a template argument, cannot have it as a member of
 a struct that’s used in either way, etc.</p>
-<p>Similarly, we cannot <em>really</em> persist reflections <span class="title"><span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]
+<p>Similarly, we cannot <em>really</em> persist reflections <span class="title"><span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]
 (Reflection for C++26)</a></span></span>:</p>
 <div class="std">
 <blockquote>
@@ -725,7 +734,7 @@ is, we would expect:</p>
 </div>
 <p>This is already pretty nice. We could never initialize something like
 <code class="sourceCode cpp">p2</code> today (including as part of a
-struct, etc.).</p>
+struct, etc.), and this would allow us to.</p>
 <p>Another important benefit of
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 variables is that they are <em>guaranteed</em> to not occupy space at
@@ -1096,7 +1105,7 @@ declarations above should be valid. The only way to keep
 types, but…</p>
 <h2 data-number="4.3" id="do-we-still-need-consteval-only-types"><span class="header-section-number">4.3</span> Do we still need consteval-only
 types?<a href="#do-we-still-need-consteval-only-types" class="self-link"></a></h2>
-<p><span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span> introduces the notion of
+<p><span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]</a></span> introduces the notion of
 consteval-only type — basically any type that has a <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
 in it somewhere — to ensure that reflections exist only at compile time.
 This paper provides an alternative approach to solve the same problem:
@@ -1107,14 +1116,16 @@ example), there are a few cases where the suggested rules would differ
 though. For example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">// v has &quot;consteval-only type,&quot; but it does not have &quot;consteval-only value&quot;</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>variant<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info, <span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="dv">42</span>;</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> p;</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co">// c has &quot;consteval-only type,&quot; but it does not have &quot;consteval-only value&quot;</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> C<span class="op">{.</span>p<span class="op">=</span><span class="kw">nullptr</span><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">// variant&lt;info, int&gt; is a &quot;consteval-only type&quot;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co">// but v does not have &quot;consteval-only value&quot;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>variant<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info, <span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="dv">42</span>;</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> p;</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co">// C is a &quot;consteval-only type&quot;</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">// but c does not have &quot;consteval-only value&quot;</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> C<span class="op">{.</span>p<span class="op">=</span><span class="kw">nullptr</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>On the whole, it’s definitely important to ensure that reflections do
@@ -1178,19 +1189,18 @@ context to another and that changes its validity.</p>
 which seems like a fairly tidy way to resolve that the allocation
 issue.</p>
 <p>Consteval-only allocation can always be adopted later, it is not
-strictly essential to this proposal, and we’re already late. We leave it
-in the hands of Evolution.</p>
+strictly essential to this proposal, and we’re already late.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>This paper proposes:</p>
 <ol type="1">
 <li>introducing the notion of consteval-only value,</li>
-<li>introducing consteval variables, and</li>
+<li>introducing consteval variables,</li>
 <li>allowing certain constexpr variables (those with consteval-only
 value) to escalate to consteval variables.</li>
 </ol>
 <p>Currently, the only kind of consteval-only value is a pointer (or
 reference) to immediate function. This paper directly also adds
-consteval variables. With the adoption of <span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span>, consteval-only values will
+consteval variables. With the adoption of <span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]</a></span>, consteval-only values will
 extend to include values of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
 (and thus variables of that type will escalate to
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>).
@@ -1207,8 +1217,8 @@ A variable <code class="sourceCode cpp">v</code> is
 <span class="addu">either</span> the full-expression of its
 initialization is a constant expression when interpreted as a
 <em>constant-expression</em> <span class="addu">or
-<code class="sourceCode cpp">v</code> is in an immediate variable and
-the full-expression of its initialization is an immediate constant
+<code class="sourceCode cpp">v</code> is an immediate variable and the
+full-expression of its initialization is an immediate constant
 expression when interpreted as a <em>constant-expression</em></span>,
 <span class="note2"><span>[ <em>Note 2:</em> </span>Within this
 evaluation, <code class="sourceCode cpp">std​<span class="op">::</span>​is_constant_evaluated<span class="op">()</span></code>
@@ -1231,7 +1241,7 @@ namespace scope that follows the initializing declaration of
 <p>[…]</p>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">x</a></span>
-An expression has consteval-only value if its value satisfies any of the
+A value is <em>consteval-only</em> if it satisfies any of the
 following:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(x.1)</a></span>
@@ -1266,8 +1276,8 @@ no constituent value of pointer type has an invalid pointer value
 </div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">22</a></span>
 A <em>constant expression</em> is either a glvalue <span class="addu">immediate</span> core constant expression <span class="rm" style="color: #bf0303"><del>that refers to an object or non-immediate
-function</del></span> <span class="addu">does not refer to an immediate
-function????</span>, or a prvalue <span class="rm" style="color: #bf0303"><del>core</del></span> <span class="addu">immediate</span> constant expression <span class="rm" style="color: #bf0303"><del>whose value satisfies the following
+function</del></span> <span class="addu">whose object does not have
+consteval-only value</span>, or a prvalue <span class="rm" style="color: #bf0303"><del>core</del></span> <span class="addu">immediate</span> constant expression <span class="rm" style="color: #bf0303"><del>whose value satisfies the following
 constraints</del></span> <span class="addu">that does not have
 consteval-only value.</span></p>
 <div class="rm" style="color: #bf0303">
@@ -1379,7 +1389,15 @@ constexpr reference is bound, shall have constant destruction.</p>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">6</span>
+Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<p>An earlier draft revision of the paper proposed something much
+narrower — simply allowing pointers to immediate functions to persist,
+if those exists as part of <code class="sourceCode cpp"><span class="kw">static</span> <span class="kw">constexpr</span></code>
+variables in immediate functions. Richard Smith suggested that we
+generalize this further. That suggestion led us to the much better
+design that this paper now proposes. Thank you, Richard.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
 <div id="ref-LWG4197" class="csl-entry" role="doc-biblioentry">
@@ -1410,10 +1428,10 @@ Non-transient constexpr allocation using propconst. <a href="https://wg21.link/p
 [P2670R1] Barry Revzin. 2023-02-03. Non-transient constexpr allocation.
 <a href="https://wg21.link/p2670r1"><div class="csl-block">https://wg21.link/p2670r1</div></a>
 </div>
-<div id="ref-P2996R9" class="csl-entry" role="doc-biblioentry">
-[P2996R9] Wyatt Childers, Peter Dimov, Dan Katz, Barry Revzin, Andrew
-Sutton, Faisal Vali, and Daveed Vandevoorde. 2025-01-12. Reflection for
-C++26. <a href="https://wg21.link/p2996r9"><div class="csl-block">https://wg21.link/p2996r9</div></a>
+<div id="ref-P2996R10" class="csl-entry" role="doc-biblioentry">
+[P2996R10] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2025-02-26. Reflection
+for C++26. <a href="https://wg21.link/p2996r10"><div class="csl-block">https://wg21.link/p2996r10</div></a>
 </div>
 <div id="ref-P3032R2" class="csl-entry" role="doc-biblioentry">
 [P3032R2] Barry Revzin. 2024-04-16. Less transient constexpr allocation.

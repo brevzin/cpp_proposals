@@ -471,22 +471,4 @@ void f() {
 
 TODO
 
----
-references:
-  - id: P2996R10
-    citation-label: P2996R10
-    title: "Reflection for C++26"
-    author:
-      - family: Barry Revzin
-      - family: Wyatt Childers
-      - family: Peter Dimov
-      - family: Andrew Sutton
-      - family: Faisal Vali
-      - family: Daveed Vandevoorde
-      - family: Dan Katz
-    issued:
-      - year: 2025
-        month: 02
-        day: 26
-    URL: https://wg21.link/p2996r10
----
+

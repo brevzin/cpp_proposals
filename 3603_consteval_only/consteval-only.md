@@ -34,7 +34,7 @@ We cannot "persist" a pointer to immediate function like this — `add` is a val
 
 It's not just that you cannot create a `constexpr` variable whose value is `add`, you also cannot use it as a template argument, cannot have it as a member of a struct that's used in either way, etc.
 
-Similarly, we cannot *really* persist reflections [@P2996R9]{.title}:
+Similarly, we cannot *really* persist reflections [@P2996R10]{.title}:
 
 ::: std
 ```cpp
@@ -77,7 +77,7 @@ int main(int argc, char**) {
 ```
 :::
 
-This is already pretty nice. We could never initialize something like `p2` today (including as part of a struct, etc.).
+This is already pretty nice. We could never initialize something like `p2` today (including as part of a struct, etc.), and this would allow us to.
 
 Another important benefit of `consteval` variables is that they are _guaranteed_ to not occupy space at runtime. You just don't hit issues [like this](https://www.reddit.com/r/cpp/comments/1i36ahd/is_this_an_msvc_bug_or_am_i_doing_something_wrong/). `constexpr` variables, even if never accessed at runtime, may occupy space anyway. It's just QoI. But in the same way that `consteval` functions _cannot_ lead to codegen, `consteval` variables _cannot_ either. That's a pretty nice benefit.
 
@@ -287,19 +287,21 @@ We think the right answer is that only the `consteval` declarations above should
 
 ## Do we still need consteval-only types?
 
-[@P2996R9] introduces the notion of consteval-only type — basically any type that has a `std::meta::info` in it somewhere — to ensure that reflections exist only at compile time. This paper provides an alternative approach to solve the same problem: extend consteval-only to include values of type `std::meta::info`.
+[@P2996R10] introduces the notion of consteval-only type — basically any type that has a `std::meta::info` in it somewhere — to ensure that reflections exist only at compile time. This paper provides an alternative approach to solve the same problem: extend consteval-only to include values of type `std::meta::info`.
 
 This broadly accomplishes the same thing (and would necessitate having `c` be ill-formed in the above example), there are a few cases where the suggested rules would differ though. For example:
 
 ::: std
 ```cpp
-// v has "consteval-only type," but it does not have "consteval-only value"
+// variant<info, int> is a "consteval-only type"
+// but v does not have "consteval-only value"
 constexpr std::variant<std::meta::info, int> v = 42;
 
 struct C {
     std::meta::info const* p;
 };
-// c has "consteval-only type," but it does not have "consteval-only value"
+// C is a "consteval-only type"
+// but c does not have "consteval-only value"
 auto c = C{.p=nullptr};
 ```
 :::
@@ -336,7 +338,7 @@ template for (consteval info r : members_of(type))
 
 desugars into declaring the underlying range `consteval`, which seems like a fairly tidy way to resolve that the allocation issue.
 
-Consteval-only allocation can always be adopted later, it is not strictly essential to this proposal, and we're already late. We leave it in the hands of Evolution.
+Consteval-only allocation can always be adopted later, it is not strictly essential to this proposal, and we're already late.
 
 
 # Proposal
@@ -344,10 +346,10 @@ Consteval-only allocation can always be adopted later, it is not strictly essent
 This paper proposes:
 
 1. introducing the notion of consteval-only value,
-2. introducing consteval variables, and
+2. introducing consteval variables,
 3. allowing certain constexpr variables (those with consteval-only value) to escalate to consteval variables.
 
-Currently, the only kind of consteval-only value is a pointer (or reference) to immediate function. This paper directly also adds consteval variables. With the adoption of [@P2996R9], consteval-only values will extend to include values of type `std::meta::info` (and thus variables of that type will escalate to `consteval`). We won't need consteval-only types.
+Currently, the only kind of consteval-only value is a pointer (or reference) to immediate function. This paper directly also adds consteval variables. With the adoption of [@P2996R10], consteval-only values will extend to include values of type `std::meta::info` (and thus variables of that type will escalate to `consteval`). We won't need consteval-only types.
 
 ## Wording
 
@@ -357,7 +359,7 @@ Change [expr.const]{.sref}
 
 [6]{.pnum} A variable `v` is *constant-initializable* if
 
-* [6.1]{.pnum}  [either]{.addu} the full-expression of its initialization is a constant expression when interpreted as a *constant-expression* [or `v` is in an immediate variable and the full-expression of its initialization is an immediate constant expression when interpreted as a *constant-expression*]{.addu},
+* [6.1]{.pnum}  [either]{.addu} the full-expression of its initialization is a constant expression when interpreted as a *constant-expression* [or `v` is an immediate variable and the full-expression of its initialization is an immediate constant expression when interpreted as a *constant-expression*]{.addu},
     [Within this evaluation, `std​::​is_constant_evaluated()` ([meta.const.eval]) returns `true`.]{.note2}
     and
 * [6.2]{.pnum} immediately after the initializing declaration of `v`, the object or reference `x` declared by `v` is constexpr-representable, and
@@ -366,7 +368,7 @@ Change [expr.const]{.sref}
 [...]
 
 ::: addu
-[x]{.pnum} An expression has consteval-only value if its value satisfies any of the following:
+[x]{.pnum} A value is *consteval-only* if it satisfies any of the following:
 
 * [x.1]{.pnum} any constituent reference refers to an immediate function or an immediate variable,
 * [x.2]{.pnum} any constituent pointer points to an immediate function or an immediate variable, or
@@ -381,7 +383,7 @@ Change [expr.const]{.sref}
 * [y.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
 :::
 
-[22]{.pnum} A *constant expression* is either a glvalue [immediate]{.addu} core constant expression [that refers to an object or non-immediate function]{.rm} [does not refer to an immediate function????]{.addu}, or a prvalue [core]{.rm} [immediate]{.addu} constant expression [whose value satisfies the following constraints]{.rm} [that does not have consteval-only value.]{.addu}
+[22]{.pnum} A *constant expression* is either a glvalue [immediate]{.addu} core constant expression [that refers to an object or non-immediate function]{.rm} [whose object does not have consteval-only value]{.addu}, or a prvalue [core]{.rm} [immediate]{.addu} constant expression [whose value satisfies the following constraints]{.rm} [that does not have consteval-only value.]{.addu}
 
 ::: rm
 * [22.1]{.pnum} each constituent reference refers to an object or a non-immediate function,
@@ -436,6 +438,10 @@ Bump `__cpp_consteval` in [cpp.predefined]{.sref}:
 ```
 :::
 
+# Acknowledgments
+
+An earlier draft revision of the paper proposed something much narrower — simply allowing pointers to immediate functions to persist, if those exists as part of `static constexpr` variables in immediate functions. Richard Smith suggested that we generalize this further. That suggestion led us to the much better design that this paper now proposes. Thank you, Richard.
+
 ---
 references:
   - id: P3554R0
@@ -449,22 +455,6 @@ references:
         month: 1
         day: 5
     URL: https://wg21.link/p3554r0
-  - id: P2996R9
-    citation-label: P2996R9
-    title: "Reflection for C++26"
-    author:
-      - family: Wyatt Childers
-      - family: Peter Dimov
-      - family: Dan Katz
-      - family: Barry Revzin
-      - family: Andrew Sutton
-      - family: Faisal Vali
-      - family: Daveed Vandevoorde
-    issued:
-      - year: 2025
-        month: 1
-        day: 12
-    URL: https://wg21.link/p2996r9
   - id: LWG4197
     citation-label: LWG4197
     title: "Complexity of `std::visit` with immediate functions"
