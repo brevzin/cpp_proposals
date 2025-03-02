@@ -320,6 +320,29 @@ Add a new term after we define what an aggregate and the elements of an aggregat
 
 * [y.1]{.pnum} `M` if `M` is an element of `T`;
 * [y.2]{.pnum} otherwise, the element of `T` that contains `M`.
+
+::: example
+```cpp
+struct A {
+  int a1;
+  union {
+    int a2;
+    char a3;
+  };
+};
+
+// The designatable members of B are: [A::a1, A::a2, A::a3, B::b1, B::b2]
+// The associated element of A::a1, A::a2, and A::a3 is A.
+// The associated element of B::b1 is itself.
+// The associated element of B::b2 is the anonymous union containing it.
+struct B : A {
+  int b1;
+  union {
+    double b2;
+  };
+};
+```
+:::
 :::
 
 [3]{.pnum} When an aggregate is initialized [...]
