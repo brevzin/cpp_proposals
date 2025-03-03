@@ -303,7 +303,7 @@ Change the grammar in [dcl.init.general]{.sref}/1 to allow a `$designated-initia
 ```
 :::
 
-Add a new term after we define what an aggregate and the elements of an aggregate are:
+Add a new term after we define what an aggregate and the elements of an aggregate are in [dcl.init.aggr]{.sref}:
 
 ::: std
 [1]{.pnum} An *aggregate* is [...]
@@ -313,7 +313,7 @@ Add a new term after we define what an aggregate and the elements of an aggregat
 ::: addu
 [x]{.pnum} The _designatable members_ of an aggregate `T` are:
 
-* [x.1]{.pnum} For each direct base class `C` of `T` that is itself an aggregate, in the order in which they appear in the `$base-specifier-list$`, the designatable members of `C` for which lookup for that member in `T` finds the member of `C`, followed by
+* [x.1]{.pnum} For each direct base class `C` of `T` that is itself an aggregate, in the order in which they appear in the `$base-specifier-list$`, the designatable members of `C` for which lookup for that member's name in `T` finds the member of `C`, followed by
 * [x.2]{.pnum} the direct non-static data members of `T`, in declaration order.
 
 [y]{.pnum} The _associated element_ of a designatable member `M` of an aggregate `T` is:
@@ -331,10 +331,6 @@ struct A {
   };
 };
 
-// The designatable members of B are: [A::a1, A::a2, A::a3, B::b1, B::b2]
-// The associated element of A::a1, A::a2, and A::a3 is A.
-// The associated element of B::b1 is itself.
-// The associated element of B::b2 is the anonymous union containing it.
 struct B : A {
   int b1;
   union {
@@ -342,6 +338,11 @@ struct B : A {
   };
 };
 ```
+
+The designatable members of `B` are: `[A::a1, A::a2, A::a3, B::b1, B::b2]`.
+The associated element of each of the members `A::a1`, `A::a2`, and `A::a3` of `B` is `A`.
+The associated element of the member `B::b1` of `B` is itself.
+The associated element of the member `B::b2` of `B` is the anonymous union containing it.
 :::
 :::
 
@@ -355,10 +356,10 @@ Extend [dcl.init.aggr]{.sref}/3.1:
 
 ::: addu
 
-An element of `$C$` is explicitly initialized if:
+An element of `$C$` is explicitly initialized if it is
 
-* [3.1.1]{.pnum} it is a base class subobject which an `$initializer-clause$` in the `$designated-initializer-list$` appertains to, or
-* [3.1.2]{.pnum} it is the associated element of the designatable member of `$C$` named by an `$identifier$` in a `$designated-initializer-clause$`.
+* [3.1.1]{.pnum} a base class subobject to which an `$initializer-clause$` in the `$designated-initializer-list$` appertains, or
+* [3.1.2]{.pnum} the associated element of the designatable member of `$C$` named by an `$identifier$` in a `$designated-initializer-clause$`.
 
 If an element of `$C$` is explicitly initialized by both an `$initializer-clause$` and a `$designated-initializer-clause$`, the program is ill-formed.
 
@@ -371,7 +372,7 @@ struct C : A { int a1; };
 B v1 = B{.a1=1, .b=2};         // the explicitly initialized elements are [A, B::b]
 B v2 = B{.a1=1, .a2=2, .b=3};  // the explicitly initialized elements are [A, B::b]
 B v3 = B{A{1, 2}, .b=3};       // the explicitly initialized elements are [A, B::b]
-B v4 = B{A{}, .a2=1, .b=3};    // ill-formed: A initialized two different ways
+B v4 = B{A{}, .a2=1, .b=3};    // error: A initialized two different ways
 C v5 = C{.a1=4};               // the explicitly initialized elements are [C::a1]
 ```
 :::
@@ -379,7 +380,7 @@ C v5 = C{.a1=4};               // the explicitly initialized elements are [C::a1
 
 :::
 
-And extend [dcl.init.aggr]{.sref}/4 to cover base class elements (TODO: do we need this special case first bullet? Expand the designated-initializer-list bullet instead of adding a new bullet. Probably only need to change 4.2):
+And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
 
 ::: std
 [4]{.pnum} For each explicitly initialized element:
