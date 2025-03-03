@@ -379,15 +379,15 @@ Change [expr.const]{.sref}
 [y]{.pnum} An *immediate constant expression* is either a glvalue core constant expression that refers to an object or a function, or a prvalue core constant expression whose value satisfies the following constraints:
 
 * [y.1]{.pnum} each constituent reference refers to an object or a function,
-* [y.2]{.pnum} no constituent value of scalar type is an indeterminate value ([basic.indet]), and
+* [y.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), and
 * [y.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
 :::
 
-[22]{.pnum} A *constant expression* is either a glvalue [immediate]{.addu} core constant expression [that refers to an object or non-immediate function]{.rm} [whose object does not have consteval-only value]{.addu}, or a prvalue [core]{.rm} [immediate]{.addu} constant expression [whose value satisfies the following constraints]{.rm} [that does not have consteval-only value.]{.addu}
+[22]{.pnum} A *constant expression* is either a glvalue [immediate]{.addu} [core]{.rm} constant expression [that refers to an object or non-immediate function]{.rm} [whose object does not have consteval-only value]{.addu}, or a prvalue [core]{.rm} [immediate]{.addu} constant expression [whose value satisfies the following constraints]{.rm} [that does not have consteval-only value.]{.addu}
 
 ::: rm
 * [22.1]{.pnum} each constituent reference refers to an object or a non-immediate function,
-* [22.2]{.pnum} no constituent value of scalar type is an indeterminate value ([basic.indet]),
+* [22.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]),
 * [22.3]{.pnum} no constituent value of pointer type is a pointer to an immediate function or an invalid pointer value ([basic.compound]), and
 * [22.4]{.pnum} no constituent value of pointer-to-member type designates an immediate function.
 :::
