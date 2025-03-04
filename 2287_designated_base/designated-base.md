@@ -406,20 +406,6 @@ And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
   // the B element is initialized from {.a=2, .b=3}
   // which leads to its A element being initialized from {.a=2}
   C y = C{.a=2, .b=3, .c=4};
-
-  struct A2 : A { int a; };
-
-  // the A element is not explicitly initialized
-  A2 z = {.a=1};
-
-  struct D { int d; };
-  struct E { int e; };
-  struct F : D, E { int f; };
-
-  // the D element is initialized from {.d=1}
-  // the E::e element is initialized from =2
-  // the F::f element is initialized from =3
-  F f = {{.d=1}, .e=2, .f=3};
   ```
   :::
   :::
@@ -475,7 +461,8 @@ void f(A); // #1
 void f(B); // #2
 
 void g() {
-    f({.a=1}); // OK (calls #1) in C++23, now ill-formed (ambiguous)
+    f({.a=1}); // ambiguous between #1 and #2; previously called #1
+
 }
 ```
 :::
