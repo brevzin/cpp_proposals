@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-03-01" />
+  <meta name="dcterms.date" content="2025-03-06" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -541,9 +541,16 @@ color: #000000; background-color: #C8FFC8;
 border: 1px solid #B3EBB3;
 }
 div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
-div.std blockquote del { text-decoration: line-through;
-color: #000000; background-color: var(--diff-del);
-border: none; }
+div.rm li {
+text-decoration: line-through;
+color: #000000;
+}
+div.std blockquote del, div.rm {
+text-decoration: line-through;
+color: #000000;
+background-color: var(--diff-del);
+border: none;
+}
 code del { border: 1px solid #ECB3C7; }
 span.orange {
 background-color: #ffa500;
@@ -568,7 +575,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-03-01</td>
+    <td>2025-03-06</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -7233,13 +7240,13 @@ let <code class="sourceCode cpp"><em>S</em></code> be the construct
 designated by
 <code class="sourceCode cpp"><em>splice-specifier</em></code>.</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_143" id="pnum_143">3</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_143" id="pnum_143">(2.1)</a></span>
 If <code class="sourceCode cpp"><em>S</em></code> is a function,
 overload resolution ([over.match], [temp.over]) is performed from an
 initial set of candidate functions containing only that function. The
 expression is an lvalue referring to the selected function and has the
 same type as that function.</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_144" id="pnum_144">(3.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_144" id="pnum_144">(2.2)</a></span>
 Otherwise, if <code class="sourceCode cpp"><em>S</em></code> is an
 object or a non-static data member, the expression is an lvalue
 designating <code class="sourceCode cpp"><em>S</em></code>. The
@@ -7247,7 +7254,7 @@ expression has the same type as
 <code class="sourceCode cpp"><em>S</em></code>, and is a bit-field if
 and only if <code class="sourceCode cpp"><em>S</em></code> is a
 bit-field.</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_145" id="pnum_145">(3.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_145" id="pnum_145">(2.3)</a></span>
 Otherwise, if <code class="sourceCode cpp"><em>S</em></code> is a
 variable or a structured binding,
 <code class="sourceCode cpp"><em>S</em></code> shall either have static
@@ -7263,15 +7270,15 @@ is a bit-field.</p>
 designating a variable or structured binding of reference type will be
 adjusted to a non-reference type (<span>7.2.2 <a href="https://wg21.link/expr.type">[expr.type]</a></span>).<span>
 — <em>end note</em> ]</span></span></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_146" id="pnum_146">(3.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_146" id="pnum_146">(2.4)</a></span>
 Otherwise, if <code class="sourceCode cpp"><em>S</em></code> is a value
 or an enumerator, the expression is a prvalue that computes
 <code class="sourceCode cpp"><em>S</em></code> and whose type is the
 same as <code class="sourceCode cpp"><em>S</em></code>.</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_147" id="pnum_147">(3.4)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_147" id="pnum_147">(2.5)</a></span>
 Otherwise, the expression is ill-formed.</p></li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_148" id="pnum_148">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_148" id="pnum_148">3</a></span>
 For a <code class="sourceCode cpp"><em>splice-expression</em></code> of
 the form <code class="sourceCode cpp"><span class="kw">template</span> <em>splice-specifier</em></code>,
 the <code class="sourceCode cpp"><em>splice-specifier</em></code> shall
@@ -7279,7 +7286,7 @@ designate a function template. Overload resolution is performed from an
 initial set of candidate functions containing only that function
 template. The expression is an lvalue referring to the selected function
 and has the same type as that function.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_149" id="pnum_149">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_149" id="pnum_149">4</a></span>
 For a <code class="sourceCode cpp"><em>splice-expression</em></code> of
 the form <code class="sourceCode cpp"><span class="kw">template</span> <em>splice-specialization-specifier</em></code>,
 the <code class="sourceCode cpp"><em>splice-specifier</em></code> of the
@@ -7292,37 +7299,37 @@ shall designate a template. Let
 any) of the
 <code class="sourceCode cpp"><em>splice-specialization-specifier</em></code>.</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_150" id="pnum_150">(5.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_150" id="pnum_150">(4.1)</a></span>
 If <code class="sourceCode cpp"><em>T</em></code> is a function
 template, overload resolution is performed from an initial set of
 candidate functions containing only the function associated with
 <code class="sourceCode cpp"><em>S</em></code>. The expression is an
 lvalue referring to the selected function and has the same type as that
 function.</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_151" id="pnum_151">(5.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_151" id="pnum_151">(4.2)</a></span>
 Otherwise, if <code class="sourceCode cpp"><em>T</em></code> is a
 primary variable template, the expression is an lvalue referring to the
 same object associated with
 <code class="sourceCode cpp"><em>S</em></code> and has the same type as
 <code class="sourceCode cpp"><em>S</em></code>.</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_152" id="pnum_152">(5.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_152" id="pnum_152">(4.3)</a></span>
 Otherwise, the expression is ill-formed.</p></li>
 </ul>
 <p><span class="note"><span>[ <em>Note 2:</em> </span>Access checking of
 class members occurs during lookup, and therefore does not pertain to
 splicing.<span> — <em>end note</em> ]</span></span></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_153" id="pnum_153">6</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_153" id="pnum_153">5</a></span>
 A <code class="sourceCode cpp"><em>splice-expression</em></code> that
 designates a non-static data member or implicit object member function
 of a class can only be used:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_154" id="pnum_154">(6.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_154" id="pnum_154">(5.1)</a></span>
 as part of a class member access in which the object expression refers
 to the member’s class or a class derived from that class,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_155" id="pnum_155">(6.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_155" id="pnum_155">(5.2)</a></span>
 to form a pointer to member (<span>7.6.2.2 <a href="https://wg21.link/expr.unary.op">[expr.unary.op]</a></span>),
 or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_156" id="pnum_156">(6.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_156" id="pnum_156">(5.3)</a></span>
 if that <code class="sourceCode cpp"><em>splice-expression</em></code>
 designates a non-static data member and it appears in an unevaluated
 operand.</li>
@@ -7333,7 +7340,7 @@ an <code class="sourceCode cpp"><em>id-expression</em></code> denoting a
 non-static member becomes a class member access does not apply to a
 <code class="sourceCode cpp"><em>splice-expression</em></code>.<span>
 — <em>end note</em> ]</span></span></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_157" id="pnum_157">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_157" id="pnum_157">6</a></span>
 While performing overload resolution to determine the entity referred to
 by a <code class="sourceCode cpp"><em>splice-expression</em></code>, the
 best viable function is <em>designated in a manner exempt from access

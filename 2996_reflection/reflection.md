@@ -4140,7 +4140,7 @@ auto g = typename [:^^int:](42);
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$S$` be the construct designated by `$splice-specifier$`.
 
-* [#]{.pnum} If `$S$` is a function, overload resolution ([over.match], [temp.over]) is performed from an initial set of candidate functions containing only that function. The expression is an lvalue referring to the selected function and has the same type as that function.
+* [#.#]{.pnum} If `$S$` is a function, overload resolution ([over.match], [temp.over]) is performed from an initial set of candidate functions containing only that function. The expression is an lvalue referring to the selected function and has the same type as that function.
 
 * [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
 
