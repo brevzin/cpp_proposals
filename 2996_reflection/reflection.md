@@ -6562,6 +6562,29 @@ consteval bool is_enumerable_type(info r);
 
 [#]{.pnum} *Returns*: `true` if `dealias(r)` represents a type that is enumerable from some point in the evaluation context. Otherwise, `false`.
 
+::: example
+```cpp
+class S;
+enum class E;
+static_assert(!is_enumerable_type(^^S));
+static_assert(!is_enumerable_type(^^E));
+
+class S {
+  void mfn() {
+    static_assert(is_enumerable_type(^^S));
+  }
+  static_assert(!is_enumerable_type(^^S));
+};
+static_assert(is_enumerable_type(^^S));
+
+enum class E {
+  A = is_enumerable_type(^^E) ? 1 : 2
+};
+static_assert(is_enumerable_type(^^E));
+static_assert(static_cast<int>(E::A) == 2);
+```
+:::
+
 ```cpp
 consteval bool is_variable(info r);
 ```
@@ -6691,12 +6714,12 @@ consteval info object_of(info r);
   - [#.#.#]{.pnum} `$R$` is usable in constant expressions ([expr.const]), or
   - [#.#.#]{.pnum} the lifetime of `$R$` began during the core constant expression currently under evaluation.
 
-[#]{.pnum} *Returns*: If `r` represents a variable, then a reflection of the object declared by, or referred to by, that variable. Otherwise, `r`.
+[#]{.pnum} *Returns*: If `r` represents a variable, then a reflection of the object declared, or referred to, by that variable. Otherwise, `r`.
 
 ::: example
 ```cpp
 int x;
-constexpr int& y = x;
+int& y = x;
 
 static_assert(^^x != ^^y);                       // OK, x and y are different variables so their
                                                  // reflections compare different
@@ -6713,7 +6736,7 @@ consteval info value_of(info r);
 
 * [#.#]{.pnum} a value,
 * [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type ([temp.type]), and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began in the core constant expression currently under evaluation ([expr.const]).
+* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type ([temp.type]), and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began within the core constant expression currently under evaluation ([expr.const]).
 
 [#]{.pnum} *Returns*:
 
@@ -6962,7 +6985,7 @@ It is implementation-defined whether other members of closure types are members-
 * [#.#]{.pnum} a primary class template, function template, primary variable template, alias template, or concept,
 * [#.#]{.pnum} a variable or reference,
 * [#.#]{.pnum} a function `$F$` for which
-  * [#.#]{.pnum} the type of `$F$` does not contain a placeholder type, and
+  * [#.#]{.pnum} the type of `$F$` does not contain an undeduced placeholder type, and
   * [#.#]{.pnum} the constraints (if any) of `$F$` are satisfied, unless `$F$` is a prospective destructor that is not a selected destructor ([class.dtor]),
 * [#.#]{.pnum} a non-static data member or unnamed bit-field, other than members of an anonymous union that is directly or indirectly members-of-representable,
 * [#.#]{.pnum} a namespace, or
@@ -7106,7 +7129,7 @@ template <class T>
 
 - [#.#]{.pnum} `r` represents a variable or object of type `U`,
 - [#.#]{.pnum} `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`, and
-- [#.#]{.pnum} if `r` represents a variable, then either that variable is usable in constant expressions or its lifetime began in the core constant expression currently under evaluation.
+- [#.#]{.pnum} if `r` represents a variable, then either that variable is usable in constant expressions or its lifetime began within the core constant expression currently under evaluation.
 
 [#]{.pnum} *Returns*: If `r` represents an object `$O$`, then a reference to `$O$`. Otherwise, a reference to the object declared, or referred to, by the variable or reference represented by `r`.
 
