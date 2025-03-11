@@ -368,22 +368,27 @@ Change [expr.const]{.sref}
 [...]
 
 ::: addu
-[x]{.pnum} A value is *consteval-only* if it satisfies any of the following:
+[x]{.pnum} An *immediate value* is a value that satisfies any of the following:
 
-* [x.1]{.pnum} any constituent reference refers to an immediate function or an immediate variable,
-* [x.2]{.pnum} any constituent pointer points to an immediate function or an immediate variable, or
+* [x.1]{.pnum} any constituent reference refers to an immediate function or an immediate object,
+* [x.2]{.pnum} any constituent pointer points to an immediate function or an immediate object, or
 * [x.3]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
 
 [With the adoption of P2996, this would have to be extended to also account for any references to, pointers to, or values of type `std::meta::info`.]{.draftnote}
 
-[y]{.pnum} An *immediate constant expression* is either a glvalue core constant expression that refers to an object or a function, or a prvalue core constant expression whose value satisfies the following constraints:
+[y]{.pnum} An *immediate object* is an object that was either initialized by an immediate value or declared by an immediate variable.
 
-* [y.1]{.pnum} each constituent reference refers to an object or a function,
-* [y.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), and
-* [y.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
+[z]{.pnum} An *immediate constant expression* is either a glvalue core constant expression that refers to an object or a function, or a prvalue core constant expression whose value satisfies the following constraints:
+
+* [z.1]{.pnum} each constituent reference refers to an object or a function,
+* [z.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), and
+* [z.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
 :::
 
-[22]{.pnum} A *constant expression* is either a glvalue [immediate]{.addu} [core]{.rm} constant expression [that refers to an object or non-immediate function]{.rm} [whose object does not have consteval-only value]{.addu}, or a prvalue [core]{.rm} [immediate]{.addu} constant expression [whose value satisfies the following constraints]{.rm} [that does not have consteval-only value.]{.addu}
+[22]{.pnum} A *constant expression* is either
+
+* [22.1]{.pnum} a glvalue [immediate]{.addu} [core]{.rm} constant expression that refers to [an]{.rm} [a non-immediate]{.addu} object or non-immediate function, or
+* [22.2]{.pnum} a prvalue [core]{.rm} [immediate]{.addu} constant expression [whose value satisfies the following constraints]{.rm} [that does not have an immediate value.]{.addu}
 
 ::: rm
 * [22.1]{.pnum} each constituent reference refers to an object or a non-immediate function,
@@ -396,7 +401,7 @@ Change [expr.const]{.sref}
 
 [25]{.pnum} An expression or conversion is *immediate-escalating* if it is not initially in an immediate function context and it is either
 
-* [#.1]{.pnum} a potentially-evaluated [*id-expression* that denotes an immediate function]{.rm} [expression that has consteval-only value]{.addu} that is not a subexpression of an immediate invocation, or
+* [#.1]{.pnum} a potentially-evaluated [*id-expression* that denotes an immediate function]{.rm} [expression that has immediate value]{.addu} that is not a subexpression of an immediate invocation, or
 * [#.2]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
 
 [26]{.pnum} An *immediate-escalating* function is [...]
@@ -407,7 +412,7 @@ Change [expr.const]{.sref}
 [z]{.pnum} An *immediate variable* is:
 
 * [z.1]{.pnum} a variable declared with the `consteval` specifier, or
-* [z.2]{.pnum} a variable that results from the instantiation of a templated entity declared with the `constexpr` specifier whose initialization results in a consteval-only value.
+* [z.2]{.pnum} a variable that results from the instantiation of a templated entity declared with the `constexpr` specifier whose initialization results in an immediate value.
 :::
 :::
 
