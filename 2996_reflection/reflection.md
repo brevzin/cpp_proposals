@@ -34,6 +34,7 @@ Since [@P2996R10]:
   * fixed wording for `extract` and `object_of` to ensure that both functions can be used with reflections of local variables declared in immediate functions
   * specified `type_of` for enumerators called from within the containing `$enum-specifier$`
   * minor editing and phrasing updates to address CWG feedback
+  * added type traits from [@P2786R13]{.title}
 
 
 Since [@P2996R9]:
@@ -6125,6 +6126,8 @@ namespace std::meta {
   consteval bool is_const_type(info type);
   consteval bool is_volatile_type(info type);
   consteval bool is_trivially_copyable_type(info type);
+  consteval bool is_trivially_relocatable_type(info type);
+  consteval bool is_replaceable_type(info type);
   consteval bool is_standard_layout_type(info type);
   consteval bool is_empty_type(info type);
   consteval bool is_polymorphic_type(info type);
@@ -6177,6 +6180,7 @@ namespace std::meta {
   consteval bool is_nothrow_swappable_type(info type);
 
   consteval bool is_nothrow_destructible_type(info type);
+  consteval bool is_nothrow_relocatable_type(info type);
 
   consteval bool is_implicit_lifetime_type(info type);
 
@@ -6712,7 +6716,7 @@ consteval info object_of(info r);
 - [#.#]{.pnum} an object with static storage duration ([basic.stc.general]), or
 - [#.#]{.pnum} a variable that either declares or refers to such an object, and if that variable is a reference `$R$` then either
   - [#.#.#]{.pnum} `$R$` is usable in constant expressions ([expr.const]), or
-  - [#.#.#]{.pnum} the lifetime of `$R$` began during the core constant expression currently under evaluation.
+  - [#.#.#]{.pnum} the lifetime of `$R$` began within the core constant expression currently under evaluation.
 
 [#]{.pnum} *Returns*: If `r` represents a variable, then a reflection of the object declared, or referred to, by that variable. Otherwise, `r`.
 
@@ -7480,6 +7484,8 @@ consteval bool is_member_pointer_type(info type);
 consteval bool is_const_type(info type);
 consteval bool is_volatile_type(info type);
 consteval bool is_trivially_copyable_type(info type);
+consteval bool is_trivially_relocatable_type(info type);
+consteval bool is_replaceable_type(info type);
 consteval bool is_standard_layout_type(info type);
 consteval bool is_empty_type(info type);
 consteval bool is_polymorphic_type(info type);
@@ -7532,6 +7538,7 @@ consteval bool is_nothrow_swappable_with_type(info type_dst, info type_src);
 consteval bool is_nothrow_swappable_type(info type);
 
 consteval bool is_nothrow_destructible_type(info type);
+consteval bool is_nothrow_relocatable_type(info type);
 
 consteval bool is_implicit_lifetime_type(info type);
 
@@ -7958,4 +7965,19 @@ references:
         month: 02
         day: 09
     URL: https://isocpp.org/files/papers/P3547R1.html
+  - id: P2786R13
+    citation-label: P2786R13
+    title: "Trivial Relocatability For C++26"
+    author:
+      - family: Alisdair Meredith
+      - family: Mungo Gill
+      - family: Joshua Berne
+      - family: Corentin Jabot
+      - family: Pablo Halpern
+      - family: Lori Hughes
+    issued:
+      - year: 2025
+        month: 02
+        day: 14
+    URL: https://wg21.link/p2786r13
 ---
