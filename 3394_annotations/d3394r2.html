@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-02-19" />
+  <meta name="dcterms.date" content="2025-03-10" />
   <title>Annotations for Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -541,9 +541,16 @@ color: #000000; background-color: #C8FFC8;
 border: 1px solid #B3EBB3;
 }
 div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
-div.std blockquote del { text-decoration: line-through;
-color: #000000; background-color: var(--diff-del);
-border: none; }
+div.rm li {
+text-decoration: line-through;
+color: #000000;
+}
+div.std blockquote del, div.rm {
+text-decoration: line-through;
+color: #000000;
+background-color: var(--diff-del);
+border: none;
+}
 code del { border: 1px solid #ECB3C7; }
 span.orange {
 background-color: #ffa500;
@@ -569,7 +576,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-02-19</td>
+    <td>2025-03-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1299,12 +1306,58 @@ template, alias template, or concept,</li>
 </ul>
 </blockquote>
 </div>
+<p>Update annotation equality in <span>7.6.10 <a href="https://wg21.link/expr.eq">[expr.eq]</a></span>/5+:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">5+</a></span>
+If both operands are of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>,
+comparison is defined as follows:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(5+.1)</a></span>
+If one operand is a null reflection value, then they compare equal if
+and only if the other operand is also a null reflection value.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(5+.2)</a></span>
+Otherwise, if one operand represents a value, then they compare equal if
+and only if the other operand represents a value that is
+template-argument-equivalent (<span>13.6 <a href="https://wg21.link/temp.type">[temp.type]</a></span>).</li>
+</ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(5+.x)</a></span>
+Otherwise, if one operand represents an annotation, then they compare
+equal if and only if the other operand represents the same
+annotation.</li>
+</ul>
+</div>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(5+.3)</a></span>
+Otherwise, if one operand represents an object, then they compare equal
+if and only if the other operand represents the same object.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(5+.4)</a></span>
+Otherwise, if one operand represents an entity, then they compare equal
+if and only if the other operand represents the same entity.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(5+.5)</a></span>
+Otherwise, if one operand represents a direct base class relationship,
+then they compare equal if and only if the other operand represents the
+same direct base class relationship.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(5+.6)</a></span>
+Otherwise, both operands
+<code class="sourceCode cpp">O<sub><em>1</em></sub></code> and
+<code class="sourceCode cpp">O<sub><em>2</em></sub></code> represent
+data member descriptions. The operands compare equal if and only if the
+data member descriptions represented by
+<code class="sourceCode cpp">O<sub><em>1</em></sub></code> and
+<code class="sourceCode cpp">O<sub><em>2</em></sub></code> compare equal
+(<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>).</li>
+</ul>
+</blockquote>
+</div>
 <p>Loosen the scope restrictions in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/29 to allow
 definitions to inject declarations of the entity that they are
 defining.</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">29</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">29</a></span>
 Let <code class="sourceCode cpp"><em>C</em></code> be a
 <code class="sourceCode cpp"><em>consteval-block-declaration</em></code>,
 the evaluation of whose corresponding expression produces an injected
@@ -1318,9 +1371,9 @@ encloses exactly one of <code class="sourceCode cpp"><em>C</em></code>
 or <code class="sourceCode cpp"><em>D</em></code> where
 <code class="sourceCode cpp"><em>S</em></code> is</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(29.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(29.1)</a></span>
 a function parameter scope, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(29.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(29.2)</a></span>
 a class scope.</li>
 </ul>
 </blockquote>
@@ -1328,7 +1381,7 @@ a class scope.</li>
 <p>Extend the grammar in <span>9.12.1 <a href="https://wg21.link/dcl.attr.grammar">[dcl.attr.grammar]</a></span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">1</a></span>
 Attributes <span class="addu">and annotations</span> specify additional
 information for various source constructs such as types, variables,
 names, blocks, or translation units.</p>
@@ -1368,7 +1421,7 @@ names, blocks, or translation units.</p>
 <span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a><span class="va">+ <em>annotation</em>:</span></span>
 <span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a><span class="va">+   = <em>constant-expression</em></span></span></code></pre></div>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">2</a></span>
 If an <code class="sourceCode cpp"><em>attribute-specifier</em></code>
 contains an
 <code class="sourceCode cpp"><em>attribute-using-prefix</em></code>, the
@@ -1391,7 +1444,7 @@ specified in the
 <p>Adjust the restriction on ellipses in <span>9.12.1 <a href="https://wg21.link/dcl.attr.grammar">[dcl.attr.grammar]</a></span>/4:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">4</a></span>
 In an <code class="sourceCode cpp"><em>attribute-list</em></code>, an
 ellipsis may <span class="rm" style="color: #bf0303"><del>appear
 only</del></span> <span class="addu">only appear following an
@@ -1409,7 +1462,7 @@ significant. <span class="addu">The
 <code class="sourceCode cpp"><em>constant-expression</em></code> in each
 <code class="sourceCode cpp"><em>annotation</em></code> shall have
 structural type ([temp.param]).</span> […]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">5</a></span>
 Each
 <code class="sourceCode cpp"><em>attribute-specifier-seq</em></code> is
 said to appertain to some entity or statement, identified by the
@@ -1436,10 +1489,10 @@ note</em> ]</span></span>.</span></p>
 <p>Change the pack expansion rule in <span>13.7.4 <a href="https://wg21.link/temp.variadic">[temp.variadic]</a></span>/5.9:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">5</a></span>
 […] Pack expansions can occur in the following contexts:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(5.9)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(5.9)</a></span>
 In an <code class="sourceCode cpp"><em>attribute-list</em></code>
 ([dcl.attr.grammar]); the pattern is an <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>attribute</em></code></span></del></span>
 <span class="addu"><code class="sourceCode cpp"><em>attribute-or-annotation</em></code></span>.</li>
@@ -1476,7 +1529,7 @@ synopsis:</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>  consteval bool is_enumerator(info r);</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool is_annotation(info r);</span></span></code></pre></div>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">1</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
 <code class="sourceCode cpp">r</code> represents an enumerator <span class="addu">or annotation, respectively</span>. Otherwise,
@@ -1488,13 +1541,13 @@ synopsis:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> source_location source_location_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">7</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">r</code> represents a
 value, a non-class type, the global namespace, or a data member
 description, then <code class="sourceCode cpp">source_location<span class="op">{}</span></code>.
 Otherwise, an implementation-defined
 <code class="sourceCode cpp">source_location</code> value.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">8</a></span>
 <em>Recommended practice</em>: <span class="addu">If
 <code class="sourceCode cpp">r</code> represents an annotation that was
 added with a call to <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>annotate</code>,
@@ -1515,13 +1568,13 @@ and <code class="sourceCode cpp">value_of</code> in
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info type_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">35</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">35</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">r</code> represents
 a value, object, variable, function that is not a constructor or
 destructor, enumerator, <span class="addu">annotation,</span> non-static
 data member, bit-field, base class specifier, or description of a
 declaration of a non-static data member.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">36</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">36</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">r</code> represents an
 entity, object, or value, then a reflection of the type of what is
 represented by <code class="sourceCode cpp">r</code>. <span class="addu">Otherwise, if <code class="sourceCode cpp">r</code>
@@ -1537,43 +1590,43 @@ type of the direct base class. Otherwise, for a data member description
 a reflection of the type
 <code class="sourceCode cpp"><em>T</em></code>.</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info value_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">39</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">39</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">r</code> is a
 reflection representing</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(39.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(39.1)</a></span>
 either an object or variable, usable in constant expressions from a
 point in the evaluation context ([expr.const]), whose type is a
 structural type ([temp.type]),</li>
 </ul>
 <div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(39.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(39.2)</a></span>
 an annotation,</li>
 </ul>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(39.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(39.3)</a></span>
 an enumerator, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(39.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(39.4)</a></span>
 a value.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">40</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">40</a></span>
 <em>Returns</em>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(40.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(40.1)</a></span>
 If <code class="sourceCode cpp">r</code> is a reflection of an object
 <code class="sourceCode cpp">o</code>, or a reflection of a variable
 which designates an object <code class="sourceCode cpp">o</code>, then a
 reflection of the value held by <code class="sourceCode cpp">o</code>.
 The reflected value has type <code class="sourceCode cpp">type_of<span class="op">(</span>o<span class="op">)</span></code>,
 with the cv-qualifiers removed if this is a scalar type</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(40.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(40.2)</a></span>
 Otherwise, if <code class="sourceCode cpp">r</code> is a reflection of
 an enumerator <span class="addu">or an annotation</span>, then a
 reflection of the value of the enumerator <span class="addu">or
 annotation, respectively</span>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(40.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(40.3)</a></span>
 Otherwise, <code class="sourceCode cpp">r</code>.</li>
 </ul>
 </blockquote>
@@ -1585,30 +1638,30 @@ Otherwise, <code class="sourceCode cpp">r</code>.</li>
 <blockquote>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T <em>extract-val</em><span class="op">(</span>info r<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">41</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">41</a></span>
 Let <code class="sourceCode cpp">U</code> be the type of the value<span class="addu">, annotation,</span> or enumerator that
 <code class="sourceCode cpp">r</code> represents.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">42</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">42</a></span>
 <em>Constant When</em>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(42.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(42.1)</a></span>
 <code class="sourceCode cpp">U</code> is a pointer type,
 <code class="sourceCode cpp">T</code> and
 <code class="sourceCode cpp">U</code> are similar types ([conv.qual]),
 and <code class="sourceCode cpp">is_convertible_v<span class="op">&lt;</span>U, T<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">true</span></code>,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(42.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(42.2)</a></span>
 <code class="sourceCode cpp">U</code> is not a pointer type and the
 cv-unqualified types of <code class="sourceCode cpp">T</code> and
 <code class="sourceCode cpp">U</code> are the same, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(42.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(42.3)</a></span>
 <code class="sourceCode cpp">U</code> is a closure type,
 <code class="sourceCode cpp">T</code> is a function pointer type, and
 the value <code class="sourceCode cpp">r</code> represents is
 convertible to <code class="sourceCode cpp">T</code>.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">43</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">43</a></span>
 <em>Returns</em>: the value<span class="addu">, annotation,</span> or
 enumerator <code class="sourceCode cpp"><em>V</em></code> represented by
 <code class="sourceCode cpp">r</code>, converted to
@@ -1619,14 +1672,14 @@ enumerator <code class="sourceCode cpp"><em>V</em></code> represented by
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">1</a></span>
 Annotations can be used to add additional information to declarations
 for future introspection.</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of<span class="op">(</span>info item<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">2</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>
 represents a type, variable, function, or a namespace.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">3</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing the following reflections:</p>
 <ul>
@@ -1679,25 +1732,25 @@ returned <code class="sourceCode cpp">vector</code>.</p>
 <span> — <em>end example</em> ]</span>
 </div>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of_with_type<span class="op">(</span>info item, info type<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">4</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">annotations_of<span class="op">(</span>item<span class="op">)</span></code>
 is constant and <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 is a reflection representing a complete type.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">5</a></span>
 <em>Returns</em> A <code class="sourceCode cpp">vector</code> containing
 each element, <code class="sourceCode cpp">e</code>, of <code class="sourceCode cpp">annotations_of<span class="op">(</span>item<span class="op">)</span></code>,
 in order, such that <code class="sourceCode cpp">dealias<span class="op">(</span>type_of<span class="op">(</span>e<span class="op">))</span> <span class="op">==</span> dealias<span class="op">(</span>type<span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info annotate<span class="op">(</span>info item, info value, source_location loc <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">6</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">6</a></span>
 <em>Constant When</em>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(6.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">(6.1)</a></span>
 <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>
 represents a class type, variable, function, or a namespace; and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(6.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">(6.2)</a></span>
 <code class="sourceCode cpp">value</code> reprents a value.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">7</a></span>
 <em>Effects</em>: Produces an injected declaration ([expr.const]) at
 location <code class="sourceCode cpp">loc</code> redeclaring the entity
 represented by <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>.
@@ -1705,7 +1758,7 @@ That injected declaration is annotated by
 <code class="sourceCode cpp">value</code> and its locus is immediately
 following the manifestly constant-evaluated expression currently under
 evaluation.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">8</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>.</p>
 </div>
 </blockquote>

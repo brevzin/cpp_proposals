@@ -523,6 +523,24 @@ Change [basic.fundamental]{.sref} to add "annotation" to the list of reflection 
 * a description of a declaration of a non-static data member.
 :::
 
+Update annotation equality in [expr.eq]{.sref}/5+:
+
+::: std
+[5+]{.pnum} If both operands are of type `std::meta::info`, comparison is defined as follows:
+
+* [5+.1]{.pnum} If one operand is a null reflection value, then they compare equal if and only if the other operand is also a null reflection value.
+* [5+.2]{.pnum} Otherwise, if one operand represents a value, then they compare equal if and only if the other operand represents a value that is template-argument-equivalent ([temp.type]{.sref}).
+
+::: addu
+* [5+.x]{.pnum} Otherwise, if one operand represents an annotation, then they compare equal if and only if the other operand represents the same annotation.
+:::
+
+* [5+.3]{.pnum} Otherwise, if one operand represents an object, then they compare equal if and only if the other operand represents the same object.
+* [5+.4]{.pnum} Otherwise, if one operand represents an entity, then they compare equal if and only if the other operand represents the same entity.
+* [5+.5]{.pnum} Otherwise, if one operand represents a direct base class relationship, then they compare equal if and only if the other operand represents the same direct base class relationship.
+* [5+.6]{.pnum} Otherwise, both operands `O@~_1_~@` and `O@~_2_~@` represent data member descriptions. The operands compare equal if and only if the data member descriptions represented by `O@~_1_~@` and `O@~_2_~@` compare equal ([class.mem.general]{.sref}).
+:::
+
 Loosen the scope restrictions in [expr.const]{.sref}/29 to allow definitions to inject declarations of the entity that they are defining.
 
 ::: std
