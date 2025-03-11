@@ -339,7 +339,7 @@ struct B : A {
 };
 ```
 
-The designatable members of `B` are: `[A::a1, A::a2, A::a3, B::b1, B::b2]`.
+The designatable members of `B` are `A::a1`, `A::a2`, `A::a3`, `B::b1`, and `B::b2`, in that order.
 The associated element of each of the members `A::a1`, `A::a2`, and `A::a3` of `B` is `A`.
 The associated element of the member `B::b1` of `B` is itself.
 The associated element of the member `B::b2` of `B` is the anonymous union containing it.
