@@ -359,7 +359,7 @@ Change [expr.const]{.sref}
 
 [6]{.pnum} A variable `v` is *constant-initializable* if
 
-* [6.1]{.pnum}  [either]{.addu} the full-expression of its initialization is a constant expression when interpreted as a *constant-expression* [or `v` is an immediate variable and the full-expression of its initialization is an immediate constant expression when interpreted as a *constant-expression*]{.addu},
+* [6.1]{.pnum}  the full-expression of its initialization is [a]{.rm} [an immediate]{.addu} constant expression when interpreted as a *constant-expression* [and is a constant expression if `v` is not an immediate variable]{.addu},
     [Within this evaluation, `std​::​is_constant_evaluated()` ([meta.const.eval]) returns `true`.]{.note2}
     and
 * [6.2]{.pnum} immediately after the initializing declaration of `v`, the object or reference `x` declared by `v` is constexpr-representable, and
@@ -368,15 +368,20 @@ Change [expr.const]{.sref}
 [...]
 
 ::: addu
-[x]{.pnum} An *immediate value* is a value that satisfies any of the following:
+[w]{.pnum} An *immediate value* is a value that satisfies any of the following:
 
-* [x.1]{.pnum} any constituent reference refers to an immediate function or an immediate object,
-* [x.2]{.pnum} any constituent pointer points to an immediate function or an immediate object, or
-* [x.3]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
+* [w.1]{.pnum} any constituent reference refers to an immediate function or an immediate object,
+* [w.2]{.pnum} any constituent pointer points to an immediate function or an immediate object, or
+* [w.3]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
 
 [With the adoption of P2996, this would have to be extended to also account for any references to, pointers to, or values of type `std::meta::info`.]{.draftnote}
 
-[y]{.pnum} An *immediate object* is an object that was either initialized by an immediate value or declared by an immediate variable.
+[x]{.pnum} An *immediate object* is an object that was either initialized by an immediate value or declared by an immediate variable.
+
+[y]{.pnum} An *immediate variable* is
+
+* [y.1]{.pnum} a variable declared with the `consteval` specifier, or
+* [y.2]{.pnum} a variable that results from the instantiation of a templated entity declared with the `constexpr` specifier whose initialization results in an immediate value.
 
 [z]{.pnum} An *immediate constant expression* is either a glvalue core constant expression that refers to an object or a function, or a prvalue core constant expression whose value satisfies the following constraints:
 
@@ -407,13 +412,6 @@ Change [expr.const]{.sref}
 [26]{.pnum} An *immediate-escalating* function is [...]
 
 [27]{.pnum} An *immediate function* is [...]
-
-::: addu
-[z]{.pnum} An *immediate variable* is:
-
-* [z.1]{.pnum} a variable declared with the `consteval` specifier, or
-* [z.2]{.pnum} a variable that results from the instantiation of a templated entity declared with the `constexpr` specifier whose initialization results in an immediate value.
-:::
 :::
 
 Change [dcl.constexpr]{.sref} to account for `consteval` variables:
