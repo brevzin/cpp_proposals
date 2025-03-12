@@ -1228,7 +1228,7 @@ void hash_append(H& algo, T const& t) {
 ```
 :::
 
-Of course, any production-ready `hash_append` would include a facility for classes to opt members in and out of participation in hashing. Annotations as proposed by [@P3394] provides just such a mechanism.
+Of course, any production-ready `hash_append` would include a facility for classes to opt members in and out of participation in hashing. Annotations as proposed by [@P3394R2] provides just such a mechanism.
 
 ## Converting a Struct to a Tuple
 
@@ -7236,6 +7236,8 @@ concept reflection_range =
   same_as<ranges::range_value_t<R>, info> &&
   same_as<remove_cvref_t<ranges::range_reference_t<R>>, info>;
 ```
+
+[1]{.pnum} *Constant When*: Let 
 
 ```cpp
 template <reflection_range R = initializer_list<info>>
