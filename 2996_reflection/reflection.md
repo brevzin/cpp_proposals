@@ -423,7 +423,8 @@ We could thus rewrite the above example as:
 struct S { unsigned i:2, j:6; };
 
 consteval auto member_number(int n) {
-  return std::meta::nonstatic_data_members_of(^^S)[n];
+  auto ctx = std::meta::access_context::current();
+  return std::meta::nonstatic_data_members_of(^^S, ctx)[n];
 }
 
 int main() {
@@ -434,7 +435,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/7P3ax5K16), [Clang](https://godbolt.org/z/8M5jP9d9E).
+On Compiler Explorer: [EDG](https://godbolt.org/z/7P3ax5K16), [Clang](https://godbolt.org/z/naTTzGebr).
 
 This proposal specifies that namespace `std::meta` is associated with the reflection type (`std::meta::info`); the `std::meta::` qualification can therefore be omitted in the example above.
 
@@ -446,7 +447,8 @@ With such a facility, we could conceivably access non-static data members "by st
 struct S { unsigned i:2, j:6; };
 
 consteval auto member_named(std::string_view name) {
-  for (std::meta::info field : nonstatic_data_members_of(^^S)) {
+  auto ctx = std::meta::access_context::current();
+  for (std::meta::info field : nonstatic_data_members_of(^^S, ctx)) {
     if (has_identifier(field) && identifier_of(field) == name)
       return field;
   }
@@ -460,7 +462,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/hhd9vePW7), [Clang](https://godbolt.org/z/1hP77jbsd).
+On Compiler Explorer: [EDG](https://godbolt.org/z/hhd9vePW7), [Clang](https://godbolt.org/z/q3c55jsKE).
 
 
 ## List of Types to List of Sizes
@@ -536,10 +538,14 @@ struct member_descriptor
 // returns std::array<member_descriptor, N>
 template <typename S>
 consteval auto get_layout() {
-  constexpr auto members = nonstatic_data_members_of(^^S);
-  std::array<member_descriptor, members.size()> layout;
+  constexpr auto ctx = std::meta::access_context::current();
+  constexpr size_t N = std::meta::nonstatic_data_members_of(^^S, ctx).size();
+  auto members = std::meta::nonstatic_data_members_of(^^S, ctx);
+
+  std::array<member_descriptor, N> layout;
   for (int i = 0; i < members.size(); ++i) {
-      layout[i] = {.offset=offset_of(members[i]).bytes, .size=size_of(members[i])};
+      layout[i] = {.offset=std::meta::offset_of(members[i]).bytes,
+                   .size=std::meta::size_of(members[i])};
   }
   return layout;
 }
@@ -561,7 +567,7 @@ where Xd would be std::array<member_descriptor, 3>{@{@
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/ss9hfaMKT), [Clang](https://godbolt.org/z/Wq13c7Gsv).
+On Compiler Explorer: [EDG](https://godbolt.org/z/ss9hfaMKT), [Clang](https://godbolt.org/z/doe83nGze).
 
 ## Enum to String
 
@@ -569,21 +575,28 @@ One of the most commonly requested facilities is to convert an enum value to a s
 
 ::: std
 ```c++
-template <typename E>
+template<typename E, bool Enumerable = std::meta::is_enumerable_type(^^E)>
   requires std::is_enum_v<E>
-constexpr std::string enum_to_string(E value) {
-  template for (constexpr auto e : std::meta::enumerators_of(^^E)) {
-    if (value == [:e:]) {
-      return std::string(std::meta::identifier_of(e));
-    }
-  }
+constexpr std::string_view enum_to_string(E value) {
+  if constexpr (Enumerable)
+    template for (constexpr auto e :
+                  std::meta::define_static_array(std::meta::enumerators_of(^^E)))
+      if (value == [:e:])
+        return std::meta::identifier_of(e);
 
   return "<unnamed>";
 }
 
-enum Color { red, green, blue };
-static_assert(enum_to_string(Color::red) == "red");
-static_assert(enum_to_string(Color(42)) == "<unnamed>");
+int main() {
+  enum Color : int;
+  static_assert(enum_to_string(Color(0)) == "<unnamed>");
+  std::println("Color 0: {}", enum_to_string(Color(0)));  // prints '<unnamed>'
+
+  enum Color : int { red, green, blue };
+  static_assert(enum_to_string(Color::red) == "red");
+  static_assert(enum_to_string(Color(42)) == "<unnamed>");
+  std::println("Color 0: {}", enum_to_string(Color(0)));  // prints 'red'
+}
 ```
 :::
 
@@ -591,14 +604,14 @@ We can also do the reverse in pretty much the same way:
 
 ::: std
 ```c++
-template <typename E>
+template <typename E, bool Enumerable = std::meta::is_enumerable_type(^^E)>
   requires std::is_enum_v<E>
 constexpr std::optional<E> string_to_enum(std::string_view name) {
-  template for (constexpr auto e : std::meta::enumerators_of(^^E)) {
-    if (name == std::meta::identifier_of(e)) {
-      return [:e:];
-    }
-  }
+  if constexpr (Enumerable)
+    template for (constexpr auto e :
+                  std::meta::define_static_array(std::meta::enumerators_of(^^E)))
+      if (name == std::meta::identifier_of(e))
+        return [:e:];
 
   return std::nullopt;
 }
@@ -650,7 +663,7 @@ constexpr std::string enum_to_string(E value) {
 
 Note that this last version has lower complexity: While the versions using an expansion statement use an expected O(N) number of comparisons to find the matching entry, a `std::map` achieves the same with O(log(N)) complexity (where N is the number of enumerator constants).
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/hf777PfGo), [Clang](https://godbolt.org/z/h5rTnWrKW).
+On Compiler Explorer: [EDG](https://godbolt.org/z/hf777PfGo), [Clang](https://godbolt.org/z/TTxMs4fMa).
 
 
 Many many variations of these functions are possible and beneficial depending on the needs of the client code.
@@ -671,7 +684,9 @@ Our next example shows how a command-line option parser could work by automatica
 template<typename Opts>
 auto parse_options(std::span<std::string_view const> args) -> Opts {
   Opts opts;
-  template for (constexpr auto dm : nonstatic_data_members_of(^^Opts)) {
+
+  constexpr auto ctx = std::meta::access_context::current();
+  template for (constexpr auto dm : nonstatic_data_members_of(^^Opts, ctx)) {
     auto it = std::ranges::find_if(args,
       [](std::string_view arg){
         return arg.starts_with("--") && arg.substr(2) == identifier_of(dm);
@@ -709,7 +724,7 @@ int main(int argc, char *argv[]) {
 
 This example is based on a presentation by Matúš Chochlík.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/jGfGv84oh), [Clang](https://godbolt.org/z/hfoP5P3sd).
+On Compiler Explorer: [EDG](https://godbolt.org/z/jGfGv84oh), [Clang](https://godbolt.org/z/5rYqnYWq4).
 
 
 ## A Simple Tuple Type
@@ -739,7 +754,7 @@ template<std::size_t I, typename... Ts>
   };
 
 consteval std::meta::info get_nth_field(std::meta::info r, std::size_t n) {
-  return nonstatic_data_members_of(r)[n];
+  return nonstatic_data_members_of(r, std::meta::access_context::current())[n];
 }
 
 template<std::size_t I, typename... Ts>
@@ -753,7 +768,7 @@ template<std::size_t I, typename... Ts>
 This example uses a "magic" `std::meta::define_aggregate` template along with member reflection through the `nonstatic_data_members_of` metafunction to implement a `std::tuple`-like type without the usual complex and costly template metaprogramming tricks that that involves when these facilities are not available.
 `define_aggregate` takes a reflection for an incomplete class or union plus a vector of non-static data member descriptions, and completes the give class or union type to have the described members.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/76EojjcEe), [Clang](https://godbolt.org/z/cx8cr53q7).
+On Compiler Explorer: [EDG](https://godbolt.org/z/76EojjcEe), [Clang](https://godbolt.org/z/E9hxqKzE9).
 
 ## A Simple Variant Type
 
@@ -812,7 +827,8 @@ class Variant {
     }
 
     static consteval std::meta::info get_nth_field(std::size_t n) {
-        return nonstatic_data_members_of(^^Storage)[n+1];
+      auto ctx = std::meta::access_context::current();
+      return nonstatic_data_members_of(^^Storage, ctx)[n+1];
     }
 
     Storage storage_;
@@ -911,7 +927,7 @@ The question here is whether we should be should be able to directly initialize 
 
 Arguably, the answer should be yes - this would be consistent with how other accesses work. This is instead proposed in [@P3293R1].
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/W74qxqnhf), [Clang](https://godbolt.org/z/h13oh4s6e).
+On Compiler Explorer: [EDG](https://godbolt.org/z/W74qxqnhf), [Clang](https://godbolt.org/z/eqj6e3Tjr).
 
 ## Struct to Struct of Arrays
 
@@ -925,7 +941,9 @@ struct struct_of_arrays_impl {
   struct impl;
 
   consteval {
-    std::vector<std::meta::info> old_members = nonstatic_data_members_of(^^T);
+    auto ctx = std::meta::access_context::current();
+
+    std::vector<std::meta::info> old_members = nonstatic_data_members_of(^^T, ctx);
     std::vector<std::meta::info> new_members = {};
     for (std::meta::info member : old_members) {
         auto array_type = substitute(^^std::array, {
@@ -1002,7 +1020,7 @@ using struct_of_arrays = [: []{
 
 But now `struct_of_arrays<point, 30>` has no linkage, whereas we wanted it to have external linkage. Hence the structure in the example above where we are instead defining a nested class in a class template — so that we have a type with external linkage but don't run afoul of the "cone of instantiation" rule.
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/jWrPGhn5s), [Clang](https://godbolt.org/z/a1sTxnW4o).
+On Compiler Explorer: [EDG](https://godbolt.org/z/jWrPGhn5s), [Clang](https://godbolt.org/z/vqxzMoPcj).
 
 
 ## Parsing Command-Line Options II
@@ -1054,8 +1072,10 @@ struct Option {
 // }
 consteval auto spec_to_opts(std::meta::info opts,
                             std::meta::info spec) -> std::meta::info {
+  auto ctx = std::meta::access_context::current();
+
   std::vector<std::meta::info> new_members;
-  for (std::meta::info member : nonstatic_data_members_of(spec)) {
+  for (std::meta::info member : nonstatic_data_members_of(spec, ctx)) {
     auto type_new = template_arguments_of(type_of(member))[0];
     new_members.push_back(data_member_spec(type_new, {.name=identifier_of(member)}));
   }
@@ -1074,8 +1094,12 @@ struct Clap {
       spec_to_opts(^^Opts, ^^Spec);
     }
 
-    template for (constexpr auto [sm, om] : std::views::zip(nonstatic_data_members_of(^^Spec),
-                                                            nonstatic_data_members_of(^^Opts))) {
+    constexpr auto ctx = std::meta::access_context::current();
+    template for (constexpr auto [sm, om] :
+                  std::meta::define_static_array(
+                      std::views::zip(nonstatic_data_members_of(^^Spec, ctx),
+                                      nonstatic_data_members_of(^^Opts, ctx)) |
+                      std::views::transform([](auto z) { return std::pair(get<0>(z), get<1>(z)); }))) {
       auto const& cur = spec.[:sm:];
       constexpr auto type = type_of(om);
 
@@ -1118,7 +1142,7 @@ struct Clap {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/4aseo5eGq), [Clang](https://godbolt.org/z/3qG5roer4).
+On Compiler Explorer: [EDG](https://godbolt.org/z/4aseo5eGq), [Clang](https://godbolt.org/z/Yjv1dM4eK).
 
 ## A Universal Formatter
 
@@ -1142,12 +1166,15 @@ struct universal_formatter {
       first = false;
     };
 
-    template for (constexpr auto base : bases_of(^^T)) {
+    constexpr auto ctx = std::meta::access_context::unchecked();
+
+    template for (constexpr auto base : define_static_array(bases_of(^^T, ctx))) {
       delim();
       out = std::format_to(out, "{}", (typename [: type_of(base) :] const&)(t));
     }
 
-    template for (constexpr auto mem : nonstatic_data_members_of(^^T)) {
+    template for (constexpr auto mem :
+                  define_static_array(nonstatic_data_members_of(^^T, ctx))) {
       delim();
       std::string_view mem_label = has_identifier(mem) ? identifier_of(mem)
                                                        : "(unnamed-member)";
@@ -1176,7 +1203,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [Clang](https://godbolt.org/z/drv1nbsf3).
+On Compiler Explorer: [Clang](https://godbolt.org/z/99dTErdG6).
 
 Note that currently, we do not have the ability to access a base class subobject using the `t.[: base :]` syntax - which means that the only way to get at the base is to use a cast:
 
@@ -1193,12 +1220,15 @@ Based on the [@N3980] API:
 ```cpp
 template <typename H, typename T> requires std::is_standard_layout_v<T>
 void hash_append(H& algo, T const& t) {
-  template for (constexpr auto mem : nonstatic_data_members_of(^^T)) {
+  constexpr auto ctx = std::meta::access_context::unchecked();
+  template for (constexpr auto mem : nonstatic_data_members_of(^^T, ctx)) {
       hash_append(algo, t.[:mem:]);
   }
 }
 ```
 :::
+
+Of course, any production-ready `hash_append` would include a facility for classes to opt members in and out of participation in hashing. Annotations as proposed by [@P3394] provides just such a mechanism.
 
 ## Converting a Struct to a Tuple
 
@@ -1208,10 +1238,13 @@ This approach requires allowing packs in structured bindings [@P1061R5], but can
 ```c++
 template <typename T>
 constexpr auto struct_to_tuple(T const& t) {
-  constexpr auto members = nonstatic_data_members_of(^^T);
+  constexpr auto ctx = std::meta::access_context::current();
+
+  constexpr std::size_t N = nonstatic_data_members_of(^^T, ctx).size();
+  auto members = nonstatic_data_members(^^T, ctx);
 
   constexpr auto indices = []{
-    std::array<int, members.size()> indices;
+    std::array<int, N> indices;
     std::ranges::iota(indices, 0);
     return indices;
   }();
@@ -1227,8 +1260,9 @@ An alternative approach is:
 ::: std
 ```cpp
 consteval auto type_struct_to_tuple(info type) -> info {
+  constexpr auto ctx = std::meta::access_context::current();
   return substitute(^^std::tuple,
-                    nonstatic_data_members_of(type)
+                    nonstatic_data_members_of(type, ctx)
                     | std::views::transform(std::meta::type_of)
                     | std::views::transform(std::meta::remove_cvref)
                     | std::ranges::to<std::vector>());
@@ -1242,16 +1276,17 @@ constexpr auto struct_to_tuple_helper(From const& from) -> To {
 template<typename From>
 consteval auto get_struct_to_tuple_helper() {
   using To = [: type_struct_to_tuple(^^From): ];
+  auto ctx = std::meta::access_context::current();
 
   std::vector args = {^^To, ^^From};
-  for (auto mem : nonstatic_data_members_of(^^From)) {
+  for (auto mem : nonstatic_data_members_of(^^From, ctx)) {
     args.push_back(reflect_value(mem));
   }
 
   /*
   Alternatively, with Ranges:
   args.append_range(
-    nonstatic_data_members_of(^^From)
+    nonstatic_data_members_of(^^From, ctx)
     | std::views::transform(std::meta::reflect_value)
     );
   */
@@ -1276,7 +1311,7 @@ However, determining the instance of `struct_to_tuple_helper` that is needed is 
 Everything is put together by using `substitute` to create the instantiation of `struct_to_tuple_helper` that we need, and a compile-time reference to that instance is obtained with `extract`.
 Thus `f` is a function reference to the correct specialization of `struct_to_tuple_helper`, which we can simply invoke.
 
-On Compiler Explorer (with a different implementation than either of the above): [EDG](https://godbolt.org/z/1Tffn4vzn), [Clang](https://godbolt.org/z/9WzGM93dM).
+On Compiler Explorer (with a different implementation than either of the above): [EDG](https://godbolt.org/z/1Tffn4vzn), [Clang](https://godbolt.org/z/dn58s5Pvz).
 
 ## Implementing `tuple_cat`
 
@@ -1374,8 +1409,9 @@ consteval {
   make_named_tuple(^^R, pair<int, "x">{}, pair<double, "y">{});
 }
 
-static_assert(type_of(nonstatic_data_members_of(^^R)[0]) == ^^int);
-static_assert(type_of(nonstatic_data_members_of(^^R)[1]) == ^^double);
+constexpr auto ctx = std::meta::access_context::current();
+static_assert(type_of(nonstatic_data_members_of(^^R, ctx)[0]) == ^^int);
+static_assert(type_of(nonstatic_data_members_of(^^R, ctx)[1]) == ^^double);
 
 int main() {
     [[maybe_unused]] auto r = R{.x=1, .y=2.0};
@@ -1383,7 +1419,7 @@ int main() {
 ```
 :::
 
-On Compiler Explorer: [EDG](https://godbolt.org/z/64qTe4KG1), [Clang](https://godbolt.org/z/76qM1xqvn).
+On Compiler Explorer: [EDG](https://godbolt.org/z/64qTe4KG1), [Clang](https://godbolt.org/z/rPM5xsbvW).
 
 Alternatively, can side-step the question of non-type template parameters entirely by keeping everything in the value domain:
 
@@ -1403,8 +1439,9 @@ consteval {
   make_named_tuple(^^R, {{^^int, "x"}, {^^double, "y"}});
 }
 
-static_assert(type_of(nonstatic_data_members_of(^^R)[0]) == ^^int);
-static_assert(type_of(nonstatic_data_members_of(^^R)[1]) == ^^double);
+constexpr auto ctx = std::meta::access_context::current();
+static_assert(type_of(nonstatic_data_members_of(^^R, ctx)[0]) == ^^int);
+static_assert(type_of(nonstatic_data_members_of(^^R, ctx)[1]) == ^^double);
 
 int main() {
     [[maybe_unused]] auto r = R{.x=1, .y=2.0};
