@@ -1228,11 +1228,11 @@ void hash_append(H& algo, T const& t) {
 ```
 :::
 
-Of course, any production-ready `hash_append` would include a facility for classes to opt members in and out of participation in hashing. Annotations as proposed by [@P3394R2] provides just such a mechanism.
+Of course, any production-ready `hash_append` would include a facility for classes to opt members in and out of participation in hashing. Annotations as proposed by [@P3394R2]{.title} provides just such a mechanism.
 
 ## Converting a Struct to a Tuple
 
-This approach requires allowing packs in structured bindings [@P1061R5], but can also be written using `std::make_index_sequence`:
+This approach requires allowing packs in structured bindings [@P1061R10], but can also be written using `std::make_index_sequence`:
 
 ::: std
 ```c++
@@ -7237,7 +7237,7 @@ concept reflection_range =
   same_as<remove_cvref_t<ranges::range_reference_t<R>>, info>;
 ```
 
-[1]{.pnum} *Constant When*: Let 
+[1]{.pnum} *Constant When*: Let
 
 ```cpp
 template <reflection_range R = initializer_list<info>>
@@ -8004,19 +8004,4 @@ references:
         month: 02
         day: 09
     URL: https://isocpp.org/files/papers/P3547R1.html
-  - id: P2786R13
-    citation-label: P2786R13
-    title: "Trivial Relocatability For C++26"
-    author:
-      - family: Alisdair Meredith
-      - family: Mungo Gill
-      - family: Joshua Berne
-      - family: Corentin Jabot
-      - family: Pablo Halpern
-      - family: Lori Hughes
-    issued:
-      - year: 2025
-        month: 02
-        day: 14
-    URL: https://wg21.link/p2786r13
 ---
