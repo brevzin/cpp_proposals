@@ -18,6 +18,8 @@ tag: constexpr
 
 # Revision History
 
+Since [@P3491R1], added support for all string literal types. Having discovered [@CWG2765]{.title}, referring to that issue and updating wording to assume its adoption.
+
 Since [@P3491R0], wording improvements.
 
 # Introduction
@@ -189,6 +191,24 @@ The interesting one is `a != b`. We could say that the comparison is unspecified
 Note that, regardless, the `string_view` comparison is valid, since that is comparing the contents.
 
 This does present an interesting situation where `a == b` could be invalid but `is_same_v<C<a>, C<b>>` would be valid.
+
+### Update from CWG
+
+[@CWG2765] now provides us a good solution for this problem. The wording (as of March 2025) introduces the idea that a pointer value pointing to a potentially non-unique object is associated with an evaluation — and that equality between pointers associated with different evaluations is non-constant.
+
+We could simply add ourselves to the list of cases in that wording:
+
+::: std
+[?]{.pnum} A pointer value pointing to a potentially non-unique object `$O$` ([intro.object]) is *associated with* the evaluation of the `$string-literal$` ([lex.string])[,]{.addu} [or]{.rm} initializer list ([dcl.init.list])[, or a call to either `std::define_static_string` or `std::define_static_array` ([???])]{.addu} that resulted in the string literal object or backing array, respectively, that is `$O$` or of which `$O$` is a subobject. [A pointer value obtained by pointer arithmetic ([expr.add]) from a pointer value associated with an evaluation `$E$` is also associated with `$E$`.]{.note}
+:::
+
+This would give us exactly the behavior stipulated above. `b == b` is associated with the same evaluation, so that's fine. But comparing `a + 2` to `b` would run afoul of the new rule that we're not allowed to evaluate
+
+::: std
+* [25.?]{.pnum} an equality operator comparing pointers to potentially non-unique objects, if the pointer values of both operands are associated with different evaluations ([basic.compound]) and they can both point to the same offset within the same potentially non-unique object
+:::
+
+Because `a + 2` _could be_ `b`, it's non-constant. Problem solved.
 
 ## The Structural Question
 
@@ -438,7 +458,7 @@ consteval auto define_static_string(R&& r) -> ranges::range_value_t<R> const* {
 
 # Wording
 
-Change [intro.object]{.sref}:
+Change [intro.object]{.sref} to add the results of `define_static_string` and `define_static_array` as being potentially non-unique:
 
 ::: std
 [9]{.pnum} An object is a *potentially non-unique object* if it is
@@ -449,32 +469,13 @@ Change [intro.object]{.sref}:
 * [9.4]{.pnum} a subobject thereof.
 :::
 
-Change [expr.eq]{.sref}/3:
+Update the wording in [@CWG2765] to account for these as well, in [basic.compound]{.sref}/x:
 
 ::: std
-[3]{.pnum} If at least one of the operands is a pointer, pointer conversions, function pointer conversions, and qualification conversions are performed on both operands to bring them to their composite pointer type.
-Comparing pointers is defined as follows:
-
-* [3.1]{.pnum} If one pointer represents the address of a complete object, and another pointer represents the address one past the last element of a different complete object, the result of the comparison is unspecified.
-
-<div class="addu">
-* [3.1b]{.pnum} Otherwise, if the pointers point into distinct potentially non-unique objects ([intro.object]) with the same contents, the result of the comparison is unspecified.
-
-::: example
-```cpp
-constexpr char const* a = std::define_static_string("other");
-constexpr char const* b = std::define_static_string("another");
-
-static_assert(a != b);     // OK
-static_assert(a == b + 2); // error: unspecified
-static_assert(b == b);     // OK
-```
+[?]{.pnum} A pointer value pointing to a potentially non-unique object `$O$` ([intro.object]) is *associated with* the evaluation of the `$string-literal$` ([lex.string])[,]{.addu} [or]{.rm} initializer list ([dcl.init.list])[, or a call to either `std::define_static_string` or `std::define_static_array` ([meta.define.static])]{.addu} that resulted in the string literal object or backing array, respectively, that is `$O$` or of which `$O$` is a subobject. [A pointer value obtained by pointer arithmetic ([expr.add]) from a pointer value associated with an evaluation `$E$` is also associated with `$E$`.]{.note}
 :::
-</div>
 
-* [3.2]{.pnum} Otherwise, if the pointers are both null, both point to the same function, or both represent the same address, they compare equal.
-* [3.3]{.pnum} Otherwise, the pointers compare unequal.
-:::
+No change to [expr.eq]{.sref} is necessary, [@CWG2765] takes care of it.
 
 Add to [meta.syn]{.sref}:
 
@@ -507,7 +508,10 @@ Add to the new clause [meta.string.literal]:
 ::: addu
 ```cpp
 consteval bool is_string_literal(const char* p);
+consteval bool is_string_literal(const wchar_t* p);
 consteval bool is_string_literal(const char8_t* p);
+consteval bool is_string_literal(const char16_t* p);
+consteval bool is_string_literal(const char32_t* p);
 ```
 
 [1]{.pnum} *Returns*: If `p` points to a string literal or a subobject thereof, `true`. Otherwise, `false`.
@@ -595,4 +599,14 @@ references:
         month: 12
         day: 4
     URL: https://wg21.link/p3380r1
+  - id: CWG2765
+    citation-label: CWG2765
+    title: "Address comparisons between potentially non-unique objects during constant evaluation"
+    author:
+      - family: CWG
+    issued:
+      - year: 2023
+        month: 07
+        day: 14
+    URL: https://cplusplus.github.io/CWG/issues/2765.html
 ---
