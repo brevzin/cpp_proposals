@@ -108,6 +108,10 @@ Our rules around immediate-escalating expressions already presuppose the existen
 
 This isn't just a way to clean up the specification a little. It also has some other interesting potential...
 
+## Interaction with Other Papers
+
+In [@P3496R0]{.title}, we try to express that certain sub-expressions have to escalate. It achieves this by _also_ introducing the notion of a consteval-only value — and saying that expressions that contain a consteval-only value have to escalate. While the goal of that paper is to have an expression (rather than a function) stop escalation, it needs to talk about this problem in the same way — so the addition of this terminology is clearly inherently useful for language evolution.
+
 # Motivating Example: Variant Visitation
 
 Jiang An submitted a very interesting bug report to [libstdc++](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118434) (and [libc++](https://github.com/llvm/llvm-project/issues/118560)) in January 2025, which is also now [@LWG4197]. It dealt with visiting a `std::variant` with a consteval lambda.
