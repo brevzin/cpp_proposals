@@ -35,6 +35,7 @@ Since [@P2996R10]:
   * specified `type_of` for enumerators called from within the containing `$enum-specifier$`
   * minor editing and phrasing updates to address CWG feedback
   * added type traits from [@P2786R13]{.title}
+  * added `has_c_language_linkage`
 
 
 Since [@P2996R9]:
@@ -4101,7 +4102,7 @@ auto g = typename [:^^int:](42);
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$S$` be the construct designated by `$splice-specifier$`.
 
-* [#.#]{.pnum} If `$S$` is a function, overload resolution ([over.match], [temp.over]) is performed from an initial set of candidate functions containing only that function. The expression is an lvalue referring to the selected function and has the same type as that function.
+* [#.#]{.pnum} If `$S$` is a function, the expression is an lvalue referring to that function and has the same type as that function. [Default arguments of the function are not considered.]{.note}
 
 * [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
 
@@ -4113,13 +4114,15 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
-[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template. Overload resolution is performed from an initial set of candidate functions containing only that function template. The expression is an lvalue referring to the selected function and has the same type as that function.
+[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template. The expression denotes an overload set containing only the function template designated by the `$splice-expression$`; overload resolution is performed to select a unique function ([over.match], [over.over]).
 
-[#]{.pnum} For a `$splice-expression$` of the form `template $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template. Let `$T$` be that template and let `$S$` be the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`.
+FIXME: These bullets aren't quite right. How do we get the explicit template arguments? Do we need overload resolution? And we need to ignore default arguments somehow (does that rule live here or in [over]?)
 
-* [#.#]{.pnum} If `$T$` is a function template, overload resolution is performed from an initial set of candidate functions containing only the function associated with `$S$`. The expression is an lvalue referring to the selected function and has the same type as that function.
+[#]{.pnum} For a `$splice-expression$` of the form `template $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template. Let `$T$` be that template.
 
-* [#.#]{.pnum} Otherwise, if `$T$` is a primary variable template, the expression is an lvalue referring to the same object associated with `$S$` and has the same type as `$S$`.
+* [#.#]{.pnum} If `$T$` is a function template, the expression denotes an overload set containing only the function template `$T$`. Overload resolution is performed to select a unique function ([over.match], [over.over]), with the explicitly provided template arguments in the `$template-argument-list$` (if any) of the `$splice-specializiation-specifier$` ([temp.over]).
+
+* [#.#]{.pnum} Otherwise, if `$T$` is a primary variable template, let `$S$` be the specialiation of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`. The expression is an lvalue referring to the same object associated with `$S$` and has the same type as `$S$`.
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
@@ -6005,6 +6008,7 @@ namespace std::meta {
   consteval bool has_internal_linkage(info r);
   consteval bool has_module_linkage(info r);
   consteval bool has_external_linkage(info r);
+  consteval bool has_c_language_linkage(info r);
   consteval bool has_linkage(info r);
 
   consteval bool is_complete_type(info r);
@@ -6581,10 +6585,11 @@ consteval bool has_automatic_storage_duration(info r);
 consteval bool has_internal_linkage(info r);
 consteval bool has_module_linkage(info r);
 consteval bool has_external_linkage(info r);
+consteval bool has_c_language_linkage(info r);
 consteval bool has_linkage(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a variable, function, type, template, or namespace whose name has internal linkage, module linkage, external linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a variable, function, type, template, or namespace whose name has internal linkage, module linkage, external linkage, C language linkage, or any linkage, respectively ([basic.link]). Otherwise, `false`.
 
 ```cpp
 consteval bool is_complete_type(info r);
@@ -6598,7 +6603,7 @@ consteval bool is_enumerable_type(info r);
 
 [#]{.pnum} A type `$T$` is _enumerable_ from a point `$P$` if either
 
-  - [#.#]{.pnum} `$T$` is a class type complete at `$P$`, or
+  - [#.#]{.pnum} `$T$` is a class type complete at `$P$` or
   - [#.#]{.pnum} `$T$` is an enumeration type defined by a declaration `$D$` such that `$D$` is reachable from `$P$` but `$P$` does not occur within an `$enum-specifier$` of `$D$` ([dcl.enum]).
 
 [#]{.pnum} *Returns*: `true` if `dealias(r)` represents a type that is enumerable from some point in the evaluation context. Otherwise, `false`.
@@ -6738,9 +6743,9 @@ consteval info type_of(info r);
 [#]{.pnum} *Returns*:
 
 - [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or bit-field, then the type of what is represented by `r`.
-- [#.#]{.pnum} Otherwise, if `r` represents an enumerator of an enumeration `$E$`, then:
+- [#.#]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
   - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that is reachable from a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
-  - [#.#.#]{.pnum} Otherwise, a reflection of the type of the enumerator prior to the closing brace of the `$enum-specifier$` as specified by [dcl.enum].
+  - [#.#.#]{.pnum} Otherwise, a reflection of the type of the `$N$` prior to the closing brace of the `$enum-specifier$` as specified by [dcl.enum].
 - [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class.
 - [#.#]{.pnum} Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), a reflection of the type `$T$`.
 
@@ -6755,7 +6760,11 @@ consteval info object_of(info r);
   - [#.#.#]{.pnum} `$R$` is usable in constant expressions ([expr.const]), or
   - [#.#.#]{.pnum} the lifetime of `$R$` began within the core constant expression currently under evaluation.
 
-[#]{.pnum} *Returns*: If `r` represents a variable, then a reflection of the object declared, or referred to, by that variable. Otherwise, `r`.
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents an object, then `r`.
+* [#.#]{.pnum} Otherwise, if `r` represents a reference, then a reflection of the object referred to by that reference.
+* [#.#]{.pnum} Otherwise (if `r` represents any other variable), a reflection of the object declared by that variable.
 
 ::: example
 ```cpp
@@ -6773,16 +6782,22 @@ static_assert(object_of(^^x) == object_of(^^y)); // OK, because y is a reference
 consteval info value_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` is a reflection representing
+[#]{.pnum} Let `$Q$` be
+
+* [#.#]{.pnum} If `r` represents a reference, then the object referred to by that reference.
+* [#.#]{.pnum} Otherwise, if `r` represents any other variable, then the object declared by that variable.
+* [#.#]{.pnum} Otherwise, the construct represented by `r`.
+
+[#]{.pnum} *Constant When*: `$Q$` is
 
 * [#.#]{.pnum} a value,
 * [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type ([temp.type]), and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began within the core constant expression currently under evaluation ([expr.const]).
+* [#.#]{.pnum} an object such that the lifetime of `$Q$` has not ended, the type of `$Q$` is a structural type ([temp.param]), and either `$Q$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$Q$` began within the core constant expression currently under evaluation ([expr.const]).
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has the type represented by `type_of(o)`, with the cv-qualifiers removed if this is a scalar type.
-* [#.#]{.pnum} Otherwise, if `r` is a reflection of an enumerator, then a reflection of the value of the enumerator. The reflected value has type represented by `type_of(r)` with the cv-qualifiers removed.
+* [#.#]{.pnum} If `$Q$` is an object `o`, then a reflection of the value held by `o`. The reflected value has the type represented by `type_of(o)`, with the cv-qualifiers removed if this is a scalar type.
+* [#.#]{.pnum} Otherwise, if `$Q$` is an enumerator, then a reflection of the value of the enumerator. The reflected value has the type represented by `type_of(r)` with the cv-qualifiers removed.
 * [#.#]{.pnum} Otherwise, `r`.
 
 ::: example
@@ -6810,7 +6825,7 @@ consteval info parent_of(info r);
 
 [#]{.pnum} *Constant When*:
 
-* [#.#]{.pnum} `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias (other than `::`), type alias, or direct base class relationship, and
+* [#.#]{.pnum} `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias other than `::`, type alias, or direct base class relationship, and
 * [#.#]{.pnum} if `r` represents an entity, that entity does not have C language linkage.
 
 If `r` represents an entity with language linkage other than C or C++ language linkage, it is implementation-defined whether a call to this function is a constant subexpression.
