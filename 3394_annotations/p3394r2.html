@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-03-10" />
+  <meta name="dcterms.date" content="2025-03-14" />
   <title>Annotations for Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -572,11 +572,11 @@ Reflection</h1>
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>D3394R2 <a href="https://wg21.link/P3394">[Latest]</a> <a href="https://wg21.link/P3394/status">[Status]</a></td>
+    <td>P3394R2 <a href="https://wg21.link/P3394">[Latest]</a> <a href="https://wg21.link/P3394/status">[Status]</a></td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-03-10</td>
+    <td>2025-03-14</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -585,7 +585,7 @@ Reflection</h1>
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      CWG, LEWG<br>
+      CWG, LWG<br>
     </td>
   </tr>
   <tr>
@@ -1276,7 +1276,7 @@ would cause <code class="sourceCode cpp">X_handler<span class="op">(...)</span><
 be invoked when an entity is first declared with an annotation of type
 <code class="sourceCode cpp">X</code>).</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>The wording is relative to <span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span>.</p>
+<p>The wording is relative to <span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]</a></span>.</p>
 <h2 data-number="5.1" id="language"><span class="header-section-number">5.1</span> Language<a href="#language" class="self-link"></a></h2>
 <p>Change <span>6.8.2 <a href="https://wg21.link/basic.fundamental">[basic.fundamental]</a></span>
 to add “annotation” to the list of reflection kinds:</p>
@@ -1543,8 +1543,8 @@ synopsis:</p>
 <div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> source_location source_location_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">7</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">r</code> represents a
-value, a non-class type, the global namespace, or a data member
-description, then <code class="sourceCode cpp">source_location<span class="op">{}</span></code>.
+value, a type other than a class type or an enumeration type, the global
+namespace, or a data member description, then <code class="sourceCode cpp">source_location<span class="op">{}</span></code>.
 Otherwise, an implementation-defined
 <code class="sourceCode cpp">source_location</code> value.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">8</a></span>
@@ -1554,12 +1554,9 @@ added with a call to <code class="sourceCode cpp">std<span class="op">::</span>m
 then implementations should return a value corresponding to the
 <code class="sourceCode cpp">source_location</code> argument passed to
 that function.</span> If <code class="sourceCode cpp">r</code>
-represents an entity, name, or direct base class relationship that was
-introduced by a declaration, implementations should return a value
-corresponding to a declaration of the represented construct that is
-reachable from the evaluation construct. If there are multiple such
-declarations and one is a definition, a value corresponding to the
-definition is preferred.</p>
+represents an entity with a definition that is reachable from the
+evaluation context, a value corresponding to a definition should be
+returned.</p>
 </blockquote>
 </div>
 <p>Update the meanings of <code class="sourceCode cpp">type_of</code>
@@ -1781,10 +1778,10 @@ Scalable Reflection in C++. <a href="https://wg21.link/p1240r0"><div class="csl-
 [P2996R0] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
 Faisal Vali, Daveed Vandevoorde. 2023-10-15. Reflection for C++26. <a href="https://wg21.link/p2996r0"><div class="csl-block">https://wg21.link/p2996r0</div></a>
 </div>
-<div id="ref-P2996R9" class="csl-entry" role="doc-biblioentry">
-[P2996R9] Wyatt Childers, Peter Dimov, Dan Katz, Barry Revzin, Andrew
-Sutton, Faisal Vali, and Daveed Vandevoorde. 2025-01-12. Reflection for
-C++26. <a href="https://wg21.link/p2996r9"><div class="csl-block">https://wg21.link/p2996r9</div></a>
+<div id="ref-P2996R10" class="csl-entry" role="doc-biblioentry">
+[P2996R10] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2025-02-26. Reflection
+for C++26. <a href="https://wg21.link/p2996r10"><div class="csl-block">https://wg21.link/p2996r10</div></a>
 </div>
 <div id="ref-P3294R2" class="csl-entry" role="doc-biblioentry">
 [P3294R2] Barry Revzin, Andrei Alexandrescu, Daveed Vandevoorde.

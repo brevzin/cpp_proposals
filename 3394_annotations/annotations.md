@@ -1,9 +1,9 @@
 ---
 title: Annotations for Reflection
 tag: reflection
-document: D3394R2
+document: P3394R2
 date: today
-audience: CWG, LEWG
+audience: CWG, LWG
 hackmd: true
 author:
     - name: Wyatt Childers
@@ -497,7 +497,7 @@ There are still open questions as to how to handle such callbacks. Does an annot
 
 # Wording
 
-The wording is relative to [@P2996R9].
+The wording is relative to [@P2996R10].
 
 ## Language
 
@@ -655,9 +655,9 @@ Update `source_location_of` in [meta.reflection.names]:
 consteval source_location source_location_of(info r);
 ```
 
-[7]{.pnum} *Returns*: If `r` represents a value, a non-class type, the global namespace, or a data member description, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
+[7]{.pnum} *Returns*: If `r` represents a value, a type other than a class type or an enumeration type, the global namespace, or a data member description, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
 
-[#]{.pnum} *Recommended practice*: [If `r` represents an annotation that was added with a call to `std::meta::annotate`, then implementations should return a value corresponding to the `source_location` argument passed to that function.]{.addu} If `r` represents an entity, name, or direct base class relationship that was introduced by a declaration, implementations should return a value corresponding to a declaration of the represented construct that is reachable from the evaluation construct. If there are multiple such declarations and one is a definition, a value corresponding to the definition is preferred.
+[#]{.pnum} *Recommended practice*: [If `r` represents an annotation that was added with a call to `std::meta::annotate`, then implementations should return a value corresponding to the `source_location` argument passed to that function.]{.addu} If `r` represents an entity with a definition that is reachable from the evaluation context, a value corresponding to a definition should be returned.
 :::
 
 Update the meanings of `type_of` and `value_of` in [meta.reflection.queries]:
@@ -783,23 +783,3 @@ consteval info annotate(info item, info value, source_location loc = source_loca
 
 :::
 :::
-
----
-references:
-  - id: P2996R9
-    citation-label: P2996R9
-    title: "Reflection for C++26"
-    author:
-      - family: Wyatt Childers
-      - family: Peter Dimov
-      - family: Dan Katz
-      - family: Barry Revzin
-      - family: Andrew Sutton
-      - family: Faisal Vali
-      - family: Daveed Vandevoorde
-    issued:
-      - year: 2025
-        month: 1
-        day: 12
-    URL: https://wg21.link/p2996r9
----
