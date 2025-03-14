@@ -2,7 +2,7 @@
 title: "`define_static_{string,object,array}`"
 document: P3491R2
 date: today
-audience: LEWG
+audience: CWG, LWG
 author:
     - name: Wyatt Childers
       email: <wcc@edg.com>
@@ -18,7 +18,7 @@ tag: constexpr
 
 # Revision History
 
-Since [@P3491R1], added support for all string literal types. Having discovered [@CWG2765]{.title}, referring to that issue and updating wording to assume its adoption.
+Since [@P3491R1], added support for all string literal types. Having discovered [@CWG2765]{.title}, referring to that issue and updating wording to assume its adoption. Retargeting CWG and LWG.
 
 Since [@P3491R0], wording improvements.
 
