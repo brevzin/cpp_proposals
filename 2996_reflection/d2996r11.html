@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-03-14" />
+  <meta name="dcterms.date" content="2025-03-16" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -575,7 +575,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-03-14</td>
+    <td>2025-03-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1074,6 +1074,7 @@ Revision History<a href="#revision-history" class="self-link"></a></h1>
 <li>replaced <code class="sourceCode cpp">has_complete_definition</code>
 function with more narrow
 <code class="sourceCode cpp">is_enumerable_type</code></li>
+<li>added more core examples</li>
 <li>library wording updates
 <ul>
 <li>functions whose types contain placeholder types are not
@@ -6196,7 +6197,14 @@ when it appears in a type-only context (<span>13.3 <a href="https://wg21.link/te
 <span id="cb114-7"><a href="#cb114-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">// OK, a splice-specialization-specifier with a splice-specifier</span></span>
 <span id="cb114-8"><a href="#cb114-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">// as a template argument</span></span>
 <span id="cb114-9"><a href="#cb114-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb114-10"><a href="#cb114-10" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>alias<span class="op">::</span>s <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span></code></pre></div>
+<span id="cb114-10"><a href="#cb114-10" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>alias<span class="op">::</span>s <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb114-11"><a href="#cb114-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb114-12"><a href="#cb114-12" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> o1 <span class="op">=</span> <span class="op">[:^^</span>TCls<span class="op">:]&lt;[:^^</span>v<span class="op">:]&gt;()</span>;          <span class="co">// error: &lt; means less than</span></span>
+<span id="cb114-13"><a href="#cb114-13" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> o2 <span class="op">=</span> <span class="kw">typename</span> <span class="op">[:^^</span>TCls<span class="op">:]&lt;[:^^</span>v<span class="op">:]&gt;()</span>; <span class="co">// ok, o2 is an object of type TCls&lt;1&gt;</span></span>
+<span id="cb114-14"><a href="#cb114-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb114-15"><a href="#cb114-15" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> bad_splice<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb114-16"><a href="#cb114-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">[:</span>v<span class="op">:]</span>; <span class="co">// error: v is not constant</span></span>
+<span id="cb114-17"><a href="#cb114-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -6914,7 +6922,9 @@ Captures<a href="#expr.prim.lambda.capture-captures" class="self-link"></a></h3>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_128" id="pnum_128">(7.1)</a></span>
 An <code class="sourceCode cpp"><em>id-expression</em></code> <span class="addu">or
 <code class="sourceCode cpp"><em>splice-expression</em></code></span>
-that names a local entity potentially references that entity; an
+that <span class="rm" style="color: #bf0303"><del>names</del></span>
+<span class="addu">designates</span> a local entity potentially
+references that entity; an
 <code class="sourceCode cpp"><em>id-expression</em></code> that names
 one or more non-static class members and does not form a pointer to
 member ([expr.unary.op]) potentially references <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>.</li>

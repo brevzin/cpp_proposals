@@ -29,6 +29,7 @@ tag: reflection
 Since [@P2996R10]:
 
 * replaced `has_complete_definition` function with more narrow `is_enumerable_type`
+* added more core examples
 * library wording updates
   * functions whose types contain placeholder types are not _members-of-representable_
   * fixed wording for `extract` and `object_of` to ensure that both functions can be used with reflections of local variables declared in immediate functions
@@ -3593,6 +3594,13 @@ using alias = [:^^TCls:]<[:^^v:]>;
   // as a template argument
 
 static_assert(alias::s == 2);
+
+auto o1 = [:^^TCls:]<[:^^v:]>();          // error: < means less than
+auto o2 = typename [:^^TCls:]<[:^^v:]>(); // ok, o2 is an object of type TCls<1>
+
+consteval int bad_splice(std::meta::info v) {
+    return [:v:]; // error: v is not constant
+}
 ```
 :::
 
@@ -3972,7 +3980,7 @@ And that the conversion function is:
 Modify bullet 7.1 as follows:
 
 ::: std
-- [7.1]{.pnum} An `$id-expression$` [or `$splice-expression$`]{.addu} that names a local entity potentially references that entity; an `$id-expression$` that names one or more non-static class members and does not form a pointer to member ([expr.unary.op]) potentially references `*this`.
+- [7.1]{.pnum} An `$id-expression$` [or `$splice-expression$`]{.addu} that [names]{.rm} [designates]{.addu} a local entity potentially references that entity; an `$id-expression$` that names one or more non-static class members and does not form a pointer to member ([expr.unary.op]) potentially references `*this`.
 
 :::
 
