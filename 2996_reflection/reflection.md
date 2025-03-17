@@ -29,13 +29,16 @@ tag: reflection
 Since [@P2996R10]:
 
 * replaced `has_complete_definition` function with more narrow `is_enumerable_type`
+* core wording updates
+  * disallow splicing constructors and destructors (inadvertently removed between R7 and R8)
+  * prevent dependent `$splice-specifier$`s from appearing in CTAD (following CWG3003)
 * library wording updates
   * functions whose types contain placeholder types are not _members-of-representable_
   * fixed wording for `extract` and `object_of` to ensure that both functions can be used with reflections of local variables declared in immediate functions
   * specified `type_of` for enumerators called from within the containing `$enum-specifier$`
   * minor editing and phrasing updates to address CWG feedback
   * added type traits from [@P2786R13]{.title}
-  * added `has_c_language_linkage`
+  * in response to CWG feedback: added `has_c_language_linkage`, `has_parent`, `is_consteval_only`
 
 
 Since [@P2996R9]:
@@ -3972,7 +3975,7 @@ And that the conversion function is:
 Modify bullet 7.1 as follows:
 
 ::: std
-- [7.1]{.pnum} An `$id-expression$` [or `$splice-expression$`]{.addu} that names a local entity potentially references that entity; an `$id-expression$` that names one or more non-static class members and does not form a pointer to member ([expr.unary.op]) potentially references `*this`.
+- [7.1]{.pnum} An `$id-expression$` [or `$splice-expression$`]{.addu} that [names]{.rm} [designates]{.addu} a local entity potentially references that entity; an `$id-expression$` that names one or more non-static class members and does not form a pointer to member ([expr.unary.op]) potentially references `*this`.
 
 :::
 
@@ -4102,7 +4105,9 @@ auto g = typename [:^^int:](42);
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$S$` be the construct designated by `$splice-specifier$`.
 
-* [#.#]{.pnum} If `$S$` is a function, the expression is an lvalue referring to that function and has the same type as that function. [Default arguments of the function are not considered.]{.note}
+* [#.#]{.pnum} If `$S$` is a constructor, destructor, or constructor template, the expression is ill-formed.
+
+* [#.#]{.pnum} Otherwise, if `$S$` is a function, the expression is an lvalue referring to that function and has the same type as that function. [Default arguments of the function are not considered.]{.note}
 
 * [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
 
@@ -4651,7 +4656,7 @@ Extend the definition of "placeholder for a deduced class type" in p3 to accommo
 - [[#.#]{.pnum} is of the form `typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ $template-name$`, or]{.addu}
 - [[#.#]{.pnum} is of the form `typename@~_opt_~@ $splice-specifier$` and the `$splice-specifier$` designates a class template or alias template.]{.addu}
 
-The `$nested-name-specifier$`, if any, shall be non-dependent and the `$template-name$` [or `$splice-specifier$`]{.addu} shall [name]{.rm} [designate]{.addu} a deducible template. A _deducible template_ is either a class template or is an alias template whose `$defining-type-id$` is of the form
+The `$nested-name-specifier$` [or `$splice-specifier$`]{.addu}, if any, shall be non-dependent and the `$template-name$` [or `$splice-specifier$`]{.addu} shall [name]{.rm} [designate]{.addu} a deducible template. A _deducible template_ is either a class template or is an alias template whose `$defining-type-id$` is of the form
 
 ```cpp
 typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ template@~_opt_~@ $simple-template-id$
@@ -5586,18 +5591,6 @@ template<typename T> void f() {
 :::
 :::
 
-### [temp.dep.type]{.sref} Dependent types {-}
-
-Apply a drive-by fix to paragraph 8 to account for placeholders for deduced class types whose template is dependent, while extending the definition to apply to `$splice-specifier$`s.
-
-::: std
-[8]{.pnum} A placeholder for a deduced class type ([dcl.type.class.deduct]{.sref}) is dependent if
-
-* [#.#]{.pnum} it has a dependent initializer, [or]{.rm}
-* [[#.#]{.pnum} it has a dependent `$template-name$` or a dependent `$splice-specifier$`, or]{.addu}
-* [#.#]{.pnum} it refers to an alias template that is a member of the current instantiation and whose `$defining-type-id$` is dependent after class template argument deduction ([over.match.class.deduct]{.sref}) and substitution ([temp.alias]{.sref}).
-
-:::
 
 Account for dependent `$splice-type-specifier$`s in paragraph 10:
 
@@ -5897,6 +5890,16 @@ Add a new primary type category type trait:
     template<class T> struct is_function;
 +   template<class T> struct is_reflection;
 
+...
+
+    // [meta.unary.prop], type properties
+    template<class T> struct is_const;
+...
+    template<class T> struct is_aggregate;
++   template<class T> struct is_consteval_only;
+
+...
+
     // [meta.unary.cat], primary type categories
     template<class T>
       constexpr bool is_void_v = is_void<T>::value;
@@ -5905,6 +5908,20 @@ Add a new primary type category type trait:
       constexpr bool is_function_v = is_function<T>::value;
 +   template<class T>
 +     constexpr bool is_reflection_v = is_reflection<T>::value;
+
+...
+
+    // [meta.unary.prop], type properties
+    template<class T>
+      constexpr bool is_const_v = is_const<T>::value;
+...
+    template<class T>
+      constexpr bool is_aggregate_v = is_aggregate<T>::value;
++   template<class T>
++     constexpr bool is_consteval_only_v = is_consteval_only<T>::value;
+    template<class T>
+      constexpr bool is_signed_v = is_signed<T>::value;
+...
 ```
 :::
 
@@ -5917,7 +5934,7 @@ Add the `is_reflection` primary type category to the table in paragraph 3:
 <tr style="text-align:center"><th>Template</th><th>Condition</th><th>Comments</th></tr>
 <tr><td>
 ```cpp
-template <class T>
+template<class T>
 struct is_void;
 ```
 </td><td style="text-align:center; vertical-align: middle">`T` is `void`</td><td></td></tr>
@@ -5925,13 +5942,46 @@ struct is_void;
 <tr><td>
 ::: addu
 ```cpp
-template <class T>
+template<class T>
 struct is_reflection;
 ```
 :::
 </td><td style="text-align:center; vertical-align: middle">
 ::: addu
 `T` is `std::meta::info`
+:::
+</td><td>
+::: addu
+<br>
+:::
+</td></tr>
+</table>
+:::
+
+### [meta.unary.prop]{.sref} Type properties {-}
+
+Add the `is_consteval_only` type trait to table 51 following paragraph 5:
+
+::: std
+<table>
+<tr style="text-align:center"><th>Template</th><th>Condition</th><th>Preconditions</th></tr>
+<tr><td>
+```cpp
+template<class T>
+struct is_const;
+```
+</td><td style="text-align:center; vertical-align: middle">`T` is const-qualified ([basic.type.qualifier])</td><td></td></tr>
+<tr style="text-align:center"><td>...</td><td>...</td><td>...</td></tr>
+<tr><td>
+::: addu
+```cpp
+template<class T>
+struct is_consteval_only;
+```
+:::
+</td><td style="text-align:center; vertical-align: middle">
+::: addu
+`T` is consteval-only ([basic.types.general])
 :::
 </td><td>
 ::: addu
@@ -6059,10 +6109,12 @@ namespace std::meta {
 
   consteval bool has_default_member_initializer(info r);
 
+  consteval bool has_unique_parent(info r);
+  consteval info parent_of(info r);
+
   consteval info type_of(info r);
   consteval info object_of(info r);
   consteval info value_of(info r);
-  consteval info parent_of(info r);
   consteval info dealias(info r);
   consteval info template_of(info r);
   consteval vector<info> template_arguments_of(info r);
@@ -6175,6 +6227,7 @@ namespace std::meta {
   consteval bool is_abstract_type(info type);
   consteval bool is_final_type(info type);
   consteval bool is_aggregate_type(info type);
+  consteval bool is_consteval_only_type(info type);
   consteval bool is_signed_type(info type);
   consteval bool is_unsigned_type(info type);
   consteval bool is_bounded_array_type(info type);
@@ -6745,7 +6798,7 @@ consteval info type_of(info r);
 - [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or bit-field, then the type of what is represented by `r`.
 - [#.#]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
   - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that is reachable from a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
-  - [#.#.#]{.pnum} Otherwise, a reflection of the type of the `$N$` prior to the closing brace of the `$enum-specifier$` as specified by [dcl.enum].
+  - [#.#.#]{.pnum} Otherwise, a reflection of the type of `$N$` prior to the closing brace of the `$enum-specifier$` as specified by [dcl.enum].
 - [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class.
 - [#.#]{.pnum} Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), a reflection of the type `$T$`.
 
@@ -6820,15 +6873,21 @@ info r = value_of(fn());  // error: x is outside its lifetime
 :::
 
 ```cpp
+consteval bool has_parent(info r);
+```
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents an entity that is given C language linkage ([dcl.link]) by a declaration reachable from some point in the evaluation context, then `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents an entity that is given a language linkage other than C++ language linkage by a declaration reachable from some point in the evaluation context, then an implementation-defined value.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias other than `::`, type alias, or direct base class relationship, then `true`.
+* [#.#]{.pnum} Otherwise, `false`.
+
+```cpp
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} *Constant When*:
-
-* [#.#]{.pnum} `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias other than `::`, type alias, or direct base class relationship, and
-* [#.#]{.pnum} if `r` represents an entity, that entity does not have C language linkage.
-
-If `r` represents an entity with language linkage other than C or C++ language linkage, it is implementation-defined whether a call to this function is a constant subexpression.
+[#]{.pnum} *Constant When*: `has_parent(r)` is `true`.
 
 [#]{.pnum} *Returns*:
 
@@ -7252,17 +7311,18 @@ concept reflection_range =
   same_as<remove_cvref_t<ranges::range_reference_t<R>>, info>;
 ```
 
-[1]{.pnum} *Constant When*: Let
-
 ```cpp
 template <reflection_range R = initializer_list<info>>
 consteval bool can_substitute(info templ, R&& arguments);
 ```
-[1]{.pnum} *Constant When*: `templ` represents a template and every reflection in `arguments` represents a construct usable as a template argument ([temp.arg]).
+[1]{.pnum} Let {`TArgs@~_N_~@`} be a sequence of template arguments corresponding to the reflections in `arguments` (call them {`R@~_N_~@`}) defined as follows:
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, values, and objects represented by the elements of `arguments`.
+- [#.#]{.pnum} If `R@~_K_~@` represents an object or a value, then `TArgs@~_K_~@` is an expression whose result is the the represented object or value. The expression is an lvalue if and only if `R@~_K_~@` is an object and is a bit-field if and only if `R@~_K_~@` is a bit-field.
+- [#.#]{.pnum} Otherwise, `TArgs@~_K_~@` is the construct represented by `R@~_K_~@`.
 
-[#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
+[1]{.pnum} *Constant When*: `templ` represents a template and every reflection in the sequence {`TArgs@~_N_~@`} is a construct usable as a template argument ([temp.arg]).
+
+[#]{.pnum} *Returns*: Letting `Z` be the template represented by `templ` and `TArgs...` be the sequence of constructs derived from `arguments` as described above, `true` if `Z<TArgs...>` is a valid `$template-id$` ([temp.names]). Otherwise, `false`.
 
 [#]{.pnum} *Remarks*: If attempting to substitute leads to a failure outside of the immediate context, the program is ill-formed.
 
@@ -7273,11 +7333,9 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Constant When*: `can_substitute(templ, arguments)` is `true`.
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, values, and objects represented by the elements of `arguments`.
+[#]{.pnum} *Returns*: Letting `Z` be the template represented by `templ` and `TArgs...` be the sequence of constructs derived from `arguments` as described above, a reflection representing `Z<TArgs...>`.
 
-[#]{.pnum} *Returns*: A reflection representing `Z<Args...>`.
-
-[#]{.pnum} [The specialization `Z<Args..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
+[#]{.pnum} [The specialization `Z<TArgs..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
 
 :::
 :::
@@ -7546,6 +7604,7 @@ consteval bool is_polymorphic_type(info type);
 consteval bool is_abstract_type(info type);
 consteval bool is_final_type(info type);
 consteval bool is_aggregate_type(info type);
+consteval bool is_consteval_only_type(info type);
 consteval bool is_signed_type(info type);
 consteval bool is_unsigned_type(info type);
 consteval bool is_bounded_array_type(info type);
