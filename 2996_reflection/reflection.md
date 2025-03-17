@@ -6109,7 +6109,7 @@ namespace std::meta {
 
   consteval bool has_default_member_initializer(info r);
 
-  consteval bool has_unique_parent(info r);
+  consteval bool has_parent(info r);
   consteval info parent_of(info r);
 
   consteval info type_of(info r);
@@ -6878,9 +6878,10 @@ consteval bool has_parent(info r);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` represents an entity that is given C language linkage ([dcl.link]) by a declaration reachable from some point in the evaluation context, then `false`.
+* [#.#]{.pnum} If `r` represents the global namespace, then `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents an entity that is given C language linkage ([dcl.link]) by a declaration reachable from some point in the evaluation context, then `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity that is given a language linkage other than C++ language linkage by a declaration reachable from some point in the evaluation context, then an implementation-defined value.
-* [#.#]{.pnum} Otherwise, if `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias other than `::`, type alias, or direct base class relationship, then `true`.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias, type alias, or direct base class relationship, then `true`.
 * [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
@@ -7311,18 +7312,17 @@ concept reflection_range =
   same_as<remove_cvref_t<ranges::range_reference_t<R>>, info>;
 ```
 
+[1]{.pnum} *Constant When*: Let
+
 ```cpp
 template <reflection_range R = initializer_list<info>>
 consteval bool can_substitute(info templ, R&& arguments);
 ```
-[1]{.pnum} Let {`TArgs@~_N_~@`} be a sequence of template arguments corresponding to the reflections in `arguments` (call them {`R@~_N_~@`}) defined as follows:
+[1]{.pnum} *Constant When*: `templ` represents a template and every reflection in `arguments` represents a construct usable as a template argument ([temp.arg]).
 
-- [#.#]{.pnum} If `R@~_K_~@` represents an object or a value, then `TArgs@~_K_~@` is an expression whose result is the the represented object or value. The expression is an lvalue if and only if `R@~_K_~@` is an object and is a bit-field if and only if `R@~_K_~@` is a bit-field.
-- [#.#]{.pnum} Otherwise, `TArgs@~_K_~@` is the construct represented by `R@~_K_~@`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, values, and objects represented by the elements of `arguments`.
 
-[1]{.pnum} *Constant When*: `templ` represents a template and every reflection in the sequence {`TArgs@~_N_~@`} is a construct usable as a template argument ([temp.arg]).
-
-[#]{.pnum} *Returns*: Letting `Z` be the template represented by `templ` and `TArgs...` be the sequence of constructs derived from `arguments` as described above, `true` if `Z<TArgs...>` is a valid `$template-id$` ([temp.names]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
 
 [#]{.pnum} *Remarks*: If attempting to substitute leads to a failure outside of the immediate context, the program is ill-formed.
 
@@ -7333,9 +7333,11 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Constant When*: `can_substitute(templ, arguments)` is `true`.
 
-[#]{.pnum} *Returns*: Letting `Z` be the template represented by `templ` and `TArgs...` be the sequence of constructs derived from `arguments` as described above, a reflection representing `Z<TArgs...>`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, values, and objects represented by the elements of `arguments`.
 
-[#]{.pnum} [The specialization `Z<TArgs..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
+[#]{.pnum} *Returns*: A reflection representing `Z<Args...>`.
+
+[#]{.pnum} [The specialization `Z<Args..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
 
 :::
 :::
