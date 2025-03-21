@@ -3471,9 +3471,10 @@ Prefer the verb "denote" in bullet 15.5 to emphasize that ODR "looks through" al
 
 :::
 
-Clarify in bullet 15.11 that default template-arguments in `$splice-specialization-specifier$`s also factor into ODR.
+Clarify in bullet 15.11 that default template-arguments in `$splice-specialization-specifier$`s also factor into ODR:
 
 ::: std
+- [15.9]{.pnum} In each such definition, corresponding manifestly constant-evaluated expressions that are not value-dependent shall have the same value ([expr.const], [temp.dep.constexpr]).
 - [15.10]{.pnum} In each such definition, the overloaded operators referred to, the implicit calls to conversion functions, constructors, operator new functions and operator delete functions, shall refer to the same function.
 - [15.11]{.pnum} In each such definition, a default argument used by an (implicit or explicit) function call or a default template argument used by an (implicit or explicit) `$template-id$`[,]{.addu} [or]{.rm} `$simple-template-id$`[, or `$splice-specialization-specifier$`]{.addu} is treated as if its token sequence were present in the definition of `$D$`; that is, the default argument or default template argument is subject to the requirements described in this paragraph (recursively).
 
@@ -4619,6 +4620,23 @@ static_assert(($E$, true));
 ```
 
 [Evaluating a `$consteval-block-declaration$` can produce injected declarations as side effects ([expr.const]).]{.note}
+
+::: example
+```cpp
+struct S;
+consteval {
+  std::meta::define_aggregate(^^S, {}); // ok
+
+  template <class T>
+  struct X { }; // error: local templates are not allowed
+
+  template <class T>
+  concept C = true; // error: local concepts are not allowed
+
+  return; // ok
+}
+```
+:::
 :::
 
 [14]{.pnum} An `$empty-declaration$` has no effect.
