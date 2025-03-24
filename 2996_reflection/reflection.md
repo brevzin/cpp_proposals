@@ -32,6 +32,7 @@ Since [@P2996R10]:
 * core wording updates
   * disallow splicing constructors and destructors (inadvertently removed between R7 and R8)
   * prevent dependent `$splice-specifier$`s from appearing in CTAD (following CWG3003)
+  * fixed parsing rules for a `$reflect-expression$` followed by `<`
   * added more core examples
 * library wording updates
   * functions whose types contain placeholder types are not _members-of-representable_
@@ -4272,15 +4273,17 @@ $reflect-expression$:
    ^^ $id-expression$
 
 $qualified-reflection-name$:
-  $nested-name-specifier$@~_opt_~@ $identifier$
-  $nested-name-specifier$ template $identifier$
+   $nested-name-specifier$@~_opt_~@ $identifier$
+   $nested-name-specifier$ template $identifier$
 ```
 
 [#]{.pnum} The unary `^^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]{.sref}).
 
 [This document places no restriction on representing, by reflections, constructs not described by this document or using such constructs as operands of `$reflect-expression$`s.]{.note}
 
-[#]{.pnum} A `$reflect-expression$` is parsed as the longest possible sequence of tokens that could syntactically form a `$reflect-expression$`.
+[#]{.pnum} The component names of a `$qualified-reflection-name$` are those of its `$nested-name-specifier$` (if any) and its `$identifier$`.
+
+[#]{.pnum} A `$reflect-expression$` is parsed as the longest possible sequence of tokens that could syntactically form a `$reflect-expression$`. A `$reflect-expression$` whose terminal name is a `$concept-name$` or a `$template-name$` shall not be followed by `<`.
 
 ::: example
 ```
@@ -4293,7 +4296,7 @@ consteval void g(std::meta::info r, X<false> xv) {
   r == ^^int & true;     // error: ^^ applies to the type-id "int&"
   r == (^^int) && true;  // OK
   r == ^^int &&&& true;  // error: 'int &&&&' is not a valid type
-  ^^X < xv;              // OK
+  ^^X < xv;              // error: template-name without arguments followed by <
   (^^X) < xv;            // OK
 }
 
@@ -4334,7 +4337,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a structured binding, enumerator, or non-static data member, `$R$` represents that entity.
 
-  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s, non-type template parameters, and `$id-expression$`s of the form `X::template Y`]{.note}
+  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
 
   The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}).
 
@@ -6027,6 +6030,7 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 **Header `<meta>` synopsis**
 
 ```
+#include <compare>
 #include <initializer_list>
 
 namespace std::meta {
@@ -6380,7 +6384,7 @@ namespace std::meta {
   consteval size_t variant_size(info type);
   consteval info variant_alternative(size_t index, info type);
 
-  consteval bool type_order(info a, info b);
+  consteval strong_ordering type_order(info a, info b);
 }
 ```
 
@@ -7869,6 +7873,8 @@ consteval info unwrap_reference(info type) {
 
 #### [meta.reflection.misc], Miscellaneous Reflection Queries {-}
 
+[The below inclusion of `meta::type_order` assumes the acceptance of [@P2830R10].]{.ednote}
+
 ::: std
 ::: addu
 [1]{.pnum} For any type or type alias `T`, for each function `meta::$UNARY-TRAIT$` defined in this subclause with the type `size_t(meta::info)`, `meta::$UNARY-TRAIT$(^^T)` equals the value of the corresponding property `$UNARY-TRAIT$_v<T>` as defined in [tuple]{.sref} or [variant]{.sref}.
@@ -7885,14 +7891,8 @@ consteval info tuple_element(size_t index, info type);
 consteval size_t variant_size(info type);
 consteval info variant_alternative(size_t index, info type);
 
-consteval bool type_order(info a, info b);
+consteval strong_ordering type_order(info a, info b);
 ```
-
-```cpp
-consteval bool type_order(info a, info b);
-```
-
-*Effects*: Let `T` and `U` be the types represented by `dealias(a)` and `dealias(b)`, respectively. Equivalent to `return type_order_v<T, U>;`
 :::
 :::
 
@@ -8060,6 +8060,16 @@ Our framework for code injection as performed by `define_aggregate` evolved quit
 
 ---
 references:
+  - id: P2830R10
+    citation-label: P2830R10
+    title: "Constexpr Type Ordering"
+    author:
+      - family: Nate Nichols, Gašper Ažman
+    issued:
+      year: 2025
+      month: 2
+      day: 21
+    URL: https://wg21.link/p2830r10
   - id: P3289R1
     citation-label: P3289R1
     title: "Consteval blocks"
