@@ -4334,10 +4334,6 @@ consteval void g(std::meta::info r, X<false> xv) {
 
   * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable declared by an `$init-capture$` ([expr.prim.lambda.capture]), `$R$` is ill-formed.
-
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity `$E$` ([basic.pre]) for which there is an intervening lambda scope between the `$id-expression$` and the point at which that local entity was introduced, and a potentially-evaluated expression naming `$E$` within the innermost such scope would 
-
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a function-local predefined variable ([dcl.fct.def.general]), `$R$` is ill-formed. For any other `$id-expression$` that denotes a variable, `$R$` represents that variable.
@@ -7887,7 +7883,7 @@ consteval info unwrap_reference(info type) {
 
 [2]{.pnum} For any type or type alias `T` and value `I`, for each function `meta::$BINARY-TRAIT$` defined in this subclause with the type `info(size_t, meta::info)`, `meta::$BINARY-TRAIT$(I, ^^T)` returns a reflection representing the type denoted by `$BINARY-TRAIT$_t<I, T>` as defined in [tuple]{.sref} or [variant]{.sref}.
 
-[3]{.pnum} For any types or type aliases `T` and `U`, `meta::type_order(^^T, ^^U)` returns `type_order_v<T, U>` as defined in [cmp]{.sref}.
+[3]{.pnum} For any types or type aliases `T` and `U`, `meta::type_order(^^T, ^^U)` equals the value of `type_order_v<T, U>` as defined in [cmp]{.sref}.
 
 
 ```cpp
