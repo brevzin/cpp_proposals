@@ -550,8 +550,10 @@ consteval auto get_layout() {
 
   std::array<member_descriptor, N> layout;
   for (int i = 0; i < members.size(); ++i) {
-      layout[i] = {.offset=std::meta::offset_of(members[i]).bytes,
-                   .size=std::meta::size_of(members[i])};
+      layout[i] = {
+          .offset=static_cast<std::size_t>(std::meta::offset_of(members[i]).bytes),
+          .size=std::meta::size_of(members[i])
+      };
   }
   return layout;
 }
@@ -4296,7 +4298,8 @@ consteval void g(std::meta::info r, X<false> xv) {
   r == ^^int & true;     // error: ^^ applies to the type-id "int&"
   r == (^^int) && true;  // OK
   r == ^^int &&&& true;  // error: 'int &&&&' is not a valid type
-  ^^X < xv;              // error: template-name without arguments followed by <
+  ^^X < xv;              // error: reflect-expression whose terminal name is a
+                         // template-name is followed by <
   (^^X) < xv;            // OK
 }
 
@@ -4330,6 +4333,10 @@ consteval void g(std::meta::info r, X<false> xv) {
 [#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
 
   * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
+
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable declared by an `$init-capture$` ([expr.prim.lambda.capture]), `$R$` is ill-formed.
+
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity `$E$` ([basic.pre]) for which there is an intervening lambda scope between the `$id-expression$` and the point at which that local entity was introduced, and a potentially-evaluated expression naming `$E$` within the innermost such scope would 
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
@@ -6030,7 +6037,6 @@ Add a new subsection in [meta]{.sref} after [type.traits]{.sref}:
 **Header `<meta>` synopsis**
 
 ```
-#include <compare>
 #include <initializer_list>
 
 namespace std::meta {
@@ -8060,16 +8066,6 @@ Our framework for code injection as performed by `define_aggregate` evolved quit
 
 ---
 references:
-  - id: P2830R10
-    citation-label: P2830R10
-    title: "Constexpr Type Ordering"
-    author:
-      - family: Nate Nichols, Gašper Ažman
-    issued:
-      year: 2025
-      month: 2
-      day: 21
-    URL: https://wg21.link/p2830r10
   - id: P3289R1
     citation-label: P3289R1
     title: "Consteval blocks"
