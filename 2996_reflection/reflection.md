@@ -6927,8 +6927,6 @@ info r = value_of(fn());  // error: x is outside its lifetime
 ```
 :::
 
-FIXME: Consider inverting the bullet, to exclude values, types that aren't class/enumeration types, and data member spec.
-
 ```cpp
 consteval bool has_parent(info r);
 ```
@@ -6938,7 +6936,8 @@ consteval bool has_parent(info r);
 * [#.#]{.pnum} If `r` represents the global namespace, then `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity that has C language linkage ([dcl.link]), then `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity that has a language linkage other than C++ language linkage, then an implementation-defined value.
-* [#.#]{.pnum} Otherwise, if `r` represents a variable, structured binding, function, enumerator, enumeration, class, class member, bit-field, template, namespace or namespace alias, type alias, or direct base class relationship, then `true`.
+* [#.#]{.pnum} Otheriwse, if `r` represents a type that is neither a class nor enumeration type, then `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents an entity or direct base class relationship, then `true`.
 * [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
