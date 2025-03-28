@@ -32,6 +32,9 @@ Since [@P2996R10]:
 * core wording updates
   * disallow splicing constructors and destructors (inadvertently removed between R7 and R8)
   * prevent dependent `$splice-specifier$`s from appearing in CTAD (following CWG3003)
+  * fixed parsing rules for a `$reflect-expression$` followed by `<`
+  * iterate on wording for overload resolution for `$splice-expression$` function calls
+  * disallow default arguments for splices ([over.match.viable])
   * added more core examples
 * library wording updates
   * functions whose types contain placeholder types are not _members-of-representable_
@@ -549,8 +552,10 @@ consteval auto get_layout() {
 
   std::array<member_descriptor, N> layout;
   for (int i = 0; i < members.size(); ++i) {
-      layout[i] = {.offset=std::meta::offset_of(members[i]).bytes,
-                   .size=std::meta::size_of(members[i])};
+      layout[i] = {
+          .offset=static_cast<std::size_t>(std::meta::offset_of(members[i]).bytes),
+          .size=std::meta::size_of(members[i])
+      };
   }
   return layout;
 }
@@ -1962,7 +1967,7 @@ static_assert(^^i != std::meta::reflect_value(42));  // A reflection of an objec
 
 ### The associated `std::meta` namespace
 
-The namespace `std::meta` is an associated type of `std::meta::info`, which allows standard library meta functions to be invoked without explicit qualification. For example:
+The namespace `std::meta` is an associated namespace of `std::meta::info`, which allows standard library meta functions to be invoked without explicit qualification. For example:
 
 ::: std
 ```c++
@@ -3500,13 +3505,6 @@ Change bullet 4.2 to refer to the declaration of a "type alias" instead of a `$t
 
 ### [basic.lookup.general]{.sref} General {-}
 
-Modify paragraph 1 to cross-reference to the new definition of "overload set" given in [over.pre], rather than define it here.
-
-::: std
-[1]{.pnum} [...] If the declarations found by name lookup all denote functions or function templates, the declarations [are said to]{.rm} form an [_overload set_]{.rm} [overload set ([over.pre]{.sref})]{.addu}. Otherwise, [...]
-
-:::
-
 Adjust paragraph 4 since type aliases are now entities.
 
 ::: std
@@ -4129,13 +4127,11 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
-[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template. The expression denotes an overload set containing only the function template designated by the `$splice-expression$`; overload resolution is performed to select a unique function ([over.match], [over.over]).
-
-FIXME: These bullets aren't quite right. How do we get the explicit template arguments? Do we need overload resolution? And we need to ignore default arguments somehow (does that rule live here or in [over]?)
+[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template. The expression denotes an overload set containing only the function template designated by the `$splice-specifier$`; overload resolution is performed to select a unique function ([over.match], [over.over]). [Function templates belonging to an overload set undergo template argument deduction and the resulting specializations are thereafter considered as candidate functions.]{.note}
 
 [#]{.pnum} For a `$splice-expression$` of the form `template $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template. Let `$T$` be that template.
 
-* [#.#]{.pnum} If `$T$` is a function template, the expression denotes an overload set containing only the function template `$T$`. Overload resolution is performed to select a unique function ([over.match], [over.over]), with the explicitly provided template arguments in the `$template-argument-list$` (if any) of the `$splice-specializiation-specifier$` ([temp.over]).
+* [#.#]{.pnum} If `$T$` is a function template, the expression denotes an overload set containing only the function template `$T$`. Overload resolution is performed to select a unique function ([over.match], [over.over]).
 
 * [#.#]{.pnum} Otherwise, if `$T$` is a primary variable template, let `$S$` be the specialiation of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`. The expression is an lvalue referring to the same object associated with `$S$` and has the same type as `$S$`.
 
@@ -4272,15 +4268,17 @@ $reflect-expression$:
    ^^ $id-expression$
 
 $qualified-reflection-name$:
-  $nested-name-specifier$@~_opt_~@ $identifier$
-  $nested-name-specifier$ template $identifier$
+   $nested-name-specifier$@~_opt_~@ $identifier$
+   $nested-name-specifier$ template $identifier$
 ```
 
 [#]{.pnum} The unary `^^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]{.sref}).
 
 [This document places no restriction on representing, by reflections, constructs not described by this document or using such constructs as operands of `$reflect-expression$`s.]{.note}
 
-[#]{.pnum} A `$reflect-expression$` is parsed as the longest possible sequence of tokens that could syntactically form a `$reflect-expression$`.
+[#]{.pnum} The component names of a `$qualified-reflection-name$` are those of its `$nested-name-specifier$` (if any) and its `$identifier$`.
+
+[#]{.pnum} A `$reflect-expression$` is parsed as the longest possible sequence of tokens that could syntactically form a `$reflect-expression$`. A `$reflect-expression$` whose terminal name is a `$concept-name$` or a `$template-name$` shall not be followed by `<`.
 
 ::: example
 ```
@@ -4293,7 +4291,8 @@ consteval void g(std::meta::info r, X<false> xv) {
   r == ^^int & true;     // error: ^^ applies to the type-id "int&"
   r == (^^int) && true;  // OK
   r == ^^int &&&& true;  // error: 'int &&&&' is not a valid type
-  ^^X < xv;              // OK
+  ^^X < xv;              // error: reflect-expression whose terminal name is a
+                         // template-name is followed by <
   (^^X) < xv;            // OK
 }
 
@@ -4334,7 +4333,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a structured binding, enumerator, or non-static data member, `$R$` represents that entity.
 
-  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s, non-type template parameters, and `$id-expression$`s of the form `X::template Y`]{.note}
+  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
 
   The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}).
 
@@ -5221,7 +5220,7 @@ Prefer "type alias" rather than `$typedef-name$` in the note that follows paragr
 Move the definition "overload set" from [basic.lookup]{.sref} to paragraph 2, rewrite the preamble to better describe overload resolution, and add a note explaining the expressions that form overload sets.
 
 ::: std
-[2]{.pnum} [An _overload set_ is a set of declarations that each denote a function or function template. Using these declarations as a starting point, the process of _overload resolution_ attempts to determine]{.addu} [When a function is named in a call,]{.rm} which function [declaration]{.rm} is being referenced [and the validity of the call are determined]{.rm} by comparing the types of the arguments at [the]{.rm} [a]{.addu} point of use with the types of the parameters in [candidate functions]{.addu} [in the declarations in the overload set]{.rm}. [This function selection process is called _overload resolution_ and]{.rm} [Overload resolution]{.addu} is defined in [over.match].
+[2]{.pnum} When a function is named [or spliced]{.addu} in a call, which function [declaration]{.rm} is being referenced and the validity of the call are determined by comparing the types of the arguments at the point of use with the types of the parameters in the declarations in the overload set. This function selection process is called _overload resolution_ and is defined in [over.match].
 
   [[Overload sets are formed by `$id-expression$`s naming functions and function templates and by `$splice-expression$`s designating entities of the same kinds.]{.note}]{.addu}
 
@@ -5243,7 +5242,7 @@ Modify paragraphs 3 and 4 to clarify that access rules do not apply in all conte
 Modify paragraph 1 to clarify that this section will also apply to splices of function templates.
 
 ::: std
-[1]{.pnum} Of interest in [over.call.func] are only those function calls in which the `$posfix-expression$` ultimately contains an `$id-expression$` [or `$splice-expression$`]{.addu} that denotes one or more functions [or function templates]{.addu}. Such a `$postfix-expression$`, perhaps nested arbitrarily deep in parentheses, has one of the following forms:
+[1]{.pnum} Of interest in [over.call.func] are only those function calls in which the `$posfix-expression$` ultimately contains an `$id-expression$` [or `$splice-expression$`]{.addu} that denotes one or more functions. Such a `$postfix-expression$`, perhaps nested arbitrarily deep in parentheses, has one of the following forms:
 
 ```diff
   $postfix-expression$:
@@ -5261,14 +5260,14 @@ These represent two syntactic subcategories of function calls: qualified functio
 Modify paragraph 2 to account for overload resolution of `$splice-expression$`s. Massage the wording to better account for member function templates.
 
 ::: std
-[2]{.pnum} In qualified function calls, the function is [named]{.rm} [designated]{.addu} by an `$id-expression$` [or `$splice-expression$`]{.addu} preceded by an `->` or `.` operator. Since the construct `A->B` is generally equivalent to `(*A).B`, the rest of [over] assumes, without loss of generality, that all member function calls have been normalized to the form that uses an object and the `.` operator. Furthermore, [over] assumes that the `$postfix-expression$` that is the left operand of the `.` operator has type "_cv_ `T`" where `T` denotes a class.^102^ The function [and function template]{.addu} declarations [either]{.addu} found by name lookup [if the dot is followed by an `$id-expression$`, or as specified by [expr.prim.splice] if the dot is followed by a `$splice-expression$`, undergo the adjustments described in [over.match.funcs.general] and thereafter]{.addu} constitute the set of candidate functions. The argument list is the `$expression-list$` in the call augmented by the addition of the left operand of the `.` operator in the normalized member function call as the implied object argument ([over.match.funcs]{.sref}).
+[2]{.pnum} In qualified function calls, the function is [named]{.rm} [designated]{.addu} by an `$id-expression$` [or `$splice-expression$`]{.addu} preceded by an `->` or `.` operator. Since the construct `A->B` is generally equivalent to `(*A).B`, the rest of [over] assumes, without loss of generality, that all member function calls have been normalized to the form that uses an object and the `.` operator. Furthermore, [over] assumes that the `$postfix-expression$` that is the left operand of the `.` operator has type "_cv_ `T`" where `T` denotes a class.^102^ [The]{.rm} [A set of]{.addu} function declarations[, either]{.addu} found by name lookup ([class.member.lookup]) [if the dot is followed by an `$id-expression$`, or determined as specified in [expr.prim.splice] if followed by a `$splice-expression$`,]{.addu} constitute the set of candidate functions. The argument list is the `$expression-list$` in the call augmented by the addition of the left operand of the `.` operator in the normalized member function call as the implied object argument ([over.match.funcs]{.sref}).
 
 :::
 
 Modify paragraph 3 to account for overload resolution of `$splice-expression$`s. Massage the wording to better account for member function templates.
 
 ::: std
-[3]{.pnum} In unqualified function calls, the function is named by a `$primary-expression$`. The function [and function template]{.addu} declarations [either]{.addu} found by name lookup[, or as specified by [expr.prim.splice] if the `$primary-expression$` is a (possibly parenthesized) `$splice-expression$`, undergo the adjustments described in [over.match.funcs.general] and thereafter]{.addu} constitute the set of candidate functions. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if the `$primary-expression$` is [a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]{.sref}) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
+[3]{.pnum} In unqualified function calls, the function is named by a `$primary-expression$` [(call it `$E$`)]{.addu}. [The]{.rm} [A set of]{.addu} function declarations[, either]{.addu} found by name lookup ([basic.lookup]) [if `$E$` is a (possibly parenthesized) `$id-expression$`, or determined as specified in [expr.prim.splice] if `$E$` is a (possibly parenthesized) `$splice-expression$`,]{.addu} constitute the set of candidate functions. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if [the `$primary-expression$`]{.rm} [`$E$`]{.addu} is [either a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]{.sref}) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
 
 :::
 
@@ -5293,6 +5292,19 @@ typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ template@~_opt_~@ $simple-tem
 ```
 
 as specified in [dcl.type.simple]{.sref}. The guides of `A` are the set of functions or function templates formed as follows. ...
+
+:::
+
+### [over.match.viable]{.sref} Viable functions {-}
+
+Disallow consideration of default arguments when an overload set was denoted by a `$splice-expression$` in paragraph 2.
+
+::: std
+[2]{.pnum} First, to be a viable function, a candidate function shall have enough parameters to agree in number with the arguments in the list.
+
+- [#.#]{.pnum} If there are `$m$` arguments in the lists, all candidate functions having exactly `$m$` parameters are viable.
+- [#.#]{.pnum} A candidate function having fewer than `$m$` parameters is viable only if it has an ellipsis in its parameter list ([dcl.fct]). For the purposes of overload resolution, any argument for which there is no corresponding parameter is considered to "match the ellipsis" ([over.ics.ellipsis]).
+- [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if all parameters following the `$m$`^th^ have default arguments ([dcl.fct.default])[, and if the set of candidate functions was not denoted by a `$splice-expression$` ([expr.prim.splice]).]{.addu}
 
 :::
 
@@ -6380,7 +6392,7 @@ namespace std::meta {
   consteval size_t variant_size(info type);
   consteval info variant_alternative(size_t index, info type);
 
-  consteval bool type_order(info a, info b);
+  consteval strong_ordering type_order(info a, info b);
 }
 ```
 
@@ -6825,7 +6837,7 @@ consteval info type_of(info r);
 - [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or bit-field, then the type of what is represented by `r`.
 - [#.#]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
   - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that is reachable from a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
-  - [#.#.#]{.pnum} Otherwise, a reflection of the type of `$N$` prior to the closing brace of the `$enum-specifier$` as specified by [dcl.enum].
+  - [#.#.#]{.pnum} Otherwise, a reflection of the type of `$N$` prior to the closing brace of the `$enum-specifier$` as specified in [dcl.enum].
 - [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class.
 - [#.#]{.pnum} Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), a reflection of the type `$T$`.
 
@@ -7869,13 +7881,15 @@ consteval info unwrap_reference(info type) {
 
 #### [meta.reflection.misc], Miscellaneous Reflection Queries {-}
 
+[The below inclusion of `meta::type_order` assumes the acceptance of [@P2830R10].]{.ednote}
+
 ::: std
 ::: addu
 [1]{.pnum} For any type or type alias `T`, for each function `meta::$UNARY-TRAIT$` defined in this subclause with the type `size_t(meta::info)`, `meta::$UNARY-TRAIT$(^^T)` equals the value of the corresponding property `$UNARY-TRAIT$_v<T>` as defined in [tuple]{.sref} or [variant]{.sref}.
 
 [2]{.pnum} For any type or type alias `T` and value `I`, for each function `meta::$BINARY-TRAIT$` defined in this subclause with the type `info(size_t, meta::info)`, `meta::$BINARY-TRAIT$(I, ^^T)` returns a reflection representing the type denoted by `$BINARY-TRAIT$_t<I, T>` as defined in [tuple]{.sref} or [variant]{.sref}.
 
-[3]{.pnum} For any types or type aliases `T` and `U`, `meta::type_order(^^T, ^^U)` returns `type_order_v<T, U>` as defined in [cmp]{.sref}.
+[3]{.pnum} For any types or type aliases `T` and `U`, `meta::type_order(^^T, ^^U)` equals the value of `type_order_v<T, U>` as defined in [cmp]{.sref}.
 
 
 ```cpp
@@ -7885,14 +7899,8 @@ consteval info tuple_element(size_t index, info type);
 consteval size_t variant_size(info type);
 consteval info variant_alternative(size_t index, info type);
 
-consteval bool type_order(info a, info b);
+consteval strong_ordering type_order(info a, info b);
 ```
-
-```cpp
-consteval bool type_order(info a, info b);
-```
-
-*Effects*: Let `T` and `U` be the types represented by `dealias(a)` and `dealias(b)`, respectively. Equivalent to `return type_order_v<T, U>;`
 :::
 :::
 
