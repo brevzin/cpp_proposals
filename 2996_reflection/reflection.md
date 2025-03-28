@@ -3853,7 +3853,27 @@ Modify paragraph 2 to avoid transforming non-static members into implicit member
 * [#.#]{.pnum} if `$E$` is a `$qualified-id$`, `$E$` is not the un-parenthesized operand of the unary `&` operator ([expr.unary.op]{.sref}),
 
 the `$id-expression$` is transformed into a class member access expression using `(*this)` as the object expression.
+:::
 
+And extend paragraph 4 to account for splices:
+
+::: std
+[4]{.pnum} An `$id-expression$` [or `$splice-expression$`]{.addu} that denotes a non-static data member or implicit object member function of a class can only be used:
+
+* [#.#]{.pnum} as part of a class member access (after any implicit transformation (see above)) in which the object expression refers to the member's class or a class derived from that class, or
+* [#.#]{.pnum} to form a pointer to member ([expr.unary.op]), or
+* [#.#]{.pnum} if that `$id-expression$` [or `$splice-expression$`]{.addu} denotes a non-static data member and it appears in an unevaluated operand.
+
+::: example
+```diff
+  struct S {
+    int m;
+  };
+  int i     = sizeof(S::m);       // OK
+  int j     = sizeof(S::m + 42);  // OK
++ int S::*k = &[:^^S::m:];        // OK
+```
+:::
 :::
 
 ### [expr.prim.id.unqual]{.sref} Unqualified names {-}
@@ -4117,7 +4137,7 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a function, the expression is an lvalue referring to that function and has the same type as that function. [Default arguments of the function are not considered.]{.note}
 
-* [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field.
+* [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field. [The implicit transformation ([expr.prim.id]{.sref}) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a variable or a structured binding, `$S$` shall either have static or thread storage duration or shall inhabit a scope enclosing the expression. The expression is an lvalue referring to the object or function `$X$` associated with or referenced by `$S$`, has the same type as `$S$`, and is a bit-field if and only if `$X$` is a bit-field.
 
@@ -4138,14 +4158,6 @@ auto g = typename [:^^int:](42);
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
 [Access checking of class members occurs during lookup, and therefore does not pertain to splicing.]{.note}
-
-[#]{.pnum} A `$splice-expression$` that designates a non-static data member or implicit object member function of a class can only be used:
-
-* [#.#]{.pnum} as part of a class member access in which the object expression refers to the member's class or a class derived from that class,
-* [#.#]{.pnum} to form a pointer to member ([expr.unary.op]{.sref}), or
-* [#.#]{.pnum} if that `$splice-expression$` designates a non-static data member and it appears in an unevaluated operand.
-
-[The implicit transformation ([expr.prim.id]{.sref}) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
 
 [#]{.pnum} While performing overload resolution to determine the entity referred to by a `$splice-expression$`, the best viable function is _designated in a manner exempt from access rules_.
 
@@ -4201,6 +4213,10 @@ Modify paragraph 4 to account for splices in member access expressions:
 Adjust the language in paragraphs 6-9 to account for `$splice-expression$`s. Explicitly add a fallback to paragraph 7 that makes other cases ill-formed.
 
 ::: std
+
+::: addu
+[*]{.pnum} If `E2` is a `$splice-expression$`, then `E2` shall designate a member of the type of `E1`.
+:::
 
 [6]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a bit-field, `E1.E2` is a bit-field. [...]
 
@@ -5239,6 +5255,12 @@ Modify paragraphs 3 and 4 to clarify that access rules do not apply in all conte
 
 ### [over.call.func]{.sref} Call to named function {-}
 
+Change the section title:
+
+::: std
+> Call to [named]{.rm} [designated]{.addu} function
+:::
+
 Modify paragraph 1 to clarify that this section will also apply to splices of function templates.
 
 ::: std
@@ -5267,7 +5289,7 @@ Modify paragraph 2 to account for overload resolution of `$splice-expression$`s.
 Modify paragraph 3 to account for overload resolution of `$splice-expression$`s. Massage the wording to better account for member function templates.
 
 ::: std
-[3]{.pnum} In unqualified function calls, the function is named by a `$primary-expression$` [(call it `$E$`)]{.addu}. [The]{.rm} [A set of]{.addu} function declarations[, either]{.addu} found by name lookup ([basic.lookup]) [if `$E$` is a (possibly parenthesized) `$id-expression$`, or determined as specified in [expr.prim.splice] if `$E$` is a (possibly parenthesized) `$splice-expression$`,]{.addu} constitute the set of candidate functions. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if [the `$primary-expression$`]{.rm} [`$E$`]{.addu} is [either a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]{.sref}) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
+[3]{.pnum} In unqualified function calls, the function is [named]{.rm} [designated]{.addu} by a `$primary-expression$` [(call it `$E$`)]{.addu}. [The]{.rm} [A set of]{.addu} function declarations[, either]{.addu} found by name lookup ([basic.lookup]) [if `$E$` is a (possibly parenthesized) `$id-expression$`, or determined as specified in [expr.prim.splice] if `$E$` is a (possibly parenthesized) `$splice-expression$`,]{.addu} constitute the set of candidate functions. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if [the `$primary-expression$`]{.rm} [`$E$`]{.addu} is [either a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]{.sref}) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
 
 :::
 
@@ -5304,7 +5326,10 @@ Disallow consideration of default arguments when an overload set was denoted by 
 
 - [#.#]{.pnum} If there are `$m$` arguments in the lists, all candidate functions having exactly `$m$` parameters are viable.
 - [#.#]{.pnum} A candidate function having fewer than `$m$` parameters is viable only if it has an ellipsis in its parameter list ([dcl.fct]). For the purposes of overload resolution, any argument for which there is no corresponding parameter is considered to "match the ellipsis" ([over.ics.ellipsis]).
-- [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if all parameters following the `$m$`^th^ have default arguments ([dcl.fct.default])[, and if the set of candidate functions was not denoted by a `$splice-expression$` ([expr.prim.splice]).]{.addu}
+- [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if
+
+  - [#.#.#]{.pnum} all parameters following the `$m$`^th^ have default arguments ([dcl.fct.default])[ and]{.addu}
+  - [#.#.#]{.pnum} [the set of candidate functions was not denoted by a `$splice-expression$` ([expr.prim.splice]).]{.addu}
 
 :::
 
@@ -6160,18 +6185,7 @@ namespace std::meta {
 
 
   // [meta.reflection.access.context], access control context
-
-  struct access_context {
-    static consteval access_context current() noexcept;
-    static consteval access_context unprivileged() noexcept;
-    static consteval access_context unchecked() noexcept;
-
-    consteval access_context via(info cls) const;
-
-  private:
-    const info $scope$ = ^^::;       // exposition only
-    const info $naming-class$ = {};  // exposition only
-  };
+  struct access_context;
 
   // [meta.reflection.access.queries], member accessessibility queries
   consteval bool is_accessible(info r, access_context ctx);
@@ -6870,6 +6884,8 @@ static_assert(object_of(^^x) == object_of(^^y)); // OK, because y is a reference
 ```
 :::
 
+FIXME: Probably needs to reject if we're asking for something noncopyable.
+
 ```cpp
 consteval info value_of(info r);
 ```
@@ -6911,6 +6927,8 @@ info r = value_of(fn());  // error: x is outside its lifetime
 ```
 :::
 
+FIXME: Consider inverting the bullet, to exclude values, types that aren't class/enumeration types, and data member spec.
+
 ```cpp
 consteval bool has_parent(info r);
 ```
@@ -6918,9 +6936,9 @@ consteval bool has_parent(info r);
 [#]{.pnum} *Returns*:
 
 * [#.#]{.pnum} If `r` represents the global namespace, then `false`.
-* [#.#]{.pnum} Otherwise, if `r` represents an entity that is given C language linkage ([dcl.link]) by a declaration reachable from some point in the evaluation context, then `false`.
-* [#.#]{.pnum} Otherwise, if `r` represents an entity that is given a language linkage other than C++ language linkage by a declaration reachable from some point in the evaluation context, then an implementation-defined value.
-* [#.#]{.pnum} Otherwise, if `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias, type alias, or direct base class relationship, then `true`.
+* [#.#]{.pnum} Otherwise, if `r` represents an entity that has C language linkage ([dcl.link]), then `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents an entity that has a language linkage other than C++ language linkage, then an implementation-defined value.
+* [#.#]{.pnum} Otherwise, if `r` represents a variable, structured binding, function, enumerator, enumeration, class, class member, bit-field, template, namespace or namespace alias, type alias, or direct base class relationship, then `true`.
 * [#.#]{.pnum} Otherwise, `false`.
 
 ```cpp
@@ -6964,7 +6982,9 @@ static_assert(parent_of(^^F::A) == ^^F::N);
 consteval info dealias(info r);
 ```
 
-[#]{.pnum} *Returns*: A reflection representing the underlying entity of `r`.
+[#]{.pnum} *Constant When*: `r` represents an entity.
+
+[#]{.pnum} *Returns*: A reflection representing the underlying entity of what `r` represents.
 
 [#]{.pnum}
 
@@ -6990,6 +7010,8 @@ consteval info template_of(info r);
 [#]{.pnum} *Constant When*: `has_template_arguments(r)` is `true`.
 
 [#]{.pnum} *Returns*: A reflection of the primary template of the specialization represented by `r`.
+
+FIXME: Specify what kinds of reflections you get back.
 
 ```cpp
 consteval vector<info> template_arguments_of(info r);
@@ -7022,34 +7044,59 @@ static_assert(template_arguments_of(^^PairPtr<int>).size() == 1);
 
 ::: std
 ::: addu
-[1]{.pnum} The `access_context` class is a structural type that represents a namespace, class, or function from which queries pertaining to access rules may be performed, as well as the naming class ([class.access.base]), if any.
+[1]{.pnum} The `access_context` class is a non-aggregate type that represents a namespace, class, or function from which queries pertaining to access rules may be performed, as well as the naming class ([class.access.base]), if any.
+
+[#]{.pnum} An `access_context` has an associated scope and naming class.
 
 ```cpp
-consteval access_context access_context::current() noexcept;
+struct access_context {
+   access_context() = delete;
+
+   consteval info scope() const;
+   consteval info naming_class() const;
+
+   static consteval access_context current() noexcept;
+   static consteval access_context unprivileged() noexcept;
+   static consteval access_context unchecked() noexcept;
+   consteval access_context via(info cls) const;
+};
+```
+
+[#]{.pnum} `access_context` is a structural type. Two values `ac1` and `ac2` of type `access_context` are template-argument-equivalent ([temp.type]) if `ac1.scope()` and `ac2.scope()` are template-argument-equivalent and `ac1.naming_class()` and `ac2.naming_class()` are template-argument-equivalent.
+
+```cpp
+consteval info scope() const;
+consteval info naming_class() const;
+```
+
+[#]{.pnum} *Returns*: The `acces_context`'s associated scope and naming class, respectively.
+
+```cpp
+static consteval access_context current() noexcept;
 ```
 
 [#]{.pnum} Let `$P$` be the program point at which `access_context::current()` is called.
 
-[#]{.pnum} *Returns*: An `access_context` whose `$naming-class$` is the null reflection and whose `$scope$` is the unique namespace, class, or function associated with the innermost namespace, class, or block scope enclosing `$P$`.
+[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope is the unique namespace, class, or function associated with the innermost namespace, class, or block scope enclosing `$P$`.
 
 ```cpp
-consteval access_context access_context::unprivileged() noexcept;
+static consteval access_context unprivileged() noexcept;
 ```
 
-[#]{.pnum} *Returns*: An `access_context` whose `$naming-class$` is the null reflection and whose `$scope$` is the global namespace.
+[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope is the global namespace.
 
 ```cpp
-consteval access_context access_context::unchecked() noexcept;
+static consteval access_context unchecked() noexcept;
 ```
 
-[#]{.pnum} *Returns*: An `access_context` whose `$naming-class$` and `$scope$` are both the null reflection.
+[#]{.pnum} *Returns*: An `access_context` whose naming class and scope are both the null reflection.
 
 ```cpp
-consteval access_context access_context::via(info cls) const;
+consteval access_context via(info cls) const;
 ```
 [#]{.pnum} *Constant When*: `cls` represents a class type.
 
-[#]{.pnum} *Returns*: An `access_context` whose `$scope$` is `this->$scope$` and whose `$naming-class$` is `cls`.
+[#]{.pnum} *Returns*: An `access_context` whose scope is `this->scope()` and whose naming class is `cls`.
 
 :::
 :::
@@ -7062,16 +7109,16 @@ consteval access_context access_context::via(info cls) const;
 consteval bool is_accessible(info r, access_context ctx);
 ```
 
-[#]{.pnum} Let `$P$` be a program point that occurs in the definition of the entity represented by `ctx.$scope$`.
+[#]{.pnum} Let `$P$` be a program point that occurs in the definition of the entity represented by `ctx.scope()`.
 
 [#]{.pnum} *Constant When*: `r` does not represent a member or unnamed bit-field of a class currently being defined.
 
 [#]{.pnum} *Returns*:
 
-- [#]{.pnum} If `ctx.$scope$` represents the null reflection, then `true`.
+- [#]{.pnum} If `ctx.scope()` represents the null reflection, then `true`.
 - [#]{.pnum} Otherwise, if `r` represents a member of a class `$C$`, then `true` if that class member is accessible at `$P$` ([class.access.base]) when named in either
-  - [#.#]{.pnum} `C` if `ctx.$naming-class$` is the null reflection, or
-  - [#.#]{.pnum} the class represented by `ctx.$naming-classs$` otherwise.
+  - [#.#]{.pnum} `C` if `ctx.naming_class()` is the null reflection, or
+  - [#.#]{.pnum} the class represented by `ctx.naming_class()` otherwise.
 - [#]{.pnum} Otherwise, if `r` represents an unnamed bit-field `$B$`, then `is_accessible(^^$M$, ctx)` where `$M$` is a hypothetical member of `parent_of(r)` declared with the same rules as `$B$`.
 - [#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a base class `$B$` and a derived class `$D$`, then `true` if the base class `$B$` of `$D$` is accessible at `$P$`.
 - [#]{.pnum} Otherwise, `true`.
