@@ -43,6 +43,7 @@ Since [@P2996R10]:
   * minor editing and phrasing updates to address CWG feedback
   * added type traits from [@P2786R13]{.title}
   * in response to CWG feedback: added `has_c_language_linkage`, `has_parent`, `is_consteval_only`
+  * added `scope()` and `naming_class()` members to `access_context`
 
 
 Since [@P2996R9]:
@@ -5524,7 +5525,7 @@ Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
 [1]{.pnum} A `$template-argument$` for a `$template-parameter$` which is a type shall [either]{.addu} be a `$type-id$` [or a `$splice-template-argument$` whose `$splice-specifier$` designates a type]{.addu}.
 :::
 
-### [temp.arg.nontype]{.sref} Template non-type arguments {-}
+### [temp.arg.nontype]{.sref} Constant template arguments {-}
 
 [We don't think we have to change anything here, since if `E` is a `$splice-specifier$` that can be interpreted as a `$splice-expression$`, the requirements already fall out based on how paragraphs 1 and 3 are already worded]{.draftnote}
 
@@ -5562,7 +5563,7 @@ Extend paragraph 1 to also define the "sameness" of `$splice-specialization-spec
 
 * [#.#]{.pnum} their `$template-name$`s, `$operator-function-id$`s, [or]{.rm} `$literal-operator-id$`s[, or `$splice-specifier$`s]{.addu} refer to the same template, and
 * [#.#]{.pnum} their corresponding type `$template-argument$`s are the same type, and
-* [#.#]{.pnum} the template parameter values determined by their corresponding non-type template arguments ([temp.arg.nontype]{.sref}) are template-argument-equivalent (see below), and
+* [#.#]{.pnum} the template parameter values determined by their corresponding constant template arguments ([temp.arg.nontype]{.sref}) are template-argument-equivalent (see below), and
 * [#.#]{.pnum} their corresponding template `$template-argument$`s refer to the same template.
 
 Two `$template-id$`s [or `$splice-specialization-specifier$`s]{.addu} that are the same refer to the same class, function, or variable.
@@ -7010,16 +7011,20 @@ consteval info template_of(info r);
 
 [#]{.pnum} *Returns*: A reflection of the primary template of the specialization represented by `r`.
 
-FIXME: Specify what kinds of reflections you get back.
-
 ```cpp
 consteval vector<info> template_arguments_of(info r);
 ```
 [#]{.pnum} *Constant When*: `has_template_arguments(r)` is `true`.
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of the template arguments of the template specialization represented by `r`, in the order they appear in the corresponding template argument list.
+[#]{.pnum} *Returns*: A `vector` containing reflections of the template arguments of the template specialization represented by `r`, in the order they appear in the corresponding template argument list. For a given template argument `$A$`, its corresponding reflection `$R$` is determined as follows:
 
-[#]{.pnum}
+* [#.#]{.pnum} If `$A$` denotes a type or a type alias, then `$R$` is a reflection representing the underlying entity of `$A$`. [`$R$` always represents a type, never a type alias.]{.note}
+* [#.#]{.pnum} Otherwise, if `$A$` denotes a class template, variable template, concept, or alias template, then `$R$` is a reflection representing `$A$`.
+* [#.#]{.pnum} Otheriwse, `$A$` is a constant template argument ([temp.arg.nontype]). Let `$P$` be the corresponding template parameter.
+
+  * [#.#.#]{.pnum} If `$P$` has reference type, then `$R$` is a reflection representing the object referred to by `$A$`.
+  * [#.#.#]{.pnum} Otherwise, if `$P$` has class type, then `$R$` represents the corresponding template parameter object.
+  * [#.#.#]{.pnum} Otherwise, `$R$` is a reflection representing the value computed by `$A$`.
 
 ::: example
 ```
@@ -7030,9 +7035,20 @@ template <class T> using PairPtr = Pair<T*>;
 static_assert(template_of(^^Pair<int>) == ^^Pair);
 static_assert(template_of(^^Pair<char, char>) == ^^Pair);
 static_assert(template_arguments_of(^^Pair<int>).size() == 2);
+static_assert(template_arguments_of(^^Pair<int>)[0] == ^^int);
 
 static_assert(template_of(^^PairPtr<int>) == ^^PairPtr);
 static_assert(template_arguments_of(^^PairPtr<int>).size() == 1);
+
+struct S { };
+int i;
+template <int, int&, S, template <class> class>
+struct X { };
+constexpr auto T = ^^X<1, i, S{}, PairPtr>;
+static_assert(is_value(template_arguments_of(T)[0]));
+static_assert(is_object(template_arguments_of(T)[1]));
+static_assert(is_object(template_arguments_of(T)[2]));
+static_assert(template_arguments_of(T)[3] == ^^PairPtr);
 ```
 :::
 :::
