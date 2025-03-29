@@ -6885,8 +6885,6 @@ static_assert(object_of(^^x) == object_of(^^y)); // OK, because y is a reference
 ```
 :::
 
-FIXME: Probably needs to reject if we're asking for something noncopyable.
-
 ```cpp
 consteval info value_of(info r);
 ```
@@ -6901,7 +6899,10 @@ consteval info value_of(info r);
 
 * [#.#]{.pnum} a value,
 * [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} an object such that the lifetime of `$Q$` has not ended, the type of `$Q$` is a structural type ([temp.param]), and either `$Q$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$Q$` began within the core constant expression currently under evaluation ([expr.const]).
+* [#.#]{.pnum} an object such that
+  * [#.#.#]{.pnum} the lifetime of `$Q$` has not ended,
+  * [#.#.#]{.pnum} the type of `$Q$` is a structural type ([temp.param]) that is copyable, and
+  * [#.#.#]{.pnum} either `$Q$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$Q$` began within the core constant expression currently under evaluation ([expr.const]).
 
 [#]{.pnum} *Returns*:
 
