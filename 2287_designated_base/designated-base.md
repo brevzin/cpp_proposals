@@ -1,6 +1,6 @@
 ---
 title: "Designated-initializers for Base Classes"
-document: P2287R4
+document: D2287R5
 date: today
 audience: CWG
 author:
@@ -10,6 +10,8 @@ toc: true
 ---
 
 # Revision History
+
+Since [@P2287R4], wording improvements.
 
 Since [@P2287R3], clarify that the design allows you to initialize the first base class from a non-designated initializer but the second base class's members indirectly. Simplified wording as a result.
 
@@ -313,8 +315,8 @@ Add a new term after we define what an aggregate and the elements of an aggregat
 ::: addu
 [x]{.pnum} The _designatable members_ of an aggregate `T` are:
 
-* [x.1]{.pnum} For each direct base class `C` of `T` that is itself an aggregate, in the order in which they appear in the `$base-specifier-list$`, the designatable members of `C` for which lookup for that member's name in `T` finds the member of `C`, followed by
-* [x.2]{.pnum} the direct non-static data members of `T`, in declaration order.
+* [x.1]{.pnum} For each direct base class `C` of `T` that is itself an aggregate, in the order in which they appear in the `$base-specifier-list$`, the designatable members of `C` for which the lookup set for that member's name in `T` finds a subobject set consisting of a single member of `C` ([class.member.lookup]), followed by
+* [x.2]{.pnum} the direct non-static data members of `T` that are not anonymous unions, in declaration order.
 
 [y]{.pnum} The _associated element_ of a designatable member `M` of an aggregate `T` is:
 
@@ -385,7 +387,7 @@ And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
 ::: std
 [4]{.pnum} For each explicitly initialized element:
 
-* [4.1]{.pnum} If the element is an anonymous union member and [...]
+* [4.1]{.pnum} If the element is an anonymous union member and the initializer list is a brace-enclosed `$designated-initializer-list$`, the element is initialized by the `$braced-init-list$ { $D$ }`, where `$D$` is the `$designated-initializer-clause$` [whose associated element is the anonymous union member]{.addu} [naming a member of the anonymous union member]{.rm}. There shall be only one such `$designated-initializer-clause$`.
 
 * [4.2]{.pnum} Otherwise, if the initializer list is a brace-enclosed `$designated-initializer-list$`, [then]{.addu}
 
@@ -442,6 +444,12 @@ Aggregate initialization is performed ([dcl.init.aggr]).
 +   E i{.na=1, .e=2};                   // error: na is not a designatable member
 ```
 :::
+:::
+
+And update paragraph 14, since now we can have `$initializer-clause$`s in `$designated-initializer-list$`s too:
+
+::: std
+[14]{.pnum} Each `$initializer-clause$` in a [brace-enclosed `$initializer-list$`]{.rm} [`$braced-init-list$`]{.addu} is said to *appertain* to an element of the aggregate being initialized or to an element of one of its subaggregates.
 :::
 
 Add an Annex C entry:

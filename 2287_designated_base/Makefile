@@ -1,2 +1,2 @@
-p2287r4.html : designated-base.md
+d2287r5.html : designated-base.md
 include ../md/mpark-wg21.mk
