@@ -1992,6 +1992,101 @@ static_assert(std::meta::info() != ^^S);
 ```
 :::
 
+### Consteval-only
+
+It's important that `std::meta::info` not be allowed to propagate to runtime. This has no meaning, so it would be ideal to simply prevent the type from being usable to runtime in any way whatsoever.
+
+We propose doing this by saying that `std::meta::info`, and all types compounded from it (meaning anythig from `info*` to classes with `info` members, e.g. `tuple<info>` or `vector<info>`) are consteval-only types. We then add two kinds of restrictions (both of which are necessary):
+
+* an _object_ of consteval-only type can only exist at compile time.
+* an _expression_ with an operand of consteval-only type can only be evaluated at compile time.
+
+The first we can achieve by requiring such objects to either be part of a `constexpr` variable, a template parameter object, or have its lifetime entirely within constant evaluation. The latter we can achieve by plugging into the already-existing immediate escalating machinery that we have for immediate functions to also consider consteval-only types as escalating.
+
+This has an interesting consequence that necessitates an `is_consteval_only` type trait that we discovered. In libc++, `std::sort` is implemented [like this](https://github.com/llvm/llvm-project/blob/acc6bcdc504ad2e8c09a628dc18de0067f7344b8/libcxx/include/__algorithm/sort.h):
+
+::: std
+```cpp
+template <class _AlgPolicy, class _RandomAccessIterator, class _Comp>
+inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 void
+__sort_impl(_RandomAccessIterator __first, _RandomAccessIterator __last, _Comp& __comp) {
+  std::__debug_randomize_range<_AlgPolicy>(__first, __last);
+
+  if (__libcpp_is_constant_evaluated()) {
+    std::__partial_sort<_AlgPolicy>(
+        std::__unwrap_iter(__first), std::__unwrap_iter(__last), std::__unwrap_iter(__last), __comp);
+  } else {
+    std::__sort_dispatch<_AlgPolicy>(std::__unwrap_iter(__first), std::__unwrap_iter(__last), __comp);
+  }
+  std::__check_strict_weak_ordering_sorted(std::__unwrap_iter(__first), std::__unwrap_iter(__last), __comp);
+}
+```
+:::
+
+During constant evaluation, we call `__partial_sort` (which is `constexpr`). Otherwise, we call `__sort_dispatch` (which is not). If we instantiate `__sort_impl` with a `_RandomAccessIterator` type of `std::meta::info*`, then this eventually ends up also instantiating `std::__introsort` ([here](https://github.com/llvm/llvm-project/blob/acc6bcdc504ad2e8c09a628dc18de0067f7344b8/libcxx/include/__algorithm/sort.h#L715), also not `constexpr`) which in the body does this:
+
+::: std
+```cpp
+template <class _AlgPolicy, class _Compare, class _RandomAccessIterator, bool _UseBitSetPartition>
+void __introsort(_RandomAccessIterator __first,
+                 _RandomAccessIterator __last,
+                 _Compare __comp,
+                 typename iterator_traits<_RandomAccessIterator>::difference_type __depth,
+                 bool __leftmost = true) {
+  // ...
+  while (true) {
+    difference_type __len = __last - __first;
+    // ...
+  }
+}
+```
+:::
+
+The expression `__last - __first`, because these are `std::meta::info*`s, must be a constant. Because it's not here (`__first` and `__last` are just function parameters), that triggers the immediate-escalation machinery from [@P2564R3]{.title} (before that paper, it would have been ill-formed on the spot). But because `__introsort` is not `constexpr`, propagation fails at that point, and the prorgam is ill-formed.
+
+Even though during we would've never actually gotten to this code during runtime.
+
+Let's go back to the problem function and reduce it and un-uglify the names:
+
+::: std
+```cpp
+template <class RandomAccessIterator>
+constexpr void sort(RandomAccessIterator first, RandomAccessIterator last) {
+  if consteval {
+    std::__consteval_only_sort(first, last);
+  } else {
+    std::__runtime_only_sort(first, last);
+  }
+}
+```
+:::
+
+At issue is that `__runtime_only_sort` isn't `constexpr` and instantiating it with `std::meta::info*` fails.
+
+We thought of a few ways to approach tihs issue:
+
+We could just mark `__runtime_only_sort` `constexpr` — but marking something `constexpr` that we explicitly do not want to evaluate during constant evaluation time (as our rename makes obvious), seems like a bad approach. It's a confusing annotation at best.
+
+We considered changing the semantics of `if consteval` so that it could discard (in the `if constexpr` sense) the non-taken branch if actually evaluated during constant evaluation time. In this case, that would avoid having to instantiate `__runtime_only_sort<meta::info*>` and we'd be okay. But that kind of change seemed very complicated.
+
+We also considered just implicitly making function templates with any function parameter having consteval-only type be `consteval` anyway. That is, `__runtime_only_sort`, despite the name, actually is `consteval`. That also seemed a bit adventurous, and while it addresses this particular issue, we weren't sure what other possible issues might come up.
+
+Instead, we're taking a simpler and easier-to-justify approach: adding a new type trait to detect whether a type is consteval-only (a trait which is fairly straightforward to implement on top of the other facilities provided in this proposal). With that trait, the fix is simple (if perhaps surprising to the reader): explicitly discard the runtime branch:
+
+::: std
+```cpp
+template <class RandomAccessIterator>
+constexpr void sort(RandomAccessIterator first, RandomAccessIterator last) {
+  if consteval {
+    std::__consteval_only_sort(first, last);
+  } else if constexpr (not is_consteval_only_type(^^RandomAccessIterator)) {
+    std::__runtime_only_sort(first, last);
+  }
+}
+```
+:::
+
+
 
 ## Metafunctions
 
@@ -2518,8 +2613,7 @@ All of that said, these relaxations are not needed for the code injection introd
 ### Freestanding implementations
 
 Several important metafunctions, such as `std::meta::nonstatic_data_members_of`, return a `std::vector` value.
-Unfortunately, that means that they are currently not usable in a freestanding environment, but [@P3295R0] currently proposes freestanding `std::vector`, `std::string`, and `std::allocator` in constant evaluated contexts, explicitly to make the facilities proposed by this paper work in freestanding.
-
+Unfortunately, that means that they are currently not usable in a freestanding environment, but [@P3295R0]{.title} currently proposes freestanding `std::vector`, `std::string`, and `std::allocator` in constant evaluated contexts, explicitly to make the facilities proposed by this paper work in freestanding.
 
 ### Synopsis
 
