@@ -2063,7 +2063,7 @@ constexpr void sort(RandomAccessIterator first, RandomAccessIterator last) {
 
 At issue is that `__runtime_only_sort` isn't `constexpr` and instantiating it with `std::meta::info*` fails.
 
-We thought of a few ways to approach tihs issue:
+We thought of a few ways to approach this issue:
 
 We could just mark `__runtime_only_sort` `constexpr` — but marking something `constexpr` that we explicitly do not want to evaluate during constant evaluation time (as our rename makes obvious), seems like a bad approach. It's a confusing annotation at best.
 
