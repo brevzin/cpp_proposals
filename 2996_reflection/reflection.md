@@ -3686,7 +3686,7 @@ template <int V> struct TCls {
   static constexpr int s = V + 1;
 };
 
-using alias = typename [:^^TCls:]<[:^^v:]>;
+using alias = [:^^TCls:]<[:^^v:]>;
   // OK, a splice-specialization-specifier with a splice-specifier
   // as a template argument
 
@@ -4236,7 +4236,7 @@ auto g = typename [:^^int:](42);
   * [#.#.#]{.pnum} a constructor,
   * [#.#.#]{.pnum} a destructor, or
   * [#.#.#]{.pnum} a local entity ([basic.pre]) such that
-    * [#.#.#.#]{.pnum} there is a lambda scope that intervenes between the expression and the point at which `$S$` was introduced, and
+    * [#.#.#.#]{.pnum} there is a lambda scope that intervenes between the expression and the point at which `$S$` was introduced and
     * [#.#.#.#]{.pnum} the expression would be potentially evaluated if the effect of any enclosing `typeid` expressions ([expr.typeid]) were ignored.
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a function, the expression is an lvalue referring to that function and has the same type as that function. [Default arguments of the function are not considered.]{.note}
@@ -7694,7 +7694,7 @@ consteval bool is_data_member_spec(info r);
 - [#.#]{.pnum} `is_complete_type(type_of(@$r$~$K$~@))` is `true` for every `@$r$~$K$~@`; and
 - [#.#]{.pnum} for every pair (`@$r$~$K$~@`, `@$r$~$L$~@`) where `K < L`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then either
 
-  - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true`, or
+  - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true` or
   - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
 
 [#]{.pnum} Let {`@$t$~k~@`} be a sequence of reflections and {`@$o$~k~@`} be a sequence of `data_member_options` values such that `data_member_spec(@$t$~$k$~@, @$o$~$k$~@) == @$r$~$k$~@` is `true` for every `@$r$~$k$~@` in `mdescrs`.
