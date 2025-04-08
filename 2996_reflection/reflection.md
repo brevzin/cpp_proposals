@@ -4457,7 +4457,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a structured binding, enumerator, or non-static data member, `$R$` represents that entity.
 
-  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
+  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and constant template parameters.]{.note}
 
   The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}).
 
@@ -5590,7 +5590,7 @@ Modify footnote 111 to account for `$splice-specialization-specifier$`s:
 Modify paragraph 1; there are now _four_ forms of `$template-argument$`.
 
 ::: std
-[1]{.pnum} There are [three]{.rm} [four]{.addu} forms of `$template-argument$`, [three of which]{.addu} correspond[ing]{.rm} to the three forms of `$template-parameter$`: type, non-type and template. [The fourth argument form, _splice template argument_, is considered to match the form of any template parameter.]{.addu} The type and form of each `$template-argument$` specified in a `$template-id$` [or in a `$splice-specialization-specifier$`]{.addu} shall match the type and form specified for the corresponding parameter declared by the template in its `$template-parameter-list$`.
+[1]{.pnum} The type and form of each `$template-argument$` specified in a `$template-id$` [or in a `$splice-specialization-specifier$`]{.addu} shall match the type and form specified for the corresponding parameter declared by the template in its `$template-parameter-list$`. [A `$template-argument$` that is a splice template argument is considered to match the form specified for the corresponding template parameter.]{.addu} When the parameter declared by the template is a template parameter pack, it will correspond to zero or more `$template-argument$`s.
 
 :::
 
@@ -5644,7 +5644,7 @@ T x = $E$ ;
 ```
 where `$E$` is the template argument provided for the parameter.
 
-[2]{.pnum} The value of a non-type *template-parameter* `P` of (possibly deduced) type `T` [...]
+[2]{.pnum} The value of a constant template parameter `P` of (possibly deduced) type `T` [...]
 
 [3]{.pnum} Otherwise, a temporary variable
 ```cpp
@@ -5732,7 +5732,7 @@ Extend paragraph 4 to define what it means for a `$splice-specifier$` to appear 
 
 * [#.#]{.pnum} a `$typename-specifier$`, `$type-requirement$`, `$nested-name-specifier$`, `$elaborated-type-specifier$`, `$class-or-decltype$`, [`$using-enum-declarator$`]{.addu} or
 * [#.#]{.pnum} [...]
-  * [4.4.6]{.pnum} `$parameter-declaration$` of a (non-type) `$template-parameter$`.
+  * [4.4.6]{.pnum} `$parameter-declaration$` of a `$template-parameter$` (which necessarily declares a constant template parameter).
 
 [A `$splice-specifier$` or `$splice-specialization-specifier$` ([basic.splice]) is said to be in a _type-only context_ if a hypothetical qualified name appearing in the same position would be in a type-only context.]{.addu}
 
@@ -5944,6 +5944,20 @@ Modify paragraph 4.3 to treat parameter types of function templates that are spe
 :::
 
 ### [temp.deduct.type]{.sref} Deducing template arguments from a type {-}
+
+Add the operand of a `$splice-specifier$` to the list of non-deduced contexts in paragraph 5:
+
+::: std
+[5]{.pnum} The non-deduced contexts are:
+
+* [#.#]{.pnum} The `$nested-name-specifier$` of a type that was specified using a `$qualified-id$`.
+* [#.#]{.pnum} A `$pack-index-specifier$` or a `$pack-index-expression$`.
+* [#.#]{.pnum} The `$expression$` of a `$decltype-specifier$`.
+* [[#.3+]{.pnum} The `$constant-expression$` of a `$splice-specifier$`.]{.addu}
+* [#.4]{.pnum} A constant template argument or an array bound in which a subexpression references a template parameter.
+* [#.#]{.pnum} ...
+
+:::
 
 Modify paragraph 20 to clarify that the construct enclosing a template argument might also be a `$splice-specialization-specifier$`.
 
