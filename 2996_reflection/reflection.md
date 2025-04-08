@@ -3686,7 +3686,7 @@ template <int V> struct TCls {
   static constexpr int s = V + 1;
 };
 
-using alias = [:^^TCls:]<[:^^v:]>;
+using alias = typename [:^^TCls:]<[:^^v:]>;
   // OK, a splice-specialization-specifier with a splice-specifier
   // as a template argument
 
@@ -4025,9 +4025,13 @@ constexpr int v2 = template [:^^TCls:]<2>::s;
 constexpr typename [:^^TCls:]<3>::type v3 = 3;
   // OK, typename binds to the qualified name
 
-constexpr [:^^TCls:]<3>::type v4 = 4;
-  // error: [:^^TCls:]< is parsed as a splice-expression followed
-  // by a comparison operator
+template [:^^TCls:]<3>::type v4 = 4;
+  // OK, template binds to the splice-scope-specifier
+
+void fn() {
+  constexpr [:^^TCls:]<3>::type v5 = 5;
+    // error: < means less than
+}
 ```
 
 :::
@@ -4228,7 +4232,12 @@ auto g = typename [:^^int:](42);
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$S$` be the construct designated by `$splice-specifier$`.
 
-* [#.#]{.pnum} If `$S$` is a constructor, destructor, or constructor template, the expression is ill-formed.
+* [#.#]{.pnum} The expression is ill-formed if `$S$` is
+  * [#.#.#]{.pnum} a constructor,
+  * [#.#.#]{.pnum} a destructor, or
+  * [#.#.#]{.pnum} a local entity ([basic.pre]) such that
+    * [#.#.#.#]{.pnum} there is a lambda scope that intervenes between the expression and the point at which `$S$` was introduced, and
+    * [#.#.#.#]{.pnum} the expression would be potentially evaluated if the effect of any enclosing `typeid` expressions ([expr.typeid]) were ignored.
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a function, the expression is an lvalue referring to that function and has the same type as that function. [Default arguments of the function are not considered.]{.note}
 
@@ -4242,7 +4251,7 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
-[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template. The expression denotes an overload set containing only the function template designated by the `$splice-specifier$`; overload resolution is performed to select a unique function ([over.match], [over.over]). [Function templates belonging to an overload set undergo template argument deduction and the resulting specializations are thereafter considered as candidate functions.]{.note}
+[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template that is not a constructor template. The expression denotes an overload set containing only the function template designated by the `$splice-specifier$`; overload resolution is performed to select a unique function ([over.match], [over.over]). [Function templates belonging to an overload set undergo template argument deduction and the resulting specializations are thereafter considered as candidate functions.]{.note}
 
 [#]{.pnum} For a `$splice-expression$` of the form `template $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template. Let `$T$` be that template.
 
@@ -4437,6 +4446,10 @@ consteval void g(std::meta::info r, X<false> xv) {
 [#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
 
   * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
+
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable declared by an `$init-capture$` ([expr.prim.lambda.capture]), `$R$` is ill-formed.
+
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity `$E$` ([basic.pre]) for which there is a lambda scope that intervenes between `$R$` and the point at which `$E$` was introduced, `$R$` is ill-formed.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
@@ -7681,8 +7694,8 @@ consteval bool is_data_member_spec(info r);
 - [#.#]{.pnum} `is_complete_type(type_of(@$r$~$K$~@))` is `true` for every `@$r$~$K$~@`; and
 - [#.#]{.pnum} for every pair (`@$r$~$K$~@`, `@$r$~$L$~@`) where `K < L`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then either
 
-  - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true`,
-  - [#.#.#]{.pnum} or `u8identifier_of(@$r$~$K$~@) == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
+  - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true`, or
+  - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
 
 [#]{.pnum} Let {`@$t$~k~@`} be a sequence of reflections and {`@$o$~k~@`} be a sequence of `data_member_options` values such that `data_member_spec(@$t$~$k$~@, @$o$~$k$~@) == @$r$~$k$~@` is `true` for every `@$r$~$k$~@` in `mdescrs`.
 
