@@ -4025,9 +4025,13 @@ constexpr int v2 = template [:^^TCls:]<2>::s;
 constexpr typename [:^^TCls:]<3>::type v3 = 3;
   // OK, typename binds to the qualified name
 
-constexpr [:^^TCls:]<3>::type v4 = 4;
-  // error: [:^^TCls:]< is parsed as a splice-expression followed
-  // by a comparison operator
+template [:^^TCls:]<3>::type v4 = 4;
+  // OK, template binds to the splice-scope-specifier
+
+void fn() {
+  constexpr [:^^TCls:]<3>::type v5 = 5;
+    // error: < means less than
+}
 ```
 
 :::
@@ -4228,7 +4232,12 @@ auto g = typename [:^^int:](42);
 
 [#]{.pnum} For a `$splice-expression$` of the form `$splice-specifier$`, let `$S$` be the construct designated by `$splice-specifier$`.
 
-* [#.#]{.pnum} If `$S$` is a constructor, destructor, or constructor template, the expression is ill-formed.
+* [#.#]{.pnum} The expression is ill-formed if `$S$` is
+  * [#.#.#]{.pnum} a constructor,
+  * [#.#.#]{.pnum} a destructor, or
+  * [#.#.#]{.pnum} a local entity ([basic.pre]) such that
+    * [#.#.#.#]{.pnum} there is a lambda scope that intervenes between the expression and the point at which `$S$` was introduced and
+    * [#.#.#.#]{.pnum} the expression would be potentially evaluated if the effect of any enclosing `typeid` expressions ([expr.typeid]) were ignored.
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a function, the expression is an lvalue referring to that function and has the same type as that function. [Default arguments of the function are not considered.]{.note}
 
@@ -4242,7 +4251,7 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
-[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template. The expression denotes an overload set containing only the function template designated by the `$splice-specifier$`; overload resolution is performed to select a unique function ([over.match], [over.over]). [Function templates belonging to an overload set undergo template argument deduction and the resulting specializations are thereafter considered as candidate functions.]{.note}
+[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template that is not a constructor template. The expression denotes an overload set containing only the function template designated by the `$splice-specifier$`; overload resolution is performed to select a unique function ([over.match], [over.over]). [Function templates belonging to an overload set undergo template argument deduction and the resulting specializations are thereafter considered as candidate functions.]{.note}
 
 [#]{.pnum} For a `$splice-expression$` of the form `template $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template. Let `$T$` be that template.
 
@@ -4438,13 +4447,17 @@ consteval void g(std::meta::info r, X<false> xv) {
 
   * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
 
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable declared by an `$init-capture$` ([expr.prim.lambda.capture]), `$R$` is ill-formed.
+
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity `$E$` ([basic.pre]) for which there is a lambda scope that intervenes between `$R$` and the point at which `$E$` was introduced, `$R$` is ill-formed.
+
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a function-local predefined variable ([dcl.fct.def.general]), `$R$` is ill-formed. For any other `$id-expression$` that denotes a variable, `$R$` represents that variable.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a structured binding, enumerator, or non-static data member, `$R$` represents that entity.
 
-  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and non-type template parameters.]{.note}
+  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and constant template parameters.]{.note}
 
   The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}).
 
@@ -5577,7 +5590,7 @@ Modify footnote 111 to account for `$splice-specialization-specifier$`s:
 Modify paragraph 1; there are now _four_ forms of `$template-argument$`.
 
 ::: std
-[1]{.pnum} There are [three]{.rm} [four]{.addu} forms of `$template-argument$`, [three of which]{.addu} correspond[ing]{.rm} to the three forms of `$template-parameter$`: type, non-type and template. [The fourth argument form, _splice template argument_, is considered to match the form of any template parameter.]{.addu} The type and form of each `$template-argument$` specified in a `$template-id$` [or in a `$splice-specialization-specifier$`]{.addu} shall match the type and form specified for the corresponding parameter declared by the template in its `$template-parameter-list$`.
+[1]{.pnum} The type and form of each `$template-argument$` specified in a `$template-id$` [or in a `$splice-specialization-specifier$`]{.addu} shall match the type and form specified for the corresponding parameter declared by the template in its `$template-parameter-list$`. [A `$template-argument$` that is a splice template argument is considered to match the form specified for the corresponding template parameter.]{.addu} When the parameter declared by the template is a template parameter pack, it will correspond to zero or more `$template-argument$`s.
 
 :::
 
@@ -5631,7 +5644,7 @@ T x = $E$ ;
 ```
 where `$E$` is the template argument provided for the parameter.
 
-[2]{.pnum} The value of a non-type *template-parameter* `P` of (possibly deduced) type `T` [...]
+[2]{.pnum} The value of a constant template parameter `P` of (possibly deduced) type `T` [...]
 
 [3]{.pnum} Otherwise, a temporary variable
 ```cpp
@@ -5719,7 +5732,7 @@ Extend paragraph 4 to define what it means for a `$splice-specifier$` to appear 
 
 * [#.#]{.pnum} a `$typename-specifier$`, `$type-requirement$`, `$nested-name-specifier$`, `$elaborated-type-specifier$`, `$class-or-decltype$`, [`$using-enum-declarator$`]{.addu} or
 * [#.#]{.pnum} [...]
-  * [4.4.6]{.pnum} `$parameter-declaration$` of a (non-type) `$template-parameter$`.
+  * [4.4.6]{.pnum} `$parameter-declaration$` of a `$template-parameter$` (which necessarily declares a constant template parameter).
 
 [A `$splice-specifier$` or `$splice-specialization-specifier$` ([basic.splice]) is said to be in a _type-only context_ if a hypothetical qualified name appearing in the same position would be in a type-only context.]{.addu}
 
@@ -5931,6 +5944,20 @@ Modify paragraph 4.3 to treat parameter types of function templates that are spe
 :::
 
 ### [temp.deduct.type]{.sref} Deducing template arguments from a type {-}
+
+Add the operand of a `$splice-specifier$` to the list of non-deduced contexts in paragraph 5:
+
+::: std
+[5]{.pnum} The non-deduced contexts are:
+
+* [#.#]{.pnum} The `$nested-name-specifier$` of a type that was specified using a `$qualified-id$`.
+* [#.#]{.pnum} A `$pack-index-specifier$` or a `$pack-index-expression$`.
+* [#.#]{.pnum} The `$expression$` of a `$decltype-specifier$`.
+* [[#.3+]{.pnum} The `$constant-expression$` of a `$splice-specifier$`.]{.addu}
+* [#.4]{.pnum} A constant template argument or an array bound in which a subexpression references a template parameter.
+* [#.#]{.pnum} ...
+
+:::
 
 Modify paragraph 20 to clarify that the construct enclosing a template argument might also be a `$splice-specialization-specifier$`.
 
@@ -7681,8 +7708,8 @@ consteval bool is_data_member_spec(info r);
 - [#.#]{.pnum} `is_complete_type(type_of(@$r$~$K$~@))` is `true` for every `@$r$~$K$~@`; and
 - [#.#]{.pnum} for every pair (`@$r$~$K$~@`, `@$r$~$L$~@`) where `K < L`,  if `has_identifier(@$r$~$K$~@) && has_identifier(@$r$~$L$~@)` is `true`, then either
 
-  - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true`,
-  - [#.#.#]{.pnum} or `u8identifier_of(@$r$~$K$~@) == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
+  - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) != u8identifier_of(@$r$~$L$~@)` is `true` or
+  - [#.#.#]{.pnum} `u8identifier_of(@$r$~$K$~@) == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
 
 [#]{.pnum} Let {`@$t$~k~@`} be a sequence of reflections and {`@$o$~k~@`} be a sequence of `data_member_options` values such that `data_member_spec(@$t$~$k$~@, @$o$~$k$~@) == @$r$~$k$~@` is `true` for every `@$r$~$k$~@` in `mdescrs`.
 
