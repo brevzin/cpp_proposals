@@ -2042,7 +2042,7 @@ void __introsort(_RandomAccessIterator __first,
 ```
 :::
 
-The expression `__last - __first`, because these are `std::meta::info*`s, must be a constant. Because it's not here (`__first` and `__last` are just function parameters), that triggers the immediate-escalation machinery from [@P2564R3]{.title} (before that paper, it would have been ill-formed on the spot). But because `__introsort` is not `constexpr`, propagation fails at that point, and the prorgam is ill-formed.
+The expression `__last - __first`, because these are `std::meta::info*`s, must be a constant. Because it's not here (`__first` and `__last` are just function parameters), that triggers the immediate-escalation machinery from [@P2564R3]{.title} (before that paper, it would have been ill-formed on the spot). But because `__introsort` is not `constexpr`, propagation fails at that point, and the program is ill-formed.
 
 Even though during we would've never actually gotten to this code during runtime.
 
