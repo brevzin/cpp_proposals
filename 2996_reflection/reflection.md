@@ -7456,9 +7456,9 @@ consteval bool can_substitute(info templ, R&& arguments);
 ```
 [1]{.pnum} *Constant When*: `templ` represents a template and every reflection in `arguments` represents a construct usable as a template argument ([temp.arg]).
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, values, and objects represented by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the values held by the elements of `arguments`.
 
-[#]{.pnum} *Returns*: `true` if `Z<Args...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `Z<[:Args:]...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
 
 [#]{.pnum} *Remarks*: If attempting to substitute leads to a failure outside of the immediate context, the program is ill-formed.
 
@@ -7469,11 +7469,11 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Constant When*: `can_substitute(templ, arguments)` is `true`.
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be the sequence of entities, values, and objects represented by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the values held by the elements of `arguments`.
 
-[#]{.pnum} *Returns*: A reflection representing `Z<Args...>`.
+[#]{.pnum} *Returns*: A reflection representing `Z<[:Args:]...>`.
 
-[#]{.pnum} [The specialization `Z<Args..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
+[#]{.pnum} [The specialization `Z<[:Args:]..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
 
 :::
 :::
