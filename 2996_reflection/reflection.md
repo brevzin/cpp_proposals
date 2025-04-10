@@ -5348,7 +5348,7 @@ Disallow consideration of default arguments when an overload set was denoted by 
 - [#.#]{.pnum} A candidate function having fewer than `$m$` parameters is viable only if it has an ellipsis in its parameter list ([dcl.fct]). For the purposes of overload resolution, any argument for which there is no corresponding parameter is considered to "match the ellipsis" ([over.ics.ellipsis]).
 - [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if
 
-  - [#.#.#]{.pnum} all parameters following the `$m$`^th^ have default arguments ([dcl.fct.default])[ and]{.addu}
+  - [#.#.#]{.pnum} all parameters following the `$m$`^th^ have default arguments ([dcl.fct.default]) [and]{.addu}
   - [#.#.#]{.pnum} [the set of candidate functions was not denoted by a `$splice-expression$` ([expr.prim.splice]).]{.addu}
 
 :::
@@ -6430,7 +6430,7 @@ namespace std::meta {
     consteval info common_reference(R&& type_args);
   consteval info type_underlying_type(info type);
   template <reflection_range R = initializer_list<info>>
-    `consteval info invoke_result(info type, R&& type_args);
+    consteval info invoke_result(info type, R&& type_args);
   consteval info unwrap_reference(info type);
   consteval info unwrap_ref_decay(info type);
 
