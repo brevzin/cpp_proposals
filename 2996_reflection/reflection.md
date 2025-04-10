@@ -592,7 +592,7 @@ template<typename E, bool Enumerable = std::meta::is_enumerable_type(^^E)>
 constexpr std::string_view enum_to_string(E value) {
   if constexpr (Enumerable)
     template for (constexpr auto e :
-                  std::meta::define_static_array(std::meta::enumerators_of(^^E)))
+                  std::define_static_array(std::meta::enumerators_of(^^E)))
       if (value == [:e:])
         return std::meta::identifier_of(e);
 
@@ -621,7 +621,7 @@ template <typename E, bool Enumerable = std::meta::is_enumerable_type(^^E)>
 constexpr std::optional<E> string_to_enum(std::string_view name) {
   if constexpr (Enumerable)
     template for (constexpr auto e :
-                  std::meta::define_static_array(std::meta::enumerators_of(^^E)))
+                  std::define_static_array(std::meta::enumerators_of(^^E)))
       if (name == std::meta::identifier_of(e))
         return [:e:];
 
@@ -1108,7 +1108,7 @@ struct Clap {
 
     constexpr auto ctx = std::meta::access_context::current();
     template for (constexpr auto [sm, om] :
-                  std::meta::define_static_array(
+                  std::define_static_array(
                       std::views::zip(nonstatic_data_members_of(^^Spec, ctx),
                                       nonstatic_data_members_of(^^Opts, ctx)) |
                       std::views::transform([](auto z) { return std::pair(get<0>(z), get<1>(z)); }))) {
