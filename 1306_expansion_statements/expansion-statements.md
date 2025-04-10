@@ -469,6 +469,396 @@ void f() {
 
 ## Implementation experience
 
-TODO
+Bloomberg's Clang/P2996 fork (available [on Godbolt](https://godbolt.org/z/Yjv1dM4eK)) implements all features proposed by this paper. Expansion statements are enabled with the `-fexpansion-statements` flag (or with `-freflection-latest`).
 
 
+# Proposed wording
+
+## [basic.scope.pdecl] Point of declaration {-}
+
+Update paragraph 11 to specify the locus of an expansion statement:
+
+::: std
+[11]{.pnum} The locus of a `$for-range-declaration$` of a range-based `for` statement ([stmt.range]) [or expansion statement ([stmt.expand])]{.addu} is immediately after the `$for-range-initializer$` [or `$expansion-initializer$`]{.addu}.
+
+:::
+
+## [basic.scope.block] Block scope {-}
+
+Update paragraph 1.1 to include expansion statements:
+
+::: std
+- [1.1]{.pnum} selection[,]{.addu} [or]{.rm} iteration[, or expansion]{.addu} statement ([stmt.select], [stmt.iter] [, [stmt.expand]]{.addu})
+
+:::
+
+## [class.temporary] Temporary objects {-}
+
+Update paragraph 7 to extend the lifetime of temporaries created by `$expansion-initializer$`s:
+
+::: std
+[7]{.pnum} The fourth context is when a temporary object other than a function parameter object is created in the `$for-range-initializer$` of a range-based `for` statement[ or the `$expansion-initializer$` of an expansion statement]{.addu}. If such a temporary object would otherwise be destroyed at the end of the `$for-range-initializer$` or `$expansion-initializer$` full-expression, the object persists for the lifetime of the reference initialized by the `$for-range-initializer$` [or for the evaluation of the `$expansion-statement$`]{.addu}.
+
+:::
+
+## [stmt.pre] Preamble {-}
+
+Add a production for expansion statements to `$statement$`:
+
+::: std
+[1]{.pnum} Except as indicated, statements are executed in sequence.
+
+```diff
+  $statement$:
+      $labeled-statement$
+      $attribute-specifier-seq$@~_opt_~@ $expression-statement$
+      $attribute-specifier-seq$@~_opt_~@ $compound-statement$
+      $attribute-specifier-seq$@~_opt_~@ $selection-statement$
+      $attribute-specifier-seq$@~_opt_~@ $iteration-statement$
++     $attribute-specifier-seq$@~_opt_~@ $expansion-statement$
+      $attribute-specifier-seq$@~_opt_~@ $jump-statement$
+      $declaration-statement$
+      $attribute-specifier-seq$@~_opt_~@ $try-block$
+```
+:::
+
+Extend "substatement" to cover expansion statements in paragraph 2:
+
+::: std
+[2]{.pnum} A _substatement_ of a `$statement$` is one of the following:
+
+- [#.#]{.pnum} for a `$labeled-statement$`, its `$statement$`,
+- [#.#]{.pnum} for a `$compound-statement$`, any `$statement$` of its `$statement-seq$`,
+- [#.#]{.pnum} for a `$selection-statement$`, any of its `$statement$`s or `$compound-statement$`s (but not its `$init-statement$`), [or]{.rm}
+- [#.#]{.pnum} for an `$iteration-statement$`, its `$statement$` (but not an `$init-statement$`)[.]{.rm}[, or]{.addu}
+- [[#.#]{.pnum} for an `$expansion-statement$`, its `$statement$` (but not an `$init-statement$`).]{.addu}
+
+:::
+
+Extend "enclose" to cover expansion statements in paragraph 3:
+
+::: std
+[3]{.pnum} A `$statement$` `S1` _encloses_ a `$statement$` `S2` if
+
+- [#.#]{.pnum} `S2` is a substatement of `S1`,
+- [#.#]{.pnum} `S1` is a `$selection-statement$`[,]{.addu} [or]{.rm} `$iteration-statement$`[, or `$expansion-statement$`]{.addu} and `S2` is the `$init-statement$` of `S1`,
+- [#.#]{.pnum} [...]
+
+:::
+
+## [stmt.label] Labeled statement {-}
+
+Add a new paragraph to the end of [stmt.label]:
+
+::: std
+[[4]{.pnum} An identifier label shall not occur in an `$expansion-statement$` ([stmt.expand]).]{.addu}
+
+:::
+
+## [stmt.ranged] The range-based `for` statement {-}
+
+Add the following pargraph to the end of [stmt.ranged]:
+
+::: std
+[[3]{.pnum} An expression is _iterable_ if, when treated as a `$for-range-initializer$` ([stmt.iter.general]), expressions `$begin-expr$` and `$end-expr$` can be determined as specified above, and if they are of the form `begin($range$)` and `end($range$)` then argument-dependent lookup finds at least one function or function template for each.]{.addu}
+
+:::
+
+## 8.6+ [stmt.expand] Expansion statements
+
+Insert this section after [stmt.iter]{.sref} (and renumber accordingly).
+
+::: std
+::: addu
+**Expansion statements   [stmt.expand]**
+
+[1]{.pnum} Expansion statements specify compile-time repetition, with substitutions, of their substatement.
+
+```
+$expansion-statement$:
+    template for ( $init-statement$@~_opt_~@ $for-range-declaration$ : $expansion-initializer$ ) $statement$
+
+$expansion-initializer$:
+    $expression$
+    $expansion-init-list$
+
+$expansion-init-list$:
+    { $expression-list$ }
+```
+
+[An `$init-statement$` ends with a semicolon.]{.note}
+
+[#]{.pnum} The `$statement$` of an `$expansion-statement$` is a control-flow-limited statement ([stmt.label]).
+
+[#]{.pnum} Each `$decl-specifier$` in the `$decl-specifier-seq$` of a `$for-range-declaration$` in an `$expansion-statement$` shall be either a `$type-specifier$` or `constexpr`.
+
+[#]{.pnum} If the `$expansion-initializer$` is iterable ([stmt.ranged]), the type of the `$initializer$` for the `$for-range-declaration$` is `decltype(*I)` where `I` is an iterator into the range. Otherwise, if the `$expansion-initializer$` is not an `$expansion-init-list$`, then it shall be destructurable expression ([dcl.struct.bind]). [The name declared by a `$for-range-declaration$` for an `$expansion-statement$` is value-dependent ([temp.dep.constexpr]) if the `$expansion-initializer$` is iterable, and is otherwise type-dependent ([temp.dep.expr]) if declared wiht a placeholder type.]{.note}
+
+[#]{.pnum} For the purpose of name lookup and instantiation, the `$for-range-declaration$` and the `$statement$` of the `$expansion-statement$` are together considered a template definition.
+
+[#]{.pnum} An `$expansion-statement$` is _expanded_ (as described below) if its `$expansion-initializer$` is neither type-dependent nor a value-dependent iterable expression. Expansion entails the repetition of a statement for each element of the `$expansion-initializer$`. Each repetition is called an _expansion_ and is an instantiation ([temp.spec]) of the `$for-range-declaration$` (including its implied initialization) together with the `$statement$`.
+
+[#]{.pnum} If the `$expansion-initializer$` is an `$expansion-init-list$`, the `$expansion-statement$` is expanded once for each expression in the contained `$expression-list$`; the expansion is equivalent to:
+
+```cpp
+{
+  $init-statement$
+  {  // @i^th^@ repetition of the substatement
+    $for-range-declaration$ = $get-expr$@~_i_~@ ;
+    $statement$
+  }
+}
+```
+where `$get-expr$@~_i_~@` is the _i_^th^ `$expression$` in the `$expansion-init-list$`.
+
+[#]{.pnum} Otherwise, if the `$expansion-initializer$` is an iterable expression ([stmt.ranged]) and the `$expansion-initializer$` does not have array type, the `$expansion-statement$` is expanded once for each element in the range computed by the `$expansion-initializer$`; the expansion is equivalent to:
+```cpp
+{
+  $init-statement$
+  static constexpr auto&& range = $expansion-initializer$ ;
+  // @i^th^@ repetition of the substatement
+  static constexpr auto iter@~_i_~@ = $get-expr$@~_i_~@ ;
+  {
+    $for-range-declaration$ = *iter@~_i_~@ ;
+    $statement$
+  }
+}
+```
+where `$get-expr$@~_0_~@` is the expression:
+```cpp
+begin($range$)
+```
+and every subsequent `$get-expr$@~_i_~@` is the expression:
+```cpp
+$get-expr$@~_i-1_~@ + 1
+```
+for all `i` in the range [0, _N_], for _N_ such that:
+```cpp
+$get-expr$@~_N_~@ == $end-expr$
+```
+where `$end-expr$` is the expression:
+```cpp
+end($range$) @.@
+```
+
+[The expansion is ill-formed if `range` is not a constant expression ([expr.const])]{.note}
+
+[9]{.pnum} Otherwise, the `$expansion-initializer$` shall be destructurable. The `$expansion-statement$` is expanded once for each element of the `$identifier-list$` of a structured binding declaration of the form
+```cpp
+auto&& [u@~1~@, u@~2~@, ..., u@~_n_~@] = $expansion-initializer$ ;
+```
+where _n_ is the number of elements required in a valid `$identifier-list$` for such a structured binding declaration. Each expansion is equivalent to:
+```cpp
+{
+  $init-statement$
+  static $constexpr-specifier$@~_opt_~@ auto&& $seq$ = $expansion-initializer$ ;
+  {  // @i^th^@ repetition of the substatement
+    $for-range-declaration$ = $get-expr$@~_i_~@ ;
+    $statement$
+  }
+}
+```
+where `$get-expr$@~_i_~@` is the `$initializer$` for the `$i$@^th^@` `$identifier$` in the corresponding structured binding declaration. The `$constexpr-specifier$` is present in the declaration of `$seq$` if `constexpr` appears in the `$for-range-declaration$`. The name `$seq$` is used for exposition only.
+
+::: example
+```cpp
+struct S { int i; short s; };
+consteval long f(S s) {
+  long result = 0;
+  template for (x : s) {
+    result += x;
+  }
+  return result;
+}
+static_assert(f(S{1, 2}) == 3);
+```
+:::
+
+::: example
+```cpp
+consteval int f(auto... Containers) {
+  int result = 0;
+  template for (auto c : {Containers...}) {
+    result += c[0];
+  }
+  return result;
+}
+constexpr int c1[] = {1, 2, 3};
+constexpr int c2[] = {4, 3, 2, 1};
+static_assert(f(c1, c2) == 5);
+```
+:::
+
+[The following example assumes the changes proposed by P2996R11.]{.ednote}
+
+::: example
+```cpp
+template <typename T> consteval std::optional<int> f() {
+  constexpr auto ctx = std::meta::access_context::current();
+  auto statics = std::meta::define_static_array(
+      std::meta::static_data_members_of(^^T, ctx));
+  template for (constexpr std::meta::info s : statics)
+    if (std::meta::identifier_of(s) == "ClsId")
+      return [:s:];
+  return std::nullopt;
+}
+struct Cls { static constexpr int ClsId == 14; };
+static_assert(f<Cls>().value() == 14);
+```
+:::
+
+:::
+:::
+
+## [stmt.break] The `break` statement {-}
+
+Modify paragraph 1 to allow `break` in expansion statements:
+
+::: std
+[1]{.pnum} A `break` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter])[, an `$expansion-statement$` ([stmt.expand]),]{.addu} or a `switch` statement ([stmt.switch]). The `break` statement causes termination of the smallest such enclosing statement; control passes to the statement following the terminated statement, if any.
+
+:::
+
+## [stmt.cont] The `continue` statement
+
+[We recommend the phrase "continuation portion" in lieu of "loop-continuation portion" to emphasize that an expansion statement is not a loop.]{.ednote}
+
+Modify paragraph 1 to allow `continue` in expansion statements:
+
+::: std
+
+[1]{.pnum} A `continue` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]) [or an `$expansion-statement$` ([stmt.expand])]{.addu}. The `continue` statement causes control to pass to the [loop]{.rm} continuation portion of the smallest such enclosing statement, that is, to the end of the loop [or expansion]{.addu}. More precisely, in each of the statements
+<table><tr>
+
+<td>
+```cpp
+while (foo) {
+  {
+    // ...
+  }
+contin: ;
+}
+```
+</td>
+
+<td>
+```cpp
+do {
+  {
+    // ...
+  }
+contin: ;
+} while (foo);
+```
+</td>
+
+<td>
+```cpp
+for (;;) {
+  {
+    // ...
+  }
+contin: ;
+}
+```
+</td>
+
+<td>
+::: addu
+```cpp
+template for (auto e : foo) {
+  {
+    // ...
+  }
+contin: ;
+}
+```
+:::
+</td>
+
+</tr></table>
+a `continue` not contained in an enclosing iteration [or expansion]{.addu} statement is equivalent to  `goto contin`.
+
+:::
+
+## [dcl.struct.bind] Structured binding declarations
+
+Add the following paragraph to the end of [dcl.struct.bind]:
+
+::: std
+::: addu
+[9]{.pnum} An expression `$E$` is _destructurable_ if the declaration
+```cpp
+auto [$identifier-list$] = $E$;
+```
+is valid for some `$identifier-list$`.
+
+:::
+:::
+
+## [dcl.attr.fallthrough] Fallthrough attribute
+
+Update paragraph 1 to discuss expansion statements:
+
+::: std
+[1]{.pnum} The `$attribute-token$` `fallthrough` may be applied to a null statement; such a statement is a fallthrough statement. No `$attribute-argument-clause$` shall be present. A fallthrough statement may only appear within an enclosing `switch` statement ([stmt.switch]). The next statement that would be executed after a fallthrough statement shall be a labeled statement whose label is a case label or default label for the same `switch` statement and, if the fallthrough statement is contained in an iteration statement [or expansion statement]{.addu}, the next statement shall be part of the same execution of the substatement of the innermost enclosing iteration statement [or the same expansion of the innermost enclosing expansion statement]{.addu}. The program is ill-formed if there is no such statement.
+
+:::
+
+## [temp.res.general] General {-}
+
+Update paragraph 6.1 to permit early checking of expansion statements in dependent contexts.
+
+::: std
+[6]{.pnum} The validity of a templated entity may be checked prior to any instantiation.
+
+[Knowing which names are type names allows teh syntax of every template to be checked in this way.]{.note3}
+
+The program is ill-formed, no diagnostic required, if
+
+- [#.#]{.pnum} no valid specialization, ignoring `$static_assert-declaration$`s that fail ([dcl.pre]), can be generated for a templated entity or a substatement of a constexpr if statement ([stmt.if]) [or expansion statement]{.addu} within a templated entity and the innermost enclosing template is not instantiated, or
+
+- [#.#]{.pnum} [...]
+
+:::
+
+## [temp.dep.expr] Type-dependent expressions {-}
+
+Add the following case to paragraph 3 (and renumber accordingly):
+
+::: std
+[3]{.pnum} An `$id-expression$` is type-dependent if it is a `$template-id$` that is not a concept-id and is dependent; or if its terminal name is
+
+- [#.#]{.pnum} [...]
+- [#.10]{.pnum}  a `$conversion-function-id$` that specifies a dependent type, or
+- [[#.10+]{.pnum} it is a name introduced by a `$for-range-declaration$` that contains a placeholder type and is declared in an `$expansion-statement$` ([stmt.expand]) for which the `$expansion-initializer$` is not an iterable expression ([stmt.ranged]), or]{.addu}
+- [#.11]{.pnum} dependent
+
+or if it names [...]
+:::
+
+## [temp.dep.constexpr] Value-dependent expressions {-}
+
+Add the following case to paragraph 2 (and renumber accordingly):
+
+::: std
+[2]{.pnum} An `$id-expression$` is value-dependent if
+
+- [#.#]{.pnum} [...]
+- [#.3]{.pnum} it is the name of a constant template parameter,
+- [[#.3+]{.pnum} it is a name introduced by a `$for-range-declaration$` declared in an `$expansion-statement$` for which the `$expansion-initializer$` is an iterable expression,]{.addu}
+- [#.4]{.pnum} [...]
+
+:::
+
+## [cpp.predefined] Predefined macro names {-}
+
+Add the following entry to Table 22:
+
+::: std
+<table>
+<tr><td><center>Macro name</center></td><td><center>Value</center></td></tr>
+<tr><td><center>...</center></td><td><center>...</center></td></tr>
+<tr><td><center>[`__cpp_expansion_statements`]{.addu}</center></td><td><center>[202506L]{.addu}</center></td></tr>
+</tr></table>
+:::
