@@ -497,7 +497,7 @@ Update paragraph 1.1 to include expansion statements:
 Update paragraph 7 to extend the lifetime of temporaries created by `$expansion-initializer$`s:
 
 ::: std
-[7]{.pnum} The fourth context is when a temporary object other than a function parameter object is created in the `$for-range-initializer$` of a range-based `for` statement[ or the `$expansion-initializer$` of an expansion statement]{.addu}. If such a temporary object would otherwise be destroyed at the end of the `$for-range-initializer$` or `$expansion-initializer$` full-expression, the object persists for the lifetime of the reference initialized by the `$for-range-initializer$` [or for the evaluation of the `$expansion-statement$`]{.addu}.
+[7]{.pnum} The fourth context is when a temporary object other than a function parameter object is created in the `$for-range-initializer$` of a range-based `for` statement [or the `$expansion-initializer$` of an expansion statement]{.addu}. If such a temporary object would otherwise be destroyed at the end of the `$for-range-initializer$` or `$expansion-initializer$` full-expression, the object persists for the lifetime of the reference initialized by the `$for-range-initializer$` [or for the evaluation of the `$expansion-statement$`]{.addu}.
 
 :::
 
@@ -557,7 +557,7 @@ Add a new paragraph to the end of [stmt.label]:
 
 ## [stmt.ranged] The range-based `for` statement {-}
 
-Add the following pargraph to the end of [stmt.ranged]:
+Add the following paragraph to the end of [stmt.ranged]:
 
 ::: std
 [[3]{.pnum} An expression is _iterable_ if, when treated as a `$for-range-initializer$` ([stmt.iter.general]), expressions `$begin-expr$` and `$end-expr$` can be determined as specified above, and if they are of the form `begin($range$)` and `end($range$)` then argument-dependent lookup finds at least one function or function template for each.]{.addu}
@@ -665,7 +665,7 @@ where `$get-expr$@~_i_~@` is the `$initializer$` for the `$i$@^th^@` `$identifie
 struct S { int i; short s; };
 consteval long f(S s) {
   long result = 0;
-  template for (x : s) {
+  template for (auto x : s) {
     result += x;
   }
   return result;
@@ -676,9 +676,9 @@ static_assert(f(S{1, 2}) == 3);
 
 ::: example
 ```cpp
-consteval int f(auto... Containers) {
+consteval int f(auto const&... Containers) {
   int result = 0;
-  template for (auto c : {Containers...}) {
+  template for (auto const& c : {Containers...}) {
     result += c[0];
   }
   return result;
@@ -689,14 +689,15 @@ static_assert(f(c1, c2) == 5);
 ```
 :::
 
-[The following example assumes the changes proposed by P2996R11.]{.ednote}
+[The following example assumes the changes proposed by P2996R11 and P3491.]{.ednote}
 
 ::: example
 ```cpp
 template <typename T> consteval std::optional<int> f() {
-  constexpr auto ctx = std::meta::access_context::current();
-  auto statics = std::meta::define_static_array(
-      std::meta::static_data_members_of(^^T, ctx));
+  constexpr auto statics = std::define_static_array(
+      std::meta::static_data_members_of(
+          ^^T,
+          std::meta::access_context::current()));
   template for (constexpr std::meta::info s : statics)
     if (std::meta::identifier_of(s) == "ClsId")
       return [:s:];
@@ -831,7 +832,7 @@ Add the following case to paragraph 3 (and renumber accordingly):
 
 - [#.#]{.pnum} [...]
 - [#.10]{.pnum}  a `$conversion-function-id$` that specifies a dependent type, or
-- [[#.10+]{.pnum} it is a name introduced by a `$for-range-declaration$` that contains a placeholder type and is declared in an `$expansion-statement$` ([stmt.expand]) for which the `$expansion-initializer$` is not an iterable expression ([stmt.ranged]), or]{.addu}
+- [[#.10+]{.pnum} a name introduced by a `$for-range-declaration$` that contains a placeholder type and is declared in an `$expansion-statement$` ([stmt.expand]) for which the `$expansion-initializer$` is not an iterable expression ([stmt.ranged]), or]{.addu}
 - [#.11]{.pnum} dependent
 
 or if it names [...]
@@ -856,6 +857,8 @@ Add the following case to paragraph 2 (and renumber accordingly):
 Add the following entry to Table 22:
 
 ::: std
+<center>Table 22 — Feature-test macros [tab:cpp.predefined.ft]</center>
+
 <table>
 <tr><td><center>Macro name</center></td><td><center>Value</center></td></tr>
 <tr><td><center>...</center></td><td><center>...</center></td></tr>

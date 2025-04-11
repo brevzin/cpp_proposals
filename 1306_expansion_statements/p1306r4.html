@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-04-10" />
+  <meta name="dcterms.date" content="2025-04-11" />
   <title>Expansion Statements</title>
   <style>
       code{white-space: pre-wrap;}
@@ -575,7 +575,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-04-10</td>
+    <td>2025-04-11</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1305,7 +1305,7 @@ parameter object is created in the
 <code class="sourceCode cpp"><em>for-range-initializer</em></code> of a
 range-based
 <code class="sourceCode cpp"><span class="cf">for</span></code>
-statement<span class="addu">or the
+statement <span class="addu">or the
 <code class="sourceCode cpp"><em>expansion-initializer</em></code> of an
 expansion statement</span>. If such a temporary object would otherwise
 be destroyed at the end of the
@@ -1411,7 +1411,7 @@ An identifier label shall not occur in an
 range-based
 <code class="sourceCode cpp"><span class="cf">for</span></code>
 statement<a href="#stmt.ranged-the-range-based-for-statement" class="self-link"></a></h2>
-<p>Add the following pargraph to the end of [stmt.ranged]:</p>
+<p>Add the following paragraph to the end of [stmt.ranged]:</p>
 <div class="std">
 <blockquote>
 <p><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">3</a></span>
@@ -1594,7 +1594,7 @@ exposition only.</p>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> S <span class="op">{</span> <span class="dt">int</span> i; <span class="dt">short</span> s; <span class="op">}</span>;</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">long</span> f<span class="op">(</span>S s<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">long</span> result <span class="op">=</span> <span class="dv">0</span>;</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span>x <span class="op">:</span> s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> x <span class="op">:</span> s<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    result <span class="op">+=</span> x;</span>
 <span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result;</span>
@@ -1604,9 +1604,9 @@ exposition only.</p>
 </div>
 <div class="example">
 <span>[ <em>Example 2:</em> </span>
-<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f<span class="op">(</span><span class="kw">auto</span><span class="op">...</span> Containers<span class="op">)</span> <span class="op">{</span></span>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f<span class="op">(</span><span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;...</span> Containers<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> result <span class="op">=</span> <span class="dv">0</span>;</span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> c <span class="op">:</span> <span class="op">{</span>Containers<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> c <span class="op">:</span> <span class="op">{</span>Containers<span class="op">...})</span> <span class="op">{</span></span>
 <span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    result <span class="op">+=</span> c<span class="op">[</span><span class="dv">0</span><span class="op">]</span>;</span>
 <span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result;</span>
@@ -1617,20 +1617,22 @@ exposition only.</p>
 <span> — <em>end example</em> ]</span>
 </div>
 <p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The
-following example assumes the changes proposed by P2996R11. ]</span></p>
+following example assumes the changes proposed by P2996R11 and P3491.
+]</span></p>
 <div class="example">
 <span>[ <em>Example 3:</em> </span>
 <div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">consteval</span> std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> f<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> ctx <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">()</span>;</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> statics <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>define_static_array<span class="op">(</span></span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>      std<span class="op">::</span>meta<span class="op">::</span>static_data_members_of<span class="op">(^^</span>T, ctx<span class="op">))</span>;</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info s <span class="op">:</span> statics<span class="op">)</span></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>identifier_of<span class="op">(</span>s<span class="op">)</span> <span class="op">==</span> <span class="st">&quot;ClsId&quot;</span><span class="op">)</span></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="op">[:</span>s<span class="op">:]</span>;</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> std<span class="op">::</span>nullopt;</span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Cls <span class="op">{</span> <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">int</span> ClsId <span class="op">==</span> <span class="dv">14</span>; <span class="op">}</span>;</span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">&lt;</span>Cls<span class="op">&gt;().</span>value<span class="op">()</span> <span class="op">==</span> <span class="dv">14</span><span class="op">)</span>;</span></code></pre></div>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> statics <span class="op">=</span> std<span class="op">::</span>define_static_array<span class="op">(</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>      std<span class="op">::</span>meta<span class="op">::</span>static_data_members_of<span class="op">(</span></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>          <span class="op">^^</span>T,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>          std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">()))</span>;</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info s <span class="op">:</span> statics<span class="op">)</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>identifier_of<span class="op">(</span>s<span class="op">)</span> <span class="op">==</span> <span class="st">&quot;ClsId&quot;</span><span class="op">)</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="op">[:</span>s<span class="op">:]</span>;</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> std<span class="op">::</span>nullopt;</span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Cls <span class="op">{</span> <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">int</span> ClsId <span class="op">==</span> <span class="dv">14</span>; <span class="op">}</span>;</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">&lt;</span>Cls<span class="op">&gt;().</span>value<span class="op">()</span> <span class="op">==</span> <span class="dv">14</span><span class="op">)</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -1810,7 +1812,7 @@ concept-id and is dependent; or if its terminal name is</p>
 a <code class="sourceCode cpp"><em>conversion-function-id</em></code>
 that specifies a dependent type, or</li>
 <li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(3.10+)</a></span>
-it is a name introduced by a
+a name introduced by a
 <code class="sourceCode cpp"><em>for-range-declaration</em></code> that
 contains a placeholder type and is declared in an
 <code class="sourceCode cpp"><em>expansion-statement</em></code>
@@ -1854,6 +1856,9 @@ macro names<a href="#cpp.predefined-predefined-macro-names" class="self-link"></
 <p>Add the following entry to Table 22:</p>
 <div class="std">
 <blockquote>
+<center>
+Table 22 — Feature-test macros [tab:cpp.predefined.ft]
+</center>
 <table>
 <tr>
 <td>
