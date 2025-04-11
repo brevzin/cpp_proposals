@@ -7127,7 +7127,11 @@ static consteval access_context current() noexcept;
 
 [#]{.pnum} Let `$P$` be the program point at which `access_context::current()` is called.
 
-[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope is the unique namespace, class, or function associated with the innermost namespace, class, or block scope enclosing `$P$`.
+[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope is defined as follows:
+
+* [#.#]{.pnum} If there is a function scope enclosing `$P$`, then a reflection representing that function.
+* [#.#]{.pnum} Otherwise, if there is a class scope enclosing `$P$`, then a reflection representing the innermost such class.
+* [#.#]{.pnum} Otherwise, a reflection the innermost enclosing namespace of `$P$`.
 
 ```cpp
 static consteval access_context unprivileged() noexcept;
@@ -7159,22 +7163,26 @@ consteval access_context via(info cls) const;
 consteval bool is_accessible(info r, access_context ctx);
 ```
 
-[#]{.pnum} Let `$P$` be a program point that occurs in the definition of the entity represented by `ctx.scope()`.
+[#]{.pnum} *Constant When*: `r` does not represent a member or unnamed bit-field of an incomplete class.
 
-[#]{.pnum} *Constant When*: `r` does not represent a member or unnamed bit-field of a class currently being defined.
+[#]{.pnum} Let `$P$` be a program point defined as follows:
+
+* [#.#]{.pnum} If `ctx.scope()` represents the null reflection, then [FIXME].
+* [#.#]{.pnum} Otherwise, [FIXME].
 
 [#]{.pnum} *Returns*:
 
-- [#]{.pnum} If `ctx.scope()` represents the null reflection, then `true`.
-- [#]{.pnum} Otherwise, if `r` represents a member of a class `$C$`, then `true` if that class member is accessible at `$P$` ([class.access.base]) when named in either
-  - [#.#]{.pnum} `C` if `ctx.naming_class()` is the null reflection, or
-  - [#.#]{.pnum} the class represented by `ctx.naming_class()` otherwise.
-- [#]{.pnum} Otherwise, if `r` represents an unnamed bit-field `$B$`, then `is_accessible(^^$M$, ctx)` where `$M$` is a hypothetical member of `parent_of(r)` declared with the same rules as `$B$`.
-- [#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a base class `$B$` and a derived class `$D$`, then `true` if the base class `$B$` of `$D$` is accessible at `$P$`.
-- [#]{.pnum} Otherwise, `true`.
+- [#.#]{.pnum} If `ctx.scope()` represents the null reflection, then `true`.
+- [#.#]{.pnum} Otherwise, if `r` represents a class member `$M$`, `true` if `$M$` is accessible at `$P$` ([class.access.base]) when named in either
+    - [#.#.#]{.pnum} the innermost enclosing class of which `$M$` is a direct member if `ctx.naming_class()` is the null reflection, or
+    - [#.#.#]{.pnum} the class represented by `ctx.naming_class()` otherwise.
+    Otherwise, `false`.
+- [#.#]{.pnum} Otherwise, if `r` represents an unnamed bit-field `$B$`, then `is_accessible($M$, ctx)` where `$M$` is a reflection representing a hypothetical member of `parent_of(r)` declared with the same rules as `$B$`.
+- [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a base class `$B$` and a derived class `$D$`, then `true` if the base class `$B$` of `$D$` is accessible at `$P$`. Otherwise, `false`.
+- [#.#]{.pnum} Otherwise, `true`.
 
 ::: note
-The definitions of when a class member or base class are accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
+The definitions of when a class member or base class is accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
 :::
 
 ::: example
@@ -7190,7 +7198,9 @@ public:
     static constexpr auto r = ^^mem;
 };
 
-static_assert(is_accessible(Cls::r, fn()));  // OK
+static_assert(is_accessible(Cls::r, fn()));                        // OK
+static_assert(is_accessible(Cls::r, access_context::current()));   // error: not accessible
+static_assert(is_accessible(Cls::r, access_context::unchecked())); // OK
 ```
 :::
 
@@ -7200,7 +7210,7 @@ consteval bool has_inaccessible_nonstatic_data_members(
       access_context ctx);
 ```
 
-[#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `members_of(r, access_context::unchecked())`. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `nonstatic_data_members_of(r, access_context::unchecked())`. Otherwise, `false`.
 
 ```cpp
 consteval bool has_inaccessible_bases(info r, access_context ctx);
