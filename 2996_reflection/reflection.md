@@ -7148,7 +7148,7 @@ static consteval access_context unchecked() noexcept;
 ```cpp
 consteval access_context via(info cls) const;
 ```
-[#]{.pnum} *Constant When*: `cls` represents a class type.
+[#]{.pnum} *Constant When*: `cls` represents a complete class type.
 
 [#]{.pnum} *Returns*: An `access_context` whose scope is `this->scope()` and whose naming class is `cls`.
 
@@ -7163,16 +7163,24 @@ consteval access_context via(info cls) const;
 consteval bool is_accessible(info r, access_context ctx);
 ```
 
-[#]{.pnum} *Constant When*: `r` does not represent a member or unnamed bit-field of an incomplete class.
+[#]{.pnum} *Constant When*: `r` does not represent
 
-[#]{.pnum} Let `$P$` be a program point defined as follows:
+* [#.#]{.pnum} a member or unnamed bit-field of an incomplete class or
+* [#.#]{.pnum} a direct base class relationship between a base class and an incomplete derived class.
 
-* [#.#]{.pnum} If `ctx.scope()` represents the null reflection, then [FIXME].
-* [#.#]{.pnum} Otherwise, [FIXME].
+[#]{.pnum} Let `$S$` be a scope ([basic.scope.scope]) defined as follows:
+
+* [#.#]{.pnum} If `ctx.scope()` represents the null reflection, then the global scope.
+* [#.#]{.pnum} Otherwise, if `r` represents a function `$F$`, then the block scope introduced by the `$compound-statement$` of the `$function-body$` in the definition of `$F$`.
+* [#.#]{.pnum} Otherwise, if `r` represents a class `$C$`, then the class scope of `$C$`.
+* [#.#]{.pnum} Otherwise, if `r` represents a namespace `$N$`, then the namespace scope of `$N$`.
+
+[#]{.pnum} Let `$P$` be an unspecified point enclosed by `$S$` such that no function parameter scope, class scope, or namespace scope intervenes between `$P$` and `$S$`.
 
 [#]{.pnum} *Returns*:
 
 - [#.#]{.pnum} If `ctx.scope()` represents the null reflection, then `true`.
+
 - [#.#]{.pnum} Otherwise, if `r` represents a class member `$M$`, `true` if `$M$` is accessible at `$P$` ([class.access.base]) when named in either
     - [#.#.#]{.pnum} the innermost enclosing class of which `$M$` is a direct member if `ctx.naming_class()` is the null reflection, or
     - [#.#.#]{.pnum} the class represented by `ctx.naming_class()` otherwise.
@@ -7210,11 +7218,18 @@ consteval bool has_inaccessible_nonstatic_data_members(
       access_context ctx);
 ```
 
+[#]{.pnum} *Constant When*:
+
+- [#.#]{.pnum} `nonstatic_data_members_of(r, ctx)` is a constant subexpression and
+- [#.#]{.pnum} `r` does not represent a closure type.
+
 [#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `nonstatic_data_members_of(r, access_context::unchecked())`. Otherwise, `false`.
 
 ```cpp
 consteval bool has_inaccessible_bases(info r, access_context ctx);
 ```
+
+[#]{.pnum} *Constant When*: `bases_of(r, ctx)` is a constant subexpression.
 
 [#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `bases_of(r, access_context::unchecked())`. Otherwise, `false`.
 
@@ -7231,16 +7246,19 @@ consteval vector<info> members_of(info r, access_context ctx);
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
 
-[#]{.pnum} A member `$M$` of either a class or namespace `$Q$` is _members-of-eligible_ if
+[#]{.pnum} A declaration `$D$` of a class or namespace _members-of-precedes_ a point `$P$` if `$D$` precedes either `$P$` or the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
+
+[#]{.pnum} A declaration `$D$` of a member `$M$` of a class or namespace `$Q$` is _members-of-eligible_ if
 
 * [#.#]{.pnum} `$M$` is not a closure type ([expr.prim.lambda.closure]),
-* [#.#]{.pnum} if `$Q$` is a class, then `$M$` is a direct member of `$Q$` ([class.member.general]),
-* [#.#]{.pnum} if `$Q$` is a namespace, then there is a declaration `$D$` of `$M$` reachable from some point in the evaluation context for which `$D$` inhabits the namespace scope of `$Q$`, and
+* [#.#]{.pnum} `$M$` is not a specialization of a template ([temp.pre]),
+* [#.#]{.pnum} if `$Q$` is a class, then `$M$` is a direct member of `$Q$` ([class.member.general]) that is not a variant member ([class.union.anon]),
+* [#.#]{.pnum} if `$Q$` is a namespace, then `$D$` inhabits the namespace scope of `$Q$`, and
 * [#.#]{.pnum} if `$Q$` is a closure type, then `$M$` is a function call operator or function call operator template.
 
-It is implementation-defined whether other members of closure types are members-of-eligible.
+It is implementation-defined whether declarations of other members of closure types are members-of-eligible.
 
-[#]{.pnum} A member of either a class or a namespace is _members-of-representable_ if it is members-of-eligible, it is not a specialization of a template, and it is
+[#]{.pnum} A member `$M$` of a class or a namespace is _members-of-representable_ if a members-of-eligible declaration of `$M$` members-of-precedes some point in the evaluation context and `$M$` is
 
 * [#.#]{.pnum} a class or enumeration type,
 * [#.#]{.pnum} a type alias,
@@ -7249,15 +7267,13 @@ It is implementation-defined whether other members of closure types are members-
 * [#.#]{.pnum} a function `$F$` for which
   * [#.#]{.pnum} the type of `$F$` does not contain an undeduced placeholder type, and
   * [#.#]{.pnum} the constraints (if any) of `$F$` are satisfied, unless `$F$` is a prospective destructor that is not a selected destructor ([class.dtor]),
-* [#.#]{.pnum} a non-static data member or unnamed bit-field, other than members of an anonymous union that is directly or indirectly members-of-representable,
+* [#.#]{.pnum} a non-static data member,
 * [#.#]{.pnum} a namespace, or
 * [#.#]{.pnum} a namespace alias.
 
 [Examples of members that are not members-of-representable include: injected class names, enumerators, partial template specializations, friend declarations, and static assertions.]{.note}
 
-[3]{.pnum} A member `$M$` of a class or namespace _members-of-precedes_ a point `$P$` if a declaration of `$M$` precedes either `$P$` or the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
-
-[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members `$M$` of the entity represented by `r` that members-of-precede some point in the evaluation context ([expr.const]) and, letting `$ref-m$` be a reflection representing `$M$`, `is_accessible($ref-m$, ctx)` is `true`.
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members `$M$` of the entity represented by `r` for which, letting `$ref-m$` be a reflection representing `$M$`, `is_accessible($ref-m$, ctx)` is `true`.
 If `r` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields declared within the `$member-specification$` of `$C$` such that, letting `$ref-b$` be a reflection representing that unnamed-bit-field, `is_accessible($ref-b$, ctx)` is `true`.
 Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared.
 [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
