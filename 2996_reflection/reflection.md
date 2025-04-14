@@ -5001,7 +5001,7 @@ Modify the grammar for `$namespace-alias-definition$` in paragraph 1, and clarif
       $nested-name-specifier$@~_opt_~@ $namespace-name$
 ```
 
-[The `$splice-specifier$` (if any) shall designate a namespace.]{.addu}
+[The `$splice-specifier$` (if any) shall designate a namespace other than the global namespace.]{.addu}
 :::
 
 Remove the details about what the `$namespace-alias$` denotes; this will fall out from the "underlying entity" of the namespace alias defined below:
@@ -5036,7 +5036,7 @@ Add the following prior to the first paragraph of [namespace.udir]{.sref}, and r
 
 ::: std
 ::: addu
-[0]{.pnum} The `$splice-specifier$`, if any, designates a namespace. The `$nested-name-specifier$`, `$namespace-name$`, and `$splice-specifier$` shall not be dependent.
+[0]{.pnum} The `$splice-specifier$` (if any) shall designate a namespace other than the global namespace. The `$nested-name-specifier$`, `$namespace-name$`, and `$splice-specifier$` shall not be dependent.
 :::
 
 [1]{.pnum} A `$using-directive$` shall not appear in class scope, but may appear in namespace scope or in block scope.
@@ -7125,13 +7125,17 @@ consteval info naming_class() const;
 static consteval access_context current() noexcept;
 ```
 
-[#]{.pnum} Let `$P$` be the program point at which `access_context::current()` is called.
+[#]{.pnum} Let `$P$` be the program point defined as follows:
 
-[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope is defined as follows:
+* [#.#]{.pnum} If `current()` is a default member initializer ([class.mem.general]), or a subexpression thereof, the point at which the constructor definition or aggregate initialization that uses the default member initializer appears.
+* [#.#]{.pnum} Otherwise, if `current()` is a default argument ([dcl.fct.default]), or a subexpression thereof, the point at which the invocation of the function that uses the default argument ([expr.call]) appears.
+* [#.#]{.pnum} Otherwise, the point at which `current()` is called.
 
-* [#.#]{.pnum} If there is a function scope enclosing `$P$`, then a reflection representing that function.
-* [#.#]{.pnum} Otherwise, if there is a class scope enclosing `$P$`, then a reflection representing the innermost such class.
-* [#.#]{.pnum} Otherwise, a reflection the innermost enclosing namespace of `$P$`.
+[#]{.pnum} *Returns*: Let `$S$` be the block scope, class scope, or namespace scope most nearly enclosing `$P$`. An `access_context` whose naming class is the null reflection and whose scope is defined as follows:
+
+* [#.#]{.pnum} If `$S$` is a block scope whose nearest enclosing function parameter scope corresponds to a function `$F$`, a reflection representing `$F$`.
+* [#.#]{.pnum} Otherwise, if `$S$` is a class scope introduced by a declaration of a class type `$C$`, a reflection representing `$C$`.
+* [#.#]{.pnum} Otherwise, `$S$` is a namespace scope introduced by a definition of a namespace `$N$`; a reflection representing `$N$`.
 
 ```cpp
 static consteval access_context unprivileged() noexcept;
@@ -7148,7 +7152,7 @@ static consteval access_context unchecked() noexcept;
 ```cpp
 consteval access_context via(info cls) const;
 ```
-[#]{.pnum} *Constant When*: `cls` represents a complete class type.
+[#]{.pnum} *Constant When*: `scope()` is not the null reflection and `cls` represents a complete class type.
 
 [#]{.pnum} *Returns*: An `access_context` whose scope is `this->scope()` and whose naming class is `cls`.
 
@@ -7165,29 +7169,25 @@ consteval bool is_accessible(info r, access_context ctx);
 
 [#]{.pnum} *Constant When*: `r` does not represent
 
-* [#.#]{.pnum} a member or unnamed bit-field of an incomplete class or
+* [#.#]{.pnum} a member of an incomplete class,
+* [#.#]{.pnum} an unnamed bit-field whose declaration is most nearly enclosed by the class scope corresponding to an incomplete class, or
 * [#.#]{.pnum} a direct base class relationship between a base class and an incomplete derived class.
 
-[#]{.pnum} Let `$S$` be a scope ([basic.scope.scope]) defined as follows:
+[#]{.pnum} Let `$P$` be a program point such that if `ctx.scope()` is not the null reflection then `access_context::current().scope() == ctx.scope()` would be `true` if it appeared at `$P$`. [If `ctx.scope()` is the null reflection the properties and location of `$P$` are not constrained.]{.note}
 
-* [#.#]{.pnum} If `ctx.scope()` represents the null reflection, then the global scope.
-* [#.#]{.pnum} Otherwise, if `r` represents a function `$F$`, then the block scope introduced by the `$compound-statement$` of the `$function-body$` in the definition of `$F$`.
-* [#.#]{.pnum} Otherwise, if `r` represents a class `$C$`, then the class scope of `$C$`.
-* [#.#]{.pnum} Otherwise, if `r` represents a namespace `$N$`, then the namespace scope of `$N$`.
+[#]{.pnum} *Returns*: If `r` represents an unnamed bit-field whose declaration is most nearly enclosed by a class scope corresponding to a class `$C$`, then `is_accessible(r@~$H$~@, ctx)` where `r@~$H$~@` represents (for exposition only) a hypothetical non-static data member of `$C$` declared immediately following the declaration of the unnamed bit-field. [Unnamed bit-fields are therefore treated as class members for the purpose of `is_accessible`.]{.note}
 
-[#]{.pnum} Let `$P$` be an unspecified point enclosed by `$S$` such that no function parameter scope, class scope, or namespace scope intervenes between `$P$` and `$S$`.
+Otherwise, if `r` does not represent a class member or a direct base class relationship, then `true`. Otherwise, let `$N$` be a class defined as follows:
 
-[#]{.pnum} *Returns*:
+- [#.#]{.pnum} If `ctx.naming_class()` represents a class, then that class.
+- [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a base class `$B$` and a derived class `$D$`, then `$D$`.
+- [#.#]{.pnum} Otherwise, if `r` represents a class member `$M$`, the innermost enclosing class of which `$M$` is a direct member [If `$M$` is a variant member, `$N$` is the anonymous union rather than the class enclosing the union.]{.note}.
+
+If `r` represents a class member that is not a (possibly variant or indirect) member of `$N$`, or a direct base class relationship with a base class `$B$` for which `$B$` is not a base class of `$N$`, then `false`. Otherwise,
 
 - [#.#]{.pnum} If `ctx.scope()` represents the null reflection, then `true`.
-
-- [#.#]{.pnum} Otherwise, if `r` represents a class member `$M$`, `true` if `$M$` is accessible at `$P$` ([class.access.base]) when named in either
-    - [#.#.#]{.pnum} the innermost enclosing class of which `$M$` is a direct member if `ctx.naming_class()` is the null reflection, or
-    - [#.#.#]{.pnum} the class represented by `ctx.naming_class()` otherwise.
-    Otherwise, `false`.
-- [#.#]{.pnum} Otherwise, if `r` represents an unnamed bit-field `$B$`, then `is_accessible($M$, ctx)` where `$M$` is a reflection representing a hypothetical member of `parent_of(r)` declared with the same rules as `$B$`.
-- [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a base class `$B$` and a derived class `$D$`, then `true` if the base class `$B$` of `$D$` is accessible at `$P$`. Otherwise, `false`.
-- [#.#]{.pnum} Otherwise, `true`.
+- [#.#]{.pnum} Otherwise, if `r` represents a class member `$M$`, then `true` if `$M$` is accessible at `$P$` ([class.access.base]) when named in `$N$`; otherwise `false`.
+- [#.#]{.pnum} Otherwise, `r` represents a direct base class relationship between a base class `$B$` and a derived class; `true` if the base class `$B$` of `$N$` is accessible at `$P$`; otherwise, `false`.
 
 ::: note
 The definitions of when a class member or base class is accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
