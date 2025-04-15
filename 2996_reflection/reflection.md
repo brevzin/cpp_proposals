@@ -7125,13 +7125,13 @@ consteval info naming_class() const;
 static consteval access_context current() noexcept;
 ```
 
-[#]{.pnum} Let `$P$` be the program point defined as follows:
+[#]{.pnum} Let `$S$` be the innermost block scope, class scope, or namespace scope enclosing the following program point:
 
 * [#.#]{.pnum} If `current()` is a default member initializer ([class.mem.general]), or a subexpression thereof, the point at which the constructor definition or aggregate initialization that uses the default member initializer appears.
 * [#.#]{.pnum} Otherwise, if `current()` is a default argument ([dcl.fct.default]), or a subexpression thereof, the point at which the invocation of the function that uses the default argument ([expr.call]) appears.
-* [#.#]{.pnum} Otherwise, the point at which `current()` is called.
+* [#.#]{.pnum} Otherwise, the point at which the invocation of `current()` appears.
 
-[#]{.pnum} *Returns*: Let `$S$` be the block scope, class scope, or namespace scope most nearly enclosing `$P$`. An `access_context` whose naming class is the null reflection and whose scope is defined as follows:
+[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope is defined as follows:
 
 * [#.#]{.pnum} If `$S$` is a block scope whose nearest enclosing function parameter scope corresponds to a function `$F$`, a reflection representing `$F$`.
 * [#.#]{.pnum} Otherwise, if `$S$` is a class scope introduced by a declaration of a class type `$C$`, a reflection representing `$C$`.
@@ -7152,7 +7152,10 @@ static consteval access_context unchecked() noexcept;
 ```cpp
 consteval access_context via(info cls) const;
 ```
-[#]{.pnum} *Constant When*: `scope()` is not the null reflection and `cls` represents a complete class type.
+[#]{.pnum} *Constant When*:
+
+- [#.#]{.pnum} `scope()` is not the null reflection and
+- [#.#]{.pnum} `cls` is either the null reflection or represents a complete class type.
 
 [#]{.pnum} *Returns*: An `access_context` whose scope is `this->scope()` and whose naming class is `cls`.
 

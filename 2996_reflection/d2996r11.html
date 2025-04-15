@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-04-14" />
+  <meta name="dcterms.date" content="2025-04-15" />
   <title>Reflection for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -575,7 +575,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-04-14</td>
+    <td>2025-04-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -12688,8 +12688,9 @@ are template-argument-equivalent.</p>
 and naming class, respectively.</p>
 <div class="sourceCode" id="cb232"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb232-1"><a href="#cb232-1" aria-hidden="true" tabindex="-1"></a><span class="kw">static</span> <span class="kw">consteval</span> access_context current<span class="op">()</span> <span class="kw">noexcept</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_541" id="pnum_541">5</a></span>
-Let <code class="sourceCode cpp"><em>P</em></code> be the program point
-defined as follows:</p>
+Let <code class="sourceCode cpp"><em>S</em></code> be the innermost
+block scope, class scope, or namespace scope enclosing the following
+program point:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_542" id="pnum_542">(5.1)</a></span>
 If <code class="sourceCode cpp">current<span class="op">()</span></code>
@@ -12704,16 +12705,14 @@ a default argument ([dcl.fct.default]), or a subexpression thereof, the
 point at which the invocation of the function that uses the default
 argument ([expr.call]) appears.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_544" id="pnum_544">(5.3)</a></span>
-Otherwise, the point at which
-<code class="sourceCode cpp">current<span class="op">()</span></code> is
-called.</li>
+Otherwise, the point at which the invocation of
+<code class="sourceCode cpp">current<span class="op">()</span></code>
+appears.</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_545" id="pnum_545">6</a></span>
-<em>Returns</em>: Let <code class="sourceCode cpp"><em>S</em></code> be
-the block scope, class scope, or namespace scope most nearly enclosing
-<code class="sourceCode cpp"><em>P</em></code>. An
-<code class="sourceCode cpp">access_context</code> whose naming class is
-the null reflection and whose scope is defined as follows:</p>
+<em>Returns</em>: An <code class="sourceCode cpp">access_context</code>
+whose naming class is the null reflection and whose scope is defined as
+follows:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_546" id="pnum_546">(6.1)</a></span>
 If <code class="sourceCode cpp"><em>S</em></code> is a block scope whose
