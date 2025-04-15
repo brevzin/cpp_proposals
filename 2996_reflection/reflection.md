@@ -7152,10 +7152,7 @@ static consteval access_context unchecked() noexcept;
 ```cpp
 consteval access_context via(info cls) const;
 ```
-[#]{.pnum} *Constant When*:
-
-- [#.#]{.pnum} `scope()` is not the null reflection and
-- [#.#]{.pnum} `cls` is either the null reflection or represents a complete class type.
+[#]{.pnum} *Constant When*: `cls` is either the null reflection or represents a complete class type.
 
 [#]{.pnum} *Returns*: An `access_context` whose scope is `this->scope()` and whose naming class is `cls`.
 
