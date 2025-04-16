@@ -7255,35 +7255,37 @@ consteval vector<info> members_of(info r, access_context ctx);
 
 [#]{.pnum} A declaration `$D$` _members-of-precedes_ a point `$P$` if `$D$` precedes either `$P$` or the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
 
-[#]{.pnum} A declaration `$D$` of a member `$M$` of a class or namespace `$Q$` is _members-of-eligible_ if
+[#]{.pnum} A declaration `$D$` of a member `$M$` of a class or namespace `$Q$` is _`$Q$`-members-of-eligible_ if
 
 * [#.#]{.pnum} `$M$` is not a closure type ([expr.prim.lambda.closure]),
 * [#.#]{.pnum} `$M$` is not a specialization of a template ([temp.pre]),
-* [#.#]{.pnum} if `$Q$` is a class, then `$M$` is a direct member of `$Q$` ([class.member.general]) that is not a variant member ([class.union.anon]),
+* [#.#]{.pnum} if `$Q$` is a class, then `$M$` is a direct member of `$Q$` ([class.mem.general]) that is not a variant member ([class.union.anon]),
 * [#.#]{.pnum} if `$Q$` is a namespace, then `$D$` inhabits the namespace scope of `$Q$`, and
 * [#.#]{.pnum} if `$Q$` is a closure type, then `$M$` is a function call operator or function call operator template.
 
-It is implementation-defined whether declarations of other members of closure types are members-of-eligible.
+It is implementation-defined whether declarations of other members of a closure type `$Q$` are `$Q$`-members-of-eligible.
 
-[#]{.pnum} A member `$M$` of a class or a namespace is _members-of-representable_ if a members-of-eligible declaration of `$M$` members-of-precedes some point in the evaluation context and `$M$` is
+[#]{.pnum} A member `$M$` of a class or namespace `$Q$` is _`$Q$`-members-of-representable_ from a point `$P$` if a `$Q$`-members-of-eligible declaration of `$M$` members-of-precedes `$P$` and `$M$` is
 
 * [#.#]{.pnum} a class or enumeration type,
 * [#.#]{.pnum} a type alias,
 * [#.#]{.pnum} a primary class template, function template, primary variable template, alias template, or concept,
 * [#.#]{.pnum} a variable or reference,
 * [#.#]{.pnum} a function `$F$` for which
-  * [#.#]{.pnum} the type of `$F$` does not contain an undeduced placeholder type, and
+  * [#.#]{.pnum} the type of `$F$` does not contain an undeduced placeholder type and
   * [#.#]{.pnum} the constraints (if any) of `$F$` are satisfied, unless `$F$` is a prospective destructor that is not a selected destructor ([class.dtor]),
 * [#.#]{.pnum} a non-static data member,
 * [#.#]{.pnum} a namespace, or
 * [#.#]{.pnum} a namespace alias.
 
-[Examples of direct members that are not members-of-representable include: unscoped enumerators ([enum]), partial specializations of templates ([temp.spec.partial]), closure types ([expr.prim.lambda.closure]), and variant members ([class.union.anon]).]{.note}
+[Examples of direct members that are not `$Q$`-members-of-representable for any entity `$Q$` include: unscoped enumerators ([enum]), partial specializations of templates ([temp.spec.partial]), closure types ([expr.prim.lambda.closure]), and variant members ([class.union.anon]).]{.note}
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all members-of-representable members `$M$` of the entity represented by `r` for which, letting `$ref-m$` be a reflection representing `$M$`, `is_accessible($ref-m$, ctx)` is `true`.
-If `r` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields declared within the `$member-specification$` of `$C$` such that, letting `$ref-b$` be a reflection representing that unnamed-bit-field, `is_accessible($ref-b$, ctx)` is `true`.
-Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared.
-[Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members `$M$` of the entity `$Q$` represented by `r` for which
+
+* [#.#]{.pnum} `$M$` is `$Q$`-members-of-representable from some point in the evaluation context and
+* [#.#]{.pnum} letting `$ref-m$` be a reflection representing `$M$`, `is_accesible($ref-m$, ctx)` is `true`.
+
+If `r` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields whose declarations inhabit the class scope corresponding to `$C$` for which, letting `$ref-b$` be a reflection representing the unnamed bit-field, `is_accessible($ref-b$, ctx)` is `true`. Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared. [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
 
 ::: example
 ```cpp
