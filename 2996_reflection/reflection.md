@@ -7135,7 +7135,7 @@ static consteval access_context current() noexcept;
 
 * [#.#]{.pnum} If `$S$` is a block scope whose nearest enclosing function parameter scope corresponds to a function `$F$`, a reflection representing `$F$`.
 * [#.#]{.pnum} Otherwise, if `$S$` is a class scope introduced by a declaration of a class type `$C$`, a reflection representing `$C$`.
-* [#.#]{.pnum} Otherwise, `$S$` is a namespace scope introduced by a definition of a namespace `$N$`; a reflection representing `$N$`.
+* [#.#]{.pnum} Otherwise, `$S$` is a namespace scope corresponding to a namespace `$N$`; a reflection representing `$N$`.
 
 ```cpp
 static consteval access_context unprivileged() noexcept;
