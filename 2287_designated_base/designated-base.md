@@ -305,7 +305,7 @@ Change the grammar in [dcl.init.general]{.sref}/1 to allow a `$designated-initia
 ```
 :::
 
-Add a new term after we define what an aggregate and the elements of an aggregate are in [dcl.init.aggr]{.sref}:
+Add a new term after we define what an aggregate and the elements of an aggregate are in [dcl.init.aggr]{.sref} and then extend the next sections.
 
 ::: std
 [1]{.pnum} An *aggregate* is [...]
@@ -342,58 +342,50 @@ The associated element of the member `B::b2` of `B` is the anonymous union conta
 :::
 :::
 
-[3]{.pnum} When an aggregate is initialized [...]
-:::
+[3]{.pnum} When an aggregate is initialized by an initializer list as specified in [dcl.init.list], the elements of the initializer list are taken as initializers for the elements of the aggregate.
+The *explicitly initialized elements* of the aggregate are determined as follows:
 
-Extend [dcl.init.aggr]{.sref}/3.1:
-
-::: std
-[3]{.pnum} When an aggregate is initialized by an initializer list as specified in [dcl.init.list], the elements of the initializer list are taken as initializers for the elements of the aggregate. The *explicitly initialized elements* of the aggregate are determined as follows:
-
-* [3.1]{.pnum} If the initializer list is a brace-enclosed `$designated-initializer-list$`, the aggregate shall be of class type [`C`]{.addu}. [, the `$identifier$` in each `$designator$` shall name a direct non-static data member of the class, and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.]{.rm} [For each designator, the lookup set for the `$identifier$` in `$C$` ([class.member.lookup]) shall yield]{.addu}
+* [3.1]{.pnum} [If the initializer list is a brace-enclosed `$designated-initializer-list$`]{.rm} [If the `$braced-init-list$` has a `$designated-only-initializer-list$` within a `$designated-initializer-list$`]{.addu}, the aggregate shall be of class type [`$C$`.]{.addu} [, the identifier in each `$designator$` shall name a direct non-static data member of the class, and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.]{.rm}
 
   ::: addu
-  * [3.1.1]{.pnum} a declaration set consisting of a single non-static data member and
-  * [3.1.#]{.pnum} a subobject set containing only one subobject, whose type shall be an aggregate base of `$C$`. An aggregate `$B$` is an _aggregate base_ of `$D$` if it is `$D$` or a direct base class of an aggregate base of `$D$`.
+  For each `$designator$`, the lookup set for the `$identifier$` in `$C$` ([class.member.lookup]) shall comprise
 
-  That non-static data member is _designated_ by the `$identifier$`. Each `$initializer-clause$`, if any, shall appertain (see below) to a base class subobject of `$C$`.
+  * [3.#.1]{.pnum} a declaration set consisting of a single non-static data member and
+  * [3.#.#]{.pnum} a subobject set containing only one subobject, whose type shall be an aggregate base of `$C$`. An aggregate `$B$` is an _aggregate base_ of a class `$D$` if it is `$D$` or a direct base class of an aggregate base of `$D$`.
 
-  An element of `$C$` is explicitly initialized if it is
-
-    * [3.1.#]{.pnum} a base class subobject to which an `$initializer-clause$` in the `$designated-initializer-list$` appertains, or
-    * [3.1.#]{.pnum} the associated element of a member `$M$` of `$C$`, where `$M$` is designated by an `$identifier$` in a `$designated-initializer-clause$`.
-
-  If an element of `$C$` is explicitly initialized by both an `$initializer-clause$` and a `$designated-initializer-clause$`, the program is ill-formed.
-
-  ::: example
-  ```cpp
-  struct A { int a1, a2; };
-  struct B : A { int b; };
-  struct C : A { int a1; };
-
-  B v1 = B{.a1=1, .b=2};         // the explicitly initialized elements are [A, B::b]
-  B v2 = B{.a1=1, .a2=2, .b=3};  // the explicitly initialized elements are [A, B::b]
-  B v3 = B{A{1, 2}, .b=3};       // the explicitly initialized elements are [A, B::b]
-  B v4 = B{A{}, .a2=1, .b=3};    // error: A initialized two different ways
-  C v5 = C{.a1=4};               // the explicitly initialized elements are [C::a1]
-  ```
-  :::
+  That non-static data member is _designated_ by the `$identifier$`. Each `$initializer-clause$`, if any, shall appertain (see below) to a base class subobject of `$C$`. The explicitly initialized elements of the aggregate include the associated elements of each member `$M$` of `$C$` for which `$M$` is designated by an `$identifier$` in a `$designated-initializer-clause$`.
   :::
 
+* [3.2]{.pnum} [If the initializer list is a brace-enclosed `$initializer-list$`]{.rm} [If the `$braced-init-list$` has an `$initializer-list$` (possibly within a `$designated-initializer-list$`)]{.addu}, the explicitly initialized elements of the aggregate [are]{.rm} [include]{.addu} those for which an element of the initializer list appertains to the aggregate element or to a subobject thereof (see below).
+* [3.3]{.pnum} [Otherwise, the initializer list must be `{}`, and there are no explicitly initialized elements.]{.rm} [No other elements of the aggregate are explicitly initialized. [The initializer `{}` does not explicitly initialize any elements of the aggregate.]{.note}]{.addu}
+
+::: addu
+If any element of the aggregate is explicitly initialized by both an `$initializer-list$` and a `$designated-initializer-list$`, the program is ill-formed. If a non-static data member is explicitly initialized by an `$initializer-list$`, a `$designated-only-initializer-list$` shall not be present.
+
+::: example
+```cpp
+struct A { int a1, a2; };
+struct B : A { int b; };
+struct C : A { int a1; };
+
+B v1 = B{.a1=1, .b=2};         // the explicitly initialized elements are [A, B::b]
+B v2 = B{.a1=1, .a2=2, .b=3};  // the explicitly initialized elements are [A, B::b]
+B v3 = B{A{1, 2}, .b=3};       // the explicitly initialized elements are [A, B::b]
+B v4 = B{A{}, .a2=1, .b=3};    // error: A initialized two different ways
+C v5 = C{.a1=4};               // the explicitly initialized elements are [C::a1]
+```
+:::
 :::
 
-And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
-
-::: std
 [4]{.pnum} For each explicitly initialized element:
 
-* [4.1]{.pnum} If the element is an anonymous union member and the initializer list is a brace-enclosed `$designated-initializer-list$`, the element is initialized by the `$braced-init-list$ { $D$ }`, where `$D$` is the `$designated-initializer-clause$` [whose associated element is the anonymous union member]{.addu} [naming a member of the anonymous union member]{.rm}. There shall be only one such `$designated-initializer-clause$`.
+* [4.1]{.pnum} If the element is an anonymous union member and [the initializer list is a brace-enclosed `$designated-initializer-list$`]{.rm} [is explicitly initialized by a `$designated-only-initializer-list$`]{.addu}, the element is initialized by the `$braced-init-list$ { $D$ }`, where `$D$` is the `$designated-initializer-clause$` [whose associated element is the anonymous union member]{.addu} [naming a member of the anonymous union member]{.rm}. There shall be only one such `$designated-initializer-clause$`.
 
-* [4.2]{.pnum} Otherwise, if the initializer list is a brace-enclosed `$designated-initializer-list$`, [then]{.addu}
+* [4.2]{.pnum} Otherwise, if the [initializer list is a brace-enclosed `$designated-initializer-list$`]{.rm} [element is explicitly initialized by a `$designated-only-initializer-list$`, then]{.addu}
 
   * [4.2.1]{.pnum} [if the element is a direct, non-static data member, then]{.addu} the element is initialized with the `$brace-or-equal-initializer$` of the corresponding `$designated-initializer-clause$`. If that initializer is of the form `= $assignment-expression$` and a narrowing conversion ([dcl.init.list]) is required to convert the expression, the program is ill-formed. [The form of the initializer determines whether copy-initialization or direct-initialization is performed.]{.note}
 
-  * [4.2.2]{.pnum} [otherwise, the element is a base class subobject `$B$`. If `$B$` is explicitly initialized from an `$initializer-clause$`, then `$B$` is copy-initialized from that `$initializer-clause$`. Otherwise, `$B$` is copy-initialized from a brace-enclosed `$designated-initializer-list$` consisting of all of the `$designated-initializer-clause$`s whose associated element is `$B$`.]{.addu}
+  * [4.2.2]{.pnum} [otherwise, the element is a base class subobject `$B$`, and is copy-initialized from a brace-enclosed `$designated-initializer-list$` consisting of all of the `$designated-initializer-clause$`s whose associated element is `$B$`.]{.addu}
 
   ::: addu
   ::: example
@@ -412,7 +404,7 @@ And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
   :::
   :::
 
-* [4.3]{.pnum} Otherwise, the initializer list is a brace-enclosed `$initializer-list$`. [...]
+* [4.3]{.pnum} Otherwise, the [initializer list is a brace-enclosed `$initializer-list$`]{.rm} [element is explicitly initialized by an `$initializer-list$`]{.addu}. [...]
 
 :::
 
