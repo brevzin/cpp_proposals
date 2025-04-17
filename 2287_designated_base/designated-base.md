@@ -313,15 +313,10 @@ Add a new term after we define what an aggregate and the elements of an aggregat
 [2]{.pnum} The *elements* of an aggregate are: [...]
 
 ::: addu
-[x]{.pnum} The _designatable members_ of an aggregate `T` are:
+[x]{.pnum} The _associated element_ of a member `M` of an aggregate `T` is:
 
-* [x.1]{.pnum} For each direct base class `C` of `T` that is itself an aggregate, in the order in which they appear in the `$base-specifier-list$`, the designatable members of `C` for which the lookup set for that member's name in `T` finds a subobject set consisting of a single member of `C` ([class.member.lookup]), followed by
-* [x.2]{.pnum} the direct non-static data members of `T` that are not anonymous unions, in declaration order.
-
-[y]{.pnum} The _associated element_ of a designatable member `M` of an aggregate `T` is:
-
-* [y.1]{.pnum} `M` if `M` is an element of `T`;
-* [y.2]{.pnum} otherwise, the element of `T` that contains `M`.
+* [x.1]{.pnum} `M` if `M` is an element of `T`;
+* [x.2]{.pnum} otherwise, the element of `T` that contains `M`.
 
 ::: example
 ```cpp
@@ -341,7 +336,6 @@ struct B : A {
 };
 ```
 
-The designatable members of `B` are `A::a1`, `A::a2`, `A::a3`, `B::b1`, and `B::b2`, in that order.
 The associated element of each of the members `A::a1`, `A::a2`, and `A::a3` of `B` is `A`.
 The associated element of the member `B::b1` of `B` is itself.
 The associated element of the member `B::b2` of `B` is the anonymous union containing it.
@@ -354,31 +348,32 @@ The associated element of the member `B::b2` of `B` is the anonymous union conta
 Extend [dcl.init.aggr]{.sref}/3.1:
 
 ::: std
-[3.1]{.pnum} If the initializer list is a brace-enclosed `$designated-initializer-list$`, the aggregate shall be of class type [`C`]{.addu}. [, the]{.rm} [The]{.addu} identifier in each designator shall name a [designatable member of `$C$`.]{.addu} [direct non-static data member of the class]{.rm} [, and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.]{.rm} [Each `$initializer-clause$`, if any, shall appertain (see below) to a base class subobject of `$C$`.]{.addu}
+[3]{.pnum} When an aggregate is initialized by an initializer list as specified in [dcl.init.list], the elements of the initializer list are taken as initializers for the elements of the aggregate. The *explicitly initialized elements* of the aggregate are determined as follows:
 
-::: addu
+* [3.1]{.pnum} If the initializer list is a brace-enclosed `$designated-initializer-list$`, the aggregate shall be of class type [`C`]{.addu}. [, the `$identifier$` in each `$designator$` shall name a direct non-static data member of the class, and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.]{.rm} [For each designator, lookup for the `$identifier$` in `$C$` ([class.member.lookup]) shall yield a declaration set consisting of a single non-static data member and a subobject set containing only one subobject. That non-static data member is _designated_ by the `$identifier$`. Each `$initializer-clause$`, if any, shall appertain (see below) to a base class subobject of `$C$`.]{.addu}
 
-An element of `$C$` is explicitly initialized if it is
+  ::: addu
+  An element of `$C$` is explicitly initialized if it is
 
-* [3.1.1]{.pnum} a base class subobject to which an `$initializer-clause$` in the `$designated-initializer-list$` appertains, or
-* [3.1.2]{.pnum} the associated element of the designatable member of `$C$` named by an `$identifier$` in a `$designated-initializer-clause$`.
+    * [3.1.1]{.pnum} a base class subobject to which an `$initializer-clause$` in the `$designated-initializer-list$` appertains, or
+     * [3.1.2]{.pnum} the associated element of a member `$M$` of `$C$`, where `$M$` is designated by an `$identifier$` in a `$designated-initializer-clause$`.
 
-If an element of `$C$` is explicitly initialized by both an `$initializer-clause$` and a `$designated-initializer-clause$`, the program is ill-formed.
+  If an element of `$C$` is explicitly initialized by both an `$initializer-clause$` and a `$designated-initializer-clause$`, the program is ill-formed.
 
-::: example
-```cpp
-struct A { int a1, a2; };
-struct B : A { int b; };
-struct C : A { int a1; };
+  ::: example
+  ```cpp
+  struct A { int a1, a2; };
+  struct B : A { int b; };
+  struct C : A { int a1; };
 
-B v1 = B{.a1=1, .b=2};         // the explicitly initialized elements are [A, B::b]
-B v2 = B{.a1=1, .a2=2, .b=3};  // the explicitly initialized elements are [A, B::b]
-B v3 = B{A{1, 2}, .b=3};       // the explicitly initialized elements are [A, B::b]
-B v4 = B{A{}, .a2=1, .b=3};    // error: A initialized two different ways
-C v5 = C{.a1=4};               // the explicitly initialized elements are [C::a1]
-```
-:::
-:::
+  B v1 = B{.a1=1, .b=2};         // the explicitly initialized elements are [A, B::b]
+  B v2 = B{.a1=1, .a2=2, .b=3};  // the explicitly initialized elements are [A, B::b]
+  B v3 = B{A{1, 2}, .b=3};       // the explicitly initialized elements are [A, B::b]
+  B v4 = B{A{}, .a2=1, .b=3};    // error: A initialized two different ways
+  C v5 = C{.a1=4};               // the explicitly initialized elements are [C::a1]
+  ```
+  :::
+  :::
 
 :::
 
@@ -419,31 +414,29 @@ And extend [dcl.init.aggr]{.sref}/4 to cover base class elements:
 Extend [dcl.init.list]{.sref}/3.1:
 
 ::: std
-[3.1]{.pnum} If the _braced-init-list_ contains a _designated-initializer-list_, `T` shall be an aggregate class.
-The ordered *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of [the ordered `$identifiers$` in the direct non-static data members]{.rm} [the designatable members [(dcl.init.aggr)] of `T`.]{.addu}
+* [3.1]{.pnum} If the _braced-init-list_ contains a _designated-initializer-list_, `T` shall be an aggregate class.
+The [non-static data members designated by the]{.addu} ordered *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of the ordered [`$identifiers$` in the]{.rm} direct [and indirect]{.addu} non-static data members. Aggregate initialization is performed ([dcl.init.aggr]).
 
-Aggregate initialization is performed ([dcl.init.aggr]).
+  ::: example
+  ```diff
+      struct A { int x; int y; int z; };
+      A a{.y = 2, .x = 1};                // error: designator order does not match declaration order
+      A b{.x = 1, .z = 2};                // OK, b.y initialized to 0
 
-::: example
-```diff
-    struct A { int x; int y; int z; };
-    A a{.y = 2, .x = 1};                // error: designator order does not match declaration order
-    A b{.x = 1, .z = 2};                // OK, b.y initialized to 0
+  +   struct B : A { int q; };
+  +   B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0
+  +   B f{.q = 3, .x = 1};                // error: designator order does not match declaration order
 
-+   struct B : A { int q; };
-+   B e{.x = 1, .q = 3};                // OK, e.y and e.z initialized to 0
-+   B f{.q = 3, .x = 1};                // error: designator order does not match declaration order
+  +   struct C { int p; int x; };
+  +   struct D : A, C { };
+  +   D g{.y=1, .p=2};                    // OK
+  +   D h{.x=2};                          // error: ambiguous lookup for x
 
-+   struct C { int p; int x; };
-+   struct D : A, C { };
-+   D g{.y=1, .p=2};                    // OK
-+   D h{.x=2};                          // error: x is not a designatable member
-
-+   struct NonAggr { int na; NonAggr(int); };
-+   struct E : NonAggr { int e; };
-+   E i{.na=1, .e=2};                   // error: na is not a designatable member
-```
-:::
+  +   struct NonAggr { int na; NonAggr(int); };
+  +   struct E : NonAggr { int e; };
+  +   E i{.na=1, .e=2};                   // error: na is not designatable because it's not an aggregate member
+  ```
+  :::
 :::
 
 And update paragraph 14, since now we can have `$initializer-clause$`s in `$designated-initializer-list$`s too:
