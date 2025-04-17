@@ -12,7 +12,7 @@ tag: constexpr
 
 # Revision History
 
-Since [@P3391R0], also noted that using the `L` locale specifier prevents constexpr formatting.
+Since [@P3391R0], also noted that using the `L` locale specifier prevents constexpr formatting, and a feature-test macro.
 
 # Introduction
 
@@ -329,6 +329,27 @@ Change [format.string.std]{.sref}/17:
 ::: std
 [17]{.pnum} When the `L` option is used, the form used for the conversion is called the *locale-specific* form.
 The `L` option is only valid for arithmetic types, and its effect depends upon the type. [A call to `format` on a given `formatter` specialization is not a core constant expression if the locale-specific form is specified.]{.addu}
+:::
+
+Mark the `$runtime-format-string$` constructor `constexpr` in [format.fmt.string]{.sref}:
+
+::: std
+```diff
+namespace std {
+  template<class charT, class... Args>
+  struct basic_format_string {
+  private:
+    basic_string_view<charT> $str$;         // exposition only
+
+  public:
+    template<class T> consteval basic_format_string(const T& s);
+-   basic_format_string($runtime-format-string$<charT> s) noexcept : str(s.str) {}
++   constexpr basic_format_string($runtime-format-string$<charT> s) noexcept : str(s.$str$) {}
+
+    constexpr basic_string_view<charT> get() const noexcept { return $str$; }
+  };
+}
+```
 :::
 
 Add to [format.formatter.spec]{.sref}:
@@ -727,4 +748,16 @@ And the container adaptors in [container.adaptors.format]{.sref}:
     };
   }
 ```
+:::
+
+## Feature-Test Macro
+
+Add a new `__cpp_lib_constexpr_format` to [version.syn]{.sref}:
+
+::: std
+::: addu
+```cpp
+#define __cpp_lib_constexpr_format 2025XXL // also in <format>
+```
+:::
 :::
