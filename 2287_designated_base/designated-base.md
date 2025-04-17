@@ -487,4 +487,4 @@ Bump `__cpp_­designated_­initializers` in [cpp.predefined]{.sref}:
 
 # Acknowledgements
 
-Thanks to Matthias Stearn for, basically, the proposal. Thanks to Tim Song for helping with design questions and wording.
+Thanks to Matthias Stearn for, basically, the proposal. Thanks to Tim Song for helping with design questions and wording. Thanks to Brian Bi and Davis Herring for a lot of help with the wording.
