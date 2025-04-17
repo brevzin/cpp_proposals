@@ -8219,7 +8219,7 @@ references:
       year: 2024
       month: 1
       day: 5
-    URL: https://wg21.link/p3289r1
+    URL: https://wg21.link/p3554r0
   - id: P2996R9
     citation-label: P2996R9
     title: "Reflection for C++26"
