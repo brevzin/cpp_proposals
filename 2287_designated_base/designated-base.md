@@ -350,13 +350,18 @@ Extend [dcl.init.aggr]{.sref}/3.1:
 ::: std
 [3]{.pnum} When an aggregate is initialized by an initializer list as specified in [dcl.init.list], the elements of the initializer list are taken as initializers for the elements of the aggregate. The *explicitly initialized elements* of the aggregate are determined as follows:
 
-* [3.1]{.pnum} If the initializer list is a brace-enclosed `$designated-initializer-list$`, the aggregate shall be of class type [`C`]{.addu}. [, the `$identifier$` in each `$designator$` shall name a direct non-static data member of the class, and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.]{.rm} [For each designator, lookup for the `$identifier$` in `$C$` ([class.member.lookup]) shall yield a declaration set consisting of a single non-static data member and a subobject set containing only one subobject. That non-static data member is _designated_ by the `$identifier$`. Each `$initializer-clause$`, if any, shall appertain (see below) to a base class subobject of `$C$`.]{.addu}
+* [3.1]{.pnum} If the initializer list is a brace-enclosed `$designated-initializer-list$`, the aggregate shall be of class type [`C`]{.addu}. [, the `$identifier$` in each `$designator$` shall name a direct non-static data member of the class, and the explicitly initialized elements of the aggregate are the elements that are, or contain, those members.]{.rm} [For each designator, the lookup set for the `$identifier$` in `$C$` ([class.member.lookup]) shall yield]{.addu}
 
   ::: addu
+  * [3.1.1]{.pnum} a declaration set consisting of a single non-static data member and
+  * [3.1.#]{.pnum} a subobject set containing only one subobject, whose type shall be an aggregate base of `$C$`. An aggregate `$B$` is an _aggregate base_ of `$D$` if it is `$D$` or a direct base class of an aggregate base of `$D$`.
+
+  That non-static data member is _designated_ by the `$identifier$`. Each `$initializer-clause$`, if any, shall appertain (see below) to a base class subobject of `$C$`.
+
   An element of `$C$` is explicitly initialized if it is
 
-    * [3.1.1]{.pnum} a base class subobject to which an `$initializer-clause$` in the `$designated-initializer-list$` appertains, or
-     * [3.1.2]{.pnum} the associated element of a member `$M$` of `$C$`, where `$M$` is designated by an `$identifier$` in a `$designated-initializer-clause$`.
+    * [3.1.#]{.pnum} a base class subobject to which an `$initializer-clause$` in the `$designated-initializer-list$` appertains, or
+    * [3.1.#]{.pnum} the associated element of a member `$M$` of `$C$`, where `$M$` is designated by an `$identifier$` in a `$designated-initializer-clause$`.
 
   If an element of `$C$` is explicitly initialized by both an `$initializer-clause$` and a `$designated-initializer-clause$`, the program is ill-formed.
 
@@ -434,7 +439,7 @@ The [non-static data members designated by the]{.addu} ordered *identifier*s in 
 
   +   struct NonAggr { int na; NonAggr(int); };
   +   struct E : NonAggr { int e; };
-  +   E i{.na=1, .e=2};                   // error: na is not designatable because it's not an aggregate member
+  +   E i{.na=1, .e=2};                   // error: the lookup set for na finds NonAggr, which is not an aggregate base of E
   ```
   :::
 :::

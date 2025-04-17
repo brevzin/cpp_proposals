@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-04-16" />
+  <meta name="dcterms.date" content="2025-04-17" />
   <title>Designated-initializers for Base Classes</title>
   <style>
       code{white-space: pre-wrap;}
@@ -576,7 +576,7 @@ Base Classes</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-04-16</td>
+    <td>2025-04-17</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1127,26 +1127,38 @@ in each
 shall name a direct non-static data member of the class, and the
 explicitly initialized elements of the aggregate are the elements that
 are, or contain, those members.</del></span> <span class="addu">For each
-designator, lookup for the
+designator, the lookup set for the
 <code class="sourceCode cpp"><em>identifier</em></code> in
 <code class="sourceCode cpp"><em>C</em></code> ([class.member.lookup])
-shall yield a declaration set consisting of a single non-static data
-member and a subobject set containing only one subobject. That
-non-static data member is <em>designated</em> by the
+shall yield</span></p>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(3.1.1)</a></span>
+a declaration set consisting of a single non-static data member and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.1.2)</a></span>
+a subobject set containing only one subobject, whose type shall be an
+aggregate base of <code class="sourceCode cpp"><em>C</em></code>. An
+aggregate <code class="sourceCode cpp"><em>B</em></code> is an
+<em>aggregate base</em> of
+<code class="sourceCode cpp"><em>D</em></code> if it is
+<code class="sourceCode cpp"><em>D</em></code> or a direct base class of
+an aggregate base of
+<code class="sourceCode cpp"><em>D</em></code>.</li>
+</ul>
+<p>That non-static data member is <em>designated</em> by the
 <code class="sourceCode cpp"><em>identifier</em></code>. Each
 <code class="sourceCode cpp"><em>initializer-clause</em></code>, if any,
 shall appertain (see below) to a base class subobject of
-<code class="sourceCode cpp"><em>C</em></code>.</span></p>
-<div class="addu">
+<code class="sourceCode cpp"><em>C</em></code>.</p>
 <p>An element of <code class="sourceCode cpp"><em>C</em></code> is
 explicitly initialized if it is</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(3.1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(3.1.3)</a></span>
 a base class subobject to which an
 <code class="sourceCode cpp"><em>initializer-clause</em></code> in the
 <code class="sourceCode cpp"><em>designated-initializer-list</em></code>
 appertains, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.1.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(3.1.4)</a></span>
 the associated element of a member
 <code class="sourceCode cpp"><em>M</em></code> of
 <code class="sourceCode cpp"><em>C</em></code>, where
@@ -1180,10 +1192,10 @@ the program is ill-formed.</p>
 cover base class elements:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">4</a></span>
 For each explicitly initialized element:</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(4.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(4.1)</a></span>
 If the element is an anonymous union member and the initializer list is
 a brace-enclosed
 <code class="sourceCode cpp"><em>designated-initializer-list</em></code>,
@@ -1195,12 +1207,12 @@ member</span> <span class="rm" style="color: #bf0303"><del>naming a
 member of the anonymous union member</del></span>. There shall be only
 one such
 <code class="sourceCode cpp"><em>designated-initializer-clause</em></code>.</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(4.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(4.2)</a></span>
 Otherwise, if the initializer list is a brace-enclosed
 <code class="sourceCode cpp"><em>designated-initializer-list</em></code>,
 <span class="addu">then</span></p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(4.2.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(4.2.1)</a></span>
 <span class="addu">if the element is a direct, non-static data member,
 then</span> the element is initialized with the
 <code class="sourceCode cpp"><em>brace-or-equal-initializer</em></code>
@@ -1211,7 +1223,7 @@ and a narrowing conversion ([dcl.init.list]) is required to convert the
 expression, the program is ill-formed. <span class="note"><span>[ <em>Note 1:</em> </span>The form of the initializer
 determines whether copy-initialization or direct-initialization is
 performed.<span> — <em>end note</em> ]</span></span></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(4.2.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(4.2.2)</a></span>
 <span class="addu">otherwise, the element is a base class subobject
 <code class="sourceCode cpp"><em>B</em></code>. If
 <code class="sourceCode cpp"><em>B</em></code> is explicitly initialized
@@ -1243,7 +1255,7 @@ whose associated element is
 <span> — <em>end example</em> ]</span>
 </div>
 </div></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(4.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(4.3)</a></span>
 Otherwise, the initializer list is a brace-enclosed
 <code class="sourceCode cpp"><em>initializer-list</em></code>.
 […]</p></li>
@@ -1254,7 +1266,7 @@ Otherwise, the initializer list is a brace-enclosed
 <div class="std">
 <blockquote>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(3.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(3.1)</a></span>
 If the <em>braced-init-list</em> contains a
 <em>designated-initializer-list</em>,
 <code class="sourceCode cpp">T</code> shall be an aggregate class. The
@@ -1283,7 +1295,7 @@ non-static data members. Aggregate initialization is performed
 <span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="va">+   struct NonAggr { int na; NonAggr(int); };</span></span>
 <span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="va">+   struct E : NonAggr { int e; };</span></span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   E i{.na=1, .e=2};                   // error: na is not designatable because it&#39;s not an aggregate member</span></span></code></pre></div>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   E i{.na=1, .e=2};                   // error: the lookup set for na finds NonAggr, which is not an aggregate base of E</span></span></code></pre></div>
 </div>
 <span> — <em>end example</em> ]</span>
 </div></li>
@@ -1296,7 +1308,7 @@ non-static data members. Aggregate initialization is performed
 too:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">14</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">14</a></span>
 Each <code class="sourceCode cpp"><em>initializer-clause</em></code> in
 a <span class="rm" style="color: #bf0303"><del>brace-enclosed
 <span><code class="sourceCode default"><em>initializer-list</em></code></span></del></span>
