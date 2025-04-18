@@ -385,7 +385,7 @@ C v5 = C{.a1=4};               // the explicitly initialized elements are [C::a1
 
   * [4.2.1]{.pnum} [if the element is a direct, non-static data member, then]{.addu} the element is initialized with the `$brace-or-equal-initializer$` of the corresponding `$designated-initializer-clause$`. If that initializer is of the form `= $assignment-expression$` and a narrowing conversion ([dcl.init.list]) is required to convert the expression, the program is ill-formed. [The form of the initializer determines whether copy-initialization or direct-initialization is performed.]{.note}
 
-  * [4.2.2]{.pnum} [otherwise, the element is a base class subobject `$B$`, and is copy-initialized from a brace-enclosed `$designated-initializer-list$` consisting of all of the `$designated-initializer-clause$`s whose associated element is `$B$`.]{.addu}
+  * [4.2.2]{.pnum} [otherwise, the element is a base class subobject `$B$`, and is copy-initialized from a brace-enclosed `$designated-initializer-list$` consisting of all of the `$designated-initializer-clause$`s whose associated element is `$B$`, in order.]{.addu}
 
   ::: addu
   ::: example
@@ -412,7 +412,7 @@ Extend [dcl.init.list]{.sref}/3.1:
 
 ::: std
 * [3.1]{.pnum} If the _braced-init-list_ contains a _designated-initializer-list_, `T` shall be an aggregate class.
-The [non-static data members designated by the]{.addu} ordered *identifier*s in the designators of the *designated-initializer-list* shall form a subsequence of the ordered [`$identifiers$` in the]{.rm} direct [and indirect]{.addu} non-static data members. Aggregate initialization is performed ([dcl.init.aggr]).
+The [associated elements of the non-static data members designated by the]{.addu} ordered *identifier*s in the designators of the *designated-initializer-list* shall [form a subsequence of the ordered `$identifiers$` in the direct non-static data members]{.rm} [be in non-decreasing declaration order]{.addu}. Aggregate initialization is performed ([dcl.init.aggr]).
 
   ::: example
   ```diff
