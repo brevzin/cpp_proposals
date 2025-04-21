@@ -29,7 +29,7 @@ tag: reflection
 Since [@P2996R11]:
 
 * core wording updates
-  * better specify interaction between spliced function calls and overload resolution; integrate fix to CWG2701
+  * better specify interaction between spliced function calls and overload resolution; integrate fix to [@CWG2701]
 
 Since [@P2996R10]:
 
@@ -3579,7 +3579,7 @@ And add a bullet thereafter that factors the result of a `$reflect-expression$` 
 
 ### [basic.scope.scope]{.sref} General {-}
 
-[The introduction of a "host scope" in paragraph 2 is part of the resolution to CWG2701.]{.ednote}
+[The introduction of a "host scope" in paragraph 2 is part of the resolution to [@CWG2701].]{.ednote}
 
 Define the "host scope" of a declaration in paragraph 2:
 
@@ -4874,7 +4874,7 @@ using alias = [:^^S::type:];    // OK, type-only context
 
 ### [dcl.array]{.sref} Arrays {-}
 
-[This change is part of the resolution to CWG2701.]{.ednote}
+[This change is part of the resolution to [@CWG2701].]{.ednote}
 
 Use "host scope" in lieu of "inhabits" in paragraph 8:
 
@@ -4921,7 +4921,7 @@ FIC S::*pm = &S::f;                             // OK
 
 ### [dcl.fct.default]{.sref} Default arguments {-}
 
-[The changes related to "host scopes" in paragraphs 4 and 9 are part of the resolution to CWG2701.]{.ednote}
+[The changes related to "host scopes" in paragraphs 4 and 9 are part of the resolution to [@CWG2701].]{.ednote}
 
 Use "host scope" in lieu of "inhabits" in paragraph 4:
 
@@ -5390,7 +5390,7 @@ as specified in [dcl.type.simple]{.sref}. The guides of `A` are the set of funct
 
 ### [over.match.viable]{.sref} Viable functions {-}
 
-[The changes to paragraph 2.3 (except for the wording related to `$splice-expression$s`) are a part of the resolution to CWG2701. These changes render [over.match.best.general]/4 redundant, hence the relocation of its associated example to this section.]{.ednote}
+[The changes to paragraph 2.3 (except for the wording related to `$splice-expression$s`) are a part of the resolution to [@CWG2701]. These changes render [over.match.best.general]/4 redundant, hence the relocation of its associated example to this section.]{.ednote}
 
 Specify rules for overload sets denoted by `$splice-expression$`s in paragraph 2, make drive-by fixes to help clear up the situation more generally, and move the example that formerly followed [over.match.best.general]/4 to follow after paragraph 2 (with a new example covering `$splice-expression$`s).
 
@@ -5412,15 +5412,16 @@ namespace B {
 }
 
 void splice() {
-  [:^^A::f:]();  // error: found default argument twice
+  [:^^A::f:](3);  // OK, default argument was not used for viability
+  [:^^A::f:]();   // error: found default argument twice
 }
 
 using A::f;
 using B::f;
 
 void use() {
-  f(3);          // OK, default argument was not used for viability
-  f();           // error: found default argument twice
+  f(3);           // OK, default argument was not used for viability
+  f();            // error: found default argument twice
 }
 ```
 
@@ -5431,7 +5432,7 @@ void use() {
 
 ### [over.match.best.general]{.sref} General {-}
 
-[The changes to [over.match.viable]/2.3 included in this proposal (part of the resolution to CWG2701) render paragraph 4 redundant; the contents of example 9 now follow [over.match.viable]/2.]{.ednote}
+[The changes to [over.match.viable]/2.3 included in this proposal (part of the resolution to [@CWG2701]) render paragraph 4 redundant; the contents of example 9 now follow [over.match.viable]/2.]{.ednote}
 
 Delete paragraph 4 and example 9.
 
