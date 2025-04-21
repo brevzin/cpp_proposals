@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R11
+document: D2996R12
 date: today
 audience: CWG, EWG, LWG
 author:
