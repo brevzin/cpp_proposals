@@ -1,6 +1,6 @@
 ---
 title: "Reflection for C++26"
-document: P2996R11
+document: D2996R12
 date: today
 audience: CWG, EWG, LWG
 author:
@@ -26,6 +26,11 @@ tag: reflection
 
 # Revision History
 
+Since [@P2996R11]:
+
+* core wording updates
+  * better specify interaction between spliced function calls and overload resolution; integrate fix to [@CWG2701]
+
 Since [@P2996R10]:
 
 * replaced `has_complete_definition` function with more narrow `is_enumerable_type`
@@ -45,6 +50,7 @@ Since [@P2996R10]:
   * added type traits from [@P2786R13]{.title}
   * in response to CWG feedback: added `has_c_language_linkage`, `has_parent`, `is_consteval_only`
   * added `scope()` and `naming_class()` members to `access_context`
+  * improve wording for `access_context::current()`, `is_accessible`, `members_of`
 
 
 Since [@P2996R9]:
@@ -3573,6 +3579,23 @@ And add a bullet thereafter that factors the result of a `$reflect-expression$` 
 
 ### [basic.scope.scope]{.sref} General {-}
 
+[The introduction of a "host scope" in paragraph 2 is part of the resolution to [@CWG2701].]{.ednote}
+
+Define the "host scope" of a declaration in paragraph 2:
+
+::: std
+[2]{.pnum} Unless otherwise specified:
+
+- [#.#]{.pnum} The smallest scope that contains a scope `$S$` is the _parent scope_ of `$S$`.
+
+[...]
+
+- [#.5]{.pnum} Any names (re)introduced by a declaration are _bound_ to it in its target scope.
+
+[The _host scope_ of a declaration is the inhabited scope if that scope is a block scope and the target scope otherwise.]{.addu} An entity _belongs_ to a scope `$S$` if `$S$` is the target scope of a declaration of the entity.
+
+:::
+
 Change bullet 4.2 to refer to the declaration of a "type alias" instead of a `$typedef-name$`.
 
 ::: std
@@ -4154,7 +4177,7 @@ auto g = typename [:^^int:](42);
     * [#.#.#.#]{.pnum} there is a lambda scope that intervenes between the expression and the point at which `$S$` was introduced and
     * [#.#.#.#]{.pnum} the expression would be potentially evaluated if the effect of any enclosing `typeid` expressions ([expr.typeid]) were ignored.
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a function, the expression is an lvalue referring to that function and has the same type as that function. [Default arguments of the function are not considered.]{.note}
+* [#.#]{.pnum} Otherwise, if `$S$` is a function `$F$`, the expression denotes an overload set containing all declarations of `$F$` that precede either the expression or the point immediately following the `$class-specifier$` of the outermost class for which the expression is in a complete-class context; overload resolution is performed to select a unique function ([over.match], [over.over]).
 
 * [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field. [The implicit transformation ([expr.prim.id]{.sref}) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
 
@@ -4166,11 +4189,11 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
-[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template that is not a constructor template. The expression denotes an overload set containing only the function template designated by the `$splice-specifier$`; overload resolution is performed to select a unique function ([over.match], [over.over]). [Function templates belonging to an overload set undergo template argument deduction and the resulting specializations are thereafter considered as candidate functions.]{.note}
+[#]{.pnum} For a `$splice-expression$` of the form  `template $splice-specifier$`, the `$splice-specifier$` shall designate a function template `$T$` that is not a constructor template. The expression denotes an overload set containing all declarations of `$T$` that precede either the expression or the point immediately following the `$class-specifier$` of the outermost class for which the expression is in a complete-class context; overload resolution is performed to select a unique function. [During overload resolution, candidate function templates undergo template argument deduction and the resulting specializations are considered as candidate functions.]{.note}
 
-[#]{.pnum} For a `$splice-expression$` of the form `template $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template. Let `$T$` be that template.
+[#]{.pnum} For a `$splice-expression$` of the form `template $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template `$T$`.
 
-* [#.#]{.pnum} If `$T$` is a function template, the expression denotes an overload set containing only the function template `$T$`. Overload resolution is performed to select a unique function ([over.match], [over.over]).
+* [#.#]{.pnum} If `$T$` is a function template, the expression denotes an overload set containing all declarations of `$T$` that precede either the expression or the point immediately following the `$class-specifier$` of the outermost class for which the expression is in a complete-class context; overload resolution is performed to select a unique function ([over.match], [over.over]).
 
 * [#.#]{.pnum} Otherwise, if `$T$` is a primary variable template, let `$S$` be the specialiation of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`. The expression is an lvalue referring to the same object associated with `$S$` and has the same type as `$S$`.
 
@@ -4849,6 +4872,17 @@ using alias = [:^^S::type:];    // OK, type-only context
 :::
 :::
 
+### [dcl.array]{.sref} Arrays {-}
+
+[This change is part of the resolution to [@CWG2701].]{.ednote}
+
+Use "host scope" in lieu of "inhabits" in paragraph 8:
+
+::: std
+[8]{.pnum} Furthermore, if there is a reachable declaration of the entity that [inhabits]{.rm} [has]{.addu} the same [host]{.addu} scope in which the bound was specified, an omitted array bound is taken to be the same as in that earlier declaration, and similarly for the definition of a static data member of a class.
+
+:::
+
 ### [dcl.fct]{.sref} Functions {-}
 
 Use "denoted by" instead of "named by" in paragraph 9 to be more clear about the entity being referred to, and add a bullet to allow for reflections of abominable function types:
@@ -4887,7 +4921,16 @@ FIC S::*pm = &S::f;                             // OK
 
 ### [dcl.fct.default]{.sref} Default arguments {-}
 
-Modify paragraph 9 to allow reflections of non-static data members to appear in default function arguments, and extend example 8 which follows.
+[The changes related to "host scopes" in paragraphs 4 and 9 are part of the resolution to [@CWG2701].]{.ednote}
+
+Use "host scope" in lieu of "inhabits" in paragraph 4:
+
+::: std
+[4]{.pnum} For non-template functions, default arguments can be added in later declarations of a function that [inhabit]{.rm} [have]{.addu} the same [host]{.addu} scope. Declarations that [inhabit]{.rm} [have]{.addu} different [host]{.addu} scopes have completely distinct sets of default arguments. [...]
+
+:::
+
+Modify paragraph 9 to allow reflections of non-static data members to appear in default function arguments, extend example 8 which follows, and use "host scope" rather than "inhabits" following example 9.
 
 ::: std
 [9]{.pnum} A default argument is evaluated each time the function is called with no argument for the corresponding parameter.
@@ -4897,6 +4940,8 @@ Modify paragraph 9 to allow reflections of non-static data members to appear in 
 A non-static member shall not appear [or be designated]{.addu} in a default argument unless it appears as the `$id-expression$` [or `$splice-expression$`]{.addu} of a class member access expression ([expr.ref]) or unless it is used to form a pointer to member ([expr.unary.op]) [or a reflection ([expr.reflect])]{.addu}.
 
 ::: example8
+The declaration of `X::mem1()` in the following example is ill-formed because no object is supplied for the non-static member `X::a` used as an initializer.
+
 ```cpp
 int b;
 class X {
@@ -4909,6 +4954,12 @@ class X {
   static int b;
 }
 ```
+
+[...]
+
+When an overload set contains a declaration of a function [that inhabits a]{.rm} [whose host]{.addu} scope [is]{.addu} `$S$`, any default argument associated with any reachable declaration [that inhabits]{.rm} [whose host scope is]{.addu} `$S$` is available to the call.
+
+[The candidate might have been found through a `$using-declarator$` from which the declaration that provides the default argument is not reaachable.]{.note7}
 
 :::
 :::
@@ -5339,18 +5390,77 @@ as specified in [dcl.type.simple]{.sref}. The guides of `A` are the set of funct
 
 ### [over.match.viable]{.sref} Viable functions {-}
 
-Disallow consideration of default arguments when an overload set was denoted by a `$splice-expression$` in paragraph 2.
+[The changes to paragraph 2.3 (except for the wording related to `$splice-expression$s`) are a part of the resolution to [@CWG2701]. These changes render [over.match.best.general]/4 redundant, hence the relocation of its associated example to this section.]{.ednote}
+
+Specify rules for overload sets denoted by `$splice-expression$`s in paragraph 2, make drive-by fixes to help clear up the situation more generally, and move the example that formerly followed [over.match.best.general]/4 to follow after paragraph 2 (with a new example covering `$splice-expression$`s).
 
 ::: std
 [2]{.pnum} First, to be a viable function, a candidate function shall have enough parameters to agree in number with the arguments in the list.
 
 - [#.#]{.pnum} If there are `$m$` arguments in the lists, all candidate functions having exactly `$m$` parameters are viable.
 - [#.#]{.pnum} A candidate function having fewer than `$m$` parameters is viable only if it has an ellipsis in its parameter list ([dcl.fct]). For the purposes of overload resolution, any argument for which there is no corresponding parameter is considered to "match the ellipsis" ([over.ics.ellipsis]).
-- [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if
+- [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if [there is a declaration `$D$` considered by the overload resolution such that for each]{.addu} [all]{.rm} parameter[s]{.rm} following the `$m$@^th^@` [have default arguments]{.rm}[, a reachable declaration whose host scope is the same as `$D$` specifies a default argument for that parameter]{.addu} ([dcl.fct.default]). [If the candidate function is selected as the best viable function, no other host scope of a declaration considered by overload resolution shall be the host scope of a declaration that specifies a default argument for the (`$m$`+1)^_st_^ parameter; the host scope of `$D$` shall not be a block scope if the declarations considered by overload resolution were denoted by a `$splice-expression$` ([expr.prim.splice]). The default arguments used in a call to the selected function are the default arguments introduced in the host scope of `$D$`.]{.addu} For the purposes of overload resolution, the parameter list is truncated on the right, so that there are exactly `$m$` parameters.
 
-  - [#.#.#]{.pnum} all parameters following the `$m$`^th^ have default arguments ([dcl.fct.default]) [and]{.addu}
-  - [#.#.#]{.pnum} [the set of candidate functions was not denoted by a `$splice-expression$` ([expr.prim.splice]).]{.addu}
+::: addu
+::: example
+```cpp
+namespace A {
+  extern "C" void f(int = 5);
+}
+namespace B {
+  extern "C" void f(int = 5);
+}
 
+void splice() {
+  [:^^A::f:](3);  // OK, default argument was not used for viability
+  [:^^A::f:]();   // error: found default argument twice
+}
+
+using A::f;
+using B::f;
+
+void use() {
+  f(3);           // OK, default argument was not used for viability
+  f();            // error: found default argument twice
+}
+```
+
+:::
+:::
+
+:::
+
+### [over.match.best.general]{.sref} General {-}
+
+[The changes to [over.match.viable]/2.3 included in this proposal (part of the resolution to [@CWG2701]) render paragraph 4 redundant; the contents of example 9 now follow [over.match.viable]/2.]{.ednote}
+
+Delete paragraph 4 and example 9.
+
+::: std
+::: rm
+[4]{.pnum} If the best viable function resolves to a function for which multiple declarations were found, and if any two of these declarations inhabit different scopes and specify a default argument that made the function viable, the program is ill-formed.
+
+::: example9
+```cpp
+namespace A {
+  extern "C" void f(int = 5);
+}
+namespace B {
+  extern "C" void f(int = 5);
+}
+
+using A::f;
+using B::f;
+
+void use() {
+  f(3);        // OK, default argument was not used for viability
+  f();         // error: found default argument twice
+}
+```
+
+:::
+
+:::
 :::
 
 ### [over.over]{.sref} Address of an overload set {-}
