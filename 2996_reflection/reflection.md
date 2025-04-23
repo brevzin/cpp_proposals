@@ -5910,7 +5910,7 @@ struct S {
 template<class> struct V1 {};
 template<class, class = int> struct V2 {};
 
-S<V1> s1; // error: type of S<V1>::m is invalid
+S<V1> s1; // error: V1<int, float> has too many template arguments 
 S<V2> s2; // OK
 ```
 
