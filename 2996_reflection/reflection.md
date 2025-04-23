@@ -6342,7 +6342,6 @@ namespace std::meta {
 
   consteval bool has_default_member_initializer(info r);
 
-  consteval bool $has-type$(info r); // exposition only
   consteval info type_of(info r);
   consteval info object_of(info r);
   consteval info value_of(info r);
