@@ -3412,10 +3412,10 @@ Modify paragraph 7 such that denoting a variable by its name finds the variable,
 
 :::
 
-Add type aliases and namespace aliases to the list of entities in paragraph 8. As drive-by fixes, remove "variable", "object", "reference", and "template specialization"; replace "class member" with "non-static data member", since all other cases are subsumed by existing one. Add "template parameters" and "`$init-capture$`s", which collectively subsume "packs". Introduce a notion of an “underlying entity” in the same paragraph, and utilize it for the definition of a name “denoting” an entity. Type aliases are now entities, so also modify accordingly.
+Add type aliases and namespace aliases to the list of entities in paragraph 8. As drive-by fixes, remove "value", "object", "reference", and "template specialization"; replace "class member" with "non-static data member", since all other cases are subsumed by existing one. Add "template parameters" and "`$init-capture$`s", which collectively subsume "packs". Introduce a notion of an “underlying entity” in the same paragraph, and utilize it for the definition of a name “denoting” an entity. Type aliases are now entities, so also modify accordingly.
 
 ::: std
-[8]{.pnum} An _entity_ is a [value, object, reference]{.rm} [variable,]{.addu} structured binding, result binding, function, enumerator, type, [type alias]{.addu}, [class]{.rm} [non-static data]{.addu} member, bit-field, template, template specialization, namespace, [namespace alias, template parameter, function parameter]{.addu}, or [`$init-capture$`]{.addu} [pack]{.rm}. [The _underlying entity_ of an entity is that entity unless otherwise specified. A name _denotes_ the underlying entity of the entity declared by each declaration that introduces the name.]{.addu} [An entity `$E$` is denoted by the name (if any) that is introduced by a declaration of `$E$` or by a `$typedef-name$` introduced by a declaration specifying `$E$`.]{.rm}
+[8]{.pnum} An _entity_ is a [value, object, reference]{.rm} [variable,]{.addu} structured binding, result binding, function, enumerator, type, [type alias]{.addu}, [class]{.rm} [non-static data]{.addu} member, bit-field, template, [template specialization]{.rm}, namespace, [namespace alias, template parameter, function parameter]{.addu}, or [`$init-capture$`]{.addu} [pack]{.rm}. [The _underlying entity_ of an entity is that entity unless otherwise specified. A name _denotes_ the underlying entity of the entity declared by each declaration that introduces the name.]{.addu} [An entity `$E$` is denoted by the name (if any) that is introduced by a declaration of `$E$` or by a `$typedef-name$` introduced by a declaration specifying `$E$`.]{.rm}
 
 [[Type aliases and namespace aliases have underlying entities that are distinct from themselves.]{.note}]{.addu}
 
@@ -3786,25 +3786,25 @@ Add new paragraphs before the last paragraph of [basic.fundamental]{.sref} as fo
 
 [17 - 1]{.pnum} A value of type `std::meta::info` is called a _reflection_. There exists a unique _null reflection_; every other reflection is a representation of
 
-* a value of structural type ([temp.param]{.sref}),
-* an object with static storage duration ([basic.stc]{.sref}),
-* a variable ([basic.pre]{.sref}),
-* a structured binding ([dcl.struct.bind]{.sref}),
-* a function ([dcl.fct]{.sref}),
-* an enumerator ([dcl.enum]{.sref}),
-* a type alias ([dcl.typedef]{.sref}),
-* a type ([basic.types]{.sref}),
-* a class member ([class.mem]{.sref}),
-* an unnamed bit-field ([class.bit]{.sref}),
-* a primary class template ([temp.pre]{.sref}),
-* a function template ([temp.pre]{.sref}),
-* a primary variable template ([temp.pre]{.sref}),
-* an alias template ([temp.alias]{.sref}),
-* a concept ([temp.concept]{.sref}),
-* a namespace alias ([namespace.alias]{.sref}),
-* a namespace ([basic.namespace.general]{.sref}),
-* a direct base class relationship ([class.derived.general]{.sref}), or
-* a data member description ([class.mem.general]{.sref}).
+* a value of structural type ([temp.param]),
+* an object with static storage duration ([basic.stc]),
+* a variable ([basic.pre]),
+* a structured binding ([dcl.struct.bind]),
+* a function ([dcl.fct]),
+* an enumerator ([dcl.enum]),
+* a type alias ([dcl.typedef]),
+* a type ([basic.types]),
+* a class member ([class.mem]),
+* an unnamed bit-field ([class.bit]),
+* a primary class template ([temp.pre]),
+* a function template ([temp.pre]),
+* a primary variable template ([temp.pre]),
+* an alias template ([temp.alias]),
+* a concept ([temp.concept]),
+* a namespace alias ([namespace.alias]),
+* a namespace ([basic.namespace.general]),
+* a direct base class relationship ([class.derived.general]), or
+* a data member description ([class.mem.general]).
 
 A reflection is said to _represent_ the corresponding construct.
 
@@ -3827,6 +3827,8 @@ template <auto> concept Concept = requires { true; };
 namespace NS {};
 namespace NSAlias = NS;
 
+constexpr auto ctx = std::meta::access_context::current();
+
 constexpr auto r1 = std::meta::reflect_value(42);  // represents int value of 42
 
 constexpr auto r2 = std::meta::reflect_object(arr[1]);  // represents int object
@@ -3839,7 +3841,7 @@ constexpr auto r7 = ^^Alias;    // represents a type alias
 constexpr auto r8 = ^^S;        // represents a type
 constexpr auto r9 = ^^S::mem;   // represents a class member
 
-constexpr auto r10 = std::meta::members_of(^^S)[1];
+constexpr auto r10 = std::meta::members_of(^^S, ctx)[1];
     // represents an unnamed bit-field
 
 constexpr auto r11 = ^^TCls;     // represents a class template
@@ -3849,7 +3851,7 @@ constexpr auto r14 = ^^Concept;  // represents a concept
 constexpr auto r15 = ^^NSAlias;  // represents a namespace alias
 constexpr auto r16 = ^^NS;       // represents a namespace
 
-constexpr auto r17 = std::meta::bases_of(^^S)[0];
+constexpr auto r17 = std::meta::bases_of(^^S, ctx)[0];
     // represents a direct base class relationship
 
 constexpr auto r18 = std::meta::data_member_spec(^^int, {.name="member"});
@@ -4124,7 +4126,7 @@ template<typename T> concept C = requires {
   typename S<T>;            // required valid ([temp.names]) template-id;
                             // fails if T::type does not exist as a type to which 0 can be implicitly converted
   typename Ref<T>;          // required alias template substitution, fails if T is void
-+ typename [:T::r1:];       // fails if T::r is not a reflection of a type
++ typename [:T::r1:];       // fails if T::r1 is not a reflection of a type
 + typename [:T::r2:]<int>;  // fails if T::r2 is not a reflection of a template T for
 +                           // which T<int> is a type
 };
@@ -5184,22 +5186,26 @@ Modify the definition of reachability to account for injected declarations:
 * [#.#]{.pnum} [`$P$` is not a synthesized point and]{.addu} `$D$` appears prior to `$P$` in the same translation unit, [or]{.rm}
 * [#.#]{.pnum} [`$D$` is an injected declaration for which `$P$` is the corresponding synthesized point, or]{.addu}
 * [#.#]{.pnum} `$D$` is not discarded ([module.global.frag]{.sref}), appears in a translation unit that is reachable from `$P$`, and does not appear within a _private-module-fragment_.
-:::
 
+::: addu
 ::: example
 ```cpp
 class S {
   class Incomplete;
 
   /* P1 */ consteval {
-    // OK, n == 7. The member Incomplete::x members-of-precedes the synthesized point P2 associated
-    // with the injected declaration produced by the call to define_aggregate.
+    // OK, n == 7. The member Incomplete::x members-of-precedes the synthesized
+    // point P2 associated with the injected declaration produced by the call to
+    // define_aggregate.
     int n = members_of(
-        define_aggregate(^^Incomplete, {data_member_spec(^^int, {.name="x"})})
+        define_aggregate(^^Incomplete, {data_member_spec(^^int, {.name="x"})}),
+        std::meta::access_context::current()
       ).size();
   }
 }; /* P2 */
 ```
+:::
+:::
 :::
 
 ### [class.mem.general]{.sref} General {-}
@@ -6322,7 +6328,6 @@ namespace std::meta {
   consteval bool is_literal_operator_template(info r);
   consteval bool is_constructor_template(info r);
   consteval bool is_concept(info r);
-  consteval bool has_template_arguments(info r);
 
   consteval bool is_value(info r);
   consteval bool is_object(info r);
@@ -6337,16 +6342,19 @@ namespace std::meta {
 
   consteval bool has_default_member_initializer(info r);
 
-  consteval bool has_parent(info r);
-  consteval info parent_of(info r);
-
+  consteval bool $has-type$(info r); // exposition only
   consteval info type_of(info r);
   consteval info object_of(info r);
   consteval info value_of(info r);
+
+  consteval bool has_parent(info r);
+  consteval info parent_of(info r);
+
   consteval info dealias(info r);
+
+  consteval bool has_template_arguments(info r);
   consteval info template_of(info r);
   consteval vector<info> template_arguments_of(info r);
-
 
   // [meta.reflection.access.context], access control context
   struct access_context;
@@ -7134,8 +7142,10 @@ struct F : I {
   }
 };
 
+constexpr auto ctx = std::meta::access_context::current();
+
 static_assert(parent_of(^^F) == ^^::);
-static_assert(parent_of(bases_of(^^F)[0]) == ^^F);
+static_assert(parent_of(bases_of(^^F, ctx)[0]) == ^^F);
 static_assert(is_union_type(parent_of(^^F::o)));
 static_assert(parent_of(^^F::N) == ^^F);
 static_assert(parent_of(^^F::A) == ^^F::N);
