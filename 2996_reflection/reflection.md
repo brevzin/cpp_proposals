@@ -5876,15 +5876,15 @@ Add a new subsection of [temp.dep]{.sref} following [temp.dep.constexpr]{.sref},
 
 [1]{.pnum} A `$splice-specifier$` is dependent if its converted `$constant-expression$` is value-dependent. A `$splice-specialization-specifier$` is dependent if its `$splice-specifier$` is dependent or if any of its arguments are dependent. A `$splice-scope-specifier$` is dependent if its `$splice-specifier$` or `$splice-specialization-specifier$` is dependent.
 
-[2]{.pnum}
+[#]{.pnum}
 
-:::example
+::: example
 ```cpp
 template <auto T, auto NS>
 void fn() {
   using a = [:T:]<1>;  // [:T:] and [:T:]<1> are dependent
 
-  static_assert([:NS:]::template TCls<1>::v == a::v); // [:NS:] is dependent
+  static_assert([:NS:]::template TCls<1>::v == a::v);  // [:NS:] is dependent
 }
 
 namespace NS {
@@ -5897,6 +5897,25 @@ int main() {
 ```
 
 :::
+
+[#]{.pnum}
+
+::: example
+```cpp
+template<template<class> class X>
+struct S {
+  typename [: ^^X :]<int, float> m; 
+};
+
+template<class> struct V1 {};
+template<class, class = int> struct V2 {};
+
+S<V1> s1; // error: V1<int, float> has too many template arguments 
+S<V2> s2; // OK
+```
+
+:::
+
 :::
 :::
 
