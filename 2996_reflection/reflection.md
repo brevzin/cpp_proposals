@@ -7270,14 +7270,14 @@ static consteval access_context current() noexcept;
 
 [#]{.pnum} Given a program point `$P$`, let `$eval-point$($P$)` be the following program point:
 
-  * [#.#]{.pnum} If `$P$` appears at or within a default member initializer `$I$` for a member of a class `$C$` ([class.mem.general]), then a point determined as follows:
+  * [#.#]{.pnum} If a potentially-evaluated subexpression ([intro.execution]) of a default member initializer `$I$` for a member of a class `$C$` ([class.mem.general]) appears at `$P$`, then a point determined as follows:
     * [#.#.#]{.pnum} If `$I$` is used by an aggregate initialization that appears at point `$Q$`, `$eval-point$($Q$)`.
     * [#.#.#]{.pnum} Otherwise, if initialization by an inherited constructor ([class.inhctor.init]) uses `$I$`, a point whose immediate scope is the class scope corresponding to `$C$`.
     * [#.#.#]{.pnum} Otherwise, a point whose immediate scope is the function parameter scope corresponding to the constructor definition that uses `$I$`.
-  * [#.#]{.pnum} Otherwise, if `$P$` appears at or within a default argument ([dcl.fct.default]) that is used by an invocation of a function ([expr.call]) that appears at point `$Q$`, `$eval-point$($Q$)`.
+  * [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, and that default argument is used by an invocation of a function ([expr.call]) that appears at point `$Q$`, `$eval-point$($Q$)`.
   * [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a function parameter scope introduced by a declaration `$D$` that is not reachable, a point with the same immediate scope as the locus of `$D$`.
-  * [#.#]{.pnum} Otherwise, if `$P$` appears at or within the `$constraint-expression$` introduced by the trailing `$requires-clause$` of a function declaration `$D$` ([dcl.decl.general]), a point with the same immediate scope as the locus of `$D$`.
-  * [#.#]{.pnum} Otherwise, if `$P$` appears within a `$consteval-block-declaration$` `$D$` ([dcl.pre]), a point whose immediate scope is the scope inhabited by `$D$`.
+  * [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a `$constraint-expression$` appears at `$P$`, and that `$constraint-expression$` is introduced by the trailing `$requires-clause$` of a function declaration `$D$` ([dcl.decl.general]), a point with the same immediate scope as the locus of `$D$`.
+  * [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a block scope and the innermost function parameter scope enclosing `$P$` is introduced by a `$consteval-block-declaration$` `$D$` ([dcl.pre]), a point whose immediate scope is the scope inhabited by `$D$`.
   * [#.#]{.pnum} Otherwise, `$P$`.
 
 [#]{.pnum} An invocation of `current` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a template parameter scope.
