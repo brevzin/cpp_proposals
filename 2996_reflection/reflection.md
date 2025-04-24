@@ -7310,7 +7310,7 @@ static_assert(B(1).s == ^^B);  // OK
 static_assert(is_constructor(B{1, 2}.s) && parent_of(B{1, 2}.s) == ^^B);  // OK
 
 auto fn() -> [:is_namespace(access_context::current().scope()) ? ^^int : ^^bool:];
-static_assert(^^decltype(fn()) == ^^int);  // OK
+static_assert(type_of(^^fn) == ^^auto()->int);  // OK
 
 template <auto R>
 struct TCls {
