@@ -7266,7 +7266,7 @@ consteval info naming_class() const;
 static consteval access_context current() noexcept;
 ```
 
-[#]{.pnum} `current` is not a designated addressable function ([namespace.std]).
+[#]{.pnum} `current` is not an addressable function ([namespace.std]).
 
 [#]{.pnum} Given a program point `$P$`, let `$eval-point$($P$)` be the following program point:
 
