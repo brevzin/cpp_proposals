@@ -30,6 +30,9 @@ Since [@P2996R11]:
 
 * core wording updates
   * better specify interaction between spliced function calls and overload resolution; integrate fix to [@CWG2701]
+  * disallow reflection of local parameters introduced by `$requires-expression$`s
+* library wording updates
+  * improve specification of `access_context::current()` (including examples)
 
 Since [@P2996R10]:
 
@@ -4385,13 +4388,13 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
 
-  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]{.sref}); `$R$` represents that function.
+  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]); `$R$` represents that function.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable declared by an `$init-capture$` ([expr.prim.lambda.capture]), `$R$` is ill-formed.
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity `$E$` ([basic.pre]) for which there is a lambda scope that intervenes between `$R$` and the point at which `$E$` was introduced, `$R$` is ill-formed.
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local parameter introduced by a `$requires-expression$` ([expr.prim.req]), `$R$` is ill-formed.
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity captured by an enclosing `$lambda-expression$`, `$R$` is ill-formed.
+  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity `$E$` ([basic.pre]) for which there is a lambda scope that intervenes between `$R$` and the point at which `$E$` was introduced, `$R$` is ill-formed.
 
   * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a function-local predefined variable ([dcl.fct.def.general]), `$R$` is ill-formed. For any other `$id-expression$` that denotes a variable, `$R$` represents that variable.
 
@@ -6097,7 +6100,7 @@ Unless F is designated an *addressable function*, the behavior of a C++ program 
 
 [6a]{.pnum}
 Let F denote a standard library function or function template.
-Unless F is designated addressable function, it is unspecified if or how a reflection value designating the associated entity can be formed.
+Unless F is designated an addressable function, it is unspecified if or how a reflection value designating the associated entity can be formed.
 [For example, it is possible that `std::meta::members_of` will not return reflections of standard library functions that an implementation handles through an extra-linguistic mechanism.]{.note}
 
 [6b]{.pnum}
@@ -6581,7 +6584,7 @@ namespace std::meta {
 }
 ```
 
-[1]{.pnum} Each function, and each instantiation of each function template, specified in this header is a designated addressable function ([namespace.std]).
+[1]{.pnum} Unless otherwise specified, each function, and each instantiation of any function template, specified in this header is a designated addressable function ([namespace.std]).
 
 [2]{.pnum} The behavior of any function specified in namespace `std::meta` is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
 
@@ -7228,7 +7231,7 @@ static_assert(template_arguments_of(T)[3] == ^^PairPtr);
 :::
 
 
-## [meta.reflection.access.context] Access control context {-}
+### [meta.reflection.access.context] Access control context {-}
 
 ::: std
 ::: addu
@@ -7263,17 +7266,64 @@ consteval info naming_class() const;
 static consteval access_context current() noexcept;
 ```
 
-[#]{.pnum} Let `$S$` be the innermost block scope, class scope, or namespace scope enclosing the following program point:
+[#]{.pnum} `current` is not a designated addressable function ([namespace.std]).
 
-* [#.#]{.pnum} If `current()` is a default member initializer ([class.mem.general]), or a subexpression thereof, the point at which the constructor definition or aggregate initialization that uses the default member initializer appears.
-* [#.#]{.pnum} Otherwise, if `current()` is a default argument ([dcl.fct.default]), or a subexpression thereof, the point at which the invocation of the function that uses the default argument ([expr.call]) appears.
-* [#.#]{.pnum} Otherwise, the point at which the invocation of `current()` appears.
+[#]{.pnum} Given a program point `$P$`, let `$eval-point$($P$)` be the following program point:
 
-[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope is defined as follows:
+  * [#.#]{.pnum} If `$P$` appears at or within a default member initializer `$I$` for a member of a class `$C$` ([class.mem.general]), then a point determined as follows:
+    * [#.#.#]{.pnum} If `$I$` is used by an aggregate initialization that appears at point `$Q$`, `$eval-point$($Q$)`.
+    * [#.#.#]{.pnum} Otherwise, if initialization by an inherited constructor ([class.inhctor.init]) uses `$I$`, a point whose immediate scope is the class scope corresponding to `$C$`.
+    * [#.#.#]{.pnum} Otherwise, a point whose immediate scope is the function parameter scope corresponding to the constructor definition that uses `$I$`.
+  * [#.#]{.pnum} Otherwise, if `$P$` appears at or within a default argument ([dcl.fct.default]) that is used by an invocation of a function ([expr.call]) that appears at point `$Q$`, `$eval-point$($Q$)`.
+  * [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a function parameter scope introduced by a declaration `$D$` that is not reachable, a point with the same immediate scope as the locus of `$D$`.
+  * [#.#]{.pnum} Otherwise, if `$P$` appears at or within the `$constraint-expression$` introduced by the trailing `$requires-clause$` of a function declaration `$D$` ([dcl.decl.general]), a point with the same immediate scope as the locus of `$D$`.
+  * [#.#]{.pnum} Otherwise, if `$P$` appears within a `$consteval-block-declaration$` `$D$` ([dcl.pre]), a point whose immediate scope is the scope inhabited by `$D$`.
+  * [#.#]{.pnum} Otherwise, `$P$`.
 
-* [#.#]{.pnum} If `$S$` is a block scope whose nearest enclosing function parameter scope corresponds to a function `$F$`, a reflection representing `$F$`.
-* [#.#]{.pnum} Otherwise, if `$S$` is a class scope introduced by a declaration of a class type `$C$`, a reflection representing `$C$`.
-* [#.#]{.pnum} Otherwise, `$S$` is a namespace scope corresponding to a namespace `$N$`; a reflection representing `$N$`.
+[#]{.pnum} An invocation of `current` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a template parameter scope.
+
+[#]{.pnum} *Returns*: Let `$P$` be the point at which the invocation of `current` appears, and let `$S$` be the innermost scope enclosing `$eval-point$($P$)` that is either a class scope, a namespace scope, or a function parameter scope that corresponds to a function. An `access_context` whose naming class is the null reflection and whose scope is the class, namespace, or function to which `$S$` corresponds.
+
+::: example
+```cpp
+struct A {
+  int a = 0;
+  consteval A(int p) : a(p) {}
+};
+struct B : A {
+  using A::A;
+  consteval B(int p, int q) : A(p * q) {}
+  info s = access_context::current().scope();
+};
+
+struct Agg {
+  consteval bool eq(info rhs = access_context::current().scope()) {
+    return s == rhs;
+  }
+  info s = access_context::current().scope();
+};
+
+namespace NS {
+static_assert(Agg{}.s == access_context::current().scope());  // OK
+static_assert(Agg{}.eq());  // OK
+static_assert(B(1).s == ^^B);  // OK
+static_assert(is_constructor(B{1, 2}.s) && parent_of(B{1, 2}.s) == ^^B);  // OK
+
+auto fn() -> [:is_namespace(access_context::current().scope()) ? ^^int : ^^bool:];
+static_assert(^^decltype(fn()) == ^^int);  // OK
+
+template <auto R>
+struct TCls {
+  consteval bool fn()
+    requires (is_type(access_context::current().scope())) {
+      // OK, scope is 'TCls<R>'.
+      return true;
+    }
+};
+static_assert(TCls<0>{}.fn());  // OK
+}
+```
+:::
 
 ```cpp
 static consteval access_context unprivileged() noexcept;
@@ -7297,7 +7347,7 @@ consteval access_context via(info cls) const;
 :::
 :::
 
-## [meta.reflection.access.queries] Member accessibility queries {-}
+### [meta.reflection.access.queries] Member accessibility queries {-}
 
 ::: std
 ::: addu
@@ -7418,12 +7468,12 @@ It is implementation-defined whether declarations of other members of a closure 
 
 [Examples of direct members that are not `$Q$`-members-of-representable for any entity `$Q$` include: unscoped enumerators ([enum]), partial specializations of templates ([temp.spec.partial]), closure types ([expr.prim.lambda.closure]), and variant members ([class.union.anon]).]{.note}
 
-[#]{.pnum} *Returns*: A `vector` containing reflections of all members `$M$` of the entity `$Q$` represented by `r` for which
+[#]{.pnum} *Returns*: A `vector` containing reflections of all members `$M$` of the entity `$Q$` represented by `dealias(r)` for which
 
 * [#.#]{.pnum} `$M$` is `$Q$`-members-of-representable from some point in the evaluation context and
 * [#.#]{.pnum} letting `$ref-m$` be a reflection representing `$M$`, `is_accesible($ref-m$, ctx)` is `true`.
 
-If `r` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields whose declarations inhabit the class scope corresponding to `$C$` for which, letting `$ref-b$` be a reflection representing the unnamed bit-field, `is_accessible($ref-b$, ctx)` is `true`. Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared. [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
+If `dealias(r)` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields whose declarations inhabit the class scope corresponding to `$C$` for which, letting `$ref-b$` be a reflection representing the unnamed bit-field, `is_accessible($ref-b$, ctx)` is `true`. Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared. [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
 
 ::: example
 ```cpp
@@ -7447,8 +7497,8 @@ consteval vector<info> bases_of(info type, access_context ctx);
 
 [#]{.pnum} *Constant When*: `dealias(type)` is a reflection representing a complete class type.
 
-[#]{.pnum} *Returns*: Let `C` be the type represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships, if any, of `C` such that, letting `$ref-b$` be a reflection representing that base class relationship, `is_accessible($ref-b$, ctx)` is `true`.
-The direct base class relationships appear in the order in which the corresponding base classes appear in the `$base-specifier-list$` of `C`.
+[#]{.pnum} *Returns*: Let `$C$` be the class represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships, if any, of `$C$` such that, letting `$ref-b$` be a reflection representing that base class relationship, `is_accessible($ref-b$, ctx)` is `true`.
+The direct base class relationships appear in the order in which the corresponding base classes appear in the `$base-specifier-list$` of `$C$`.
 
 ```cpp
 consteval vector<info> static_data_members_of(info type, access_context ctx);
