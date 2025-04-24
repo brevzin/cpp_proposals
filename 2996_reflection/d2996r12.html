@@ -12902,11 +12902,12 @@ let <code class="sourceCode cpp"><em>eval-point</em><span class="op">(</span><em
 be the following program point:</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_548" id="pnum_548">(6.1)</a></span>
-If <code class="sourceCode cpp"><em>P</em></code> appears at or within a
+If a potentially-evaluated subexpression ([intro.execution]) of a
 default member initializer
 <code class="sourceCode cpp"><em>I</em></code> for a member of a class
-<code class="sourceCode cpp"><em>C</em></code> ([class.mem.general]),
-then a point determined as follows:
+<code class="sourceCode cpp"><em>C</em></code> ([class.mem.general])
+appears at <code class="sourceCode cpp"><em>P</em></code>, then a point
+determined as follows:
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_549" id="pnum_549">(6.1.1)</a></span>
 If <code class="sourceCode cpp"><em>I</em></code> is used by an
@@ -12924,10 +12925,11 @@ corresponding to the constructor definition that uses
 <code class="sourceCode cpp"><em>I</em></code>.</li>
 </ul></li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_552" id="pnum_552">(6.2)</a></span>
-Otherwise, if <code class="sourceCode cpp"><em>P</em></code> appears at
-or within a default argument ([dcl.fct.default]) that is used by an
-invocation of a function ([expr.call]) that appears at point
-<code class="sourceCode cpp"><em>Q</em></code>, <code class="sourceCode cpp"><em>eval-point</em><span class="op">(</span><em>Q</em><span class="op">)</span></code>.</li>
+Otherwise, if a potentially-evaluated subexpression of a default
+argument ([dcl.fct.default]) appears at
+<code class="sourceCode cpp"><em>P</em></code>, and that default
+argument is used by an invocation of a function ([expr.call]) that
+appears at point <code class="sourceCode cpp"><em>Q</em></code>, <code class="sourceCode cpp"><em>eval-point</em><span class="op">(</span><em>Q</em><span class="op">)</span></code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_553" id="pnum_553">(6.3)</a></span>
 Otherwise, if the immediate scope of
 <code class="sourceCode cpp"><em>P</em></code> is a function parameter
@@ -12936,17 +12938,20 @@ scope introduced by a declaration
 point with the same immediate scope as the locus of
 <code class="sourceCode cpp"><em>D</em></code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_554" id="pnum_554">(6.4)</a></span>
-Otherwise, if <code class="sourceCode cpp"><em>P</em></code> appears at
-or within the
+Otherwise, if a potentially-evaluated subexpression of a
 <code class="sourceCode cpp"><em>constraint-expression</em></code>
+appears at <code class="sourceCode cpp"><em>P</em></code>, and that
+<code class="sourceCode cpp"><em>constraint-expression</em></code> is
 introduced by the trailing
 <code class="sourceCode cpp"><em>requires-clause</em></code> of a
 function declaration <code class="sourceCode cpp"><em>D</em></code>
 ([dcl.decl.general]), a point with the same immediate scope as the locus
 of <code class="sourceCode cpp"><em>D</em></code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_555" id="pnum_555">(6.5)</a></span>
-Otherwise, if <code class="sourceCode cpp"><em>P</em></code> appears
-within a
+Otherwise, if the immediate scope of
+<code class="sourceCode cpp"><em>P</em></code> is a block scope and the
+innermost function parameter scope enclosing
+<code class="sourceCode cpp"><em>P</em></code> is introduced by a
 <code class="sourceCode cpp"><em>consteval-block-declaration</em></code>
 <code class="sourceCode cpp"><em>D</em></code> ([dcl.pre]), a point
 whose immediate scope is the scope inhabited by
