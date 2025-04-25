@@ -4105,7 +4105,7 @@ And that the conversion function is:
 [11]{.pnum} For a generic lambda with no lambda-capture and no explicit object parameter ([dcl.fct]), the closure type has a conversion function template to pointer to function. [The conversion function template is a direct member of the closure type.]{.addu} The conversion function template has the same invented template parameter list, [...]
 :::
 
-### [expr.prim.req.type]{.sref} Type requirements
+### [expr.prim.req.type]{.sref} Type requirements {-}
 
 Allow splices in type requirements:
 
@@ -4419,7 +4419,7 @@ template <typename T>
 struct S {
   static constexpr auto r = ^^T;
   using type = T;
-}
+};
 static_assert(S<int>::r == ^^int);
 static_assert(^^S<int>::type != ^^int);
 
@@ -5251,7 +5251,12 @@ Update paragraph 4 accordingly:
 Extend paragraph 6, and modify note 3, to clarify the existence of subobjects corresponding to non-static data members of reference types.
 
 ::: std
-[6]{.pnum} A data member or member function may be declared `static` in its `$member-declaration$`, in which case it is a _static member_ (see [class.static]) (a _static data member_ ([class.static.data]) or _static member function_ ([class.static.mfct]), respectively) of the class. Any other data member or member function is a _non-static member_ (a _non-static data member_ or _non-static member function_ ([class.mfct.non.static]), respectively). [For each non-static data member of reference type, there is a unique member subobject whose size and alignment is the same as if the data member were declared with the corresponding pointer type.]{.addu}
+[6]{.pnum} A data member or member function may be declared `static` in its `$member-declaration$`, in which case it is a _static member_ (see [class.static]) (a _static data member_ ([class.static.data]) or _static member function_ ([class.static.mfct]), respectively) of the class. Any other data member or member function is a _non-static member_ (a _non-static data member_ or _non-static member function_ ([class.mfct.non.static]), respectively). [For each non-static data member of type `$T$`, there is a unique member _layout-associated subobject_ whose size and alignment is the same as if that data member were declared as having type]{.addu}
+
+::: addu
+* [6.1]{.pnum} `$U$*` if `$T$` is some type `$U$&` or `$U$&&`,
+* [6.2]{.pnum} Otherwise, `$T$`.
+:::
 
 [[A non-static data member of non-reference type is a member subobject of a class object.]{.rm} [An object of class type has a member subobject corresponding to each non-static data member of its class.]{.addu}]{.note3}
 
@@ -5913,13 +5918,13 @@ int main() {
 ```cpp
 template<template<class> class X>
 struct S {
-  typename [: ^^X :]<int, float> m; 
+  typename [: ^^X :]<int, float> m;
 };
 
 template<class> struct V1 {};
 template<class, class = int> struct V2 {};
 
-S<V1> s1; // error: V1<int, float> has too many template arguments 
+S<V1> s1; // error: V1<int, float> has too many template arguments
 S<V2> s2; // OK
 ```
 
@@ -6376,12 +6381,7 @@ namespace std::meta {
   consteval vector<info> enumerators_of(info type_enum);
 
   // [meta.reflection.layout], reflection layout queries
-  struct member_offset {
-    ptrdiff_t bytes;
-    ptrdiff_t bits;
-    constexpr ptrdiff_t total_bits() const;
-    auto operator<=>(member_offset const&) const = default;
-  };
+  struct member_offset;
   consteval member_offset offset_of(info r);
   consteval size_t size_of(info r);
   consteval size_t alignment_of(info r);
@@ -7362,7 +7362,7 @@ consteval bool is_accessible(info r, access_context ctx);
 
 [#]{.pnum} *Constant When*:
 
-* [#.#]{.pnum} `r` does not represent a class member for which `$PARENT-CLS$(r)` is an incomplete class.
+* [#.#]{.pnum} `r` does not represent a class member for which `$PARENT-CLS$(r)` is an incomplete class and
 * [#.#]{.pnum} `r` does not represent a direct base class relationship between a base class and an incomplete derived class.
 
 [#]{.pnum} Let `$NAMING-CLS$(r, ctx)` be:
@@ -7376,13 +7376,13 @@ consteval bool is_accessible(info r, access_context ctx);
 * [#.#]{.pnum} Otherwise, if `r` does not represent a class member or a direct base class relationship, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents
   * [#.#.#]{.pnum} a class member that is not a (possibly indirect or variant) member of `$NAMING-CLS$(r, ctx)` or
-  * [#.#.#]{.pnum} a direct base class relationship with base class `$B$` such that `$B$` is not a (possibly indirect) base class of `$NAMING-CLS$(r, ctx)`,
+  * [#.#.#]{.pnum} a direct base class relationship such that `parent_of(r)` does not represent `$NAMING-CLS$(r, ctx)` or a (direct or indirect) base class thereof,
 
   then `false`.
 * [#.#]{.pnum} Otherwise, if `ctx.scope()` is the null reflection, then `true`.
 * [#.#]{.pnum} Otherwise, letting `$P$` be a program point such that `access_context::current().scope() == ctx.scope()` would be `true` if it appeared at that point:
-  * [#.#.#]{.pnum} If `r` represents a direct base class relationship with base class `$B$`, then `true` if `$B$` is accessible at `$P$` ([class.access.base]); otherwise, `false`.
-  * [#.#.#]{.pnum} Otherwsise, `r` represents a class member `$M$`; `true` if `$M$` is accessible at `$P$` when named in `$NAMING-CLS$(r, ctx)` ([class.access.base]). Otherwise, `false`.
+  * [#.#.#]{.pnum} If `r` represents a direct base class relationship with base class `$B$`, then `true` if base class `$B$` of `$NAMING-CLASS$(r, ctx)` is accessible at `$P$` ([class.access.base]); otherwise, `false`.
+  * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` is accessible at `$P$` when named in `$NAMING-CLS$(r, ctx)` ([class.access.base]). Otherwise, `false`.
 
 ::: note
 The definitions of when a class member or base class is accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
@@ -7415,7 +7415,7 @@ consteval bool has_inaccessible_nonstatic_data_members(
 
 [#]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} `nonstatic_data_members_of(r, ctx)` is a constant subexpression and
+- [#.#]{.pnum} `nonstatic_data_members_of(r, access_context::unchecked())` is a constant subexpression and
 - [#.#]{.pnum} `r` does not represent a closure type.
 
 [#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `nonstatic_data_members_of(r, access_context::unchecked())`. Otherwise, `false`.
@@ -7424,7 +7424,7 @@ consteval bool has_inaccessible_nonstatic_data_members(
 consteval bool has_inaccessible_bases(info r, access_context ctx);
 ```
 
-[#]{.pnum} *Constant When*: `bases_of(r, ctx)` is a constant subexpression.
+[#]{.pnum} *Constant When*: `bases_of(r, access_context::unchecked())` is a constant subexpression.
 
 [#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `bases_of(r, access_context::unchecked())`. Otherwise, `false`.
 
@@ -7447,7 +7447,7 @@ consteval vector<info> members_of(info r, access_context ctx);
 
 * [#.#]{.pnum} `$M$` is not a closure type ([expr.prim.lambda.closure]),
 * [#.#]{.pnum} `$M$` is not a specialization of a template ([temp.pre]),
-* [#.#]{.pnum} if `$Q$` is a class, then `$M$` is a direct member of `$Q$` ([class.mem.general]) that is not a variant member ([class.union.anon]),
+* [#.#]{.pnum} if `$Q$` is a class that is not a closure type, then `$M$` is a direct member of `$Q$` ([class.mem.general]) that is not a variant member of a nested anonymous union of `$Q$` ([class.union.anon]),
 * [#.#]{.pnum} if `$Q$` is a namespace, then `$D$` inhabits the namespace scope of `$Q$`, and
 * [#.#]{.pnum} if `$Q$` is a closure type, then `$M$` is a function call operator or function call operator template.
 
@@ -7460,18 +7460,19 @@ It is implementation-defined whether declarations of other members of a closure 
 * [#.#]{.pnum} a primary class template, function template, primary variable template, alias template, or concept,
 * [#.#]{.pnum} a variable or reference,
 * [#.#]{.pnum} a function `$F$` for which
-  * [#.#]{.pnum} the type of `$F$` does not contain an undeduced placeholder type and
-  * [#.#]{.pnum} the constraints (if any) of `$F$` are satisfied, unless `$F$` is a prospective destructor that is not a selected destructor ([class.dtor]),
+  * [#.#]{.pnum} the type of `$F$` does not contain an undeduced placeholder type,
+  * [#.#]{.pnum} the constraints (if any) of `$F$` are satisfied, and
+  * [#.#]{.pnum} if `$F$` is a prospective destructor, `$F$` is the selected destructor ([class.dtor]),
 * [#.#]{.pnum} a non-static data member,
 * [#.#]{.pnum} a namespace, or
 * [#.#]{.pnum} a namespace alias.
 
-[Examples of direct members that are not `$Q$`-members-of-representable for any entity `$Q$` include: unscoped enumerators ([enum]), partial specializations of templates ([temp.spec.partial]), closure types ([expr.prim.lambda.closure]), and variant members ([class.union.anon]).]{.note}
+[Examples of direct members that are not `$Q$`-members-of-representable for any entity `$Q$` include: unscoped enumerators ([enum]), partial specializations of templates ([temp.spec.partial]), and closure types ([expr.prim.lambda.closure]).]{.note}
 
 [#]{.pnum} *Returns*: A `vector` containing reflections of all members `$M$` of the entity `$Q$` represented by `dealias(r)` for which
 
 * [#.#]{.pnum} `$M$` is `$Q$`-members-of-representable from some point in the evaluation context and
-* [#.#]{.pnum} letting `$ref-m$` be a reflection representing `$M$`, `is_accesible($ref-m$, ctx)` is `true`.
+* [#.#]{.pnum} letting `$ref-m$` be a reflection representing `$M$`, `is_accessible($ref-m$, ctx)` is `true`.
 
 If `dealias(r)` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields whose declarations inhabit the class scope corresponding to `$C$` for which, letting `$ref-b$` be a reflection representing the unnamed bit-field, `is_accessible($ref-b$, ctx)` is `true`. Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared. [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
 
@@ -7533,6 +7534,13 @@ consteval vector<info> enumerators_of(info type_enum);
 ::: std
 ::: addu
 ```cpp
+struct member_offset {
+  ptrdiff_t bytes;
+  ptrdiff_t bits;
+  constexpr ptrdiff_t total_bits() const;
+  auto operator<=>(const member_offset&) const = default;
+};
+
 constexpr ptrdiff_t member_offset::total_bits() const;
 ```
 [#]{.pnum} *Returns*: `bytes * CHAR_BIT + bits`.
@@ -7553,9 +7561,9 @@ consteval size_t size_of(info r);
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member of type `$T$`, a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`), or `dealias(r)` represents a type `$T$`, then `sizeof($TO$)` where `$TO$` is the type of the corresponding subobject for a non-static data member of type `$T$`. Otherwise, `size_of(type_of(r))`.
+[#]{.pnum} *Returns*: If `r` represents a non-static data member of type `$T$`, a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), or `dealias(r)` represents a type `$T$`, then `sizeof($LAS$)` where `$LAS$` is the type of the layout-associated subobject ([class.member.general]) of a non-static data member of type `$T$`. Otherwise, `size_of(type_of(r))`.
 
-[The subobject corresponding to a non-static data member of reference type has the same size and alignment as the corresponding pointer type. As a result it is possible that while `sizeof(char) == size_of(^^char)` that `sizeof(char&) != size_of(^^char&)`.]{.note}
+[It is possible that while `sizeof(char) == size_of(^^char)` that `sizeof(char&) != size_of(^^char&)`. If `b` represents a direct base class relationship of an empty base class, then `size_of(b) > 0`.]{.note}
 
 ```cpp
 consteval size_t alignment_of(info r);
@@ -7565,11 +7573,11 @@ consteval size_t alignment_of(info r);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `dealias(r)` represents a type `$T$`, then the alignment requirement for the type of the corresponding subobject for a non-static data member of type `$T$`.
+* [#.#]{.pnum} If `dealias(r)` represents a type `$T$`, then the alignment requirement for the type of the layout-associated subobject ([class.mem.general]) for a non-static data member of type `$T$`.
 * [#.#]{.pnum} Otherwise, if `dealias(r)` represents a variable or object, then the alignment requirement of the variable or object.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `alignment_of(type_of(r))`.
 * [#.#]{.pnum} Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$TR$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}). If `$A$` is not ⊥, then the value `$A$`. Otherwise `alignof($T$)` where the corresponding subobject of `$TR$` would have type `$T$`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$TR$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]). If `$A$` is not ⊥, then the value `$A$`. Otherwise `alignof($T$)` where the corresponding subobject of `$TR$` would have type `$T$`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
@@ -7580,7 +7588,7 @@ consteval size_t bit_size_of(info r);
 [#]{.pnum} *Returns*:
 
 * [#.#]{.pnum} If `r` represents a non-static data member that is a bit-field or an unnamed bit-field with width `$W$`, then `$W$`.
-* [#.#]{.pnum} Otherwise, if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}) and `$W$` is not ⊥, then `$W$`.
+* [#.#]{.pnum} Otherwise, if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) and `$W$` is not ⊥, then `$W$`.
 * [#.#]{.pnum} Otherwise, `CHAR_BIT * size_of(r)`.
 :::
 :::
