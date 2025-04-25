@@ -1,8 +1,8 @@
 ---
 title: "Splicing a base class subobject"
-document: P3293R1
+document: P3293R2
 date: today
-audience: EWG
+audience: CWG/LWG
 author:
     - name: Peter Dimov
       email: <pdimov@gmail.com>
@@ -18,7 +18,7 @@ tag: reflection
 
 # Revision History
 
-Since [@P3293R1], updating wording and design to account for [@P3547R0]{.title}.
+Since [@P3293R1], updating wording and design to account for [@P3547R1]{.title}.
 
 Since [@P3293R0], noted that `&[:base:]` cannot work for virtual base classes. Talking about arrays. Added wording.
 
@@ -288,20 +288,5 @@ consteval vector<info> enumerators_of(info type_enum);
 
 ---
 references:
-  - id: P2996R6
-    citation-label: P2996R6
-    title: "Reflection for C++26"
-    author:
-      - family: Barry Revzin
-      - family: Wyatt Childers
-      - family: Peter Dimov
-      - family: Andrew Sutton
-      - family: Faisal Vali
-      - family: Daveed Vandevoorde
-      - family: Dan Katz
-    issued:
-      - year: 2024
-        month: 09
-        day: 24
-    URL: https://wg21.link/p2996r6
+
 ---
