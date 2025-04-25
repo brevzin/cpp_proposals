@@ -18,7 +18,7 @@ tag: reflection
 
 # Revision History
 
-Since [@P3293R1], updating wording and design to account for [@P3547R1]{.title}.
+Since [@P3293R1], updating wording and design to account for [@P3547R1]{.title}. Adding corresponding `has_inaccessible_subobjects`.
 
 Since [@P3293R0], noted that `&[:base:]` cannot work for virtual base classes. Talking about arrays. Added wording.
 
@@ -182,7 +182,7 @@ Handle base class splices in [expr.ref]{.sref}/7-8:
 
   constexpr int f() {
     D d = {1, 2};
-    B& b = d.[: std::meta::bases_of(^^D)[0] :];
+    B& b = d.[: std::meta::bases_of(^^D, std::meta::access_context::current())[0] :];
     b.b += 10;
     d.[: ^^D::d :] += 1;
     return d.b * d.d;
@@ -218,7 +218,7 @@ Handle base class pointers to members in [expr.unary.op]{.sref}:
 
   constexpr D d = {1, 2};
 
-  constexpr int B::*pb = &[: std::meta::bases_of(^^D)[0] :];
+  constexpr int B::*pb = &[: std::meta::bases_of(^^D, std::meta::access_context::current())[0] :];
   static_assert(d.*pb == 1);
   static_assert(&(d.*pb) == &static_cast<B&>(d));
   ```
@@ -238,6 +238,14 @@ Add to meta.synop:
 namespace std::meta {
   // ...
 
+  // [meta.reflection.access.queries], member accessibility queries
+  consteval bool is_accessible(info r, access_context ctx);
+  consteval bool has_inaccessible_nonstatic_data_members(
+      info r,
+      access_context ctx);
+  consteval bool has_inaccessible_bases(info r, access_context ctx);
++ consteval bool has_inaccessible_subobjects(info r, access_context ctx);
+
   // [meta.reflection.member.queries], reflection member queries
   consteval vector<info> members_of(info r, access_context ctx);
   consteval vector<info> bases_of(info type, access_context ctx);
@@ -250,6 +258,26 @@ namespace std::meta {
   // ...
 }
 ```
+:::
+
+Add to [meta.reflection.access.queries] in the appropriate spot:
+
+::: std
+```cpp
+consteval bool has_inaccessible_bases(info r, access_context ctx);
+```
+
+[7]{.pnum} *Constant When*: `bases_of(r, ctx)` is a constant subexpression.
+
+[#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `bases_of(r, access_context::unchecked())`. Otherwise, `false`.
+
+::: addu
+```cpp
+consteval bool has_inaccessible_subobjects(info r, access_context ctx);
+```
+
+[#]{.pnum} *Effects*: Equivalent to: `return has_inaccessible_bases(r, ctx) || has_inaccessible_nonstatic_data_members(r, ctx);`
+:::
 :::
 
 Add to [meta.reflection.member.queries] in the appropriate spot:

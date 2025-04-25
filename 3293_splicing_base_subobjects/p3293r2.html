@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-04-24" />
+  <meta name="dcterms.date" content="2025-04-25" />
   <title>Splicing a base class subobject</title>
   <style>
       code{white-space: pre-wrap;}
@@ -576,7 +576,7 @@ subobject</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-04-24</td>
+    <td>2025-04-25</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -585,7 +585,7 @@ subobject</h1>
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      EWG<br>
+      CWG/LWG<br>
     </td>
   </tr>
   <tr>
@@ -903,7 +903,7 @@ a base class subobject.<span> — <em>end note</em> ]</span></span></p>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  D d <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  B<span class="op">&amp;</span> b <span class="op">=</span> d<span class="op">.[:</span> std<span class="op">::</span>meta<span class="op">::</span>bases_of<span class="op">(^^</span>D<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  B<span class="op">&amp;</span> b <span class="op">=</span> d<span class="op">.[:</span> std<span class="op">::</span>meta<span class="op">::</span>bases_of<span class="op">(^^</span>D, std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">())[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  b<span class="op">.</span>b <span class="op">+=</span> <span class="dv">10</span>;</span>
 <span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  d<span class="op">.[:</span> <span class="op">^^</span>D<span class="op">::</span>d <span class="op">:]</span> <span class="op">+=</span> <span class="dv">1</span>;</span>
 <span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> d<span class="op">.</span>b <span class="op">*</span> d<span class="op">.</span>d;</span>
@@ -963,7 +963,7 @@ subobject.</p>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> D d <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> B<span class="op">::*</span>pb <span class="op">=</span> <span class="op">&amp;[:</span> std<span class="op">::</span>meta<span class="op">::</span>bases_of<span class="op">(^^</span>D<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> B<span class="op">::*</span>pb <span class="op">=</span> <span class="op">&amp;[:</span> std<span class="op">::</span>meta<span class="op">::</span>bases_of<span class="op">(^^</span>D, std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">())[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
 <span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>d<span class="op">.*</span>pb <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(&amp;(</span>d<span class="op">.*</span>pb<span class="op">)</span> <span class="op">==</span> <span class="op">&amp;</span><span class="kw">static_cast</span><span class="op">&lt;</span>B<span class="op">&amp;&gt;(</span>d<span class="op">))</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
@@ -997,50 +997,80 @@ enclosed in parentheses.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  // ...</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.member.queries], reflection member queries</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; members_of(info r, access_context ctx);</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; bases_of(info type, access_context ctx);</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; static_data_members_of(info type, access_context ctx);</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; nonstatic_data_members_of(info type, access_context ctx);</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; subobjects_of(info type, access_context ctx);</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; enumerators_of(info type_enum);</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.access.queries], member accessibility queries</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  consteval bool is_accessible(info r, access_context ctx);</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  consteval bool has_inaccessible_nonstatic_data_members(</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      info r,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>      access_context ctx);</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  consteval bool has_inaccessible_bases(info r, access_context ctx);</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool has_inaccessible_subobjects(info r, access_context ctx);</span></span>
 <span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  // ...</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.member.queries], reflection member queries</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; members_of(info r, access_context ctx);</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; bases_of(info type, access_context ctx);</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; static_data_members_of(info type, access_context ctx);</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; nonstatic_data_members_of(info type, access_context ctx);</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; subobjects_of(info type, access_context ctx);</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; enumerators_of(info type_enum);</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<p>Add to [meta.reflection.access.queries] in the appropriate spot:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_inaccessible_bases<span class="op">(</span>info r, access_context ctx<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">7</a></span>
+<em>Constant When</em>: <code class="sourceCode cpp">bases_of<span class="op">(</span>r, ctx<span class="op">)</span></code>
+is a constant subexpression.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">8</a></span>
+<em>Returns</em>:
+<code class="sourceCode cpp"><span class="kw">true</span></code> if
+<code class="sourceCode cpp">is_accessible<span class="op">(</span><em>R</em>, ctx<span class="op">)</span></code>
+is <code class="sourceCode cpp"><span class="kw">false</span></code> for
+any <code class="sourceCode cpp"><em>R</em></code> in <code class="sourceCode cpp">bases_of<span class="op">(</span>r, access_context<span class="op">::</span>unchecked<span class="op">())</span></code>.
+Otherwise,
+<code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
+<div class="addu">
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_inaccessible_subobjects<span class="op">(</span>info r, access_context ctx<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">9</a></span>
+<em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> has_inaccessible_bases<span class="op">(</span>r, ctx<span class="op">)</span> <span class="op">||</span> has_inaccessible_nonstatic_data_members<span class="op">(</span>r, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
 </div>
 <p>Add to [meta.reflection.member.queries] in the appropriate spot:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> nonstatic_data_members_of<span class="op">(</span>info type, access_context ctx<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">9</a></span>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> nonstatic_data_members_of<span class="op">(</span>info type, access_context ctx<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">9</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a complete class type.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">10</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">10</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing each element <code class="sourceCode cpp">e</code> of <code class="sourceCode cpp">members_of<span class="op">(</span>type, ctx<span class="op">)</span></code>
 such that <code class="sourceCode cpp">is_nonstatic_data_member<span class="op">(</span>e<span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>,
 preserving their order.</p>
 <div class="addu">
-<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>consteval vector&lt;info&gt; subobjects_of(info type, access_context ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">10+1</a></span>
+<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>consteval vector&lt;info&gt; subobjects_of(info type, access_context ctx);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">10+1</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a complete class type.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">10+2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">10+2</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing each element of <code class="sourceCode cpp">bases_of<span class="op">(</span>type, ctx<span class="op">)</span></code>
 followed by each element of <code class="sourceCode cpp">nonstatic_data_members_of<span class="op">(</span>type, ctx<span class="op">)</span></code>,
 preserving their order.</p>
 </div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> enumerators_of<span class="op">(</span>info type_enum<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">11</a></span>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> enumerators_of<span class="op">(</span>info type_enum<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">11</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type_enum<span class="op">)</span></code>
 represents an enumeration type and <code class="sourceCode cpp">has_complete_definition<span class="op">(</span>dealias<span class="op">(</span>type_enum<span class="op">))</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">12</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">12</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing the reflections of each enumerator of the enumeration
 represented by <code class="sourceCode cpp">dealias<span class="op">(</span>type_enum<span class="op">)</span></code>,
