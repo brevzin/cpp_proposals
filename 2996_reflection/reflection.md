@@ -6616,6 +6616,8 @@ static_assert(sv == "C");
 static_assert(sv.data()[0] == 'C');
 static_assert(sv.data()[1] == '\0');
 ```
+
+[4]{.pnum} Throughout this clause, variables are introduced to designate various source constructs. For the purpose of exposition, `^^$E$` is used to a mean a reflection representing `$E$` when `$E$` is such an exposition-only variable.
 :::
 :::
 :::
@@ -7126,9 +7128,9 @@ consteval info parent_of(info r);
 - [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, or an unnamed bit-field declared within the `$member-specification$` of such a union, then a reflection representing the innermost enclosing anonymous union.
 - [#.#]{.pnum} Otherwise, if `r` represents an enumerator, then a reflection representing the corresponding enumeration type.
 - [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a class `$D$` and a direct base class `$B$`, then a reflection representing `$D$`.
-- [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is, respectively, the innermost such scope that either is, or encloses, the target scope of a declaration of what is represented by `r`. Let `$R$` be a reflection representing `$E$`.
-  - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(parent_of($R$))`. [In this case, the first `parent_of` will be the closure type, so the second `parent_of` is necessary to give the parent of that closure type.]{.note}
-  - [#.#]{.pnum} Otherwise, `$R$`.
+- [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is, respectively, the innermost such scope that either is, or encloses, the target scope of a declaration of what is represented by `r`.
+  - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(parent_of(^^$E$))`. [In this case, the first `parent_of` will be the closure type, so the second `parent_of` is necessary to give the parent of that closure type.]{.note}
+  - [#.#]{.pnum} Otherwise, `^^$E$`.
 
 ::: example
 ```cpp
@@ -7472,9 +7474,9 @@ It is implementation-defined whether declarations of other members of a closure 
 [#]{.pnum} *Returns*: A `vector` containing reflections of all members `$M$` of the entity `$Q$` represented by `dealias(r)` for which
 
 * [#.#]{.pnum} `$M$` is `$Q$`-members-of-representable from some point in the evaluation context and
-* [#.#]{.pnum} letting `$ref-m$` be a reflection representing `$M$`, `is_accessible($ref-m$, ctx)` is `true`.
+* [#.#]{.pnum} `is_accessible(^^$M$, ctx)` is `true`.
 
-If `dealias(r)` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields whose declarations inhabit the class scope corresponding to `$C$` for which, letting `$ref-b$` be a reflection representing the unnamed bit-field, `is_accessible($ref-b$, ctx)` is `true`. Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared. [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
+If `dealias(r)` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields `$B$` whose declarations inhabit the class scope corresponding to `$C$` for which `is_accessible(^^$B$, ctx)` is `true`. Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared. [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
 
 ::: example
 ```cpp
@@ -7498,7 +7500,7 @@ consteval vector<info> bases_of(info type, access_context ctx);
 
 [#]{.pnum} *Constant When*: `dealias(type)` is a reflection representing a complete class type.
 
-[#]{.pnum} *Returns*: Let `$C$` be the class represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships, if any, of `$C$` such that, letting `$ref-b$` be a reflection representing that base class relationship, `is_accessible($ref-b$, ctx)` is `true`.
+[#]{.pnum} *Returns*: Let `$C$` be the class represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships `$B$`, if any, of `$C$` such that `is_accessible(^^$B$, ctx)` is `true`.
 The direct base class relationships appear in the order in which the corresponding base classes appear in the `$base-specifier-list$` of `$C$`.
 
 ```cpp
