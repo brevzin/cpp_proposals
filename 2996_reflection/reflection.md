@@ -6771,7 +6771,7 @@ consteval source_location source_location_of(info r);
 consteval bool $has-type$(info r); // exposition only
 ```
 
-[#]{.pnum} *Returns*: `true` if  `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, direct base class relationship, or data member description. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if  `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, unnamed bit-field, direct base class relationship, or data member description. Otherwise, `false`.
 
 ```cpp
 consteval info type_of(info r);
@@ -6781,7 +6781,7 @@ consteval info type_of(info r);
 
 [#]{.pnum} *Returns*:
 
-- [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or bit-field, then the type of what is represented by `r`.
+- [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or unnamed bit-field, then the type of what is represented by `r`.
 - [#.#]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
   - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that is reachable from a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
   - [#.#.#]{.pnum} Otherwise, a reflection of the type of `$N$` prior to the closing brace of the `$enum-specifier$` as specified in [dcl.enum].
