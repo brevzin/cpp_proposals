@@ -4190,7 +4190,7 @@ auto g = typename [:^^int:](42);
 
   [The type of a `$splice-expression$` designating a variable or structured binding of reference type will be adjusted to a non-reference type ([expr.type]{.sref}).]{.note}
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue that computes `$S$` and whose type is the same as `$S$`.
+* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue that computes `$S$` and whose type is the same as that of `$S$`.
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
@@ -4402,7 +4402,7 @@ consteval void g(std::meta::info r, X<false> xv) {
 
   * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and constant template parameters.]{.note}
 
-  The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]{.sref}).
+  The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]).
 
 ::: example
 ```cpp
@@ -4616,7 +4616,7 @@ consteval { // #1
 
 [#]{.pnum} The _evaluation context_ is a set of points within the program that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$C$` as a core constant expression, the evaluation context of an evaluation `$E$` comprises the union of
 
-- [#.#]{.pnum} the instantiation context of `$C$` ([module.context]{.sref}), and
+- [#.#]{.pnum} the instantiation context of `$C$` ([module.context]), and
 - [#.#]{.pnum} the synthesized points corresponding to any injected declarations produced by evaluations sequenced before `$E$` ([intro.execution]{.sref}).
 
 :::
@@ -5413,7 +5413,7 @@ Specify rules for overload sets denoted by `$splice-expression$`s in paragraph 2
 
 - [#.#]{.pnum} If there are `$m$` arguments in the lists, all candidate functions having exactly `$m$` parameters are viable.
 - [#.#]{.pnum} A candidate function having fewer than `$m$` parameters is viable only if it has an ellipsis in its parameter list ([dcl.fct]). For the purposes of overload resolution, any argument for which there is no corresponding parameter is considered to "match the ellipsis" ([over.ics.ellipsis]).
-- [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if [there is a declaration `$D$` considered by the overload resolution such that for each]{.addu} [all]{.rm} parameter[s]{.rm} following the `$m$@^th^@` [have default arguments]{.rm}[, a reachable declaration whose host scope is the same as `$D$` specifies a default argument for that parameter]{.addu} ([dcl.fct.default]). [If the candidate function is selected as the best viable function, no other host scope of a declaration considered by overload resolution shall be the host scope of a declaration that specifies a default argument for the (`$m$`+1)^_st_^ parameter; the host scope of `$D$` shall not be a block scope if the declarations considered by overload resolution were denoted by a `$splice-expression$` ([expr.prim.splice]). The default arguments used in a call to the selected function are the default arguments introduced in the host scope of `$D$`.]{.addu} For the purposes of overload resolution, the parameter list is truncated on the right, so that there are exactly `$m$` parameters.
+- [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if [there is a declaration `$D$` considered by the overload resolution such that for each]{.addu} [all]{.rm} parameter[s]{.rm} following the `$m$@^th^@` [have default arguments]{.rm}[, a reachable declaration whose host scope is the same as that of `$D$` specifies a default argument for that parameter]{.addu} ([dcl.fct.default]). [If the candidate function is selected as the best viable function, no other host scope of a declaration considered by overload resolution shall be the host scope of a declaration that specifies a default argument for the (`$m$`+1)^_st_^ parameter; the host scope of `$D$` shall not be a block scope if the declarations considered by overload resolution were denoted by a `$splice-expression$` ([expr.prim.splice]). The default arguments used in a call to the selected function are the default arguments introduced in the host scope of `$D$`.]{.addu} For the purposes of overload resolution, the parameter list is truncated on the right, so that there are exactly `$m$` parameters.
 
 ::: addu
 ::: example
@@ -6268,6 +6268,10 @@ namespace std::meta {
   consteval source_location source_location_of(info r);
 
   // [meta.reflection.queries], reflection queries
+  consteval info type_of(info r);
+  consteval info object_of(info r);
+  consteval info value_of(info r);
+
   consteval bool is_public(info r);
   consteval bool is_protected(info r);
   consteval bool is_private(info r);
@@ -6349,10 +6353,6 @@ namespace std::meta {
   consteval bool is_base(info r);
 
   consteval bool has_default_member_initializer(info r);
-
-  consteval info type_of(info r);
-  consteval info object_of(info r);
-  consteval info value_of(info r);
 
   consteval bool has_parent(info r);
   consteval info parent_of(info r);
@@ -6768,6 +6768,100 @@ consteval source_location source_location_of(info r);
 ::: std
 ::: addu
 ```cpp
+consteval bool $has-type$(info r); // exposition only
+```
+
+[#]{.pnum} *Returns*: `true` if  `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, direct base class relationship, or data member description. Otherwise, `false`.
+
+```cpp
+consteval info type_of(info r);
+```
+
+[#]{.pnum} *Constant When*: `$has-type$(r)` is `true`.
+
+[#]{.pnum} *Returns*:
+
+- [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or bit-field, then the type of what is represented by `r`.
+- [#.#]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
+  - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that is reachable from a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
+  - [#.#.#]{.pnum} Otherwise, a reflection of the type of `$N$` prior to the closing brace of the `$enum-specifier$` as specified in [dcl.enum].
+- [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class.
+- [#.#]{.pnum} Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), a reflection of the type `$T$`.
+
+```cpp
+consteval info object_of(info r);
+```
+
+[#]{.pnum} *Constant When*: `r` is a reflection representing either
+
+- [#.#]{.pnum} an object with static storage duration ([basic.stc.general]), or
+- [#.#]{.pnum} a variable that either declares or refers to such an object, and if that variable is a reference `$R$` then either
+  - [#.#.#]{.pnum} `$R$` is usable in constant expressions ([expr.const]), or
+  - [#.#.#]{.pnum} the lifetime of `$R$` began within the core constant expression currently under evaluation.
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `r` represents an object, then `r`.
+* [#.#]{.pnum} Otherwise, if `r` represents a reference, then a reflection of the object referred to by that reference.
+* [#.#]{.pnum} Otherwise (if `r` represents any other variable), a reflection of the object declared by that variable.
+
+::: example
+```cpp
+int x;
+int& y = x;
+
+static_assert(^^x != ^^y);                       // OK, x and y are different variables so their
+                                                 // reflections compare different
+static_assert(object_of(^^x) == object_of(^^y)); // OK, because y is a reference
+                                                 // to x, their underlying objects are the same
+```
+:::
+
+```cpp
+consteval info value_of(info r);
+```
+
+[#]{.pnum} Let `$Q$` be
+
+* [#.#]{.pnum} If `r` represents a reference, then the object referred to by that reference.
+* [#.#]{.pnum} Otherwise, if `r` represents any other variable, then the object declared by that variable.
+* [#.#]{.pnum} Otherwise, the construct represented by `r`.
+
+[#]{.pnum} *Constant When*: `$Q$` is
+
+* [#.#]{.pnum} a value,
+* [#.#]{.pnum} an enumerator, or
+* [#.#]{.pnum} an object such that
+  * [#.#.#]{.pnum} the lifetime of `$Q$` has not ended,
+  * [#.#.#]{.pnum} the type of `$Q$` is a structural type ([temp.param]) that is copyable, and
+  * [#.#.#]{.pnum} either `$Q$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$Q$` began within the core constant expression currently under evaluation ([expr.const]).
+
+[#]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `$Q$` is an object `o`, then a reflection of the value held by `o`. The reflected value has the type represented by `type_of(o)`, with the cv-qualifiers removed if this is a scalar type.
+* [#.#]{.pnum} Otherwise, if `$Q$` is an enumerator, then a reflection of the value of the enumerator. The reflected value has the type represented by `type_of(r)` with the cv-qualifiers removed.
+* [#.#]{.pnum} Otherwise, `r`.
+
+::: example
+```cpp
+constexpr int x = 0;
+constexpr int y = 0;
+
+static_assert(^^x != ^^y);                        // OK, x and y are different variables so their
+                                                  // reflections compare different
+static_assert(value_of(^^x) == value_of(^^y));    // OK, both value_of(^^x) and value_of(^^y) represent
+                                                  // the value 0
+static_assert(value_of(^^x) == reflect_value(0)); // OK, likewise
+
+info fn() {
+  constexpr int x = 42;
+  return ^^x;
+}
+info r = value_of(fn());  // error: x is outside its lifetime
+```
+:::
+
+```cpp
 consteval bool is_public(info r);
 consteval bool is_protected(info r);
 consteval bool is_private(info r);
@@ -7011,100 +7105,6 @@ consteval bool has_default_member_initializer(info r);
 [#]{.pnum} *Returns*: `true` if `r` represents a non-static data member that has a default member initializer. Otherwise, `false`.
 
 ```cpp
-consteval bool $has-type$(info r); // exposition only
-```
-
-[#]{.pnum} *Returns*: `true` if  `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, direct base class relationship, or data member description. Otherwise, `false`.
-
-```cpp
-consteval info type_of(info r);
-```
-
-[#]{.pnum} *Constant When*: `$has-type$(r)` is `true`.
-
-[#]{.pnum} *Returns*:
-
-- [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or bit-field, then the type of what is represented by `r`.
-- [#.#]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
-  - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that is reachable from a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
-  - [#.#.#]{.pnum} Otherwise, a reflection of the type of `$N$` prior to the closing brace of the `$enum-specifier$` as specified in [dcl.enum].
-- [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class.
-- [#.#]{.pnum} Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), a reflection of the type `$T$`.
-
-```cpp
-consteval info object_of(info r);
-```
-
-[#]{.pnum} *Constant When*: `r` is a reflection representing either
-
-- [#.#]{.pnum} an object with static storage duration ([basic.stc.general]), or
-- [#.#]{.pnum} a variable that either declares or refers to such an object, and if that variable is a reference `$R$` then either
-  - [#.#.#]{.pnum} `$R$` is usable in constant expressions ([expr.const]), or
-  - [#.#.#]{.pnum} the lifetime of `$R$` began within the core constant expression currently under evaluation.
-
-[#]{.pnum} *Returns*:
-
-* [#.#]{.pnum} If `r` represents an object, then `r`.
-* [#.#]{.pnum} Otherwise, if `r` represents a reference, then a reflection of the object referred to by that reference.
-* [#.#]{.pnum} Otherwise (if `r` represents any other variable), a reflection of the object declared by that variable.
-
-::: example
-```cpp
-int x;
-int& y = x;
-
-static_assert(^^x != ^^y);                       // OK, x and y are different variables so their
-                                                 // reflections compare different
-static_assert(object_of(^^x) == object_of(^^y)); // OK, because y is a reference
-                                                 // to x, their underlying objects are the same
-```
-:::
-
-```cpp
-consteval info value_of(info r);
-```
-
-[#]{.pnum} Let `$Q$` be
-
-* [#.#]{.pnum} If `r` represents a reference, then the object referred to by that reference.
-* [#.#]{.pnum} Otherwise, if `r` represents any other variable, then the object declared by that variable.
-* [#.#]{.pnum} Otherwise, the construct represented by `r`.
-
-[#]{.pnum} *Constant When*: `$Q$` is
-
-* [#.#]{.pnum} a value,
-* [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} an object such that
-  * [#.#.#]{.pnum} the lifetime of `$Q$` has not ended,
-  * [#.#.#]{.pnum} the type of `$Q$` is a structural type ([temp.param]) that is copyable, and
-  * [#.#.#]{.pnum} either `$Q$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$Q$` began within the core constant expression currently under evaluation ([expr.const]).
-
-[#]{.pnum} *Returns*:
-
-* [#.#]{.pnum} If `$Q$` is an object `o`, then a reflection of the value held by `o`. The reflected value has the type represented by `type_of(o)`, with the cv-qualifiers removed if this is a scalar type.
-* [#.#]{.pnum} Otherwise, if `$Q$` is an enumerator, then a reflection of the value of the enumerator. The reflected value has the type represented by `type_of(r)` with the cv-qualifiers removed.
-* [#.#]{.pnum} Otherwise, `r`.
-
-::: example
-```cpp
-constexpr int x = 0;
-constexpr int y = 0;
-
-static_assert(^^x != ^^y);                        // OK, x and y are different variables so their
-                                                  // reflections compare different
-static_assert(value_of(^^x) == value_of(^^y));    // OK, both value_of(^^x) and value_of(^^y) represent
-                                                  // the value 0
-static_assert(value_of(^^x) == reflect_value(0)); // OK, likewise
-
-info fn() {
-  constexpr int x = 42;
-  return ^^x;
-}
-info r = value_of(fn());  // error: x is outside its lifetime
-```
-:::
-
-```cpp
 consteval bool has_parent(info r);
 ```
 
@@ -7272,19 +7272,27 @@ static consteval access_context current() noexcept;
 
 [#]{.pnum} Given a program point `$P$`, let `$eval-point$($P$)` be the following program point:
 
-  * [#.#]{.pnum} If a potentially-evaluated subexpression ([intro.execution]) of a default member initializer `$I$` for a member of a class `$C$` ([class.mem.general]) appears at `$P$`, then a point determined as follows:
-    * [#.#.#]{.pnum} If `$I$` is used by an aggregate initialization that appears at point `$Q$`, `$eval-point$($Q$)`.
-    * [#.#.#]{.pnum} Otherwise, if initialization by an inherited constructor ([class.inhctor.init]) uses `$I$`, a point whose immediate scope is the class scope corresponding to `$C$`.
-    * [#.#.#]{.pnum} Otherwise, a point whose immediate scope is the function parameter scope corresponding to the constructor definition that uses `$I$`.
-  * [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, and that default argument is used by an invocation of a function ([expr.call]) that appears at point `$Q$`, `$eval-point$($Q$)`.
-  * [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a function parameter scope introduced by a declaration `$D$` that is not reachable, a point with the same immediate scope as the locus of `$D$`.
-  * [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a `$constraint-expression$` appears at `$P$`, and that `$constraint-expression$` is introduced by the trailing `$requires-clause$` of a function declaration `$D$` ([dcl.decl.general]), a point with the same immediate scope as the locus of `$D$`.
-  * [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a block scope and the innermost function parameter scope enclosing `$P$` is introduced by a `$consteval-block-declaration$` `$D$` ([dcl.pre]), a point whose immediate scope is the scope inhabited by `$D$`.
-  * [#.#]{.pnum} Otherwise, `$P$`.
+* [#.#]{.pnum} If a potentially-evaluated subexpression ([intro.execution]) of a default member initializer `$I$` for a member of a class `$C$` ([class.mem.general]) appears at `$P$`, then a point determined as follows:
+  * [#.#.#]{.pnum} If `$I$` is being used by an aggregate initialization that appears at point `$Q$`, `$eval-point$($Q$)`.
+  * [#.#.#]{.pnum} Otherwise, if `$I$` is being used for an initialization by an inherited constructor ([class.inhctor.init]), a point whose immediate scope is the class scope corresponding to `$C$`.
+  * [#.#.#]{.pnum} Otherwise, a point whose immediate scope is the function parameter scope corresponding to the constructor definition that is using `$I$`.
+* [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, and that default argument is being used by an invocation of a function ([expr.call]) that appears at point `$Q$`, `$eval-point$($Q$)`.
+* [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a function parameter scope introduced by a declaration `$D$`, and `$P$` appears either before the locus of `$D$` or within the trailing `$requires-clause$` of `$D$`, a point whose immediate scope is the innermost scope enclosing the locus of `$D$` that is not a template parameter scope.
+* [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a function parameter scope introduced by a `$lambda-expression$` `$L$` whose `$lambda-introducer$` appears at point `$Q$`, and `$P$` appears either within the `$trailing-return-type$` or the trailing `$requires-clause$` of `$L$`, `$eval-point$($Q$)`.
+* [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a block scope and the innermost function parameter scope enclosing `$P$` is introduced by a `$consteval-block-declaration$` `$D$` ([dcl.pre]), a point whose immediate scope is the scope inhabited by `$D$`.
+* [#.#]{.pnum} Otherwise, `$P$`.
 
-[#]{.pnum} An invocation of `current` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a template parameter scope.
+[#]{.pnum} Given a scope `$S$`, let `$ctx-scope$($S$)` be the following scope:
 
-[#]{.pnum} *Returns*: Let `$P$` be the point at which the invocation of `current` appears, and let `$S$` be the innermost scope enclosing `$eval-point$($P$)` that is either a class scope, a namespace scope, or a function parameter scope that corresponds to a function. An `access_context` whose naming class is the null reflection and whose scope is the class, namespace, or function to which `$S$` corresponds.
+* [#.#]{.pnum} If `$S$` is a class scope or a namespace scope, `$S$`.
+* [#.#]{.pnum} Otherwise, if `$S$` is a lambda scope introduced by a `$lambda-expression$` `$L$`, the function parameter scope corresponding to the call operator of the closure type for `$L$`.
+* [#.#]{.pnum} Otherwise, if `$S$` is a function parameter scope introduced by the declaration of a function, `$S$`.
+* [#.#]{.pnum} Otherwise, `$ctx-scope$($S$')` where `$S$'` is the parent scope of `$S$`.
+
+[#]{.pnum} An invocation of `current` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a scope corresponding to a templated entity.
+
+[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope represents the function, class, or namespace whose corresponding function parameter scope, class scope, or namespace scope is `$eval-ctx$($S$)`, where `$S$` is the immediate scope of `$eval-point$($P$)` and `$P$` is the point at which the invocation of `current` lexically appears.
+
 
 ::: example
 ```cpp
@@ -7382,7 +7390,8 @@ consteval bool is_accessible(info r, access_context ctx);
 
   then `false`.
 * [#.#]{.pnum} Otherwise, if `ctx.scope()` is the null reflection, then `true`.
-* [#.#]{.pnum} Otherwise, letting `$P$` be a program point such that `access_context::current().scope() == ctx.scope()` would be `true` if it appeared at that point:
+
+* [#.#]{.pnum} Otherwise, letting `$P$` be a program point whose immediate scope is the function parameter scope, class scope, or namespace scope corresponding to the function, class, or namespace represented by `ctx.scope()`:
   * [#.#.#]{.pnum} If `r` represents a direct base class relationship with base class `$B$`, then `true` if base class `$B$` of `$NAMING-CLASS$(r, ctx)` is accessible at `$P$` ([class.access.base]); otherwise, `false`.
   * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` is accessible at `$P$` when named in `$NAMING-CLS$(r, ctx)` ([class.access.base]). Otherwise, `false`.
 
