@@ -31,6 +31,7 @@ Since [@P2996R11]:
 * core wording updates
   * better specify interaction between spliced function calls and overload resolution; integrate fix to [@CWG2701]
   * disallow reflection of local parameters introduced by `$requires-expression$`s
+  * made unnamed bit-fields members
 * library wording updates
   * improve specification of `access_context::current()` (including examples)
 
@@ -3798,7 +3799,6 @@ Add new paragraphs before the last paragraph of [basic.fundamental]{.sref} as fo
 * a type alias ([dcl.typedef]),
 * a type ([basic.types]),
 * a class member ([class.mem]),
-* an unnamed bit-field ([class.bit]),
 * a primary class template ([temp.pre]),
 * a function template ([temp.pre]),
 * a primary variable template ([temp.pre]),
@@ -3845,7 +3845,7 @@ constexpr auto r8 = ^^S;        // represents a type
 constexpr auto r9 = ^^S::mem;   // represents a class member
 
 constexpr auto r10 = std::meta::members_of(^^S, ctx)[1];
-    // represents an unnamed bit-field
+    // represents a class member that is an unnamed bit-field
 
 constexpr auto r11 = ^^TCls;     // represents a class template
 constexpr auto r12 = ^^TFn;      // represents a function template
@@ -4458,6 +4458,20 @@ Add a new paragraph between paragraphs 5 and 6:
 
 ### [expr.const]{.sref} Constant Expressions {-}
 
+Exclude unnamed bit-fields from constituent values:
+
+::: std
+[2]{.pnum} The *constituent values* of an object `o` are
+
+* [2.1]{.pnum} if `o` has scalar type, the value of `o`;
+* [2.2]{.pnum} otherwise, the constituent values of any direct subobjects of `o` other than inactive union members [and unnamed bit-fields]{.addu}.
+
+The *constituent references* of an object `o` are
+
+* [2.3]{.pnum} any direct members of `o` that have reference type, and
+* [2.4]{.pnum} the constituent references of any direct subobjects of `o` other than inactive union members.
+:::
+
 Add a bullet to paragraph 10 between 10.27 and 10.28 to disallow the production of injected declarations from any core constant expression that isn't a consteval block.
 
 ::: std
@@ -4996,6 +5010,17 @@ If a program calls for the default-initialization of an object of a const-qualif
 [9]{.pnum} To value-initialize an object of type T means: [...]
 :::
 
+### [dcl.init.aggr]{.sref} Aggregates {-}
+
+Now that unnamed bit-fields are members, we need to exclude them from the elements of an aggregate in p2:
+
+::: std
+[2]{.pnum} The *elements* of an aggregate are:
+
+* [#.#]{.pnum} for an array, the array elements in increasing subscript order, or
+* [#.#]{.pnum} for a class, the direct base classes in declaration order, followed by the direct non-static data members ([class.mem]) that are [not]{.rm} [neither]{.addu} members of an anonymous union [nor unnamed bit-fields]{.addu}, in declaration order.
+:::
+
 ### [dcl.fct.def.general]{.sref} Function definitions {-}
 
 Disallow using `__func__` in a `consteval` block:
@@ -5234,7 +5259,7 @@ Modify the grammar for `$member-declaration$` as follows:
 ```
 :::
 
-Update paragraph 4 accordingly:
+Update paragraph 4 accordingly, and make unnamed bit-fields members
 
 ::: std
 [4]{.pnum} A `$member-declaration$` does not declare new members of the class if it is
@@ -5246,6 +5271,7 @@ Update paragraph 4 accordingly:
 * [#.#]{.pnum} a `$using-declaration$` ([namespace.udecl]) , or
 * [#.#]{.pnum} an `$empty-declaration$`.
 
+For any other `$member-declaration$`, each declared entity [that is not an unnamed bit-field]{.rm} is a member of the class, and each such `$member-declaration$` shall either declare at least one member name of the class or declare at least one unnamed bit-field.
 :::
 
 Extend paragraph 6, and modify note 3, to clarify the existence of subobjects corresponding to non-static data members of reference types.
@@ -5289,6 +5315,15 @@ Data member descriptions are represented by reflections ([basic.fundamental]{.sr
 :::
 
 :::
+:::
+
+### [class.bit]{.sref} Bit-fields {-}
+
+Make unnamed bit-fields members:
+
+::: std
+[2]{.pnum} A declaration for a bit-field that omits the identifier declares an unnamed bit-field.
+Unnamed bit-fields [are not members and]{.rm} cannot be initialized. An unnamed bit-field shall not be declared with a cv-qualified type. [[Unnamed bit-fields are still members.]{.note}.]{.addu}
 :::
 
 ### [class.union.anon]{.sref} Anonymous unions {-}
@@ -7125,7 +7160,7 @@ consteval info parent_of(info r);
 
 [#]{.pnum} *Returns*:
 
-- [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, or an unnamed bit-field declared within the `$member-specification$` of such a union, then a reflection representing the innermost enclosing anonymous union.
+- [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, then a reflection representing the innermost enclosing anonymous union.
 - [#.#]{.pnum} Otherwise, if `r` represents an enumerator, then a reflection representing the corresponding enumeration type.
 - [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a class `$D$` and a direct base class `$B$`, then a reflection representing `$D$`.
 - [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is, respectively, the innermost such scope that either is, or encloses, the target scope of a declaration of what is represented by `r`.
@@ -7374,7 +7409,6 @@ consteval bool is_accessible(info r, access_context ctx);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` represents an unnamed bit-field `$F$`, then `is_accessible(r@~$H$~@, ctx)` where `r@~$H$~@` represents a hypothetical non-static data member of the class represented by `$PARENT-CLS$(r)` with the same access as `$F$`. [Unnamed bit-fields are treated as class members for the purpose of `is_accessible`.]{.note}
 * [#.#]{.pnum} Otherwise, if `r` does not represent a class member or a direct base class relationship, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents
   * [#.#.#]{.pnum} a class member that is not a (possibly indirect or variant) member of `$NAMING-CLS$(r, ctx)` or
@@ -7476,7 +7510,7 @@ It is implementation-defined whether declarations of other members of a closure 
 * [#.#]{.pnum} `$M$` is `$Q$`-members-of-representable from some point in the evaluation context and
 * [#.#]{.pnum} `is_accessible(^^$M$, ctx)` is `true`.
 
-If `dealias(r)` represents a class `$C$`, then the `vector` also contains reflections representing all unnamed bit-fields `$B$` whose declarations inhabit the class scope corresponding to `$C$` for which `is_accessible(^^$B$, ctx)` is `true`. Reflections of class members and unnamed bit-fields that are declared appear in the order in which they are declared. [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
+Reflections of class members appear in the order in which they are declared. [Base classes are not members. Implicitly-declared special members appear after any user-declared members ([special]).]{.note}
 
 ::: example
 ```cpp
@@ -7551,7 +7585,7 @@ constexpr ptrdiff_t member_offset::total_bits() const;
 consteval member_offset offset_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `r` represents a non-static data member, unnamed bit-field, or direct base class relationship other than a virtual base class of an abstract class.
+[#]{.pnum} *Constant When*: `r` represents a non-static data member or direct base class relationship other than a virtual base class of an abstract class.
 
 [#]{.pnum} Let `$V$` be the offset in bits from the beginning of a complete object of type `parent_of(r)` to the subobject associated with the entity represented by `r`.
 
@@ -7585,11 +7619,11 @@ consteval size_t alignment_of(info r);
 consteval size_t bit_size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, unnamed bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `r` represents a non-static data member that is a bit-field or an unnamed bit-field with width `$W$`, then `$W$`.
+* [#.#]{.pnum} If `r` represents a non-static data member that is a (possibly unnamed) bit-field with width `$W$`, then `$W$`.
 * [#.#]{.pnum} Otherwise, if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) and `$W$` is not ⊥, then `$W$`.
 * [#.#]{.pnum} Otherwise, `CHAR_BIT * size_of(r)`.
 :::
@@ -7865,14 +7899,14 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 - [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
 - [#.#]{.pnum} The locus of `$D$` follows immediately after the core constant expression currently under evaluation.
 - [#.#]{.pnum} If `$C$` is a specialization, that is not a local class, of a templated class `$T$`; then `$D$` is an explicit specialization of `$T$`.
-- [#.#]{.pnum} `$D$` contains a public non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@`. For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
-- [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@` is declared as follows:
+- [#.#]{.pnum} `$D$` contains a public non-static data member corresponding to each `@$r$~$K$~@`. For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
+- [#.#]{.pnum} A non-static data member corresponding to each `@$r$~$K$~@` is declared as follows:
 
   - [#.#.#]{.pnum} It has the type represented by `@$t$~$K$~@`.
   - [#.#.#]{.pnum} If `@$o$~$K$~@.no_unique_address` is `true`, it is declared with the attribute `[[no_unique_address]]`.
   - [#.#.#]{.pnum} If `@$o$~$K$~@.bit_width` contains a value, it is declared as a bit-field whose width is that value.
   - [#.#.#]{.pnum} If `@$o$~$K$~@.alignment` contains a value, it is declared with the `$alignment-specifier$` `alignas(*@$o$~$K$~@.alignment)`.
-  - [#.#.#]{.pnum} If `@$o$~$K$~@.name` does not contain a value, it is an unnamed bit-field. Otherwise, it is a non-static data member with an identifier determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
+  - [#.#.#]{.pnum} If `@$o$~$K$~@.name` does not contain a value, it is an unnamed bit-field. Otherwise, its identifier is determined by the character sequence encoded by `u8identifier_of(@$r$~$K$~@)` in UTF-8.
 
 [#]{.pnum} *Returns*: `class_type`.
 
