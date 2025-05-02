@@ -836,10 +836,13 @@ restriction added by P2996:</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">*</a></span>
 If <code class="sourceCode cpp">E2</code> is a
 <code class="sourceCode cpp"><em>splice-expression</em></code>, then
-<code class="sourceCode cpp">E2</code> shall designate <span class="addu">either</span> a member of the type of
-<code class="sourceCode cpp">E1</code> <span class="addu">or a direct
-base class relationship whose parent is the type of
-<code class="sourceCode cpp">E1</code></span>.</p>
+<span class="addu">let <code class="sourceCode cpp">T1</code> be the
+type of <code class="sourceCode cpp">E1</code>.</span>
+<code class="sourceCode cpp">E2</code> shall designate <span class="addu">either</span> a member of <span class="rm" style="color: #bf0303"><del>the type of
+<span><code class="sourceCode default">E1</code></span></del></span>
+<span class="addu"><code class="sourceCode cpp">T1</code> or a direct
+base class relationship whose derived class is
+<code class="sourceCode cpp">T1</code></span>.</p>
 </blockquote>
 </div>
 <p>Handle base class splices in <span>7.6.1.5 <a href="https://wg21.link/expr.ref">[expr.ref]</a></span>/7-8:</p>
@@ -892,18 +895,17 @@ enumerator […]</li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(7.6)</a></span>
 Otherwise, if <code class="sourceCode cpp">E2</code> designates a
 direct, non-virtual base class relationship with base class
-<code class="sourceCode cpp"><em>B</em></code> and the type of
-<code class="sourceCode cpp"><em>B</em></code> is
-<code class="sourceCode cpp"><em>T</em></code>, the expression
-designates the corresponding base class subobject of the object
-designated by the first expression. If
+<code class="sourceCode cpp"><em>B</em></code>, the expression
+designates the base class subobject of type
+<code class="sourceCode cpp"><em>B</em></code> corresponding to the the
+object designated by the first expression. If
 <code class="sourceCode cpp">E1</code> is an lvalue, then
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is an
 lvalue; otherwise
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is an
 xvalue. The type of
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is
-“<code class="sourceCode cpp"><em>cv</em> <em>T</em></code>”. <span class="note"><span>[ <em>Note 1:</em> </span>This can only occur in an
+“<code class="sourceCode cpp"><em>cv</em> <em>B</em></code>”. <span class="note"><span>[ <em>Note 1:</em> </span>This can only occur in an
 expression of the form <code class="sourceCode cpp">e1<span class="op">.[:</span>e2<span class="op">:]</span></code>
 where <code class="sourceCode cpp">e2</code> is a reflection designating
 a base class subobject.<span> — <em>end note</em> ]</span></span></p>
