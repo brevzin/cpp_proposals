@@ -157,6 +157,12 @@ We then additionally propose to back `subobjects_of()` that [@P2996R6] removed. 
 
 The wording here is a diff on top of P2996.
 
+Adjust the `$splice-expression$` restriction added by P2996:
+
+::: std
+[*]{.pnum} If `E2` is a `$splice-expression$`, then `E2` shall designate [either]{.addu} a member of the type of `E1` [or a direct base class relationship whose parent is the type of `E1`]{.addu}.
+:::
+
 Handle base class splices in [expr.ref]{.sref}/7-8:
 
 ::: std
@@ -169,7 +175,7 @@ Handle base class splices in [expr.ref]{.sref}/7-8:
 * [#.#]{.pnum} Otherwise, if `E2` designates a member enumerator [...]
 
 ::: addu
-* [#.#]{.pnum} Otherwise, if `E2` designates a direct, non-virtual base class relationship with base class `$B$` and type of `$B$` is `$T$`, the expression designates the corresponding base class subobject of the object designated by the first expression. If `E1` is an lvalue, then `E1.E2` is an lvalue; otherwise `E1.E2` is an xvalue. The type of `E1.E2` is "`$cv$ $T$`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a base class subobject.]{.note}
+* [#.#]{.pnum} Otherwise, if `E2` designates a direct, non-virtual base class relationship with base class `$B$` and the type of `$B$` is `$T$`, the expression designates the corresponding base class subobject of the object designated by the first expression. If `E1` is an lvalue, then `E1.E2` is an lvalue; otherwise `E1.E2` is an xvalue. The type of `E1.E2` is "`$cv$ $T$`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a base class subobject.]{.note}
 
   ::: example
   ```cpp
