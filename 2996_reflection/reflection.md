@@ -5251,14 +5251,12 @@ Update paragraph 4 accordingly:
 Extend paragraph 6, and modify note 3, to clarify the existence of subobjects corresponding to non-static data members of reference types.
 
 ::: std
-[6]{.pnum} A data member or member function may be declared `static` in its `$member-declaration$`, in which case it is a _static member_ (see [class.static]) (a _static data member_ ([class.static.data]) or _static member function_ ([class.static.mfct]), respectively) of the class. Any other data member or member function is a _non-static member_ (a _non-static data member_ or _non-static member function_ ([class.mfct.non.static]), respectively). [For each non-static data member of type `$T$`, there is a unique member _layout-associated subobject_ whose size and alignment is the same as if that data member were declared as having type]{.addu}
+[6]{.pnum} A data member or member function may be declared `static` in its `$member-declaration$`, in which case it is a _static member_ (see [class.static]) (a _static data member_ ([class.static.data]) or _static member function_ ([class.static.mfct]), respectively) of the class. Any other data member or member function is a _non-static member_ (a _non-static data member_ or _non-static member function_ ([class.mfct.non.static]), respectively). [The _layout-associated type_ of a non-static data member is `$T$*` if it has type `$T$&` or `$T$&&` and the type of the member otherwise. For layout purposes, it is as if the member were declared with its layout-associated type.]{.addu}
 
-::: addu
-* [6.1]{.pnum} `$U$*` if `$T$` is some type `$U$&` or `$U$&&`,
-* [6.2]{.pnum} Otherwise, `$T$`.
+
+::: rm
+[A non-static data member of non-reference type is a member subobject of a class object.]{.note3}
 :::
-
-[[A non-static data member of non-reference type is a member subobject of a class object.]{.rm} [An object of class type has a member subobject corresponding to each non-static data member of its class.]{.addu}]{.note3}
 
 :::
 
@@ -7572,7 +7570,7 @@ consteval size_t size_of(info r);
 
 [#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member of type `$T$`, a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), or `dealias(r)` represents a type `$T$`, then `sizeof($LAS$)` where `$LAS$` is the type of the layout-associated subobject ([class.member.general]) of a non-static data member of type `$T$`. Otherwise, `size_of(type_of(r))`.
+[#]{.pnum} *Returns*: If `r` represents a non-static data member of type `$T$`, a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), or `dealias(r)` represents a type `$T$`, then `sizeof($LAT$)` where `$LAT$` is the layout-associated type ([class.member.general]) of a non-static data member of type `$T$`. Otherwise, `size_of(type_of(r))`.
 
 [It is possible that while `sizeof(char) == size_of(^^char)` that `sizeof(char&) != size_of(^^char&)`. If `b` represents a direct base class relationship of an empty base class, then `size_of(b) > 0`.]{.note}
 
@@ -7580,11 +7578,11 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing a type, object, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `dealias(r)` represents a type `$T$`, then the alignment requirement for the type of the layout-associated subobject ([class.mem.general]) for a non-static data member of type `$T$`.
+* [#.#]{.pnum} If `dealias(r)` represents a type `$T$`, then the alignment requirement for the layout-associated type ([class.mem.general]) for a non-static data member of type `$T$`.
 * [#.#]{.pnum} Otherwise, if `dealias(r)` represents a variable or object, then the alignment requirement of the variable or object.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `alignment_of(type_of(r))`.
 * [#.#]{.pnum} Otherwise, if `r` represents a non-static data member, then the alignment requirement of the subobject associated with the represented entity within any object of type `parent_of(r)`.
@@ -7622,10 +7620,10 @@ template <class T>
 [#]{.pnum} *Constant When*:
 
 - [#.#]{.pnum} `r` represents a variable or object of type `U`,
-- [#.#]{.pnum} `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`, and
+- [#.#]{.pnum} `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`, and [The intent is to allow only qualification conversions from `U` to `T`.]{.note}
 - [#.#]{.pnum} if `r` represents a variable, then either that variable is usable in constant expressions or its lifetime began within the core constant expression currently under evaluation.
 
-[#]{.pnum} *Returns*: If `r` represents an object `$O$`, then a reference to `$O$`. Otherwise, a reference to the object declared, or referred to, by the variable or reference represented by `r`.
+[#]{.pnum} *Returns*: If `r` represents an object `$O$`, then a reference to `$O$`. Otherwise, a reference to the object declared, or referred to, by the variable represented by `r`.
 
 ```cpp
 template <class T>
@@ -7690,19 +7688,17 @@ concept reflection_range =
   same_as<remove_cvref_t<ranges::range_reference_t<R>>, info>;
 ```
 
-[1]{.pnum} *Constant When*: Let
-
 ```cpp
 template <reflection_range R = initializer_list<info>>
 consteval bool can_substitute(info templ, R&& arguments);
 ```
 [1]{.pnum} *Constant When*: `templ` represents a template and every reflection in `arguments` represents a construct usable as a template argument ([temp.arg]).
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the values held by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the reflections held by the elements of `arguments`.
 
 [#]{.pnum} *Returns*: `true` if `Z<[:Args:]...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
 
-[#]{.pnum} *Remarks*: If attempting to substitute leads to a failure outside of the immediate context, the program is ill-formed.
+[#]{.pnum} [If forming `Z<[:Args:]...>` leads to a failure outside of the immediate context, the program is ill-formed.]{.note}
 
 ```cpp
 template <reflection_range R = initializer_list<info>>
@@ -7711,12 +7707,13 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Constant When*: `can_substitute(templ, arguments)` is `true`.
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the values held by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the reflections held by the elements of `arguments`.
 
-[#]{.pnum} *Returns*: A reflection representing `Z<[:Args:]...>`.
+[#]{.pnum} *Returns*: `^^Z<[:Args:]...>`.
 
-[#]{.pnum} [The specialization `Z<[:Args:]..>` is only instantiated if the deduction of a placeholder type necessarily requires that instantiation.]{.note}
+[#]{.pnum} [The specialization `Z<[:Args:]...>` is only instantiated if needed.]{.note}
 
+[#]{.pnum} [If forming `Z<[:Args:]...>` leads to a failure outside of the immediate context, the program is ill-formed.]{.note}
 :::
 :::
 
@@ -7873,7 +7870,7 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 
 - [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
 - [#.#]{.pnum} The locus of `$D$` follows immediately after the core constant expression currently under evaluation.
-- [#.#]{.pnum} If `$C$` is a specialization, that is not a local class, of a templated class `$T$`; then `$D$` is an explicit specialization of `$T$`.
+- [#.#]{.pnum} If `$C$` is a specialization  of a templated class `$T$`; then `$D$` is an explicit specialization of `$T$`.
 - [#.#]{.pnum} `$D$` contains a public non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@`. For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
 - [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@` is declared as follows:
 
