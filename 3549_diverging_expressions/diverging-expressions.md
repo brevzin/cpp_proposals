@@ -233,7 +233,7 @@ There is another approach though.
 
 Several languages have a notion of a bottom type (`⊥`) for diverging expressions. This type is spelled `Nothing` in Scala, `never` in TypeScript, `Never` in Python, `noreturn` in D, `!` in Rust, `void` in Haskell (but notably not `void` in C++), etc. This type represents an expression that diverges.
 
-Let's imagine what it would look like if C++ also had such a type. We'll call it `noreturn_t`. It would some interesting properties:
+Let's imagine what it would look like if C++ also had such a type. We'll call it `noreturn_t`. It would have some interesting properties:
 
 * You cannot produce an instance of such a type. It wouldn't be very divergent otherwise! In this case, it's not just that this type isn't constructible, but we would also have to eliminate all of C++'s other clever ways of producing a value (like `reinterpret_cast`, `std::bit_cast`, etc.).
 * On the other hand, `noreturn_t` is convertible to any other type (including reference types). This is currently impossible to emulate in C++ today, since you cannot make a type that is both convertible to `T` and `T&` for all `T`.
