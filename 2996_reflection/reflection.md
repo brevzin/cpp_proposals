@@ -7870,7 +7870,7 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 
 - [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
 - [#.#]{.pnum} The locus of `$D$` follows immediately after the core constant expression currently under evaluation.
-- [#.#]{.pnum} If `$C$` is a specialization  of a templated class `$T$`; then `$D$` is an explicit specialization of `$T$`.
+- [#.#]{.pnum} If `$C$` is a specialization, that is not a local class, of a templated class `$T$`; then `$D$` is an explicit specialization of `$T$`.
 - [#.#]{.pnum} `$D$` contains a public non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@`. For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration of `@$r$~$K$~@` precedes the declaration of `@$r$~$L$~@`.
 - [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@` is declared as follows:
 
