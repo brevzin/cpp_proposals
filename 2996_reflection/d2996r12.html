@@ -1090,6 +1090,9 @@ overload resolution; integrate fix to <span class="citation" data-cites="CWG2701
 <ul>
 <li>improve specification of <code class="sourceCode cpp">access_context<span class="op">::</span>current<span class="op">()</span></code>
 (including examples)</li>
+<li><code class="sourceCode cpp">size_of<span class="op">(</span>r<span class="op">)</span></code>
+is no longer constant if <code class="sourceCode cpp">r</code> is a
+bit-field</li>
 </ul></li>
 </ul>
 <p>Since <span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]</a></span>:</p>
@@ -13473,8 +13476,14 @@ to the subobject associated with the entity represented by
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_629" id="pnum_629">5</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
 is a reflection of a type, object, value, variable of non-reference
-type, non-static data member, direct base class relationship, or data
-member description. If <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+type, non-static data member that is not a bit-field, direct base class
+relationship, or data member description
+(<code class="sourceCode cpp"><em>T</em></code>,
+<code class="sourceCode cpp"><em>N</em></code>,
+<code class="sourceCode cpp"><em>A</em></code>,
+<code class="sourceCode cpp"><em>W</em></code>,
+<code class="sourceCode cpp"><em>NUA</em></code>) ([class.mem.general])
+where <code class="sourceCode cpp"><em>W</em></code> is not ⊥. If <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
 represents a type, then <code class="sourceCode cpp">is_complete_type<span class="op">(</span>r<span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_630" id="pnum_630">6</a></span>
@@ -13485,8 +13494,7 @@ description (<code class="sourceCode cpp"><em>T</em></code>,
 <code class="sourceCode cpp"><em>N</em></code>,
 <code class="sourceCode cpp"><em>A</em></code>,
 <code class="sourceCode cpp"><em>W</em></code>,
-<code class="sourceCode cpp"><em>NUA</em></code>) ([class.mem.general]),
-or <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
+<code class="sourceCode cpp"><em>NUA</em></code>), or <code class="sourceCode cpp">dealias<span class="op">(</span>r<span class="op">)</span></code>
 represents a type <code class="sourceCode cpp"><em>T</em></code>, then
 <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span><em>LAT</em><span class="op">)</span></code>
 where <code class="sourceCode cpp"><em>LAT</em></code> is the

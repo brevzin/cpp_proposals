@@ -33,6 +33,7 @@ Since [@P2996R11]:
   * disallow reflection of local parameters introduced by `$requires-expression$`s
 * library wording updates
   * improve specification of `access_context::current()` (including examples)
+  * `size_of(r)` is no longer constant if `r` is a bit-field
 
 Since [@P2996R10]:
 
@@ -7568,9 +7569,9 @@ consteval member_offset offset_of(info r);
 consteval size_t size_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) where `$W$` is not ⊥. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 
-[#]{.pnum} *Returns*: If `r` represents a non-static data member of type `$T$`, a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), or `dealias(r)` represents a type `$T$`, then `sizeof($LAT$)` where `$LAT$` is the layout-associated type ([class.member.general]) of a non-static data member of type `$T$`. Otherwise, `size_of(type_of(r))`.
+[#]{.pnum} *Returns*: If `r` represents a non-static data member of type `$T$`, a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`), or `dealias(r)` represents a type `$T$`, then `sizeof($LAT$)` where `$LAT$` is the layout-associated type ([class.member.general]) of a non-static data member of type `$T$`. Otherwise, `size_of(type_of(r))`.
 
 [It is possible that while `sizeof(char) == size_of(^^char)` that `sizeof(char&) != size_of(^^char&)`. If `b` represents a direct base class relationship of an empty base class, then `size_of(b) > 0`.]{.note}
 
