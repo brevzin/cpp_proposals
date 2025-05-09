@@ -4568,6 +4568,8 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
 
+An injected declaration whose name is an identifier reserved by the implementation is ill-formed; no diagnostic is required.
+
 [#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration `$D$` ([meta.reflection.define.aggregate]). The scope of `$D$` shall not enclose `$C$`. The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
 
 * [#.#]{.pnum} a function parameter scope, or
@@ -7423,7 +7425,7 @@ consteval bool is_accessible(info r, access_context ctx);
 
 * [#.#]{.pnum} Otherwise, letting `$P$` be a program point whose immediate scope is the function parameter scope, class scope, or namespace scope corresponding to the function, class, or namespace represented by `ctx.scope()`:
   * [#.#.#]{.pnum} If `r` represents a direct base class relationship with base class `$B$`, then `true` if base class `$B$` of `$DESIGNATING-CLS$(r, ctx)` is accessible at `$P$` ([class.access.base]); otherwise, `false`.
-  * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` is accessible at `$P$` when designated in `$DESIGNATING-CLS$(r, ctx)` ([class.access.base]). Otherwise, `false`.
+  * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` would be accessible at `$P$` when designated in `$DESIGNATING-CLS$(r, ctx)` ([class.access.base]) if the effect of any `$using-declaration$`s ([namespace.udecl]) were ignored. Otherwise, `false`.
 
 ::: note
 The definitions of when a class member or base class is accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
@@ -7745,6 +7747,8 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} [If forming `Z<[:Args:]...>` leads to a failure outside of the immediate context, the program is ill-formed.]{.note}
 
+[#]{.pnum}
+
 ::: example
 ```cpp
 template <typename T>
@@ -7756,12 +7760,24 @@ constexpr info r1 = substitute(^^fn1, {^^int});
 
 template <typename T>
 auto fn2() {
-  static_assert(^^T != ^^int); // static assertion failed during instantiation of fn<int>
+  static_assert(^^T != ^^int);
+    // static assertion failed during instantiation of fn<int>
   return 0;
 }
 
 constexpr bool r2 = can_substitute(^^fn2, {^^int});
   // error: instantiation of body of fn<int> is needed to deduce return type
+```
+:::
+
+[#]{.pnum}
+
+::: example
+```cpp
+consteval info to_integral_constant(unsigned i) {
+  return substitute(^^integral_constant, {^^unsigned, reflect_value(i)});
+    // OK, represents integral_constant<unsigned, i>
+}
 ```
 :::
 :::
@@ -7906,7 +7922,7 @@ consteval info data_member_spec(info type,
   - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier ([lex.name]) that is not a keyword ([lex.key]) when interpreted with UTF-8, or
   - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier that is not a keyword when interpreted with the ordinary literal encoding;
 
-  [The name corresponds to the spelling of an identifier token after phase 6 of translation ([lex.phases]). Lexical constructs like `$universal-character-name$`s [lex.universal.char] are not processed and will cause evaluation to fail. For example, `"\u03B1"` is an invalid identifier rather than being processed as `"α"`.]{.note}
+  [The name corresponds to the spelling of an identifier token after phase 6 of translation ([lex.phases]). Lexical constructs like `$universal-character-name$`s [lex.universal.char] are not processed and will cause evaluation to fail. For example, `"\u03B1"` is an invalid identifier and is not interpreted as `"α"`.]{.note}
 - [#.#]{.pnum} if `options.name` does not contain a value, then `options.bit_width` contains a value;
 - [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
   - [#.#.#]{.pnum} `is_integral_type(type) || is_enumeration_type(type)` is `true`,
@@ -7949,19 +7965,20 @@ consteval bool is_data_member_spec(info r);
   - [#.#.#]{.pnum} `@$N$~$K$~@ == u8"_"` is `true`. [Every provided identifier is unique or `"_"`.]{.note}
 
 [#]{.pnum} *Effects*:
-Produces an injected declaration `$D$` ([expr.const]) that provides a definition for `$C$` with properties as follows:
+Produces an injected declaration `$D$` ([expr.const]) that defines `$C$` and has properties as follows:
 
 - [#.1]{.pnum} The target scope of `$D$` is the scope to which `$C$` belongs ([basic.scope.scope]).
 - [#.#]{.pnum} The locus of `$D$` follows immediately after the core constant expression currently under evaluation.
 - [#.#]{.pnum} If `$C$` is a specialization of a templated class `$T$`, and `$C$` is not a local class, then `$D$` is an explicit specialization of `$T$`.
-- [#.#]{.pnum} `$D$` declares a public non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@`. For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration corresponding to `@$r$~$K$~@` precedes the declaration corresponding to `@$r$~$L$~@`.
-- [#.#]{.pnum} A non-static data member or unnamed bit-field corresponding to each `@$r$~$K$~@` is declared as follows:
+- [#.#]{.pnum} For each `@$r$~$K$~@`, there is a corresponding entity `@$M$~$K$~@` belonging to the class scope of `$D$` with the following properties:
 
-  - [#.#.#]{.pnum} If `@$N$~$K$~@` is ⊥, it is an unnamed bit-field. Otherwise, it is a non-static data member with an identifier determined by the character sequence encoded by `@$N$~$K$~@` in UTF-8.
-  - [#.#.#]{.pnum} It has the type `@$T$~$K$~@`.
-  - [#.#.#]{.pnum} If `@$NUA$~$K$~@` is `true`, it is declared with the attribute `[[no_unique_address]]`.
-  - [#.#.#]{.pnum} If `@$W$~$K$~@` is not ⊥, it is declared as a bit-field whose width is that value.
-  - [#.#.#]{.pnum} If `@$A$~$K$~@` is not ⊥, it is declared with the `$alignment-specifier$` `alignas(@$A$~$K$~@)`.
+  - [#.#.#]{.pnum} If `@$N$~$K$~@` is ⊥, `@$M$~$K$~@` is an unnamed bit-field. Otherwise, `@$M$~$K$~@` is a non-static data member whose name is the identifier determined by the character sequence encoded by `@$N$~$K$~@` in UTF-8.
+  - [#.#.#]{.pnum} The type of `@$M$~$K$~@` is `@$T$~$K$~@`.
+  - [#.#.#]{.pnum} `@$M$~$K$~@` is declared with the attribute `[[no_unique_address]]` if and only if `@$NUA$~$K$~@` is `true`.
+  - [#.#.#]{.pnum} If `@$W$~$K$~@` is not ⊥, `@$M$~$K$~@` is a bit-field whose width is that value. Otherwise, `@$M$~$K$~@` is not a bit-field.
+  - [#.#.#]{.pnum} If `@$A$~$K$~@` is not ⊥, `@$M$~$K$~@` has the `$alignment-specifier$` `alignas(@$A$~$K$~@)`. Otherwise, `@$M$~$K$~@` has no `$alignment-specifier$`.
+
+- For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$`, the declaration corresponding to `@$r$~$K$~@` precedes the declaration corresponding to `@$r$~$L$~@`.
 
 [#]{.pnum} *Returns*: `class_type`.
 
@@ -7972,9 +7989,10 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 
 ::: std
 ::: addu
-[1]{.pnum} Subclause [meta.reflection.unary] contains consteval functions to query the properties of a type at compile time.
+[1]{.pnum} Subclause [meta.reflection.unary] specifies consteval functions to query the properties of a type during translation.
 
-[2]{.pnum} For each function taking an argument of type `meta::info` whose name contains `type`, a call to the function is a non-constant library call ([defns.nonconst.libcall]{.sref}) if that argument is not a reflection of a type or type alias. For each function taking an argument named `type_args`, a call to the function is a non-constant library call if any `meta::info` in that range is not a reflection of a type or a type alias.
+[#]{.pnum} For each function or function template taking an argument of type `meta::info` whose name contains `type`, a call to the function or function template is a non-constant library call ([defns.nonconst.libcall]) if that argument is not a reflection of a type or type alias. For each function or function template taking an argument named `type_args`, a call to the function or function template is a non-constant library call if any `meta::info` in that range is not a reflection of a type or a type alias.
+
 :::
 :::
 
@@ -7982,7 +8000,7 @@ Produces an injected declaration `$D$` ([expr.const]) that provides a definition
 
 ::: std
 ::: addu
-[1]{.pnum} For any reflection `$R$` which represents a type or type alias, for each function `meta::$TRAIT$_type` defined in this subclause, `meta::$TRAIT$_type($R$)` equals the value of the corresponding unary type trait `$TRAIT$_v<[:$R$:]>` as specified in [meta.unary.cat]{.sref}.
+[1]{.pnum} For any reflection `$R$` which represents a type or type alias, for each function named `meta::$TRAIT$_type` defined in this subclause, `meta::$TRAIT$_type($R$)` equals the value of the unary type trait denoted by `$TRAIT$_v<[:$R$:]>` as specified in [meta.unary.cat]{.sref}.
 
 ```cpp
 consteval bool is_void_type(info type);
@@ -8002,25 +8020,6 @@ consteval bool is_function_type(info type);
 consteval bool is_reflection_type(info type);
 ```
 
-[2]{.pnum}
-
-::: example
-```
-namespace std::meta {
-  consteval bool is_void_type(info type) {
-    // one example implementation
-    return extract<bool>(substitute(^^is_void_v, {type}));
-
-    // another example implementation
-    type = dealias(type);
-    return type == ^^void
-        || type == ^^const void
-        || type == ^^volatile void
-        || type == ^^const volatile void;
-  }
-}
-```
-:::
 :::
 :::
 
@@ -8028,7 +8027,7 @@ namespace std::meta {
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `meta::$TRAIT$_type` defined in this subclause, `meta::$TRAIT$_type(^^T)` equals the value of the corresponding unary type trait `$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
+[1]{.pnum} For any type or type alias `T`, for each function named `meta::$TRAIT$_type` defined in this subclause, `meta::$TRAIT$_type(^^T)` equals the value of the unary type trait denoted by `$TRAIT$_v<T>` as specified in [meta.unary.comp]{.sref}.
 
 ```cpp
 consteval bool is_reference_type(info type);
@@ -8046,11 +8045,11 @@ consteval bool is_member_pointer_type(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `meta::$UNARY-TRAIT$_type` or `meta::$UNARY-TRAIT$` defined in this subclause with function type `bool(meta::info)`, `meta::$UNARY-TRAIT$_type(^^T)` or `meta::$UNARY-TRAIT$(^^T)` equals the value of the corresponding type property `$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
+[1]{.pnum} For any type or type alias `T`, for each function named `meta::$UNARY-TRAIT$_type` or `meta::$UNARY-TRAIT$` defined in this subclause with function type `bool(meta::info)`, `meta::$UNARY-TRAIT$_type(^^T)` or `meta::$UNARY-TRAIT$(^^T)` equals the value of the type property denoted by `$UNARY-TRAIT$_v<T>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any types or type aliases `T` and `U`, for each function `meta::$BINARY-TRAIT$_type` or `meta::$BINARY-TYPE$` defined in this subclause with function type `bool(meta::info, meta::info)`, `meta::$BINARY-TRAIT$_type(^^T, ^^U)` or `meta::$BINARY-TRAIT$(^^T, ^^U)` equals the value of the corresponding type property `$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any types or type aliases `T` and `U`, for each function named `meta::$BINARY-TRAIT$_type` or `meta::$BINARY-TYPE$` defined in this subclause with function type `bool(meta::info, meta::info)`, `meta::$BINARY-TRAIT$_type(^^T, ^^U)` or `meta::$BINARY-TRAIT$(^^T, ^^U)` equals the value of the type property denoted by `$BINARY-TRAIT$_v<T, U>` as specified in [meta.unary.prop]{.sref}.
 
-[#]{.pnum} For any type or type alias `T`, pack of types or type aliases `U...`, and range `r` such that `ranges::equal(r, vector{^^U...})` is `true`, for each function template `meta::$VARIADIC-TRAIT$_type` defined in this subclause, `meta::$VARIADIC-TRAIT$_type(^^T, r)` equals the value of the corresponding type property `$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
+[#]{.pnum} For any type or type alias `T`, pack of types or type aliases `U...`, and range `r` such that `ranges::equal(r, vector{^^U...})` is `true`, for each function template named `meta::$VARIADIC-TRAIT$_type` defined in this subclause, `meta::$VARIADIC-TRAIT$_type(^^T, r)` equals the value of the type property denoted by `$VARIADIC-TRAIT$_v<T, U...>` as specified in [meta.unary.prop]{.sref}.
 
 ```cpp
 consteval bool is_const_type(info type);
@@ -8133,13 +8132,13 @@ consteval bool reference_converts_from_temporary(info type_dst, info type_src);
 consteval size_t rank(info type);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `return rank_v<T>;`, where `T` is the type represented by `dealias(type)`.
+[#]{.pnum} *Returns*: `rank_v<T>`, where `T` is the type represented by `dealias(type)`.
 
 ```cpp
 consteval size_t extent(info type, unsigned i = 0);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to `return extent_v<T, I>;`, where `T` is the type represented by `dealias(type)` and `I` is a constant equal to `i`.
+[#]{.pnum} *Returns*: `extent_v<T, I>`, where `T` is the type represented by `dealias(type)` and `I` is a constant equal to `i`.
 
 :::
 :::
@@ -8148,13 +8147,15 @@ consteval size_t extent(info type, unsigned i = 0);
 
 ::: std
 ::: addu
-[1]{.pnum} The consteval functions specified in this subclause may be used to query relationships between types at compile time.
+[1]{.pnum} The consteval functions specified in this subclause query relationships between types during translation.
 
-[#]{.pnum} For any types or type aliases `T` and `U`, for each function `meta::$REL$_type` defined in this subclause with function type `bool(meta::info, meta::info)`, `meta::$REL$_type(^^T, ^^U)` equals the value of the corresponding type relation `$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For each function or function template taking an argument of type `meta::info` whose name contains `type`, a call to the function or function template is a non-constant library call ([defns.nonconst.libcall]) if that argument is not a reflection of a type or type alias. For each function or function template taking an argument named `type_args`, a call to the function or function template is a non-constant library call if any `meta::info` in that range is not a reflection of a type or a type alias.
 
-[#]{.pnum} For any type or type alias `T`, pack of types or type aliases `U...`, and range `r` such that `ranges::equal(r, vector{^^U...})` is `true`, for each binary function template `meta::$VARIADIC-REL$_type`, `meta::$VARIADIC-REL$_type(^^T, r)` equals the value of the corresponding type relation `$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any types or type aliases `T` and `U`, for each function named `meta::$REL$_type` defined in this subclause with function type `bool(meta::info, meta::info)`, `meta::$REL$_type(^^T, ^^U)` equals the value of the type relation denoted by `$REL$_v<T, U>` as specified in [meta.rel]{.sref}.
 
-[#]{.pnum} For any types or type aliases `T` and `R`, pack of types or type aliases `U...`, and range `r` such that `ranges::equal(r, vector{^^U...})` is `true`, for each ternary function template `meta::$VARIADIC-REL-R$_type` defined in this subclause, `meta::$VARIADIC-REL-R$_type(^^R, ^^T, r)` equals the value of the corresponding type relation `$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
+[#]{.pnum} For any type or type alias `T`, pack of types or type aliases `U...`, and range `r` such that `ranges::equal(r, vector{^^U...})` is `true`, for each binary function template named `meta::$VARIADIC-REL$_type`, `meta::$VARIADIC-REL$_type(^^T, r)` equals the value of the type relation denoted by `$VARIADIC-REL$_v<T, U...>` as specified in [meta.rel]{.sref}.
+
+[#]{.pnum} For any types or type aliases `T` and `R`, pack of types or type aliases `U...`, and range `r` such that `ranges::equal(r, vector{^^U...})` is `true`, for each ternary function template named `meta::$VARIADIC-REL-R$_type` defined in this subclause, `meta::$VARIADIC-REL-R$_type(^^R, ^^T, r)` equals the value of the type relation denoted by `$VARIADIC-REL-R$_v<R, T, U...>` as specified in [meta.rel]{.sref}.
 
 ```cpp
 consteval bool is_same_type(info type1, info type2);
@@ -8182,17 +8183,18 @@ consteval bool is_nothrow_invocable_r_type(info type_result, info type, R&& type
 
 
 ### [meta.reflection.trans], Transformations between types  {-}
-
 ::: std
 ::: addu
-[1]{.pnum} Subclause [meta.reflection.trans] specifies consteval functions that transform one type to another following some predefined rule.
+[1]{.pnum} Subclause [meta.reflection.trans] specifies consteval functions that transform the reflection of one type to that of another following some predefined rule.
+
+[#]{.pnum} For each function or function template taking an argument of type `meta::info` whose name contains `type`, a call to the function or function template is a non-constant library call ([defns.nonconst.libcall]) if that argument is not a reflection of a type or type alias. For each function or function template taking an argument named `type_args`, a call to the function or function template is a non-constant library call if any `meta::info` in that range is not a reflection of a type or a type alias.
 :::
 :::
 
 #### [meta.reflection.trans.cv], Const-volatile modifications  {-}
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
+[1]{.pnum} For any type or type alias `T`, for each function named `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.cv]{.sref}.
 
 ```cpp
 consteval info remove_const(info type);
@@ -8209,7 +8211,7 @@ consteval info add_cv(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
+[1]{.pnum} For any type or type alias `T`, for each function named `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.ref]{.sref}.
 
 ```cpp
 consteval info remove_reference(info type);
@@ -8223,7 +8225,7 @@ consteval info add_rvalue_reference(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
+[1]{.pnum} For any type or type alias `T`, for each function named `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.sign]{.sref}.
 ```cpp
 consteval info make_signed(info type);
 consteval info make_unsigned(info type);
@@ -8235,7 +8237,7 @@ consteval info make_unsigned(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
+[1]{.pnum} For any type or type alias `T`, for each function named `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.arr]{.sref}.
 ```cpp
 consteval info remove_extent(info type);
 consteval info remove_all_extents(info type);
@@ -8246,7 +8248,7 @@ consteval info remove_all_extents(info type);
 #### [meta.reflection.trans.ptr], Pointer modifications  {-}
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
+[1]{.pnum} For any type or type alias `T`, for each function named `meta::$MOD$` defined in this subclause, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.ptr]{.sref}.
 ```cpp
 consteval info remove_pointer(info type);
 consteval info add_pointer(info type);
@@ -8260,11 +8262,11 @@ consteval info add_pointer(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `meta::$MOD$` defined in this subclause with function type `meta::info(meta::info)`, `meta::$MOD$(^^T)` returns the reflection of the corresponding type denoted by `$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
+[1]{.pnum} For any type or type alias `T`, for each function named `meta::$MOD$` defined in this subclause with function type `meta::info(meta::info)`, `meta::$MOD$(^^T)` returns the reflection of the type denoted by `$MOD$_t<T>` as specified in [meta.trans.other]{.sref}.
 
-[#]{.pnum} For any pack of types or type aliases `T...` and range `r` such that `ranges::equal(r, vector{^^T...})` is `true`, for each unary function template `meta::$VARIADIC-MOD$` defined in this subclause, `meta::$VARIADIC-MOD$(r)` returns the reflection of the corresponding type denoted by `$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
+[#]{.pnum} For any pack of types or type aliases `T...` and range `r` such that `ranges::equal(r, vector{^^T...})` is `true`, for each unary function template named `meta::$VARIADIC-MOD$` defined in this subclause, `meta::$VARIADIC-MOD$(r)` returns the reflection of the type denoted by `$VARIADIC-MOD$_t<T...>` as specified in [meta.trans.other]{.sref}.
 
-[#]{.pnum} For any type or type alias `T`, pack of types or type aliases `U...`, and range `r` such that `ranges::equal(r, vector{^^U...})` is `true`, `meta::invoke_result(^^T, r)` returns the reflection of the corresponding type denoted by `invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
+[#]{.pnum} For any type or type alias `T`, pack of types or type aliases `U...`, and range `r` such that `ranges::equal(r, vector{^^U...})` is `true`, `meta::invoke_result(^^T, r)` returns the reflection of the type denoted by `invoke_result_t<T, U...>` ([meta.trans.other]{.sref}).
 
 ```cpp
 consteval info remove_cvref(info type);
@@ -8289,9 +8291,9 @@ consteval info unwrap_ref_decay(info type);
 
 ::: std
 ::: addu
-[1]{.pnum} For any type or type alias `T`, for each function `meta::$UNARY-TRAIT$` defined in this subclause with function type `size_t(meta::info)`, `meta::$UNARY-TRAIT$(^^T)` equals the value of the property `$UNARY-TRAIT$_v<T>` as defined in [tuple]{.sref} or [variant]{.sref}.
+[1]{.pnum} For any type or type alias `T`, for each function named `meta::$UNARY-TRAIT$` defined in this subclause with function type `size_t(meta::info)`, `meta::$UNARY-TRAIT$(^^T)` equals the value of the property denoted by `$UNARY-TRAIT$_v<T>` as defined in [tuple]{.sref} or [variant]{.sref}.
 
-[2]{.pnum} For any type or type alias `T` and value `I`, for each function `meta::$BINARY-TRAIT$` defined in this subclause with function type `info(size_t, meta::info)`, `meta::$BINARY-TRAIT$(I, ^^T)` returns a reflection representing the type denoted by `$BINARY-TRAIT$_t<I, T>` as defined in [tuple]{.sref} or [variant]{.sref}.
+[2]{.pnum} For any type or type alias `T` and value `I`, for each function named `meta::$BINARY-TRAIT$` defined in this subclause with function type `info(size_t, meta::info)`, `meta::$BINARY-TRAIT$(I, ^^T)` returns a reflection representing the type denoted by `$BINARY-TRAIT$_t<I, T>` as defined in [tuple]{.sref} or [variant]{.sref}.
 
 [3]{.pnum} For any types or type aliases `T` and `U`, `meta::type_order(^^T, ^^U)` equals the value of `type_order_v<T, U>` as defined in [cmp]{.sref}.
 
@@ -8391,10 +8393,13 @@ To [cpp.predefined]{.sref}:
 
 ::: std
 ```diff
-  __cpp_impl_coroutine 201902L
-  __cpp_impl_destroying_delete 201806L
-  __cpp_impl_three_way_comparison 201907L
-+ __cpp_impl_reflection 2025XXL
+ [...]
+  __cpp_impl_raw_strings            200710L
+  __cpp_impl_ref_qualifiers         200710L
++ __cpp_impl_reflection             2025XXL
+  __cpp_impl_return_type_deduction  201304L
+  __cpp_impl_rvalue_references      200610L
+ [...]
 ```
 :::
 
@@ -8402,7 +8407,13 @@ and [version.syn]{.sref}:
 
 ::: std
 ```diff
-+ #define __cpp_lib_reflection 2025XXL // also in <meta>
+  [...]
+  #define __cpp_lib_reference_from_temporary  202202L // freestanding, also in <type_traits>
+  #define __cpp_lib_reference_wrapper         202403L // freestanding, also in <functional>
++ #define __cpp_lib_reflection                2025XXL // also in <meta>
+  #define __cpp_lib_remove_cvref              201711L // freestanding, also in <type_traits>
+  #define __cpp_lib_result_of_sfinae          201210L // freestanding, also in <functional>, <type_traits>
+  [...]
 ```
 :::
 
