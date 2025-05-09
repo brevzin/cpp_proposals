@@ -3786,31 +3786,40 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 Add new paragraphs before the last paragraph of [basic.fundamental]{.sref} as follows:
 
 ::: std
+[16]{.pnum} The types denoted by `$cv$ std​::​nullptr_t` are distinct types. [...]
+
 ::: addu
 
-[17 - 1]{.pnum} A value of type `std::meta::info` is called a _reflection_. There exists a unique _null reflection_; every other reflection is a representation of
+[x]{.pnum} A value of type `std::meta::info` is called a _reflection_. There exists a unique _null reflection_; every other reflection is a representation of
 
-* a value of structural type ([temp.param]),
-* an object with static storage duration ([basic.stc]),
-* a variable ([basic.pre]),
-* a structured binding ([dcl.struct.bind]),
-* a function ([dcl.fct]),
-* an enumerator ([dcl.enum]),
-* a type alias ([dcl.typedef]),
-* a type ([basic.types]),
-* a class member ([class.mem]),
-* an unnamed bit-field ([class.bit]),
-* a primary class template ([temp.pre]),
-* a function template ([temp.pre]),
-* a primary variable template ([temp.pre]),
-* an alias template ([temp.alias]),
-* a concept ([temp.concept]),
-* a namespace alias ([namespace.alias]),
-* a namespace ([basic.namespace.general]),
-* a direct base class relationship ([class.derived.general]), or
-* a data member description ([class.mem.general]).
+* [x.#]{.pnum} a value (see below) of structural type ([temp.param]),
+* [x.#]{.pnum} an object with static storage duration ([basic.stc]),
+* [x.#]{.pnum} a variable ([basic.pre]),
+* [x.#]{.pnum} a structured binding ([dcl.struct.bind]),
+* [x.#]{.pnum} a function ([dcl.fct]),
+* [x.#]{.pnum} an enumerator ([dcl.enum]),
+* [x.#]{.pnum} a type alias ([dcl.typedef]),
+* [x.#]{.pnum} a type ([basic.types]),
+* [x.#]{.pnum} a class member ([class.mem]),
+* [x.#]{.pnum} an unnamed bit-field ([class.bit]),
+* [x.#]{.pnum} a primary class template ([temp.pre]),
+* [x.#]{.pnum} a function template ([temp.pre]),
+* [x.#]{.pnum} a primary variable template ([temp.pre]),
+* [x.#]{.pnum} an alias template ([temp.alias]),
+* [x.#]{.pnum} a concept ([temp.concept]),
+* [x.#]{.pnum} a namespace alias ([namespace.alias]),
+* [x.#]{.pnum} a namespace ([basic.namespace.general]),
+* [x.#]{.pnum} a direct base class relationship ([class.derived.general]), or
+* [x.#]{.pnum} a data member description ([class.mem.general]).
 
 A reflection is said to _represent_ the corresponding construct.
+
+A reflection of a value of type `T` is associated with
+
+* [x.#]{.pnum} if `T` is a scalar type, then a computed value of type `T`, or
+* [x.#]{.pnum} if `T` is a class type, then a template parameter object ([temp.param]) of type `T`.
+
+[A reflection of a value can be produced by library functions such as `std::meta::value_of` and `std::meta::reflect_value`]{.note}
 
 ::: example
 ```cpp
@@ -3864,11 +3873,13 @@ constexpr auto r18 = std::meta::data_member_spec(^^int, {.name="member"});
 
 :::
 
-[17 - 2]{.pnum} *Recommended practice*: Implementations should not represent other constructs specified in this document, such as partial template specializations, attributes, placeholder types, statements, or expressions, as values of type `std::meta::info`.
+[y]{.pnum} *Recommended practice*: Implementations should not represent other constructs specified in this document, such as partial template specializations, attributes, placeholder types, statements, or expressions, as values of type `std::meta::info`.
 
-[17 - 3]{.pnum} [Future revisions of this document can specify semantics for reflections representing any such constructs.]{.note}
+[z]{.pnum} [Future revisions of this document can specify semantics for reflections representing any such constructs.]{.note}
 
 :::
+
+[17]{.pnum} The types described in this subclause are called *fundamental types*.
 :::
 
 ### [intro.execution]{.sref} Sequential execution {-}
@@ -4191,7 +4202,11 @@ auto g = typename [:^^int:](42);
 
   [The type of a `$splice-expression$` designating a variable or structured binding of reference type will be adjusted to a non-reference type ([expr.type]{.sref}).]{.note}
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue that computes `$S$` and whose type is the same as that of `$S$`.
+* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue whose type is the same of `$S$` and whose value is determined as follows:
+
+  * [#.#.#]{.pnum} if `$S$` is an enumerator, then the value is the value of the enumerator;
+  * [#.#.#]{.pnum} otherwise, if `$S$` is a value of scalar type, then the value is `$S$`'s associated value;
+  * [#.#.#]{.pnum} otherwise (if `$S$` is a value of class type), then the value is the result of the lvalue-to-rvalue conversion applied to `$S$`'s associated template parameter object.
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
@@ -6820,26 +6835,20 @@ static_assert(object_of(^^x) == object_of(^^y)); // OK, because y is a reference
 consteval info value_of(info r);
 ```
 
-[#]{.pnum} Let `$Q$` be
+[#]{.pnum} Let `$R$` be a constant expression of type `info` such that `$R$ == r` is `true`.
 
-* [#.#]{.pnum} If `r` represents a reference, then the object referred to by that reference.
-* [#.#]{.pnum} Otherwise, if `r` represents any other variable, then the object declared by that variable.
-* [#.#]{.pnum} Otherwise, the construct represented by `r`.
+[#]{.pnum} *Constant When*: `[: $R$ :]` is a valid `$splice-expression$` ([expr.prim.splice]).
 
-[#]{.pnum} *Constant When*: `$Q$` is
+[#]{.pnum} *Effects*: Equivalent to:
 
-* [#.#]{.pnum} a value,
-* [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} an object such that
-  * [#.#.#]{.pnum} the lifetime of `$Q$` has not ended,
-  * [#.#.#]{.pnum} the type of `$Q$` is a structural type ([temp.param]) that is copyable, and
-  * [#.#.#]{.pnum} either `$Q$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$Q$` began within the core constant expression currently under evaluation ([expr.const]).
+```cpp
+if (is_value(r)) {
+  return r;
+} else {
+  return reflect_value([: $R$ :]);
+}
+```
 
-[#]{.pnum} *Returns*:
-
-* [#.#]{.pnum} If `$Q$` is an object `o`, then a reflection of the value held by `o`. The reflected value has the type represented by `type_of(o)`, with the cv-qualifiers removed if this is a scalar type.
-* [#.#]{.pnum} Otherwise, if `$Q$` is an enumerator, then a reflection of the value of the enumerator. The reflected value has the type represented by `type_of(r)` with the cv-qualifiers removed.
-* [#.#]{.pnum} Otherwise, `r`.
 
 ::: example
 ```cpp
@@ -7724,22 +7733,52 @@ consteval info substitute(info templ, R&& arguments);
 ::: addu
 [#]{.pnum} An object `$O$` of type `$T$` is *meta-reflectable* if an lvalue expression denoting `$O$` is suitable for use as a constant template argument for a constant template parameter of type `$T$&` ([temp.arg.nontype]).
 
+[#]{.pnum} The following are defined for exposition only to aid in the specification of `reflect_value`:
+
+```cpp
+template <typename T>
+  consteval info $reflect-value-scalar$(T expr); // exposition only
+```
+
+Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
+
+[#]{.pnum} *Constant When*: `$V$` satisfies the constraints for for a value computed by a prvalue constant expression ([expr.const]) and, if `$V$` has pointer type, then it is not a pointer to an object that is not meta-reflectable.
+
+[#]{.pnum} *Returns*: A reflection of a value of type `$T$` associated with the computed value `$V$`.
+
+```cpp
+template <typename T>
+  consteval info $reflect-value-class$(T const& expr); // exposition only
+```
+
+[#]{.pnum} *Mandates*: `T` is copy constructible and structural ([temp.param]).
+
+[#]{.pnum} Let `$O$` be a template parameter object ([temp.param]) copy-initialized from `expr`.
+
+[#]{.pnum} *Constant When*:
+
+* [#.#]{.pnum} `$O$` satisfies the constraints for a constant expression ([expr.const]),
+* [#.#]{.pnum} no constituent reference of `$O$` refers to an object that is not meta-reflectable, and
+* [#.#]{.pnum} no constituent value of `$O$` of pointer type is a pointer to an object that is not meta-reflectable.
+
+[#]{.pnum} *Returns*: A reflection of a value of type `T` associated with the template parameter object `$O$`.
+
 ```cpp
 template <typename T>
   consteval info reflect_value(const T& expr);
 ```
 
-[#]{.pnum} *Mandates*: `T` is a copy constructible, structural type that is neither a reference type nor an array type.
+*Effects*: Equivalent to:
 
-[#]{.pnum} Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
+```cpp
+if (is_class_type(^^T)) {
+  return $reflect-value-class$(expr);
+} else {
+  return $reflect-value-scalar$(expr);
+}
+```
 
-[#]{.pnum} *Constant When*:
-
-* [#.#]{.pnum} `$V$` satisfies the constraints for a value computed by a prvalue constant expression ([expr.const]),
-* [#.#]{.pnum} no constituent reference of `$V$` refers to an object that is not meta-reflectable, and
-* [#.#]{.pnum} no constituent value of `$V$` of pointer type is a pointer to an object that is not meta-reflectable.
-
-[#]{.pnum} *Returns*: A reflection of `$V$`. The type of the represented value is the cv-unqualified version of `T`.
+[Array-to-pointer and function-to-function-pointer decay occur.]{.note}
 
 ```cpp
 template <typename T>
