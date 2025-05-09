@@ -4568,7 +4568,7 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
 
-An injected declaration that introduces a name reserved by the implementation is ill-formed; no diagnostic is required.
+No member of an injected declaration shall have a name reserved by the implementation; no diagnostic is required.
 
 [#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration `$D$` ([meta.reflection.define.aggregate]). The scope of `$D$` shall not enclose `$C$`. The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
 
