@@ -31,6 +31,8 @@ Since [@P2996R11]:
 * core wording updates
   * better specify interaction between spliced function calls and overload resolution; integrate fix to [@CWG2701]
   * disallow reflection of local parameters introduced by `$requires-expression$`s
+  * change "naming class" to "designating class" and define for `$splice-expression$`s
+  * clarified value reflection model and the interaction between `reflect_value`, `value_of`, and splicing.
 * library wording updates
   * improve specification of `access_context::current()` (including examples)
   * `size_of(r)` is no longer constant if `r` is a bit-field
@@ -3816,7 +3818,7 @@ A reflection is said to _represent_ the corresponding construct.
 
 A reflection of a value of type `T` is associated with
 
-* [x.#]{.pnum} if `T` is a scalar type, then a computed value of type `T`, or
+* [x.#]{.pnum} if `T` is a scalar type, then a value of type `T`, or
 * [x.#]{.pnum} if `T` is a class type, then a template parameter object ([temp.param]) of type `T`.
 
 [A reflection of a value can be produced by library functions such as `std::meta::value_of` and `std::meta::reflect_value`]{.note}
@@ -4202,7 +4204,7 @@ auto g = typename [:^^int:](42);
 
   [The type of a `$splice-expression$` designating a variable or structured binding of reference type will be adjusted to a non-reference type ([expr.type]{.sref}).]{.note}
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue whose type is the same of `$S$` and whose value is determined as follows:
+* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue whose type is the same as that of `$S$` and whose value is determined as follows:
 
   * [#.#.#]{.pnum} if `$S$` is an enumerator, then the value is the value of the enumerator;
   * [#.#.#]{.pnum} otherwise, if `$S$` is a value of scalar type, then the value is `$S$`'s associated value;
@@ -4220,9 +4222,7 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
-[Access checking of class members occurs during lookup, and therefore does not pertain to splicing.]{.note}
-
-[#]{.pnum} While performing overload resolution to determine the entity referred to by a `$splice-expression$`, the best viable function is _designated in a manner exempt from access rules_.
+[Class members designated by `$splice-expression$`s are accessible from any point ([class.access.base]). A class member access expression whose right operand is a `$splice-expression$` is ill-formed if the left operand (considered as a pointer) cannot be implicitly converted to a pointer to the designating class of the right operand.]{.note}
 
 :::
 :::
@@ -4273,7 +4273,7 @@ Modify paragraph 4 to account for splices in member access expressions:
 
 :::
 
-Adjust the language in paragraphs 6-9 to account for `$splice-expression$`s. Explicitly add a fallback to paragraph 7 that makes other cases ill-formed.
+Adjust the language in paragraphs 6-9 to account for `$splice-expression$`s. Explicitly add a fallback to paragraph 7 that makes other cases ill-formed. Update the term "naming class" to "designated class" in paragraph 8.
 
 ::: std
 
@@ -4283,7 +4283,7 @@ Adjust the language in paragraphs 6-9 to account for `$splice-expression$`s. Exp
 
 [6]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a bit-field, `E1.E2` is a bit-field. [...]
 
-[7]{.pnum} If `E2` [designates an entity that]{.addu} is declared to have type "reference to `T`", then `E1.E2` is an lvalue of type `T`. [If]{.rm} [In that case, if]{.addu} `E2` [is]{.rm} [designates]{.addu} a static data member, `E1.E2` designates the object or function to which the reference is bound, otherwise `E1.E2` designates the object or function to which the corresponding reference member of `E1` is bound. Otherwise, one of the following rules applies.
+[#]{.pnum} If `E2` [designates an entity that]{.addu} is declared to have type "reference to `T`", then `E1.E2` is an lvalue of type `T`. [If]{.rm} [In that case, if]{.addu} `E2` [is]{.rm} [designates]{.addu} a static data member, `E1.E2` designates the object or function to which the reference is bound, otherwise `E1.E2` designates the object or function to which the corresponding reference member of `E1` is bound. Otherwise, one of the following rules applies.
 
 * [#.#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a static data member and the type of `E2` is `T`, then `E1.E2` is an lvalue; [...]
 * [#.#]{.pnum} [Otherwise, if]{.addu} [If]{.rm} `E2` [is]{.rm} [designates]{.addu} a non-static data member and the type of `E1` is "_cq1_ _vq1_ `X`", and the type of `E2` is "_cq2 vq2_ `T`", [...]. If [the entity designated by]{.addu} `E2` is declared to be a `mutable` member, then the type of `E1.E2` is "_vq12_ `T`". If [the entity designated by]{.addu} `E2` is not declared to be a `mutable` member, then the type of `E1.E2` is "_cq12_ _vq12_ `T`".
@@ -4296,9 +4296,9 @@ Adjust the language in paragraphs 6-9 to account for `$splice-expression$`s. Exp
 
 * [[#.#]{.pnum} Otherwise, the program is ill-formed.]{.addu}
 
-[8]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a non-static member, the program is ill-formed if the class of which `E2` [is directly]{.rm} [designates]{.addu} a member is an ambiguous base ([class.member.lookup]{.sref}) of the naming class ([class.access.base]{.sref}) of `E2`.
+[#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a non-static member, the program is ill-formed if the class of which `E2` [is directly]{.rm} [designates]{.addu} a [direct]{.addu} member is an ambiguous base ([class.member.lookup]{.sref}) of the [naming]{.rm} [designating]{.addu} class ([class.access.base]{.sref}) of `E2`.
 
-[9]{.pnum} If [the entity designated by]{.addu} `E2` is a non-static member and the result of `E1` is an object whose type is not similar ([conv.qual]) to the type of `E1`, the behavior is undefined.
+[#]{.pnum} If [the entity designated by]{.addu} `E2` is a non-static member and the result of `E1` is an object whose type is not similar ([conv.qual]) to the type of `E1`, the behavior is undefined.
 
 :::
 
@@ -5330,6 +5330,38 @@ Prefer "type alias" rather than `$typedef-name$` in the note that follows paragr
 [Because access control applies to the declarations named, if access control is applied to a [`$typedef-name$`]{.rm} [type alias]{.addu}, only the accessibility of the typedef or alias declaration itself is considered. The accessibility of the [entity referred to by the `$typedef-name$`]{.rm} [underlying entity]{.addu} is not considered.]{.note3}
 :::
 
+### [class.access.base]{.sref} Accessibility of base classes and base class members {-}
+
+Update paragraph 5 to handle `$splice-expression$`s, and to make more clear that the "naming class" (renamed "designating class" here) is a property of the expression. State explicitly that members designated through `$splice-expression$`s are accessible.
+
+::: std
+[5]{.pnum} [...]
+
+[The access to a member is affected by the class in which the member is named. This naming class is the]{.rm} [An expression `E` that designates a member `m` has a _designating class_ that affects the access to `m`. This designating class is either]{.addu}
+
+- [[#.#]{.pnum} the innermost class of which `m` is directly a member if `E` is a `$splice-expression$` or]{.addu}
+- [#.#]{.pnum} [the]{.addu} class in whose scope lookup performed a search that found [`m`]{.addu} [the member]{.rm} [otherwise]{.addu}.
+
+[This class can be explicit, e.g., when a `$qualified-id$` is used, or implicit, e.g., when a class member access operator ([expr.ref]) is used (including cases where an implicit "`this->`" was added). If both a class member access operator and a `$qualified-id$` are used to [name]{.rm} [designate]{.addu} the member (as in `p->T::m`), the class [naming]{.rm} [designating]{.addu} the member is the class denoted by the `$nested-name-specifier$` of the `$qualified-id$` (that is, `T`).]{.note3}
+
+A member `m` is accessible at the point `$R$` when [named]{.rm} [designated]{.addu} in class `N` if
+
+- [#.#]{.pnum} `m` as a member of `N` is public, or
+- [#.#]{.pnum} `m` as a member of `N` is private, and `$R$` occurs in a direct member or friend of class `$N$`, or
+- [#.#]{.pnum} `m` as a member of `N` is protected, and `$R$` occurs in a direct member or friend of class `$N$`, or in a member of a class `P` derived from `N`, where `m` as a member of `P` is public, private, or protected, or
+- [[#.#]{.pnum} `m` is designated by a `$splice-expression$`, or]{.addu}
+- [#.#]{.pnum} there exists a base class `B` of `N` that is accessible at `$R$`, and `m` is accessible at `$R$` when [named]{.rm} [designated]{.addu} in class `B`.
+:::
+
+Update paragraph 6, and the note which follows, to use the term "designated class":
+
+::: std
+[6]{.pnum} If a class member access operator, including an implicit "`this->`", is used to access a non-static data member or non-static member function, the reference is ill-formed if the left operand (considered as a pointer in the "`.`" case) cannot be implicitly converted to a pointer to the [naming]{.rm} [designating]{.addu} class of the right operand.
+
+[This requirement is in addition to the requirement that the member be accessible as [named]{.rm} [designated]{.addu}.]{.note}
+
+:::
+
 ### [over.pre]{.sref} Preamble {-}
 
 Add a note explaining the expressions that form overload sets after paragraph 2.
@@ -5338,17 +5370,6 @@ Add a note explaining the expressions that form overload sets after paragraph 2.
 [2]{.pnum} When a function is named [or designated]{.addu} in a call, which function declaration is being referenced and the validity of the call are determined by comparing the types of the arguments at the point of use with the types of the parameters in the declarations in the overload set. This function selection process is called _overload resolution_ and is defined in [over.match].
 
   [[Overload sets are formed by `$id-expression$`s naming functions and function templates and by `$splice-expression$`s designating entities of the same kinds.]{.note}]{.addu}
-
-:::
-
-### [over.match.general]{.sref} General {-}
-
-Modify paragraphs 3 and 4 to clarify that access rules do not apply in all contexts.
-
-::: std
-[3]{.pnum} If a best viable function exists and is unique, overload resolution succeeds and produces it as the result. Otherwise overload resolution fails and the invocation is ill-formed. When overload resolution succeeds, and the best viable function is [not]{.rm} [neither designated in a manner exempt from access rules ([expr.prim.splice]) nor]{.addu} accessible in the context in which it is used, the program is ill-formed.
-
-[4]{.pnum} Overload resolution results in a _usable candidate_ if overload resolution succeeds and the selected candidate is either not a function ([over.built]{.sref}), or is a function that is not deleted and is [either designated in a manner exempt from access rules or is]{.addu} accessible from the context in which overload resolution was performed.
 
 :::
 
@@ -5707,10 +5728,11 @@ is introduced.
 
 ### [temp.arg.template]{.sref} Template template arguments {-}
 
-Extend [temp.arg.template]{.sref}/1 to cover splice template arguments:
+Extend paragraph 1 to cover splice template arguments:
 
 ::: std
 [1]{.pnum} A `$template-argument$` for a template template parameter shall [either]{.addu} be the name of a template [or a `$splice-template-argument$`]{.addu}. For a `$type-tt-parameter$`, the name [or `$splice-template-argument$`]{.addu} shall [denote]{.rm} [designate]{.addu} a class template or alias template. For a `$variable-tt-parameter$`, the name [or `$splice-template-argument$`]{.addu} shall [denote]{.rm} [designate]{.addu} a variable template. For a `$concept-tt-parameter$`, the name [or `$splice-template-argument$`]{.addu} shall [denote]{.rm} [designate]{.addu} a concept. Only primary templates are considered when matching the template argument with the corresponding parameter; partial specializations are not considered even if their parameter lists match that of the template template parameter.
+
 :::
 
 ### [temp.type]{.sref} Type equivalence {-}
@@ -6839,7 +6861,7 @@ consteval info value_of(info r);
 
 [#]{.pnum} *Constant When*: `[: $R$ :]` is a valid `$splice-expression$` ([expr.prim.splice]).
 
-[#]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Effects*:  Equivalent to:
 
 ```cpp
 if (is_value(r)) {
@@ -7383,7 +7405,7 @@ consteval bool is_accessible(info r, access_context ctx);
 * [#.#]{.pnum} `r` does not represent a class member for which `$PARENT-CLS$(r)` is an incomplete class and
 * [#.#]{.pnum} `r` does not represent a direct base class relationship between a base class and an incomplete derived class.
 
-[#]{.pnum} Let `$NAMING-CLS$(r, ctx)` be:
+[#]{.pnum} Let `$DESIGNATING-CLS$(r, ctx)` be:
 
 * [#.#]{.pnum} If `ctx.naming_class()` represents a class `$C$`, then `$C$`.
 * [#.#]{.pnum} Otherwise, `$PARENT-CLS$(r)`.
@@ -7393,15 +7415,15 @@ consteval bool is_accessible(info r, access_context ctx);
 * [#.#]{.pnum} If `r` represents an unnamed bit-field `$F$`, then `is_accessible(r@~$H$~@, ctx)` where `r@~$H$~@` represents a hypothetical non-static data member of the class represented by `$PARENT-CLS$(r)` with the same access as `$F$`. [Unnamed bit-fields are treated as class members for the purpose of `is_accessible`.]{.note}
 * [#.#]{.pnum} Otherwise, if `r` does not represent a class member or a direct base class relationship, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents
-  * [#.#.#]{.pnum} a class member that is not a (possibly indirect or variant) member of `$NAMING-CLS$(r, ctx)` or
-  * [#.#.#]{.pnum} a direct base class relationship such that `parent_of(r)` does not represent `$NAMING-CLS$(r, ctx)` or a (direct or indirect) base class thereof,
+  * [#.#.#]{.pnum} a class member that is not a (possibly indirect or variant) member of `$DESIGNATING-CLS$(r, ctx)` or
+  * [#.#.#]{.pnum} a direct base class relationship such that `parent_of(r)` does not represent `$DESIGNATING-CLS$(r, ctx)` or a (direct or indirect) base class thereof,
 
   then `false`.
 * [#.#]{.pnum} Otherwise, if `ctx.scope()` is the null reflection, then `true`.
 
 * [#.#]{.pnum} Otherwise, letting `$P$` be a program point whose immediate scope is the function parameter scope, class scope, or namespace scope corresponding to the function, class, or namespace represented by `ctx.scope()`:
-  * [#.#.#]{.pnum} If `r` represents a direct base class relationship with base class `$B$`, then `true` if base class `$B$` of `$NAMING-CLASS$(r, ctx)` is accessible at `$P$` ([class.access.base]); otherwise, `false`.
-  * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` is accessible at `$P$` when named in `$NAMING-CLS$(r, ctx)` ([class.access.base]). Otherwise, `false`.
+  * [#.#.#]{.pnum} If `r` represents a direct base class relationship with base class `$B$`, then `true` if base class `$B$` of `$DESIGNATING-CLS$(r, ctx)` is accessible at `$P$` ([class.access.base]); otherwise, `false`.
+  * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` is accessible at `$P$` when designated in `$DESIGNATING-CLS$(r, ctx)` ([class.access.base]). Otherwise, `false`.
 
 ::: note
 The definitions of when a class member or base class is accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
@@ -7706,7 +7728,7 @@ consteval bool can_substitute(info templ, R&& arguments);
 
 [#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the reflections held by the elements of `arguments`.
 
-[#]{.pnum} *Returns*: `true` if `Z<[:Args:]...>` is a valid *template-id* ([temp.names]). Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `Z<[:Args:]...>` is a valid `$template-id$` ([temp.names]) that does not name a function whose type contains an undeduced placeholder type. Otherwise, `false`.
 
 [#]{.pnum} [If forming `Z<[:Args:]...>` leads to a failure outside of the immediate context, the program is ill-formed.]{.note}
 
@@ -7721,9 +7743,27 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Returns*: `^^Z<[:Args:]...>`.
 
-[#]{.pnum} [The specialization `Z<[:Args:]...>` is only instantiated if needed.]{.note}
-
 [#]{.pnum} [If forming `Z<[:Args:]...>` leads to a failure outside of the immediate context, the program is ill-formed.]{.note}
+
+::: example
+```cpp
+template <typename T>
+auto fn1();
+
+static_assert(!can_substitute(^^fn1, {^^int}));  // OK
+constexpr info r1 = substitute(^^fn1, {^^int});
+  // error: fn<int> contains an undeduced placeholder type
+
+template <typename T>
+auto fn2() {
+  static_assert(^^T != ^^int); // static assertion failed during instantiation of fn<int>
+  return 0;
+}
+
+constexpr bool r2 = can_substitute(^^fn2, {^^int});
+  // error: instantiation of body of fn<int> is needed to deduce return type
+```
+:::
 :::
 :::
 
@@ -7742,7 +7782,7 @@ template <typename T>
 
 Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
 
-[#]{.pnum} *Constant When*: `$V$` satisfies the constraints for for a value computed by a prvalue constant expression ([expr.const]) and, if `$V$` has pointer type, then it is not a pointer to an object that is not meta-reflectable.
+[#]{.pnum} *Constant When*: `$V$` satisfies the constraints for the result of a prvalue constant expression ([expr.const]) and, if `$V$` is a pointer to an object, then that object is meta-reflectable.
 
 [#]{.pnum} *Returns*: A reflection of a value of type `$T$` associated with the computed value `$V$`.
 
@@ -7753,15 +7793,14 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is copy constructible and structural ([temp.param]).
 
-[#]{.pnum} Let `$O$` be a template parameter object ([temp.param]) copy-initialized from `expr`.
+[#]{.pnum} Let `$O$` be an object copy-initialized from `expr`.
 
 [#]{.pnum} *Constant When*:
 
-* [#.#]{.pnum} `$O$` satisfies the constraints for a constant expression ([expr.const]),
-* [#.#]{.pnum} no constituent reference of `$O$` refers to an object that is not meta-reflectable, and
-* [#.#]{.pnum} no constituent value of `$O$` of pointer type is a pointer to an object that is not meta-reflectable.
+* [#.#]{.pnum} `$O$` satisfies the constraints for the result of a glvalue constant expression ([expr.const]),
+* [#.#]{.pnum} every object referred to by a constituent reference of `$O$`, or pointed to by a constituent pointer value of `$O$`, is meta-reflectable.
 
-[#]{.pnum} *Returns*: A reflection of a value of type `T` associated with the template parameter object `$O$`.
+[#]{.pnum} *Returns*: A reflection of a value of type `T` associated with a template parameter object that is template-argument-equivalent to `$O$`.
 
 ```cpp
 template <typename T>
@@ -7847,8 +7886,10 @@ The class `$name-type$` allows the function `data_member_spec` to accept an ordi
 
 ::: example
 ```cpp
-constexpr auto mem1 = data_member_spec(^^int, {.name="ordinary_literal_encoding"});
-constexpr auto mem2 = data_member_spec(^^int, {.name=u8"utf8_encoding"});
+consteval void fn() {
+  data_member_options o1 = {.name="ordinary_literal_encoding"};
+  data_member_options o2 = {.name=u8"utf8_encoding"};
+}
 ```
 :::
 
