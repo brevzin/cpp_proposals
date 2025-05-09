@@ -8154,7 +8154,7 @@ evaluation is said to <em>produce</em> the declaration.</p>
 <p><span class="note13"><span>[ <em>Note 13:</em> </span>Special rules
 concerning reachability apply to synthesized points (<span>10.7 <a href="https://wg21.link/module.reach">[module.reach]</a></span>).<span>
 — <em>end note</em> ]</span></span></p>
-<p>An injected declaration whose name is an identifier reserved by the
+<p>An injected declaration that introduces a name reserved by the
 implementation is ill-formed; no diagnostic is required.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_256" id="pnum_256">29</a></span>
 Let <code class="sourceCode cpp"><em>C</em></code> be a
@@ -13875,8 +13875,9 @@ ill-formed.<span> — <em>end note</em> ]</span></span></p>
 <span>[ <em>Example 2:</em> </span>
 <div class="sourceCode" id="cb265"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb265-1"><a href="#cb265-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info to_integral_constant<span class="op">(</span><span class="dt">unsigned</span> i<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb265-2"><a href="#cb265-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> substitute<span class="op">(^^</span>integral_constant, <span class="op">{^^</span><span class="dt">unsigned</span>, reflect_value<span class="op">(</span>i<span class="op">)})</span>;</span>
-<span id="cb265-3"><a href="#cb265-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// OK, represents integral_constant&lt;unsigned, i&gt;</span></span>
-<span id="cb265-4"><a href="#cb265-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb265-3"><a href="#cb265-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb265-4"><a href="#cb265-4" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> info r <span class="op">=</span> to_integral_constant<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb265-5"><a href="#cb265-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// OK, r represents the type integral_constant&lt;unsigned, 2&gt;</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -14284,7 +14285,7 @@ Unary type traits<a href="#meta.reflection.unary-unary-type-traits" class="self-
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_752" id="pnum_752">1</a></span>
 Subclause [meta.reflection.unary] specifies consteval functions to query
-the properties of a type during translation.</p>
+the properties of a type at compile-time.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_753" id="pnum_753">2</a></span>
 For each function or function template taking an argument of type
 <code class="sourceCode cpp">meta<span class="op">::</span>info</code>
@@ -14480,7 +14481,7 @@ relations<a href="#meta.reflection.rel-type-relations" class="self-link"></a></h
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_761" id="pnum_761">1</a></span>
 The consteval functions specified in this subclause query relationships
-between types during translation.</p>
+between types at compile-time.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_762" id="pnum_762">2</a></span>
 For each function or function template taking an argument of type
 <code class="sourceCode cpp">meta<span class="op">::</span>info</code>
@@ -14890,12 +14891,8 @@ makes sense to provide one?</p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb294"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb294-1"><a href="#cb294-1" aria-hidden="true" tabindex="-1"></a> [...]</span>
-<span id="cb294-2"><a href="#cb294-2" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_raw_strings            200710L</span>
-<span id="cb294-3"><a href="#cb294-3" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_ref_qualifiers         200710L</span>
-<span id="cb294-4"><a href="#cb294-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_impl_reflection             2025XXL</span></span>
-<span id="cb294-5"><a href="#cb294-5" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_return_type_deduction  201304L</span>
-<span id="cb294-6"><a href="#cb294-6" aria-hidden="true" tabindex="-1"></a>  __cpp_impl_rvalue_references      200610L</span>
-<span id="cb294-7"><a href="#cb294-7" aria-hidden="true" tabindex="-1"></a> [...]</span></code></pre></div>
+<span id="cb294-2"><a href="#cb294-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_impl_reflection             2025XXL</span></span>
+<span id="cb294-3"><a href="#cb294-3" aria-hidden="true" tabindex="-1"></a> [...]</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -14904,12 +14901,8 @@ makes sense to provide one?</p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb295"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb295-1"><a href="#cb295-1" aria-hidden="true" tabindex="-1"></a>  [...]</span>
-<span id="cb295-2"><a href="#cb295-2" aria-hidden="true" tabindex="-1"></a>  #define __cpp_lib_reference_from_temporary  202202L // freestanding, also in &lt;type_traits&gt;</span>
-<span id="cb295-3"><a href="#cb295-3" aria-hidden="true" tabindex="-1"></a>  #define __cpp_lib_reference_wrapper         202403L // freestanding, also in &lt;functional&gt;</span>
-<span id="cb295-4"><a href="#cb295-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_reflection                2025XXL // also in &lt;meta&gt;</span></span>
-<span id="cb295-5"><a href="#cb295-5" aria-hidden="true" tabindex="-1"></a>  #define __cpp_lib_remove_cvref              201711L // freestanding, also in &lt;type_traits&gt;</span>
-<span id="cb295-6"><a href="#cb295-6" aria-hidden="true" tabindex="-1"></a>  #define __cpp_lib_result_of_sfinae          201210L // freestanding, also in &lt;functional&gt;, &lt;type_traits&gt;</span>
-<span id="cb295-7"><a href="#cb295-7" aria-hidden="true" tabindex="-1"></a>  [...]</span></code></pre></div>
+<span id="cb295-2"><a href="#cb295-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_reflection                2025XXL // also in &lt;meta&gt;</span></span>
+<span id="cb295-3"><a href="#cb295-3" aria-hidden="true" tabindex="-1"></a>  [...]</span></code></pre></div>
 </div>
 </blockquote>
 </div>

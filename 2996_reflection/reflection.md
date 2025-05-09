@@ -4568,7 +4568,7 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
 
-An injected declaration whose name is an identifier reserved by the implementation is ill-formed; no diagnostic is required.
+An injected declaration that introduces a name reserved by the implementation is ill-formed; no diagnostic is required.
 
 [#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration `$D$` ([meta.reflection.define.aggregate]). The scope of `$D$` shall not enclose `$C$`. The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
 
@@ -7776,8 +7776,9 @@ constexpr bool r2 = can_substitute(^^fn2, {^^int});
 ```cpp
 consteval info to_integral_constant(unsigned i) {
   return substitute(^^integral_constant, {^^unsigned, reflect_value(i)});
-    // OK, represents integral_constant<unsigned, i>
 }
+constexpr info r = to_integral_constant(2);
+  // OK, r represents the type integral_constant<unsigned, 2>
 ```
 :::
 :::
@@ -7989,7 +7990,7 @@ Produces an injected declaration `$D$` ([expr.const]) that defines `$C$` and has
 
 ::: std
 ::: addu
-[1]{.pnum} Subclause [meta.reflection.unary] specifies consteval functions to query the properties of a type during translation.
+[1]{.pnum} Subclause [meta.reflection.unary] specifies consteval functions to query the properties of a type at compile-time.
 
 [#]{.pnum} For each function or function template taking an argument of type `meta::info` whose name contains `type`, a call to the function or function template is a non-constant library call ([defns.nonconst.libcall]) if that argument is not a reflection of a type or type alias. For each function or function template taking an argument named `type_args`, a call to the function or function template is a non-constant library call if any `meta::info` in that range is not a reflection of a type or a type alias.
 
@@ -8147,7 +8148,7 @@ consteval size_t extent(info type, unsigned i = 0);
 
 ::: std
 ::: addu
-[1]{.pnum} The consteval functions specified in this subclause query relationships between types during translation.
+[1]{.pnum} The consteval functions specified in this subclause query relationships between types at compile-time.
 
 [#]{.pnum} For each function or function template taking an argument of type `meta::info` whose name contains `type`, a call to the function or function template is a non-constant library call ([defns.nonconst.libcall]) if that argument is not a reflection of a type or type alias. For each function or function template taking an argument named `type_args`, a call to the function or function template is a non-constant library call if any `meta::info` in that range is not a reflection of a type or a type alias.
 
@@ -8394,11 +8395,7 @@ To [cpp.predefined]{.sref}:
 ::: std
 ```diff
  [...]
-  __cpp_impl_raw_strings            200710L
-  __cpp_impl_ref_qualifiers         200710L
 + __cpp_impl_reflection             2025XXL
-  __cpp_impl_return_type_deduction  201304L
-  __cpp_impl_rvalue_references      200610L
  [...]
 ```
 :::
@@ -8408,11 +8405,7 @@ and [version.syn]{.sref}:
 ::: std
 ```diff
   [...]
-  #define __cpp_lib_reference_from_temporary  202202L // freestanding, also in <type_traits>
-  #define __cpp_lib_reference_wrapper         202403L // freestanding, also in <functional>
 + #define __cpp_lib_reflection                2025XXL // also in <meta>
-  #define __cpp_lib_remove_cvref              201711L // freestanding, also in <type_traits>
-  #define __cpp_lib_result_of_sfinae          201210L // freestanding, also in <functional>, <type_traits>
   [...]
 ```
 :::
