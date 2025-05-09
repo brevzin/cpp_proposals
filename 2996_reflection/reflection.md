@@ -31,6 +31,7 @@ Since [@P2996R11]:
 * core wording updates
   * better specify interaction between spliced function calls and overload resolution; integrate fix to [@CWG2701]
   * disallow reflection of local parameters introduced by `$requires-expression$`s
+  * clarified value reflection model and the interaction between `reflect_value`, `value_of`, and splicing.
 * library wording updates
   * improve specification of `access_context::current()` (including examples)
   * `size_of(r)` is no longer constant if `r` is a bit-field
@@ -3816,7 +3817,7 @@ A reflection is said to _represent_ the corresponding construct.
 
 A reflection of a value of type `T` is associated with
 
-* [x.#]{.pnum} if `T` is a scalar type, then a computed value of type `T`, or
+* [x.#]{.pnum} if `T` is a scalar type, then a value of type `T`, or
 * [x.#]{.pnum} if `T` is a class type, then a template parameter object ([temp.param]) of type `T`.
 
 [A reflection of a value can be produced by library functions such as `std::meta::value_of` and `std::meta::reflect_value`]{.note}
