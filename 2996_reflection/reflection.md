@@ -1562,7 +1562,7 @@ static_assert(&[:template_arguments_of(spec)[1]:] == &p[1]);
 ```
 :::
 
-Such reflections cannot generally be obtained using the `^^`-operator, but the `std::meta::reflect_value` and `std::meta::reflect_object` functions make it easy to reflect particular values or objects. The `std::meta::value_of` metafunction can also be used to map a reflection of an object to a reflection of its value.
+Such reflections cannot generally be obtained using the `^^`-operator, but the `std::meta::reflect_constant` and `std::meta::reflect_object` functions make it easy to reflect particular values or objects. The `std::meta::constant_of` metafunction can also be used to map a reflection of an object to a reflection of its value.
 
 ### Syntax discussion
 
@@ -1970,11 +1970,11 @@ constexpr std::meta::info r = ^^i, s = ^^i;
 static_assert(r == r && r == s);
 
 static_assert(^^i != ^^j);  // 'i' and 'j' are different entities.
-static_assert(value_of(^^i) == value_of(^^j));  // Two equivalent values.
-static_assert(^^i != std::meta::reflect_object(i))  // A variable is distinct from the
-                                                    // object it designates.
-static_assert(^^i != std::meta::reflect_value(42));  // A reflection of an object
-                                                     // is not the same as its value.
+static_assert(constant_of(^^i) == constant_of(^^j));    // Two equivalent values.
+static_assert(^^i != std::meta::reflect_object(i))      // A variable is distinct from the
+                                                        // object it designates.
+static_assert(^^i != std::meta::reflect_constant(42));  // A reflection of an object
+                                                        // is not the same as its value.
 ```
 :::
 
@@ -2654,9 +2654,9 @@ namespace std::meta {
   consteval auto parent_of(info r) -> info;
   consteval auto dealias(info r) -> info;
 
-  // @[object and value queries](#object_of-value_of)@
+  // @[object and constant queries](#object_of-constant_of)@
   consteval auto object_of(info r) -> info;
-  consteval auto value_of(info r) -> info;
+  consteval auto constant_of(info r) -> info;
 
   // @[template queries](#template_of-template_arguments_of)@
   consteval auto template_of(info r) -> info;
@@ -2677,7 +2677,7 @@ namespace std::meta {
 
   // @[reflect expression results](#reflect-expression-results)@
   template <typename T>
-    consteval auto reflect_value(const T& value) -> info;
+    consteval auto reflect_constant(const T& value) -> info;
   template <typename T>
     consteval auto reflect_object(T& value) -> info;
   template <typename T>
@@ -2852,13 +2852,13 @@ static_assert(dealias(^^Y) == ^^int);
 ```
 :::
 
-### `object_of`, `value_of`
+### `object_of`, `constant_of`
 
 ::: std
 ```c++
 namespace std::meta {
   consteval auto object_of(info r) -> info;
-  consteval auto value_of(info r) -> info;
+  consteval auto constant_of(info r) -> info;
 }
 ```
 :::
@@ -2875,7 +2875,12 @@ static_assert(object_of(^^x) == object_of(^^y));
 ```
 :::
 
-If `r` is a reflection of an enumerator, then `value_of(r)` is a reflection of the value of the enumerator. Otherwise, if `r` is a reflection of an object _usable in constant expressions_, then `value_of(r)` is a reflection of the value of the object. For all other inputs, `value_of(r)` is not a constant expression.
+If `r` is a reflection of an enumerator, then `constant_of(r)` is a reflection of the value of the enumerator. Otherwise, if `r` is a reflection of an object _usable in constant expressions_, then:
+
+* if `r` has scalar type, then `constant_of(r)` is a reflection of the value of the object.
+* otherwise, `constant_of(r)` is a reflection of the object.
+
+For all other inputs, `constant_of(r)` is not a constant expression. For more, see [`reflect_constant`](#reflect-expression-results).
 
 ### `template_of`, `template_arguments_of`
 
@@ -2970,12 +2975,12 @@ typename[:r:] si;  // Error: T::X is invalid for T = int.
 `can_substitute(templ, args)` simply checks if the substitution can succeed (with the same caveat about instantiations outside of the immediate context).
 If `can_substitute(templ, args)` is `false`, then `substitute(templ, args)` will be ill-formed.
 
-### `reflect_value`, `reflect_object`, `reflect_function` {#reflect-expression-results}
+### `reflect_constant`, `reflect_object`, `reflect_function` {#reflect-expression-results}
 
 ::: std
 ```c++
 namespace std::meta {
-  template<typename T> consteval auto reflect_value(const T& expr) -> info;
+  template<typename T> consteval auto reflect_constant(const T& expr) -> info;
   template<typename T> consteval auto reflect_object(T& expr) -> info;
   template<typename T> consteval auto reflect_function(T& expr) -> info;
 }
@@ -2984,10 +2989,34 @@ namespace std::meta {
 
 These metafunctions produce a reflection of the _result_ from evaluating the provided expression. One of the most common use-cases for such reflections is to specify the template arguments with which to build a specialization using `std::meta::substitute`.
 
-`reflect_value(expr)` produces a reflection of the value computed by an lvalue-to-rvalue conversion on `expr`. The type of the reflected value is the cv-unqualified (de-aliased) type of `expr`. The result needs to be a permitted result of a constant expression, and `T` cannot be of reference type.
+`reflect_constant(expr)` can best be understood from the equivalence that given the template
+
+::: std
+```cpp
+template <auto P> struct C { };
+```
+:::
+
+that:
+
+::: std
+```cpp
+reflect_constant(V) == template_arguments_of(^^C<V>)[0]
+```
+:::
+
+In other words, letting `T` be the cv-unqualified, de-aliased type of `expr`.
+
+* if `expr` has scalar type, then `reflect_constant(expr)` is a reflection of the value of `expr`, whose type is `T`.
+* if `expr` has class type, then `reflect_constant(expr)` is a reflection of the template parameter object that is template-argument-equivalent to an object of type `T` copy-initialized from `expr`.
+
+Either way, the result needs to be a permitted result of a constant expression. Notably, `reflect_constant(e)` can be either a reflection of a value or a reflection of an object, depending on the type of `e`. This seeming inconsistence is actually useful for two reasons:
+
+1. As mentioned above, it allows an equivalence with template arguments — where the argument is already either a value or an object.
+2. It avoids having to invest complexity into defining what it means to have a reflection of a value of class type. Particularly with regards to when/if copies happen.
 
 ```cpp
-static_assert(substitute(^^std::array, {^^int, std::meta::reflect_value(5)}) ==
+static_assert(substitute(^^std::array, {^^int, std::meta::reflect_constant(5)}) ==
               ^^std::array<int, 5>);
 ```
 
