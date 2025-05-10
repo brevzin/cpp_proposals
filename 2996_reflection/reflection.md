@@ -32,7 +32,7 @@ Since [@P2996R11]:
   * better specify interaction between spliced function calls and overload resolution; integrate fix to [@CWG2701]
   * disallow reflection of local parameters introduced by `$requires-expression$`s
   * change "naming class" to "designating class" and define for `$splice-expression$`s
-  * replaced `reflect_value` and `value_of` with` reflect_constant` and `constant_of`.
+  * replaced `reflect_value` and `value_of` with `reflect_constant` and `constant_of`.
 * library wording updates
   * improve specification of `access_context::current()` (including examples)
   * `size_of(r)` is no longer constant if `r` is a bit-field
@@ -6868,9 +6868,9 @@ constexpr int y = 0;
 
 static_assert(^^x != ^^y);                              // OK, x and y are different variables so their
                                                         // reflections compare different
-static_assert(constant_of(^^x) == constant_of(^^y));    // OK, both constant_of(^^x) and constant_of(^^y) represent
-                                                        // the value 0
-static_assert(constant_of(^^x) == reflect_constant(0));    // OK, likewise
+static_assert(constant_of(^^x) == constant_of(^^y));    // OK, both constant_of(^^x) and constant_of(^^y)
+                                                        // represent the value 0
+static_assert(constant_of(^^x) == reflect_constant(0)); // OK, likewise
 
 info fn() {
   constexpr int x = 42;
