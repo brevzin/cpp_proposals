@@ -7824,7 +7824,7 @@ template <typename T>
   consteval info reflect_value(const T& expr);
 ```
 
-*Effects*: Equivalent to:
+[*]{.pnum} *Effects*: Equivalent to:
 
 ```cpp
 if (is_class_type(^^T)) {
