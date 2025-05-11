@@ -1109,7 +1109,7 @@ annotations:</p>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of_with_type<span class="op">(</span>info item, info type<span class="op">)</span>; <span class="co">// (2)</span></span>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info annotate<span class="op">(</span>info item,</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>                          info value,</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>                          info constant,</span>
 <span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>                          source_location loc <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span>;</span>
 <span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
@@ -1296,7 +1296,8 @@ reflection</em>; every other reflection is a representation of</p>
 <li>a structured binding,</li>
 <li>a function,</li>
 <li>an enumerator,</li>
-<li><span class="addu">an annotation ([dcl.attr.grammar]),</span></li>
+<li><span class="addu">an annotation ([dcl.attr.grammar]) with an
+<em>underlying constant</em>,</span></li>
 <li>a type,</li>
 <li>a <code class="sourceCode cpp"><em>typedef-name</em></code>,</li>
 <li>a class member,</li>
@@ -1461,10 +1462,10 @@ contains no <code class="sourceCode cpp"><em>attribute</em></code>s has
 no effect. The order in which the
 <code class="sourceCode cpp"><em>attribute-tokens</em></code> appear in
 an <code class="sourceCode cpp"><em>attribute-list</em></code> is not
-significant. <span class="addu">The
-<code class="sourceCode cpp"><em>constant-expression</em></code> in each
-<code class="sourceCode cpp"><em>annotation</em></code> shall have
-structural type ([temp.param]).</span> […]</p>
+significant. <span class="addu">Evaluating an
+<code class="sourceCode cpp"><em>annotation</em></code> produces a
+reflection of an annotation whose underlying constant is <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span><em>constant-expression</em><span class="op">)</span></code>.</span>
+[…]</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">5</a></span>
 Each
 <code class="sourceCode cpp"><em>attribute-specifier-seq</em></code> is
@@ -1479,12 +1480,11 @@ not allowed to apply to that entity or statement, the program is
 ill-formed. If an
 <code class="sourceCode cpp"><em>attribute-specifier-seq</em></code>
 appertains to a friend declaration ([class.friend]), that declaration
-shall be a definition. <span class="addu">The
-<code class="sourceCode cpp"><em>constant-expression</em></code> in each
-<code class="sourceCode cpp"><em>annotation</em></code> in an
-<code class="sourceCode cpp"><em>attribute-specifier-seq</em></code>
-shall have structural type ([temp.param]) <span class="note"><span>[ <em>Note 1:</em> </span>Reflections representing
-annotations can be retrieved with functions like <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>annotations_of</code>
+shall be a definition. <span class="addu">Evaluating an
+<code class="sourceCode cpp"><em>annotation</em></code> produces a
+reflection of an annotation whose underlying constant is <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span><em>constant-expression</em><span class="op">)</span></code>.
+<span class="note"><span>[ <em>Note 1:</em> </span>Reflections
+representing annotations can be retrieved with functions such as <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>annotations_of</code>
 ([meta.reflection.annotation])<span> — <em>end
 note</em> ]</span></span>.</span></p>
 </blockquote>
@@ -1595,7 +1595,7 @@ the type of what is represented by
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(3.*)</a></span>
 Otherwise, if <code class="sourceCode cpp">r</code> represents an
-annotation, then the type of the annotated value.</li>
+annotation, then <code class="sourceCode cpp">type_of<span class="op">(</span>constant_of<span class="op">(</span>r<span class="op">))</span></code>.</li>
 </ul>
 </div>
 <ul>
@@ -1638,60 +1638,45 @@ a reflection of the type
 <em>Constant When</em>: […]</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">5</a></span>
 <em>Returns</em>: […]</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info value_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">39</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp">r</code> is a
-reflection representing</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(39.1)</a></span>
-either an object or variable, usable in constant expressions from a
-point in the evaluation context ([expr.const]), whose type is a
-structural type ([temp.type]),</li>
-</ul>
-<div class="addu">
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(39.2)</a></span>
-an annotation,</li>
-</ul>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info constant_of<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">6</a></span>
+Let <code class="sourceCode cpp"><em>R</em></code> be a constant
+expression of type <code class="sourceCode cpp">info</code> such that
+<code class="sourceCode cpp"><em>R</em> <span class="op">==</span> r</code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code>.
+<span class="addu">If <code class="sourceCode cpp">r</code> represents
+an annotation, then let <code class="sourceCode cpp"><em>C</em></code>
+be its underlying constant.</span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">7</a></span>
+<em>Constant When</em>: <span class="addu">Either
+<code class="sourceCode cpp">r</code> represents an annotation or</span>
+<code class="sourceCode cpp"><span class="op">[:</span> <em>R</em> <span class="op">:]</span></code>
+is a valid
+<code class="sourceCode cpp"><em>splice-expression</em></code>
+([expr.prim.splice]).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">8</a></span>
+<em>Effects</em>: Equivalent to:</p>
+<div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ if (is_annotation(r)) {</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="va">+   return <em>C</em>;</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="va">+ } else {</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    return reflect_constant([: <em>R</em> :]);</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span></code></pre></div>
 </div>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(39.3)</a></span>
-an enumerator, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(39.4)</a></span>
-a value.</li>
-</ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">40</a></span>
-<em>Returns</em>:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(40.1)</a></span>
-If <code class="sourceCode cpp">r</code> is a reflection of an object
-<code class="sourceCode cpp">o</code>, or a reflection of a variable
-which designates an object <code class="sourceCode cpp">o</code>, then a
-reflection of the value held by <code class="sourceCode cpp">o</code>.
-The reflected value has type <code class="sourceCode cpp">type_of<span class="op">(</span>o<span class="op">)</span></code>,
-with the cv-qualifiers removed if this is a scalar type</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(40.2)</a></span>
-Otherwise, if <code class="sourceCode cpp">r</code> is a reflection of
-an enumerator <span class="addu">or an annotation</span>, then a
-reflection of the value of the enumerator <span class="addu">or
-annotation, respectively</span>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(40.3)</a></span>
-Otherwise, <code class="sourceCode cpp">r</code>.</li>
-</ul>
 </blockquote>
 </div>
-<p>And to the new section [meta.reflection.annotation]:</p>
+<p>Add the new section [meta.reflection.annotation]:</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">1</a></span>
 Annotations can be used to add additional information to declarations
 for future introspection.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of<span class="op">(</span>info item<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">2</a></span>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of<span class="op">(</span>info item<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">2</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>
 represents a type, variable, function, or a namespace.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">3</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing the following reflections:</p>
 <ul>
@@ -1722,55 +1707,56 @@ before <code class="sourceCode cpp"><em>R</em><sub>2</sub></code> in the
 returned <code class="sourceCode cpp">vector</code>.</p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
-<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Option <span class="op">{</span> <span class="dt">bool</span> value; <span class="op">}</span>;</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">1</span><span class="op">]]</span> <span class="dt">void</span> f<span class="op">()</span>;</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">2</span>,<span class="at"> </span><span class="op">=</span><span class="dv">3</span><span class="op">]]</span> <span class="dt">void</span> g<span class="op">()</span>;</span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">4</span><span class="op">]]</span> <span class="dt">void</span> g<span class="op">()</span>;</span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">Option</span><span class="op">{</span><span class="at">true</span><span class="op">}]]</span> <span class="dt">int</span> a;</span>
-<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">Option</span><span class="op">{</span><span class="at">false</span><span class="op">}]]</span> <span class="dt">int</span> b;</span>
-<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotations_of<span class="op">(^^</span>f<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
-<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotations_of<span class="op">(^^</span>g<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span>
-<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>g<span class="op">)[</span><span class="dv">0</span><span class="op">])</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span>
-<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>g<span class="op">)[</span><span class="dv">1</span><span class="op">])</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span>
-<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>g<span class="op">)[</span><span class="dv">2</span><span class="op">])</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span>;</span>
-<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span>Option<span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>C<span class="op">::</span>a<span class="op">)[</span><span class="dv">0</span><span class="op">]).</span>value<span class="op">)</span>;</span>
-<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>extract<span class="op">&lt;</span>Option<span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>C<span class="op">::</span>b<span class="op">)[</span><span class="dv">0</span><span class="op">]).</span>value<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Option <span class="op">{</span> <span class="dt">bool</span> value; <span class="op">}</span>;</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">1</span><span class="op">]]</span> <span class="dt">void</span> f<span class="op">()</span>;</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">2</span>,<span class="at"> </span><span class="op">=</span><span class="dv">3</span><span class="op">]]</span> <span class="dt">void</span> g<span class="op">()</span>;</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">4</span><span class="op">]]</span> <span class="dt">void</span> g<span class="op">()</span>;</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">Option</span><span class="op">{</span><span class="at">true</span><span class="op">}]]</span> <span class="dt">int</span> a;</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">Option</span><span class="op">{</span><span class="at">false</span><span class="op">}]]</span> <span class="dt">int</span> b;</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotations_of<span class="op">(^^</span>f<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>annotations_of<span class="op">(^^</span>g<span class="op">).</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>g<span class="op">)[</span><span class="dv">0</span><span class="op">])</span> <span class="op">==</span> <span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>g<span class="op">)[</span><span class="dv">1</span><span class="op">])</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>g<span class="op">)[</span><span class="dv">2</span><span class="op">])</span> <span class="op">==</span> <span class="dv">4</span><span class="op">)</span>;</span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>extract<span class="op">&lt;</span>Option<span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>C<span class="op">::</span>a<span class="op">)[</span><span class="dv">0</span><span class="op">]).</span>value<span class="op">)</span>;</span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>extract<span class="op">&lt;</span>Option<span class="op">&gt;(</span>annotations_of<span class="op">(^^</span>C<span class="op">::</span>b<span class="op">)[</span><span class="dv">0</span><span class="op">]).</span>value<span class="op">)</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
-<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of_with_type<span class="op">(</span>info item, info type<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">4</a></span>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> annotations_of_with_type<span class="op">(</span>info item, info type<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">4</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">annotations_of<span class="op">(</span>item<span class="op">)</span></code>
 is constant and <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 is a reflection representing a complete type.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">5</a></span>
 <em>Returns</em> A <code class="sourceCode cpp">vector</code> containing
 each element, <code class="sourceCode cpp">e</code>, of <code class="sourceCode cpp">annotations_of<span class="op">(</span>item<span class="op">)</span></code>,
-in order, such that <code class="sourceCode cpp">dealias<span class="op">(</span>type_of<span class="op">(</span>e<span class="op">))</span> <span class="op">==</span> dealias<span class="op">(</span>type<span class="op">)</span></code>.</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info annotate<span class="op">(</span>info item, info value, source_location loc <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">6</a></span>
+in order, such that <code class="sourceCode cpp">type_of<span class="op">(</span>e<span class="op">)</span> <span class="op">==</span> dealias<span class="op">(</span>type<span class="op">)</span></code>.</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info annotate<span class="op">(</span>info item, info constant, source_location loc <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">6</a></span>
 <em>Constant When</em>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">(6.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">(6.1)</a></span>
 <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>
 represents a class type, variable, function, or a namespace; and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">(6.2)</a></span>
-<code class="sourceCode cpp">value</code> reprents a value.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">(6.2)</a></span>
+<code class="sourceCode cpp">constant</code> represents either a value
+or an object of class type.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">7</a></span>
 <em>Effects</em>: Produces an injected declaration ([expr.const]) at
 location <code class="sourceCode cpp">loc</code> redeclaring the entity
 represented by <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>.
-That injected declaration is annotated by
-<code class="sourceCode cpp">value</code> and its locus is immediately
-following the manifestly constant-evaluated expression currently under
-evaluation.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">8</a></span>
+That injected declaration has an annotation whose underlying constant is
+<code class="sourceCode cpp">constant</code> and its locus is
+immediately following the manifestly constant-evaluated expression
+currently under evaluation.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">8</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>item<span class="op">)</span></code>.</p>
 </div>
 </blockquote>

@@ -387,7 +387,7 @@ namespace std::meta {
   consteval vector<info> annotations_of_with_type(info item, info type); // (2)
 
   consteval info annotate(info item,
-                          info value,
+                          info constant,
                           source_location loc = source_location::current());
 }
 ```
@@ -514,7 +514,7 @@ Change [basic.fundamental]{.sref} to add "annotation" to the list of reflection 
 * a structured binding,
 * a function,
 * an enumerator,
-* [an annotation ([dcl.attr.grammar]),]{.addu}
+* [an annotation ([dcl.attr.grammar]) with an _underlying constant_,]{.addu}
 * a type,
 * a `$typedef-name$`,
 * a class member,
@@ -601,11 +601,11 @@ Adjust the restriction on ellipses in [dcl.attr.grammar]{.sref}/4:
 
 ::: std
 [4]{.pnum} In an `$attribute-list$`, an ellipsis may [appear only]{.rm} [only appear following an `$attribute$`]{.addu} if that `$attribute$`'s specification permits it. An [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu} followed by an ellipsis is a pack expansion. An `$attribute-specifier$` that contains no `$attribute$`s has no effect.
-The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [The `$constant-expression$` in each `$annotation$` shall have structural type ([temp.param]).]{.addu} [...]
+The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [Evaluating an `$annotation$` produces a reflection of an annotation whose underlying constant is `std::meta::reflect_constant($constant-expression$)`.]{.addu} [...]
 
 [5]{.pnum} Each `$attribute-specifier-seq$` is said to appertain to some entity or statement, identified by the syntactic context where it appears ([stmt.stmt], [dcl.dcl], [dcl.decl]).
 If an `$attribute-specifier-seq$` that appertains to some entity or statement contains an `$attribute$` or `$alignment-specifier$` that is not allowed to apply to that entity or statement, the program is ill-formed.
-If an `$attribute-specifier-seq$` appertains to a friend declaration ([class.friend]), that declaration shall be a definition. [The `$constant-expression$` in each `$annotation$` in an `$attribute-specifier-seq$` shall have structural type ([temp.param]) [Reflections representing annotations can be retrieved with functions like `std::meta::annotations_of` ([meta.reflection.annotation])]{.note}.]{.addu}
+If an `$attribute-specifier-seq$` appertains to a friend declaration ([class.friend]), that declaration shall be a definition. [Evaluating an `$annotation$` produces a reflection of an annotation whose underlying constant is `std::meta::reflect_constant($constant-expression$)`. [Reflections representing annotations can be retrieved with functions such as `std::meta::annotations_of` ([meta.reflection.annotation])]{.note}.]{.addu}
 :::
 
 Change the pack expansion rule in [temp.variadic]{.sref}/5.9:
@@ -682,7 +682,7 @@ consteval info type_of(info r);
 - [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or unnamed bit-field, then the type of what is represented by `r`.
 
 ::: addu
-- [#.*]{.pnum} Otherwise, if `r` represents an annotation, then the type of the annotated value.
+- [#.*]{.pnum} Otherwise, if `r` represents an annotation, then `type_of(constant_of(r))`.
 :::
 
 - [#.2]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
@@ -699,31 +699,28 @@ consteval info object_of(info r);
 
 [#]{.pnum} *Returns*: [...]
 
-
 ```cpp
-consteval info value_of(info r);
+consteval info constant_of(info r);
 ```
 
-[39]{.pnum} *Constant When*: `r` is a reflection representing
+[6]{.pnum} Let `$R$` be a constant expression of type `info` such that `$R$ == r` is `true`. [If `r` represents an annotation, then let `$C$` be its underlying constant.]{.addu}
 
-* [#.#]{.pnum} either an object or variable, usable in constant expressions from a point in the evaluation context ([expr.const]), whose type is a structural type ([temp.type]),
+[#]{.pnum} *Constant When*: [Either `r` represents an annotation or]{.addu} `[: $R$ :]` is a valid `$splice-expression$` ([expr.prim.splice]).
 
-::: addu
-* [#.#]{.pnum} an annotation,
-:::
+[#]{.pnum} *Effects*: Equivalent to:
 
-* [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} a value.
-
-[#]{.pnum} *Returns*:
-
-* [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type
-* [#.#]{.pnum} Otherwise, if `r` is a reflection of an enumerator [or an annotation]{.addu}, then a reflection of the value of the enumerator [or annotation, respectively]{.addu}.
-* [#.#]{.pnum} Otherwise, `r`.
+```diff
++ if (is_annotation(r)) {
++   return $C$;
++ } else {
+    return reflect_constant([: $R$ :]);
++ }
+```
 :::
 
 
-And to the new section [meta.reflection.annotation]:
+
+Add the new section [meta.reflection.annotation]:
 
 ::: std
 ::: addu
@@ -774,19 +771,19 @@ consteval vector<info> annotations_of_with_type(info item, info type);
 
 [#]{.pnum} *Constant When*: `annotations_of(item)` is constant and `dealias(type)` is a reflection representing a complete type.
 
-[#]{.pnum} *Returns* A `vector` containing each element, `e`, of `annotations_of(item)`, in order, such that `dealias(type_of(e)) == dealias(type)`.
+[#]{.pnum} *Returns* A `vector` containing each element, `e`, of `annotations_of(item)`, in order, such that `type_of(e) == dealias(type)`.
 
 
 ```cpp
-consteval info annotate(info item, info value, source_location loc = source_location::current());
+consteval info annotate(info item, info constant, source_location loc = source_location::current());
 ```
 
 [#]{.pnum} *Constant When*:
 
 * [#.#]{.pnum} `dealias(item)` represents a class type, variable, function, or a namespace; and
-* [#.#]{.pnum} `value` reprents a value.
+* [#.#]{.pnum} `constant` represents either a value or an object of class type.
 
-[#]{.pnum} *Effects*: Produces an injected declaration ([expr.const]) at location `loc` redeclaring the entity represented by `dealias(item)`. That injected declaration is annotated by `value` and its locus is immediately following the manifestly constant-evaluated expression currently under evaluation.
+[#]{.pnum} *Effects*: Produces an injected declaration ([expr.const]) at location `loc` redeclaring the entity represented by `dealias(item)`. That injected declaration has an annotation whose underlying constant is `constant` and its locus is immediately following the manifestly constant-evaluated expression currently under evaluation.
 
 [#]{.pnum} *Returns*: `dealias(item)`.
 
