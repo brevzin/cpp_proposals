@@ -1,7 +1,7 @@
 ---
 title: Annotations for Reflection
 tag: reflection
-document: P3394R2
+document: P3394R3
 date: today
 audience: CWG, LWG
 hackmd: true
@@ -17,6 +17,8 @@ author:
 ---
 
 # Revision History
+
+Since [@P3394R2]: wording, including rebasing off of [@P2996R12].
 
 Since [@P3394R1]:
 
@@ -660,16 +662,43 @@ consteval source_location source_location_of(info r);
 [#]{.pnum} *Recommended practice*: [If `r` represents an annotation that was added with a call to `std::meta::annotate`, then implementations should return a value corresponding to the `source_location` argument passed to that function.]{.addu} If `r` represents an entity with a definition that is reachable from the evaluation context, a value corresponding to a definition should be returned.
 :::
 
-Update the meanings of `type_of` and `value_of` in [meta.reflection.queries]:
+Update the meanings of `$has-type$`, `type_of` and `value_of` in [meta.reflection.queries]:
 
 ::: std
+```cpp
+consteval bool $has-type$(info r); // exposition only
+```
+
+[1]{.pnum} *Returns*: `true` if  `r` represents a value, [annotation,]{.addu} object, variable, function that is not a constructor or destructor, enumerator, non-static data member, unnamed bit-field, direct base class relationship, or data member description. Otherwise, `false`.
+
 ```cpp
 consteval info type_of(info r);
 ```
 
-[35]{.pnum} *Constant When*: `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, [annotation,]{.addu} non-static data member, bit-field, base class specifier, or description of a declaration of a non-static data member.
+[#]{.pnum} *Constant When*: `$has-type$(r)` is `true`.
 
-[#]{.pnum} *Returns*: If `r` represents an entity, object, or value, then a reflection of the type of what is represented by `r`. [Otherwise, if `r` represents an annotation, then the the type of the annotated value.]{.addu} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class. Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}), a reflection of the type `$T$`.
+[#]{.pnum} *Returns*:
+
+- [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or unnamed bit-field, then the type of what is represented by `r`.
+
+::: addu
+- [#.*]{.pnum} Otherwise, if `r` represents an annotation, then the type of the annotated value.
+:::
+
+- [#.2]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
+  - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that is reachable from a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
+  - [#.#.#]{.pnum} Otherwise, a reflection of the type of `$N$` prior to the closing brace of the `$enum-specifier$` as specified in [dcl.enum].
+- [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class.
+- [#.#]{.pnum} Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), a reflection of the type `$T$`.
+
+```cpp
+consteval info object_of(info r);
+```
+
+[#]{.pnum} *Constant When*: [...]
+
+[#]{.pnum} *Returns*: [...]
+
 
 ```cpp
 consteval info value_of(info r);
@@ -691,26 +720,6 @@ consteval info value_of(info r);
 * [#.#]{.pnum} If `r` is a reflection of an object `o`, or a reflection of a variable which designates an object `o`, then a reflection of the value held by `o`. The reflected value has type `type_of(o)`, with the cv-qualifiers removed if this is a scalar type
 * [#.#]{.pnum} Otherwise, if `r` is a reflection of an enumerator [or an annotation]{.addu}, then a reflection of the value of the enumerator [or annotation, respectively]{.addu}.
 * [#.#]{.pnum} Otherwise, `r`.
-:::
-
-
-And update `extract` in [meta.reflection.extract], specifically `$extract-val$`:
-
-::: std
-```cpp
-template <class T>
-  consteval T $extract-val$(info r); // exposition only
-```
-
-[#]{.pnum} Let `U` be the type of the value[, annotation,]{.addu} or enumerator that `r` represents.
-
-[#]{.pnum} *Constant When*:
-
-  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
-  - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
-  - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value `r` represents is convertible to `T`.
-
-[#]{.pnum} *Returns*: the value[, annotation,]{.addu} or enumerator `$V$` represented by `r`, converted to `T`.
 :::
 
 
