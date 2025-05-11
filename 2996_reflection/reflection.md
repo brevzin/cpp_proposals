@@ -7997,7 +7997,7 @@ Produces an injected declaration `$D$` ([expr.const]) that defines `$C$` and has
 * [#.#]{.pnum} For every parameter `p` of type `info`, `is_type(p)` is `true`.
 * [#.#]{.pnum} For every parameter `r` whose type is constrained on `reflection_range`, `ranges::all_of(r, is_type)` is `true`.
 
-[#]{.pnum} Unless otherwise specified, each function and function template describe in this clause has the following behavior based on the the signature of that function or function template. [The associated class template need not be instantiated.]{.note}
+[#]{.pnum} Unless otherwise specified, each function and function template described in this clause has the following behavior based on the signature of that function or function template. [The associated class template need not be instantiated.]{.note}
 
 <table>
 <tr><th>Signature</th><th>*Returns*</th></tr>
@@ -8019,14 +8019,14 @@ template <reflection_range R>
 bool meta::$VARIADIC$_type(info type, R&& args);
 ```
 </td>
-<td>`std::$VARIADIC$_v<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases represents by the elements of `args`</td></tr>
+<td>`std::$VARIADIC$_v<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases represented by the elements of `args`</td></tr>
 <tr><td>
 ```cpp
 template <reflection_range R>
 bool meta::$VARIADIC$_type(info t1, info t2, R&& args);
 ```
 </td>
-<td>`std::$VARIADIC$_v<$T1$, $T2$, $U$...>` where `$T1$` and `$T2$` are the types or type alias represented by `t1` and `t2`, respectively, and `$U$...` is the pack of types or type aliases represents by the elements of `args`</td></tr>
+<td>`std::$VARIADIC$_v<$T1$, $T2$, $U$...>` where `$T1$` and `$T2$` are the types or type aliases represented by `t1` and `t2`, respectively, and `$U$...` is the pack of types or type aliases represented by the elements of `args`</td></tr>
 <tr><td>
 ```cpp
 info meta::$UNARY$(info type);
@@ -8038,14 +8038,14 @@ template <reflection_range R>
 info meta::$VARIADIC$(R&& args);
 ```
 </td>
-<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$...>` where `$T$...` is the pack of types or type aliases represents by the elements of `args`</td></tr>
+<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$...>` where `$T$...` is the pack of types or type aliases represented by the elements of `args`</td></tr>
 <tr><td>
 ```cpp
 template <reflection_range R>
 info meta::$VARIADIC$(info type, R&& args);
 ```
 </td>
-<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases represents by the elements of `args`</td></tr>
+<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases represented by the elements of `args`</td></tr>
 </table>
 
 [For those functions or function templates which return a reflection, that reflection always represents a type and never a type alias.]{.note}

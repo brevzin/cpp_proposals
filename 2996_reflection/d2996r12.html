@@ -13951,7 +13951,8 @@ parameter object that is template-argument-equivalent to
 <code class="sourceCode cpp"><em>O</em></code>.</p>
 <div class="sourceCode" id="cb268"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb268-1"><a href="#cb268-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb268-2"><a href="#cb268-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info reflect_value<span class="op">(</span><span class="kw">const</span> T<span class="op">&amp;</span> expr<span class="op">)</span>;</span></code></pre></div>
-<p><em>Effects</em>: Equivalent to:</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_705" id="pnum_705">*</a></span>
+<em>Effects</em>: Equivalent to:</p>
 <div class="sourceCode" id="cb269"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb269-1"><a href="#cb269-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>is_class_type<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
 <span id="cb269-2"><a href="#cb269-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <em>reflect-value-class</em><span class="op">(</span>expr<span class="op">)</span>;</span>
 <span id="cb269-3"><a href="#cb269-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
@@ -13962,21 +13963,21 @@ and function-to-function-pointer decay occur.<span> — <em>end
 note</em> ]</span></span></p>
 <div class="sourceCode" id="cb270"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb270-1"><a href="#cb270-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb270-2"><a href="#cb270-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info reflect_object<span class="op">(</span>T<span class="op">&amp;</span> expr<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_705" id="pnum_705">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_706" id="pnum_706">9</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">T</code> is not a
 function type.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_706" id="pnum_706">10</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_707" id="pnum_707">10</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">expr</code>
 designates a meta-reflectable object.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_707" id="pnum_707">11</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_708" id="pnum_708">11</a></span>
 <em>Returns</em>: A reflection of the object designated by
 <code class="sourceCode cpp">expr</code>.</p>
 <div class="sourceCode" id="cb271"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb271-1"><a href="#cb271-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb271-2"><a href="#cb271-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info reflect_function<span class="op">(</span>T<span class="op">&amp;</span> fn<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_708" id="pnum_708">12</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_709" id="pnum_709">12</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">T</code> is a function
 type.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_709" id="pnum_709">13</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_710" id="pnum_710">13</a></span>
 <em>Returns</em>: A reflection of the function designated by
 <code class="sourceCode cpp">fn</code>.</p>
 </div>
@@ -14004,19 +14005,19 @@ Reflection class definition generation<a href="#meta.reflection.define.aggregate
 <span id="cb272-15"><a href="#cb272-15" aria-hidden="true" tabindex="-1"></a>  optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> bit_width;</span>
 <span id="cb272-16"><a href="#cb272-16" aria-hidden="true" tabindex="-1"></a>  <span class="dt">bool</span> no_unique_address <span class="op">=</span> <span class="kw">false</span>;</span>
 <span id="cb272-17"><a href="#cb272-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_710" id="pnum_710">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_711" id="pnum_711">1</a></span>
 The classes <code class="sourceCode cpp">data_member_options</code> and
 <code class="sourceCode cpp">data_member_options<span class="op">::</span><em>name-type</em></code>
 are consteval-only types ([basic.types.general]), and are not structural
 types ([temp.param]).</p>
 <div class="sourceCode" id="cb273"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb273-1"><a href="#cb273-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>u8string, T<span class="op">&gt;</span></span>
 <span id="cb273-2"><a href="#cb273-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> data_member_options<span class="op">::</span><em>name-type</em><span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_711" id="pnum_711">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_712" id="pnum_712">2</a></span>
 <em>Effects</em>: Initializes
 <code class="sourceCode cpp"><em>contents</em></code> with <code class="sourceCode cpp">u8string<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>value<span class="op">))</span></code>.</p>
 <div class="sourceCode" id="cb274"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb274-1"><a href="#cb274-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> constructible_from<span class="op">&lt;</span>string, T<span class="op">&gt;</span></span>
 <span id="cb274-2"><a href="#cb274-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> data_member_options<span class="op">::</span><em>name-type</em><span class="op">(</span>T<span class="op">&amp;&amp;</span> value<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_712" id="pnum_712">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_713" id="pnum_713">3</a></span>
 <em>Effects</em>: Initializes
 <code class="sourceCode cpp"><em>contents</em></code> with <code class="sourceCode cpp">string<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>value<span class="op">))</span></code>.</p>
 <div class="note">
@@ -14040,24 +14041,24 @@ literal (or <code class="sourceCode cpp">u8string_view</code>,
 </div>
 <div class="sourceCode" id="cb276"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb276-1"><a href="#cb276-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info data_member_spec<span class="op">(</span>info type,</span>
 <span id="cb276-2"><a href="#cb276-2" aria-hidden="true" tabindex="-1"></a>                                data_member_options options<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_713" id="pnum_713">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_714" id="pnum_714">4</a></span>
 <em>Constant When</em>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_714" id="pnum_714">(4.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_715" id="pnum_715">(4.1)</a></span>
 <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents either an object type or a reference type;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_715" id="pnum_715">(4.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_716" id="pnum_716">(4.2)</a></span>
 if
 <code class="sourceCode cpp">options<span class="op">.</span>name</code>
 contains a value, then:
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_716" id="pnum_716">(4.2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_717" id="pnum_717">(4.2.1)</a></span>
 <code class="sourceCode cpp">holds_alternative<span class="op">&lt;</span>u8string<span class="op">&gt;(</span>options<span class="op">.</span>name<span class="op">-&gt;</span><em>contents</em><span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> and
 <code class="sourceCode cpp">get<span class="op">&lt;</span>u8string<span class="op">&gt;(</span>options<span class="op">.</span>name<span class="op">-&gt;</span><em>contents</em><span class="op">)</span></code>
 contains a valid identifier ([lex.name]) that is not a keyword
 ([lex.key]) when interpreted with UTF-8, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_717" id="pnum_717">(4.2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_718" id="pnum_718">(4.2.2)</a></span>
 <code class="sourceCode cpp">holds_alternative<span class="op">&lt;</span>string<span class="op">&gt;(</span>options<span class="op">.</span>name<span class="op">-&gt;</span><em>contents</em><span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> and
 <code class="sourceCode cpp">get<span class="op">&lt;</span>string<span class="op">&gt;(</span>options<span class="op">.</span>name<span class="op">-&gt;</span><em>contents</em><span class="op">)</span></code>
@@ -14072,38 +14073,38 @@ to the spelling of an identifier token after phase 6 of translation
 fail. For example, <code class="sourceCode cpp"><span class="st">&quot;</span><span class="sc">\u03B1</span><span class="st">&quot;</span></code>
 is an invalid identifier and is not interpreted as <code class="sourceCode cpp"><span class="st">&quot;α&quot;</span></code>.<span>
 — <em>end note</em> ]</span></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_718" id="pnum_718">(4.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_719" id="pnum_719">(4.3)</a></span>
 if
 <code class="sourceCode cpp">options<span class="op">.</span>name</code>
 does not contain a value, then <code class="sourceCode cpp">options<span class="op">.</span>bit_width</code>
 contains a value;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_719" id="pnum_719">(4.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_720" id="pnum_720">(4.4)</a></span>
 if <code class="sourceCode cpp">options<span class="op">.</span>bit_width</code>
 contains a value <code class="sourceCode cpp"><em>V</em></code>, then
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_720" id="pnum_720">(4.4.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_721" id="pnum_721">(4.4.1)</a></span>
 <code class="sourceCode cpp">is_integral_type<span class="op">(</span>type<span class="op">)</span> <span class="op">||</span> is_enumeration_type<span class="op">(</span>type<span class="op">)</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">true</span></code>,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_721" id="pnum_721">(4.4.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_722" id="pnum_722">(4.4.2)</a></span>
 <code class="sourceCode cpp">options<span class="op">.</span>alignment</code>
 does not contain a value,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_722" id="pnum_722">(4.4.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_723" id="pnum_723">(4.4.3)</a></span>
 <code class="sourceCode cpp">options<span class="op">.</span>no_unique_address</code>
 is <code class="sourceCode cpp"><span class="kw">false</span></code>,
 and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_723" id="pnum_723">(4.4.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_724" id="pnum_724">(4.4.4)</a></span>
 if <code class="sourceCode cpp"><em>V</em></code> equals
 <code class="sourceCode cpp"><span class="dv">0</span></code> then
 <code class="sourceCode cpp">options<span class="op">.</span>name</code>
 does not contain a value; and</li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_724" id="pnum_724">(4.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_725" id="pnum_725">(4.5)</a></span>
 if <code class="sourceCode cpp">options<span class="op">.</span>alignment</code>
 contains a value, it is an alignment value ([basic.align]) not less than
 <code class="sourceCode cpp">alignment_of<span class="op">(</span>type<span class="op">)</span></code>.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_725" id="pnum_725">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_726" id="pnum_726">5</a></span>
 <em>Returns</em>: A reflection of a data member description
 (<code class="sourceCode cpp"><em>T</em></code>,
 <code class="sourceCode cpp"><em>N</em></code>,
@@ -14112,31 +14113,31 @@ contains a value, it is an alignment value ([basic.align]) not less than
 <code class="sourceCode cpp"><em>NUA</em></code>) (<span>11.4.1 <a href="https://wg21.link/class.mem.general">[class.mem.general]</a></span>)
 where</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_726" id="pnum_726">(5.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_727" id="pnum_727">(5.1)</a></span>
 <code class="sourceCode cpp"><em>T</em></code> is the type represented
 by <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_727" id="pnum_727">(5.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_728" id="pnum_728">(5.2)</a></span>
 <code class="sourceCode cpp"><em>N</em></code> is either the identifier
 encoded by
 <code class="sourceCode cpp">options<span class="op">.</span>name</code>
 or ⊥ if
 <code class="sourceCode cpp">options<span class="op">.</span>name</code>
 does not contain a value,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_728" id="pnum_728">(5.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_729" id="pnum_729">(5.3)</a></span>
 <code class="sourceCode cpp"><em>A</em></code> is either the alignment
 value held by <code class="sourceCode cpp">options<span class="op">.</span>alignment</code>
 or ⊥ if <code class="sourceCode cpp">options<span class="op">.</span>alignment</code>
 does not contain a value,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_729" id="pnum_729">(5.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_730" id="pnum_730">(5.4)</a></span>
 <code class="sourceCode cpp"><em>W</em></code> is either the value held
 by <code class="sourceCode cpp">options<span class="op">.</span>bit_width</code>
 or ⊥ if <code class="sourceCode cpp">options<span class="op">.</span>bit_width</code>
 does not contain a value, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_730" id="pnum_730">(5.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_731" id="pnum_731">(5.5)</a></span>
 <code class="sourceCode cpp"><em>NUA</em></code> is the value held by
 <code class="sourceCode cpp">options<span class="op">.</span>no_unique_address</code>.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_731" id="pnum_731">6</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_732" id="pnum_732">6</a></span>
 <span class="note"><span>[ <em>Note 3:</em> </span>The returned
 reflection value is primarily useful in conjunction with
 <code class="sourceCode cpp">define_aggregate</code>; it can also be
@@ -14146,7 +14147,7 @@ queried by certain other functions in
 <code class="sourceCode cpp">identifier_of</code>).<span> — <em>end
 note</em> ]</span></span></p>
 <div class="sourceCode" id="cb277"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb277-1"><a href="#cb277-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_data_member_spec<span class="op">(</span>info r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_732" id="pnum_732">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_733" id="pnum_733">7</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
 <code class="sourceCode cpp">r</code> represents a data member
@@ -14154,7 +14155,7 @@ description. Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <div class="sourceCode" id="cb278"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb278-1"><a href="#cb278-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
 <span id="cb278-2"><a href="#cb278-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info define_aggregate<span class="op">(</span>info class_type, R<span class="op">&amp;&amp;</span> mdescrs<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_733" id="pnum_733">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_734" id="pnum_734">8</a></span>
 Let <code class="sourceCode cpp"><em>C</em></code> be the class
 represented by <code class="sourceCode cpp">class_type</code> and
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code> be the
@@ -14169,10 +14170,10 @@ value in <code class="sourceCode cpp">mdescrs</code>. For every
 <code class="sourceCode cpp"><span class="math inline"><em>N</em><em>U</em><em>A</em></span><sub><span class="math inline"><em>K</em></span></sub></code>) be the corresponding
 data member description represented by
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_734" id="pnum_734">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_735" id="pnum_735">9</a></span>
 <em>Constant When</em>:</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_735" id="pnum_735">(9.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_736" id="pnum_736">(9.1)</a></span>
 <code class="sourceCode cpp"><em>C</em></code> is incomplete from every
 point in the evaluation context; <span class="note"><span>[ <em>Note
 4:</em> </span><code class="sourceCode cpp"><em>C</em></code> can be a
@@ -14180,17 +14181,17 @@ class template specialization for which there is a reachable definition
 of the primary class template. In this case, the injected declaration is
 an explicit specialization.<span> — <em>end
 note</em> ]</span></span></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_736" id="pnum_736">(9.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_737" id="pnum_737">(9.2)</a></span>
 <code class="sourceCode cpp">is_data_member_spec<span class="op">(</span><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> for
 every
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code>;</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_737" id="pnum_737">(9.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_738" id="pnum_738">(9.3)</a></span>
 <code class="sourceCode cpp">is_complete_type<span class="op">(</span><span class="math inline"><em>T</em></span><sub><span class="math inline"><em>K</em></span></sub><span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> for
 every
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code>; and</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_738" id="pnum_738">(9.4)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_739" id="pnum_739">(9.4)</a></span>
 for every pair
 (<code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code>,
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>L</em></span></sub></code>) where
@@ -14199,10 +14200,10 @@ for every pair
 <code class="sourceCode cpp"><span class="math inline"><em>N</em></span><sub><span class="math inline"><em>L</em></span></sub></code> is not ⊥, then
 either:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_739" id="pnum_739">(9.4.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_740" id="pnum_740">(9.4.1)</a></span>
 <code class="sourceCode cpp"><span class="math inline"><em>N</em></span><sub><span class="math inline"><em>K</em></span></sub> <span class="op">!=</span> <span class="math inline"><em>N</em></span><sub><span class="math inline"><em>L</em></span></sub></code> is
 <code class="sourceCode cpp"><span class="kw">true</span></code> or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_740" id="pnum_740">(9.4.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_741" id="pnum_741">(9.4.2)</a></span>
 <code class="sourceCode cpp"><span class="math inline"><em>N</em></span><sub><span class="math inline"><em>K</em></span></sub> <span class="op">==</span> <span class="st">u8&quot;_&quot;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.
 <span class="note"><span>[ <em>Note 5:</em> </span>Every provided
@@ -14210,28 +14211,28 @@ identifier is unique or <code class="sourceCode cpp"><span class="st">&quot;_&qu
 — <em>end note</em> ]</span></span></li>
 </ul></li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_741" id="pnum_741">10</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_742" id="pnum_742">10</a></span>
 <em>Effects</em>: Produces an injected declaration
 <code class="sourceCode cpp"><em>D</em></code> ([expr.const]) that
 defines <code class="sourceCode cpp"><em>C</em></code> and has
 properties as follows:</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_742" id="pnum_742">(10.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_743" id="pnum_743">(10.1)</a></span>
 The target scope of <code class="sourceCode cpp"><em>D</em></code> is
 the scope to which <code class="sourceCode cpp"><em>C</em></code>
 belongs ([basic.scope.scope]).</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_743" id="pnum_743">(10.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_744" id="pnum_744">(10.2)</a></span>
 The locus of <code class="sourceCode cpp"><em>D</em></code> follows
 immediately after the core constant expression currently under
 evaluation.</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_744" id="pnum_744">(10.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_745" id="pnum_745">(10.3)</a></span>
 If <code class="sourceCode cpp"><em>C</em></code> is a specialization of
 a templated class <code class="sourceCode cpp"><em>T</em></code>, and
 <code class="sourceCode cpp"><em>C</em></code> is not a local class,
 then <code class="sourceCode cpp"><em>D</em></code> is an explicit
 specialization of
 <code class="sourceCode cpp"><em>T</em></code>.</p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_745" id="pnum_745">(10.4)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_746" id="pnum_746">(10.4)</a></span>
 For each
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>K</em></span></sub></code>, there is a
 corresponding entity
@@ -14239,7 +14240,7 @@ corresponding entity
 class scope of <code class="sourceCode cpp"><em>D</em></code> with the
 following properties:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_746" id="pnum_746">(10.4.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_747" id="pnum_747">(10.4.1)</a></span>
 If
 <code class="sourceCode cpp"><span class="math inline"><em>N</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is ⊥,
 <code class="sourceCode cpp"><span class="math inline"><em>M</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is an unnamed
@@ -14248,23 +14249,23 @@ bit-field. Otherwise,
 member whose name is the identifier determined by the character sequence
 encoded by
 <code class="sourceCode cpp"><span class="math inline"><em>N</em></span><sub><span class="math inline"><em>K</em></span></sub></code> in UTF-8.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_747" id="pnum_747">(10.4.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_748" id="pnum_748">(10.4.2)</a></span>
 The type of
 <code class="sourceCode cpp"><span class="math inline"><em>M</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is
 <code class="sourceCode cpp"><span class="math inline"><em>T</em></span><sub><span class="math inline"><em>K</em></span></sub></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_748" id="pnum_748">(10.4.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_749" id="pnum_749">(10.4.3)</a></span>
 <code class="sourceCode cpp"><span class="math inline"><em>M</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is declared with the
 attribute <code class="sourceCode cpp"><span class="op">[[</span><span class="at">no_unique_address</span><span class="op">]]</span></code>
 if and only if <code class="sourceCode cpp"><span class="math inline"><em>N</em><em>U</em><em>A</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is
 <code class="sourceCode cpp"><span class="kw">true</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_749" id="pnum_749">(10.4.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_750" id="pnum_750">(10.4.4)</a></span>
 If
 <code class="sourceCode cpp"><span class="math inline"><em>W</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is not ⊥,
 <code class="sourceCode cpp"><span class="math inline"><em>M</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is a bit-field whose
 width is that value. Otherwise,
 <code class="sourceCode cpp"><span class="math inline"><em>M</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is not a
 bit-field.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_750" id="pnum_750">(10.4.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_751" id="pnum_751">(10.4.5)</a></span>
 If
 <code class="sourceCode cpp"><span class="math inline"><em>A</em></span><sub><span class="math inline"><em>K</em></span></sub></code> is not ⊥,
 <code class="sourceCode cpp"><span class="math inline"><em>M</em></span><sub><span class="math inline"><em>K</em></span></sub></code> has the
@@ -14282,7 +14283,7 @@ the declaration corresponding to
 declaration corresponding to
 <code class="sourceCode cpp"><span class="math inline"><em>r</em></span><sub><span class="math inline"><em>L</em></span></sub></code>.</p></li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_751" id="pnum_751">11</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_752" id="pnum_752">11</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">class_type</code>.</p>
 </div>
 </blockquote>
@@ -14292,35 +14293,35 @@ Reflection type traits<a href="#meta.reflection.traits-reflection-type-traits" c
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_752" id="pnum_752">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_753" id="pnum_753">1</a></span>
 Subclause [meta.reflection.traits] specifies consteval functions to
 query the properties of types ([meta.unary]), query the relationships
 between types ([meta.rel]), or transform types ([meta.trans]) at compile
 time. Each consteval function declared in this class has an associated
 class template declared elsewhere in this document.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_753" id="pnum_753">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_754" id="pnum_754">2</a></span>
 Every function and function template declared in this clause has the
 following conditions required for a call to that function or function
 template to be a constant subexpression ([defns.const.subexpr]):</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_754" id="pnum_754">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_755" id="pnum_755">(2.1)</a></span>
 For every parameter <code class="sourceCode cpp">p</code> of type
 <code class="sourceCode cpp">info</code>, <code class="sourceCode cpp">is_type<span class="op">(</span>p<span class="op">)</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">true</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_755" id="pnum_755">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_756" id="pnum_756">(2.2)</a></span>
 For every parameter <code class="sourceCode cpp">r</code> whose type is
 constrained on <code class="sourceCode cpp">reflection_range</code>,
 <code class="sourceCode cpp">ranges<span class="op">::</span>all_of<span class="op">(</span>r, is_type<span class="op">)</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">true</span></code>.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_756" id="pnum_756">3</a></span>
-Unless otherwise specified, each function and function template describe
-in this clause has the following behavior based on the the signature of
-that function or function template. <span class="note"><span>[ <em>Note
-1:</em> </span>The associated class template need not be
-instantiated.<span> — <em>end note</em> ]</span></span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_757" id="pnum_757">3</a></span>
+Unless otherwise specified, each function and function template
+described in this clause has the following behavior based on the
+signature of that function or function template. <span class="note"><span>[ <em>Note 1:</em> </span>The associated class
+template need not be instantiated.<span> — <em>end
+note</em> ]</span></span></p>
 <table>
 <tr>
 <th>
@@ -14364,7 +14365,7 @@ aliases represented by <code class="sourceCode cpp">t1</code> and
 where <code class="sourceCode cpp"><em>T</em></code> is the type or type
 alias represented by <code class="sourceCode cpp">type</code> and
 <code class="sourceCode cpp"><em>U</em><span class="op">...</span></code>
-is the pack of types or type aliases represents by the elements of
+is the pack of types or type aliases represented by the elements of
 <code class="sourceCode cpp">args</code>
 </td>
 </tr>
@@ -14377,10 +14378,10 @@ is the pack of types or type aliases represents by the elements of
 <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC</em>_v<span class="op">&lt;</span><em>T1</em>, <em>T2</em>, <em>U</em><span class="op">...&gt;</span></code>
 where <code class="sourceCode cpp"><em>T1</em></code> and
 <code class="sourceCode cpp"><em>T2</em></code> are the types or type
-alias represented by <code class="sourceCode cpp">t1</code> and
+aliases represented by <code class="sourceCode cpp">t1</code> and
 <code class="sourceCode cpp">t2</code>, respectively, and
 <code class="sourceCode cpp"><em>U</em><span class="op">...</span></code>
-is the pack of types or type aliases represents by the elements of
+is the pack of types or type aliases represented by the elements of
 <code class="sourceCode cpp">args</code>
 </td>
 </tr>
@@ -14403,7 +14404,7 @@ alias represented by <code class="sourceCode cpp">type</code>
 A reflection representing the type denoted by <code class="sourceCode cpp">std<span class="op">::</span><em>VARIADIC</em>_t<span class="op">&lt;</span><em>T</em><span class="op">...&gt;</span></code>
 where
 <code class="sourceCode cpp"><em>T</em><span class="op">...</span></code>
-is the pack of types or type aliases represents by the elements of
+is the pack of types or type aliases represented by the elements of
 <code class="sourceCode cpp">args</code>
 </td>
 </tr>
@@ -14417,7 +14418,7 @@ A reflection representing the type denoted by <code class="sourceCode cpp">std<s
 where <code class="sourceCode cpp"><em>T</em></code> is the type or type
 alias represented by <code class="sourceCode cpp">type</code> and
 <code class="sourceCode cpp"><em>U</em><span class="op">...</span></code>
-is the pack of types or type aliases represents by the elements of
+is the pack of types or type aliases represented by the elements of
 <code class="sourceCode cpp">args</code>
 </td>
 </tr>
@@ -14549,12 +14550,12 @@ Type property queries<a href="#meta.reflection.traits.unary.prop.query-type-prop
 <blockquote>
 <div class="addu">
 <div class="sourceCode" id="cb289"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb289-1"><a href="#cb289-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> rank<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_757" id="pnum_757">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_758" id="pnum_758">1</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">rank_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>,
 where <code class="sourceCode cpp">T</code> is the type represented by
 <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb290"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb290-1"><a href="#cb290-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> extent<span class="op">(</span>info type, <span class="dt">unsigned</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_758" id="pnum_758">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_759" id="pnum_759">2</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">extent_v<span class="op">&lt;</span>T, I<span class="op">&gt;</span></code>,
 where <code class="sourceCode cpp">T</code> is the type represented by
 <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
@@ -14585,7 +14586,7 @@ Type relations<a href="#meta.reflection.traits.rel-type-relations" class="self-l
 <span id="cb291-15"><a href="#cb291-15" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_invocable_type<span class="op">(</span>info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span>
 <span id="cb291-16"><a href="#cb291-16" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>reflection_range R <span class="op">=</span> initializer_list<span class="op">&lt;</span>info<span class="op">&gt;&gt;</span></span>
 <span id="cb291-17"><a href="#cb291-17" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_nothrow_invocable_r_type<span class="op">(</span>info type_result, info type, R<span class="op">&amp;&amp;</span> type_args<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_759" id="pnum_759">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_760" id="pnum_760">1</a></span>
 <span class="note"><span>[ <em>Note 1:</em> </span>If
 <code class="sourceCode cpp">t</code> is a reflection of the type
 <code class="sourceCode cpp"><span class="dt">int</span></code> and
@@ -14696,31 +14697,31 @@ acceptance of <span class="citation" data-cites="P2830R10"><a href="https://wg21
 <blockquote>
 <div class="addu">
 <div class="sourceCode" id="cb298"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb298-1"><a href="#cb298-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> tuple_size<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_760" id="pnum_760">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_761" id="pnum_761">1</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">tuple_size_v<span class="op">&lt;</span><em>T</em><span class="op">&gt;</span></code>
 where <code class="sourceCode cpp"><em>T</em></code> is the type
 represented by <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb299"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb299-1"><a href="#cb299-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info tuple_element<span class="op">(</span><span class="dt">size_t</span> index, info type<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_761" id="pnum_761">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_762" id="pnum_762">2</a></span>
 <em>Returns</em>: A reflection representing the type denoted by <code class="sourceCode cpp">tuple_element_t<span class="op">&lt;</span><em>I</em>, <em>T</em><span class="op">&gt;</span></code>
 where <code class="sourceCode cpp"><em>T</em></code> is the type
 represented by <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 and <code class="sourceCode cpp"><em>I</em></code> is a constant equal
 to <code class="sourceCode cpp">index</code>.</p>
 <div class="sourceCode" id="cb300"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb300-1"><a href="#cb300-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">size_t</span> variant_size<span class="op">(</span>info type<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_762" id="pnum_762">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_763" id="pnum_763">3</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">variant_size_v<span class="op">&lt;</span><em>T</em><span class="op">&gt;</span></code>
 where <code class="sourceCode cpp"><em>T</em></code> is the type
 represented by <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>.</p>
 <div class="sourceCode" id="cb301"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb301-1"><a href="#cb301-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info variant_alternative<span class="op">(</span><span class="dt">size_t</span> index, info type<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_763" id="pnum_763">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_764" id="pnum_764">4</a></span>
 <em>Returns</em>: A reflection representing the type denoted by <code class="sourceCode cpp">variant_alterantive_t<span class="op">&lt;</span><em>I</em>, <em>T</em><span class="op">&gt;</span></code>
 where <code class="sourceCode cpp"><em>T</em></code> is the type
 represented by <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 and <code class="sourceCode cpp"><em>I</em></code> is a constant equal
 to <code class="sourceCode cpp">index</code>.</p>
 <div class="sourceCode" id="cb302"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb302-1"><a href="#cb302-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> strong_ordering type_order<span class="op">(</span>info t1, info t2<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_764" id="pnum_764">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_765" id="pnum_765">5</a></span>
 <em>Returns</em>: <code class="sourceCode cpp">type_order_v<span class="op">&lt;</span><em>T1</em>, <em>T2</em><span class="op">&gt;</span></code>,
 where <code class="sourceCode cpp"><em>T1</em></code> and
 <code class="sourceCode cpp"><em>T2</em></code> are the types
@@ -14743,33 +14744,33 @@ as a mandates (and then <em>Constant When</em> has to be before
 <blockquote>
 <div class="sourceCode" id="cb303"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb303-1"><a href="#cb303-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> To, <span class="kw">class</span> From<span class="op">&gt;</span></span>
 <span id="cb303-2"><a href="#cb303-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> To bit_cast<span class="op">(</span><span class="kw">const</span> From<span class="op">&amp;</span> from<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_765" id="pnum_765">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_766" id="pnum_766">1</a></span>
 <em>Constraints</em>:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_766" id="pnum_766">(1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_767" id="pnum_767">(1.1)</a></span>
 <code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">(</span>To<span class="op">)</span> <span class="op">==</span> <span class="kw">sizeof</span><span class="op">(</span>From<span class="op">)</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">true</span></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_767" id="pnum_767">(1.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_768" id="pnum_768">(1.2)</a></span>
 <code class="sourceCode cpp">is_trivially_copyable_v<span class="op">&lt;</span>To<span class="op">&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>;
 and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_768" id="pnum_768">(1.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_769" id="pnum_769">(1.3)</a></span>
 <code class="sourceCode cpp">is_trivially_copyable_v<span class="op">&lt;</span>From<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">true</span></code>.</li>
 </ul>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_769" id="pnum_769">*</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_770" id="pnum_770">*</a></span>
 <em>Mandates</em>: Neither <code class="sourceCode cpp">To</code> nor
 <code class="sourceCode cpp">From</code> are consteval-only types
 ([expr.const]).</p>
 </div>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_770" id="pnum_770">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_771" id="pnum_771">2</a></span>
 <em>Returns</em>: […]</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_771" id="pnum_771">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_772" id="pnum_772">3</a></span>
 <span class="rm" style="color: #bf0303"><del><em>Remarks</em></del></span> <span class="addu"><em>Constant When</em></span>: <span class="rm" style="color: #bf0303"><del>This function is constexpr if and only
 if</del></span> <code class="sourceCode cpp">To</code>,
 <code class="sourceCode cpp">From</code>, and the types of all
@@ -14777,28 +14778,28 @@ subobjects of <code class="sourceCode cpp">To</code> and
 <code class="sourceCode cpp">From</code> are types
 <code class="sourceCode cpp">T</code> such that:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_772" id="pnum_772">(3.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_773" id="pnum_773">(3.1)</a></span>
 <code class="sourceCode cpp">is_union_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">false</span></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_773" id="pnum_773">(3.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_774" id="pnum_774">(3.2)</a></span>
 <code class="sourceCode cpp">is_pointer_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">false</span></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_774" id="pnum_774">(3.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_775" id="pnum_775">(3.3)</a></span>
 <code class="sourceCode cpp">is_member_pointer_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">false</span></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_775" id="pnum_775">(3.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_776" id="pnum_776">(3.4)</a></span>
 <code class="sourceCode cpp">is_volatile_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">false</span></code>;
 and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_776" id="pnum_776">(3.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_777" id="pnum_777">(3.5)</a></span>
 <code class="sourceCode cpp">T</code> has no non-static data members of
 reference type.</li>
 </ul>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_777" id="pnum_777">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_778" id="pnum_778">4</a></span>
 <em>Returns</em>: […]</p>
 </div>
 </blockquote>
@@ -14882,7 +14883,7 @@ shown to be necessary. The following changes were confirmed by EWG
 during the Hagenberg 2025 meeting.</p>
 <p>One small change was needed to the reflection operator.</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_778" id="pnum_778">1</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_779" id="pnum_779">1</a></span>
 Application of the
 <code class="sourceCode cpp"><span class="op">^^</span></code> operator
 to a non-type template parameter
@@ -14911,7 +14912,7 @@ as appropriate.</li>
 <p>A few changes were needed to “consteval-only types” to ensure that
 objects of such types cannot reach runtime.</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_779" id="pnum_779">2</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_780" id="pnum_780">2</a></span>
 Relaxed linkage restrictions on objects of consteval-only types
 <ul>
 <li><strong>P2996R4</strong>: Rigid rules prevented objects of
@@ -14929,7 +14930,7 @@ imported across TUs and modules without issue.
 <li>Try it with <a href="https://godbolt.org/z/Y8cdd9sGo">Clang</a>.</li>
 </ul></li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_780" id="pnum_780">3</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_781" id="pnum_781">3</a></span>
 Immediate-escalation of expressions of consteval-only type
 <ul>
 <li><strong>D2996R10</strong>: Every expression of consteval-only type
@@ -14939,7 +14940,7 @@ to persist to runtime (e.g., passing a reference to a <code class="sourceCode cp
 to a runtime function).</li>
 <li>Fully implemented; try it with Clang <a href="https://godbolt.org/z/5sfe7vdzE">here</a> and <a href="https://godbolt.org/z/T3MY1Yqo4">here</a>.</li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_781" id="pnum_781">4</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_782" id="pnum_782">4</a></span>
 Immediate-escalation of non-constexpr variables of consteval-only type
 <ul>
 <li><strong>D2996R10</strong>: Immediate-escalating functions containing
@@ -14950,7 +14951,7 @@ of consteval-only type (for which an expression does not necessarily
 appear) from reaching runtime.</li>
 <li>Fully implemented; try it with <a href="https://godbolt.org/z/3asrnK13G">Clang</a>.</li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_782" id="pnum_782">5</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_783" id="pnum_783">5</a></span>
 No “erasure” of consteval-only-ness from results of constant
 expressions.
 <ul>
@@ -14969,7 +14970,7 @@ seen <a href="https://godbolt.org/z/E4faezfr3">here</a>).</li>
 </ul>
 <p>Two changes were needed for splicers.</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_783" id="pnum_783">6</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_784" id="pnum_784">6</a></span>
 A slight syntactic change is needed for template splicers.
 <ul>
 <li><strong>P2994R4</strong>:
@@ -14990,7 +14991,7 @@ were supposed to work.</li>
 </ul></li>
 <li>Try it on godbolt with <a href="https://godbolt.org/z/GKj5of839">Clang</a>.</li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_784" id="pnum_784">7</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_785" id="pnum_785">7</a></span>
 Reflections of concepts cannot be spliced.
 <ul>
 <li><strong>P2996R4</strong>: Concepts could be spliced within both
@@ -15013,7 +15014,7 @@ after P2996R4. When the evaluation of an expression calls
 evaluation produces an <em>injected declaration</em> of the completed
 type (try it on <a href="https://godbolt.org/z/PTeb9qqcW">godbolt</a>).</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_785" id="pnum_785">1</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_786" id="pnum_786">1</a></span>
 Recent revisions lock down the context from which
 <code class="sourceCode cpp">define_aggregate</code> can be called.
 <ul>
@@ -15032,7 +15033,7 @@ for code injection due to e.g., template instantiation behavior,
 immediate-escalating expression behavior, etc.</li>
 <li>Fully implemented with Clang.</li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_786" id="pnum_786">2</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_787" id="pnum_787">2</a></span>
 The scope that a given expression can inject a declaration <em>into</em>
 has been constrained.
 <ul>
@@ -15047,7 +15048,7 @@ use <code class="sourceCode cpp">define_aggregate</code> to observe
 failed substitutions, overload resolution order, etc.</li>
 <li>Fully implemented in Clang.</li>
 </ul></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_787" id="pnum_787">3</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_788" id="pnum_788">3</a></span>
 Strengthening order of evaluation for core constant expressions removes
 the need for more IFNDR.
 <ul>
@@ -15141,8 +15142,8 @@ Faisal Vali, Daveed Vandevoorde. 2023-12-18. Reflection for C++26. <a href="http
 </div>
 <div id="ref-P2996R10" class="csl-entry" role="doc-biblioentry">
 [P2996R10] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
-Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2025-02-26. Reflection
-for C++26. <a href="https://wg21.link/p2996r10"><div class="csl-block">https://wg21.link/p2996r10</div></a>
+Faisal Vali, Daveed Vandevoorde, Dan Katz. 2025-02-27. Reflection for
+C++26. <a href="https://wg21.link/p2996r10"><div class="csl-block">https://wg21.link/p2996r10</div></a>
 </div>
 <div id="ref-P2996R11" class="csl-entry" role="doc-biblioentry">
 [P2996R11] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
