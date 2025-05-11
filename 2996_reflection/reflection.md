@@ -8420,9 +8420,10 @@ To [cpp.predefined]{.sref}:
 
 ::: std
 ```diff
- [...]
-+ __cpp_impl_reflection             2025XXL
- [...]
+  __cpp_impl_coroutine 201902L
+  __cpp_impl_destroying_delete 201806L
+  __cpp_impl_three_way_comparison 201907L
++ __cpp_impl_reflection 2025XXL
 ```
 :::
 
@@ -8430,9 +8431,7 @@ and [version.syn]{.sref}:
 
 ::: std
 ```diff
-  [...]
-+ #define __cpp_lib_reflection                2025XXL // also in <meta>
-  [...]
++ #define __cpp_lib_reflection 2025XXL // also in <meta>
 ```
 :::
 
