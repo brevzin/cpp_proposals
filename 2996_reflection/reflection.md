@@ -4634,10 +4634,11 @@ consteval { // #1
 ```
 :::
 
-[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$C$` as a core constant expression, the evaluation context is defined as follows:
+[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$E$` as a core constant expression, the evaluation context is defined as follows:
 
-- [#.#]{.pnum} If `$C$` is a potentially-evaluated subexpression of a default argument ([dcl.fct.default]), and that default argument is being used by an invocation of a function ([expr.call]) that appears at a point `$Q$`, the evaluation context of `$Q$`.
-- [#.#]{.pnum} Otherwise, the instantiation context of the point at which `$C$` appears.
+- [#.#]{.pnum} If `$E$` is a potentially-evaluated subexpression ([intro.execution]) of a default member initializer used by an aggregate initialization that appears at a point `$Q$`, the evaluation context of `$Q$`.
+- [#.#]{.pnum} Otherwise, if `$E$` is a potentially-evaluated subexpression of a default argument ([dcl.fct.default]), and that default argument is being used by an invocation of a function ([expr.call]) that appears at a point `$Q$`, the evaluation context of `$Q$`.
+- [#.#]{.pnum} Otherwise, the instantiation context of the point at which `$E$` appears.
 
 :::
 :::
