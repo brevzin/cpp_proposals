@@ -36,6 +36,7 @@ Since [@P2996R11]:
 * library wording updates
   * improve specification of `access_context::current()` (including examples)
   * `size_of(r)` is no longer constant if `r` is a bit-field
+  * allowing `extract` to pull a pointer from an array
 
 Since [@P2996R10]:
 
@@ -7685,7 +7686,8 @@ template <class T>
 [#]{.pnum} *Constant When*:
 
   - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
-  - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
+  - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same,
+  - [#.#]{.pnum} `U` is an array type, `T` is pointer type, and the value `r` represents is convertible to `T`, or
   - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value that `r` represents is convertible to `T`.
 
 [#]{.pnum} *Returns*: The value that `r` represents, converted to `T`.
