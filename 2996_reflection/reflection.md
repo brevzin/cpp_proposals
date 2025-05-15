@@ -4192,7 +4192,8 @@ auto g = typename [:^^int:](42);
 
 * [#.#]{.pnum} The expression is ill-formed if `$S$` is
   * [#.#.#]{.pnum} a constructor,
-  * [#.#.#]{.pnum} a destructor, or
+  * [#.#.#]{.pnum} a destructor,
+  * [#.#.#]{.pnum} an unnamed bit-field, or
   * [#.#.#]{.pnum} a local entity ([basic.pre]) such that
     * [#.#.#.#]{.pnum} there is a lambda scope that intervenes between the expression and the point at which `$S$` was introduced and
     * [#.#.#.#]{.pnum} the expression would be potentially evaluated if the effect of any enclosing `typeid` expressions ([expr.typeid]) were ignored.
@@ -4633,10 +4634,10 @@ consteval { // #1
 ```
 :::
 
-[#]{.pnum} The _evaluation context_ is a set of points within the program that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$C$` as a core constant expression, the evaluation context of an evaluation `$E$` comprises the union of
+[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$C$` as a core constant expression, the evaluation context is defined as follows:
 
-- [#.#]{.pnum} the instantiation context of `$C$` ([module.context]), and
-- [#.#]{.pnum} the synthesized points corresponding to any injected declarations produced by evaluations sequenced before `$E$` ([intro.execution]{.sref}).
+- [#.#]{.pnum} If `$C$` is a potentially-evaluated subexpression of a default argument ([dcl.fct.default]), and that default argument is being used by an invocation of a function ([expr.call]) that appears at a point `$Q$`, the evaluation context of `$Q$`.
+- [#.#]{.pnum} Otherwise, the instantiation context of the point at which `$C$` appears.
 
 :::
 :::
@@ -5195,6 +5196,29 @@ In this determination, it is unspecified
 - [#.#]{.pnum} whether a `$decltype-specifier$` [or `$splice-type-specifier$`]{.addu} that does not [denote]{.rm} [designate]{.addu} a dependent type is replaced by its [denoted]{.rm} [designated]{.addu} type prior to this determination, [and]{.rm}
 - [#.#]{.pnum} whether a non-value-dependent constant expression is replaced by the result of constant evaluation prior to this determination[.]{.rm}[, and]{.addu}
 - [[#.#]{.pnum} whether a `$splice-specifier$` or `$splice-expression$` that is not dependent is replaced by the construct that it designates prior to this determination.]{.addu}
+
+:::
+
+### [module.context]{.sref} Instantiation context {-}
+
+Modify paragraphs 2 through 6 to relax the phrasing used to define the points in the instantiation context, add a new paragraph to include synthesized points in the instantiation context, and add a paragraph clarifying that the context contains only these points.
+
+::: std
+[2]{.pnum} During the implicit definition of a defaulted function ([special], [class.compare.default]), the instantiation context [is]{.rm} [contains each point in]{.addu} the union of the instantiation context from the definition of the class and the instantiation context of the program construct that resulted in the implicit definition of the defaulted function.
+
+[3]{.pnum} During the implicit instantiation of a template whose point of instantiation is specified as that of an enclosing specialization ([temp.point]), the instantiation context [is]{.rm} [contains each point in]{.addu} [the union of]{.rm} the instantiation context of the enclosing specialization and, if the template is defined in a module interface unit of a module `$M$` and the point of instantiation is not in a module interface unit of `$M$`, the point at the end of the `$declaration-seq$` of the primary module interface unit of `$M$` (prior to the `$private-module-fragment$`, if any).
+
+[4]{.pnum} During the implicit instantiation of a template that is implicitly instantiated because it is referenced from within the implicit definition of a defaulted function, the instantiation context [is]{.rm} [contains each point in]{.addu} the instantiation context of the defaulted function.
+
+[5]{.pnum} During the instantiation of any other template specialization, the instantiation context [comprises]{.rm} [contains]{.addu} the point of instantiation of the template.
+
+[6]{.pnum} In any other case, the instantiation context at a point within the program [comprises]{.rm} [contains]{.addu} that point.
+
+::: addu
+[6+]{.pnum} During the implicit instantiation of any construct that resulted from the evaluation `$E$` of an expression, the instantiation context also contains each synthesized point ([expr.const]) corresponding to an injected declaration produced by any evaluation sequenced before `$E$` ([intro.execution]).
+
+[6++]{.pnum} The instantiation context contains only those points specified above.
+:::
 
 :::
 
@@ -5904,7 +5928,7 @@ alignof ( type-id )
 noexcept ( expression )
 ```
 
-[A `$reflect-expression$` is value-dependent if it contains a dependent `$nested-name-specifier$`, `$type-id$`, `$namespace-name$`, or `$template-name$`, or if it contains a value-dependent or type-dependent `$id-expression$`.]{.addu}
+[A `$reflect-expression$` is value-dependent if it contains a dependent `$nested-name-specifier$`, `$type-id$`, `$namespace-name$`, or `$template-name$`, if it names a dependent member of the current instantiation ([temp.dep.type]), or if it contains a value-dependent or type-dependent `$id-expression$`.]{.addu}
 :::
 
 
@@ -6762,7 +6786,7 @@ consteval bool has_identifier(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a variable, then `false` if the declaration of that variable was instantiated from a function parameter pack. Otherwise, `!has_template_arguments(r)`.
 * [#.#]{.pnum} Otherwise, if `r` represents a structured binding, then `false` if the declaration of that structured binding was instantiated from a structured binding pack. Otherwise, `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a type alias, then `!has_template_arguments(r)`.
-* [#.#]{.pnum} Otherwise, if `r` represents a enumerator, non-static data member, namespace, or namespace alias, then `true`.
+* [#.#]{.pnum} Otherwise, if `r` represents an enumerator, non-static data member, namespace, or namespace alias, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `has_identifier(type_of(r))`.
 * [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); `true` if `$N$` is not ⊥. Otherwise, `false`.
 
@@ -7540,7 +7564,7 @@ static_assert(members_of(^^S, access_context::unchecked()).size() == 8);  // all
 consteval vector<info> bases_of(info type, access_context ctx);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(type)` is a reflection representing a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a class type that is complete from some point in the evaluation context.
 
 [#]{.pnum} *Returns*: Let `$C$` be the class represented by `dealias(type)`. A `vector` containing the reflections of all the direct base class relationships `$B$`, if any, of `$C$` such that `is_accessible(^^$B$, ctx)` is `true`.
 The direct base class relationships appear in the order in which the corresponding base classes appear in the `$base-specifier-list$` of `$C$`.
@@ -7549,7 +7573,7 @@ The direct base class relationships appear in the order in which the correspondi
 consteval vector<info> static_data_members_of(info type, access_context ctx);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a class type that is complete from some point in the evaluation context.
 
 [#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type, ctx)` such that `is_variable(e)` is `true`, preserving their order.
 
@@ -7557,7 +7581,7 @@ consteval vector<info> static_data_members_of(info type, access_context ctx);
 consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
+[#]{.pnum} *Constant When*: `dealias(type)` represents a class type that is complete from some point in the evaluation context.
 
 [#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type, ctx)` such that `is_nonstatic_data_member(e)` is `true`, preserving their order.
 
@@ -7613,7 +7637,7 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(r)` is a reflection representing a type, object, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
+[#]{.pnum} *Constant When*: `dealias(r)` is a reflection of a type, object, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 
 [#]{.pnum} *Returns*:
 
@@ -8021,14 +8045,14 @@ template <reflection_range R>
 bool meta::$VARIADIC$_type(info type, R&& args);
 ```
 </td>
-<td>`std::$VARIADIC$_v<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases represented by the elements of `args`</td></tr>
+<td>`std::$VARIADIC$_v<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
 <tr><td>
 ```cpp
 template <reflection_range R>
 bool meta::$VARIADIC$_type(info t1, info t2, R&& args);
 ```
 </td>
-<td>`std::$VARIADIC$_v<$T1$, $T2$, $U$...>` where `$T1$` and `$T2$` are the types or type aliases represented by `t1` and `t2`, respectively, and `$U$...` is the pack of types or type aliases represented by the elements of `args`</td></tr>
+<td>`std::$VARIADIC$_v<$T1$, $T2$, $U$...>` where `$T1$` and `$T2$` are the types or type aliases represented by `t1` and `t2`, respectively, and `$U$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
 <tr><td>
 ```cpp
 info meta::$UNARY$(info type);
@@ -8040,14 +8064,14 @@ template <reflection_range R>
 info meta::$VARIADIC$(R&& args);
 ```
 </td>
-<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$...>` where `$T$...` is the pack of types or type aliases represented by the elements of `args`</td></tr>
+<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$...>` where `$T$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
 <tr><td>
 ```cpp
 template <reflection_range R>
 info meta::$VARIADIC$(info type, R&& args);
 ```
 </td>
-<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases represented by the elements of `args`</td></tr>
+<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
 </table>
 
 [For those functions or function templates which return a reflection, that reflection always represents a type and never a type alias.]{.note}
