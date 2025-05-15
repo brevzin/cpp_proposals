@@ -14,11 +14,15 @@ tag: reflection
 
 # Revision History
 
-Since [@P3560R0], after discussion in an SG16 telecon, we changed the proposed API to be able to have a `string_view` constructor and `string` accessor. See [here](#post-sg16-telecon)
+Since [@P3560R0]:
+
+* after discussion in an SG16 telecon, we changed the proposed API to be able to have a `string_view` constructor and `string` accessor. See [here](#post-sg16-telecon).
+* after LEWG discussion (and [@P3637R0]{.title}), changed to inherit from `std::exception`
+* rebased on [@P2996R12]
 
 # Introduction
 
-In [@P2996R9]{.title}, we had to answer the question of what the error handling mechanism should be. We considered four options:
+In [@P2996R12]{.title}, we had to answer the question of what the error handling mechanism should be. We considered four options:
 
 1. Returning an invalid reflection (similar to `NaN` for floating point)
 2. Returning a `std::expected<T, E>` for some reflection-specific error type `E`
@@ -134,7 +138,7 @@ There's basically no way to easily do that today. We can't use `std::format` to 
 
 In contrast, if the constructor took `std::string_view`, we could have used any of these.
 
-So maybe we should just use `string_view`? But that's not consistent with the current state of [@P2996R8]. It did start out using `string_view` everywhere, and had to be rewritten to supply additional `u8string_view` interfaces, for good reasons.
+So maybe we should just use `string_view`? But that's not consistent with the current state of [@P2996R12]. It did start out using `string_view` everywhere, and had to be rewritten to supply additional `u8string_view` interfaces, for good reasons.
 
 Consider, for instance, `std::meta::identifier_of(x)`. It can fail for two reasons: if the entity to which `x` refers has no associated identifier, or if it does, but that identifier is not representable in the literal encoding.
 
@@ -165,11 +169,11 @@ For quality of implementation reasons, we want to include the identifier in the 
 
 There is no way to do that if we take and return `string_view` from the exception constructor and `what()`. Since the failure is caused by the identifier not being representable in the literal encoding, it trivially follows that we can't put it into an error string that uses the literal encoding.
 
-That is why we believe that the currently proposed interface, taking and returning `u8string_view`, is the path to take in order to maintain consistency with the current design of [@P2996R8], which is the result of extensive discussions in SG16.
+That is why we believe that the currently proposed interface, taking and returning `u8string_view`, is the path to take in order to maintain consistency with the current design of [@P2996R12], which is the result of extensive discussions in SG16.
 
 (The fact that the standard library doesn't provide adequate support for `char8_t` strings is fixable by... adding that support.)
 
-What if, however, we follow [@P2996R8] even more closely and provide two constructors for `meta::exception`, one taking `u8string_view` and one taking `string_view`?
+What if, however, we follow [@P2996R12] even more closely and provide two constructors for `meta::exception`, one taking `u8string_view` and one taking `string_view`?
 
 This is possible, and will allow users to take advantage of present standard library facilities for string manipulation when constructing the exception. We don't propose it here for two reasons. One, it allows writing code that isn't quite correct, even though it would probably work on all tested platforms.
 
@@ -293,7 +297,7 @@ Code written against this proposal will continue to work unmodified, and new cod
 
 # Recoverable or Unrecoverable
 
-We went through the proposed API in [@P2996R8] and we think that all of the library functions should be recoverable — that is failing to meet the requirements of the function should be an exception rather than constant evaluation failure — with a single exception, `std::meta::define_aggregate`.
+We went through the proposed API in [@P2996R12] and we think that all of the library functions should be recoverable — that is failing to meet the requirements of the function should be an exception rather than constant evaluation failure — with a single exception, `std::meta::define_aggregate`.
 
 `define_aggregate` isn't likely to be used from a context from which recovery is meaningful, and even if it were, for meaningful recovery we would have to guarantee that the partial effects of a failure have been rolled back (as a definition containing some of the members may already have been produced at the point where the error is detected.)
 We don't believe that imposing this requirement is warranted or worth the cost.
@@ -333,12 +337,13 @@ Add a new subclause as follows:
 ::: std
 ::: addu
 ```cpp
-class exception
+class exception : std::exception
 {
 private:
-  u8string $what_$;         // exposition only
-  info $from_$;             // exposition only
-  source_location $where_$; // exposition only
+  optional<string> $what_$;   // exposition only
+  u8string $u8what_$;         // exposition only
+  info $from_$;               // exposition only
+  source_location $where_$;   // exposition only
 
 public:
   consteval exception(u8string_view what, info from,
@@ -353,8 +358,8 @@ public:
   exception& operator=(exception const&) = default;
   exception& operator=(exception&&) = default;
 
+  constexpr const char* what() const noexcept override;
   consteval u8string_view u8what() const noexcept;
-  consteval string what() const noexcept;
   consteval info from() const noexcept;
   consteval source_location where() const noexcept;
 };
@@ -367,28 +372,29 @@ consteval exception(u8string_view what, info from,
     source_location where = source_location::current()) noexcept;
 ```
 
-[#]{.pnum} *Effects*: Initializes `$what_$` with `what`, `$from_$` with `from` and `$where_$` with `where`.
+[#]{.pnum} *Effects*: Initializes `$u8what_$` with `what`, `$from_$` with `from` and `$where_$` with `where`. If `$what_$` can be represented in the ordinary literal encoding, initializes `$what_$` with `what`, transcoded from UTF-8 to the ordinary literal encoding.
 
 ```cpp
 consteval exception(string_view what, info from,
     source_location where = source_location::current()) noexcept;
 ```
 
-[#]{.pnum} *Effects*: Initializes `$what_$` with `what`, transcoded from the ordinary literal encoding to UTF-8, `$from_$` with `from` and `$where_$` with `where`.
+[#]{.pnum} *Effects*: Initializes `$what_$` with `what`, `$u8what_$` with `what` transcoded from the ordinary literal encoding to UTF-8, `$from_$` with `from` and `$where_$` with `where`.
+
+```cpp
+constexpr const char* what() const noexcept override;
+```
+
+[#]{.pnum} *Constant When*: `$what_$.has_value()` is `true`.
+
+[#]{.pnum} *Returns*: `$what_$->c_str()`.
+
 
 ```cpp
 consteval u8string_view u8what() const noexcept;
 ```
 
 [#]{.pnum} *Returns*: `$what_$`.
-
-```cpp
-consteval string what() const noexcept;
-```
-
-[#]{.pnum} *Constant When*: `$what_$` can be represented in the ordinary literal encoding.
-
-[#]{.pnum} *Returns*: `$what_$`, converted to the ordinary literal encoding.
 
 ```cpp
 consteval info from() const noexcept;
@@ -454,7 +460,7 @@ Replace the error handling in this subclause:
 consteval info type_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, bit-field, direct base class relationship, or data member description.
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `$has-type$(r)` is `true`.
 :::
 
 ::: std
@@ -462,7 +468,12 @@ consteval info type_of(info r);
 consteval info object_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents either an object with static storage duration ([basic.stc.general]), or a variable associated with, or referring to, such an object.
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` is a reflection representing either
+
+- [#.#]{.pnum} an object with static storage duration ([basic.stc.general]), or
+- [#.#]{.pnum} a variable that either declares or refers to such an object, and if that variable is a reference `$R$` then either
+  - [#.#.#]{.pnum} `$R$` is usable in constant expressions ([expr.const]), or
+  - [#.#.#]{.pnum} the lifetime of `$R$` began within the core constant expression currently under evaluation.
 :::
 
 ::: std
@@ -470,11 +481,9 @@ consteval info object_of(info r);
 consteval info value_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` is a reflection representing
+[#]{.pnum} Let `$R$` be a constant expression of type `info` such that `$R$ == r` is `true`.
 
-* [#.#]{.pnum} a value,
-* [#.#]{.pnum} an enumerator, or
-* [#.#]{.pnum} an object or variable `$X$` such that the lifetime of `$X$` has not ended, the type of `$X$` is a structural type, and either `$X$` is usable in constant expressions from some point in the evaluation context or the lifetime of `$X$` began in the manifestly constant-evaluated expression currently under evaluation ([expr.const]), ([temp.type]).
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `[: $R$ :]` is a valid `$splice-expression$` ([expr.prim.splice]).
 :::
 
 ::: std
@@ -482,7 +491,7 @@ consteval info value_of(info r);
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a variable, structured binding, function, enumerator, class, class member, bit-field, template, namespace or namespace alias (other than `::`), type alias, or direct base class relationship.
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `has_parent(r)` is `true`.
 :::
 
 ::: std
@@ -499,7 +508,7 @@ Replace the error handling in this subclause:
 
 ::: std
 ```cpp
-consteval vector<info> members_of(info r);
+consteval vector<info> members_of(info r, access_context ctx);
 ```
 
 [#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
@@ -507,7 +516,7 @@ consteval vector<info> members_of(info r);
 
 ::: std
 ```cpp
-consteval vector<info> bases_of(info type);
+consteval vector<info> bases_of(info type, access_context ctx);
 ```
 
 [#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` is a reflection representing a complete class type.
@@ -515,7 +524,7 @@ consteval vector<info> bases_of(info type);
 
 ::: std
 ```cpp
-consteval vector<info> static_data_members_of(info type);
+consteval vector<info> static_data_members_of(info type, access_context ctx);
 ```
 
 [#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
@@ -523,7 +532,7 @@ consteval vector<info> static_data_members_of(info type);
 
 ::: std
 ```cpp
-consteval vector<info> nonstatic_data_members_of(info type);
+consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
 ```
 
 [#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
@@ -534,40 +543,9 @@ consteval vector<info> nonstatic_data_members_of(info type);
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type_enum)` represents an enumeration type and `has_complete_definition(dealias(type_enum))` is `true`.
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type_enum)` represents an enumeration type and `is_enumerable_type(type_enum)` is `true`.
 :::
 
-::: std
-```cpp
-consteval vector<info> get_public_members(info type);
-```
-
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
-:::
-
-::: std
-```cpp
-consteval vector<info> get_public_bases(info type);
-```
-
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
-:::
-
-::: std
-```cpp
-consteval vector<info> get_public_static_data_members(info type);
-```
-
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
-:::
-
-::: std
-```cpp
-consteval vector<info> get_public_nonstatic_data_members(info type);
-```
-
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
-:::
 
 ## [meta.reflection.layout]
 
@@ -586,7 +564,7 @@ consteval member_offset offset_of(info r);
 consteval size_t size_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) where `$W$` is not ⊥. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 :::
 
 ::: std
@@ -594,7 +572,7 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection representing a type, object, variable, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection representing a type, object, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 :::
 
 ::: std
@@ -617,7 +595,11 @@ template <class T>
 
 [#]{.pnum} [`T` is a reference type.]{.note}
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a variable or object of type `U` that is usable in constant expressions from some point in the evaluation context and `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`.
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
+
+- [#.#]{.pnum} `r` represents a variable or object of type `U`,
+- [#.#]{.pnum} `is_convertible_v<remove_reference_t<U>(*)[], remove_reference_t<T>(*)[]>` is `true`, and [The intent is to allow only qualification conversions from `U` to `T`.]{.note}
+- [#.#]{.pnum} if `r` represents a variable, then either that variable is usable in constant expressions or its lifetime began within the core constant expression currently under evaluation.
 :::
 
 ::: std
@@ -626,11 +608,11 @@ template <class T>
   consteval T $extract-member-or-function$(info r); // exposition only
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless the following conditions are met:]{.addu}
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
 
-- [#.#]{.pnum} If `r` represents a non-static data member of a class `C` with type `X`, [then when]{.rm} `T` is `X C::*` and `r` does not represent a bit-field.
-- [#.#]{.pnum} Otherwise, if `r` represents an implicit object member function of class `C` with type `F` or `F noexcept`, [then when]{.rm} `T` is `F C::*`.
-- [#.#]{.pnum} Otherwise, `r` represents a function, static member function, or explicit object member function of function type `F` or `F noexcept`, [then when]{.rm} [and]{.addu} `T` is `F*`.
+- [#.#]{.pnum} `r` represents a non-static data member with type `X`, that is not a bit-field, that is a direct member of a class `C` and `T` is `X C::*`;
+- [#.#]{.pnum} `r` represents an implicit object member function with type `F` or `F noexcept` that is a direct member of a class `C` and `T` is `F C::*`; or
+- [#.#]{.pnum} `r` represents a non-member function, static member function, or explicit object member function of function type `F` or `F noexcept` and `T` is `F*`.
 :::
 
 ::: std
@@ -641,7 +623,7 @@ template <class T>
 
 [#]{.pnum} Let `U` be the type of the value that `r` represents.
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless the following conditions are met:]{.addu}
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
 
   - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
   - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
@@ -674,23 +656,44 @@ consteval info substitute(info templ, R&& arguments);
 Replace the error handling in this subclause:
 
 ::: std
+[#]{.pnum} An object `$O$` of type `$T$` is *meta-reflectable* if an lvalue expression denoting `$O$` is suitable for use as a constant template argument for a constant template parameter of type `$T$&` ([temp.arg.nontype]).
+
+[#]{.pnum} The following are defined for exposition only to aid in the specification of `reflect_value`:
+
+```cpp
+template <typename T>
+  consteval info $reflect-value-scalar$(T expr); // exposition only
+```
+
+Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `$V$` satisfies the constraints for the result of a prvalue constant expression ([expr.const]) and, if `$V$` is a pointer to an object, then that object is meta-reflectable.
+
+[#]{.pnum} *Returns*: A reflection of a value of type `$T$` associated with the computed value `$V$`.
+
+```cpp
+template <typename T>
+  consteval info $reflect-value-class$(T const& expr); // exposition only
+```
+
+[#]{.pnum} *Mandates*: `T` is copy constructible and structural ([temp.param]).
+
+[#]{.pnum} Let `$O$` be an object copy-initialized from `expr`.
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
+
+* [#.#]{.pnum} `$O$` satisfies the constraints for the result of a glvalue constant expression ([expr.const]),
+* [#.#]{.pnum} every object referred to by a constituent reference of `$O$`, or pointed to by a constituent pointer value of `$O$`, is meta-reflectable.
+
+[#]{.pnum} *Returns*: A reflection of a value of type `T` associated with a template parameter object that is template-argument-equivalent to `$O$`.
+
 ```cpp
 template <typename T>
   consteval info reflect_value(const T& expr);
 ```
 
-[#]{.pnum} *Mandates*: `T` is a structural type that is neither a reference type nor an array type.
+[*]{.pnum} *Effects*: [...]
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless any]{.addu} [Any]{.rm} value computed by `expr` having pointer type, or every subobject of the value computed by `expr` having pointer or reference type, is the address of or refers to an object or function that
-
-  - [#.#]{.pnum} is a permitted result of a constant expression ([expr.const]),
-  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
-  - [#.#]{.pnum} is not a string literal object ([lex.string]),
-  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
-  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
-:::
-
-::: std
 ```cpp
 template <typename T>
   consteval info reflect_object(T& expr);
@@ -698,13 +701,9 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `T` is not a function type.
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `expr` designates an object or function that
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `expr` designates a meta-reflectable object.
 
-  - [#.#]{.pnum} is a permitted result of a constant expression ([expr.const]),
-  - [#.#]{.pnum} is not a temporary object ([class.temporary]),
-  - [#.#]{.pnum} is not a string literal object ([lex.string]),
-  - [#.#]{.pnum} is not the result of a `typeid` expression ([expr.typeid]), and
-  - [#.#]{.pnum} is not an object associated with a predefined `__func__` variable ([dcl.fct.def.general]).
+[#]{.pnum} *Returns*: A reflection of the object designated by `expr`.
 :::
 
 ## [meta.reflection.define.aggregate]
@@ -730,6 +729,22 @@ consteval info data_member_spec(info type,
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
   - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value.
 :::
+
+## [meta.reflection.traits]
+
+Replace the error handling for all the type traits:
+
+::: std
+[1]{.pnum} Subclause [meta.reflection.traits] specifies consteval functions to query the properties of types ([meta.unary]), query the relationships between types ([meta.rel]), or transform types ([meta.trans]) at compile time. Each consteval function declared in this class has an associated class template declared elsewhere in this document.
+
+[#]{.pnum} Every function and function template declared in this clause [has the following conditions required for a call to that function or function template to be a constant subexpression ([defns.const.subexpr])]{.rm} [throws an exception of type `std::meta::exception` unless the following conditions hold:]{.addu}
+
+* [#.#]{.pnum} For every parameter `p` of type `info`, `is_type(p)` is `true`.
+* [#.#]{.pnum} For every parameter `r` whose type is constrained on `reflection_range`, `ranges::all_of(r, is_type)` is `true`.
+
+[#]{.pnum} [...]
+:::
+
 
 ## Feature-Test Macro
 

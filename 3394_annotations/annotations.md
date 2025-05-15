@@ -18,7 +18,7 @@ author:
 
 # Revision History
 
-Since [@P3394R2]: wording, including rebasing off of [@P2996R12].
+Since [@P3394R2]: wording, including rebasing off of [@P2996R12]. Also removed `annotate` to streamline the process, it can always be added later.
 
 Since [@P3394R1]:
 
@@ -385,10 +385,6 @@ namespace std::meta {
 
   consteval vector<info> annotations_of(info item);                      // (1)
   consteval vector<info> annotations_of_with_type(info item, info type); // (2)
-
-  consteval info annotate(info item,
-                          info constant,
-                          source_location loc = source_location::current());
 }
 ```
 
@@ -400,8 +396,6 @@ We provide two functions to retrieve all the annotations of a particular item:
 2. `annotations_of_item_with_type(item, type)` returns all the annotations `a` on `item` such that `type_of(a) == type`.
 
 In earlier revisions, these were overloads (both spelled `annotations_of`), but starting in R2 the second function was renamed to add clarity on what the second parameter actually means. There were previously additional functions proposed for ergonomic reasons, but those were removed during the [Hagenberg meeting](https://wiki.edg.com/bin/view/Wg21hagenberg2025/P3394).
-
-And lastly, `annotate` provides the ability to programmatically add an annotation to a declaration.
 
 ## Additional Syntactic Constraints
 
@@ -543,15 +537,6 @@ Update annotation equality in [expr.eq]{.sref}/5+:
 * [5+.6]{.pnum} Otherwise, both operands `O@~_1_~@` and `O@~_2_~@` represent data member descriptions. The operands compare equal if and only if the data member descriptions represented by `O@~_1_~@` and `O@~_2_~@` compare equal ([class.mem.general]{.sref}).
 :::
 
-Loosen the scope restrictions in [expr.const]{.sref}/29 to allow definitions to inject declarations of the entity that they are defining.
-
-::: std
-[29]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration `$D$` ([meta.reflection.define.aggregate]). [The]{.rm} [If `$D$` is a definition, then the]{.addu} scope of `$D$` shall not enclose `$C$`. The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
-
-* [#.#]{.pnum} a function parameter scope, or
-* [#.#]{.pnum} a class scope.
-:::
-
 Extend the grammar in [dcl.attr.grammar]{.sref}:
 
 ::: std
@@ -632,8 +617,7 @@ namespace std::meta {
   // [meta.reflection.annotation], annotation reflection
 + consteval vector<info> annotations_of(info item);
 + consteval vector<info> annotations_of_with_type(info item, info type);
-+
-+  consteval info annotate(info item, info value, source_location loc = source_location::current());
+
 }
 ```
 :::
@@ -648,18 +632,6 @@ Add `is_annotation` to [meta.reflection.queries]:
 
 [#]{.pnum} *Returns*: `true` if `r` represents an enumerator [or annotation, respectively]{.addu}. Otherwise, `false`.
 
-:::
-
-Update `source_location_of` in [meta.reflection.names]:
-
-::: std
-```cpp
-consteval source_location source_location_of(info r);
-```
-
-[7]{.pnum} *Returns*: If `r` represents a value, a type other than a class type or an enumeration type, the global namespace, or a data member description, then `source_location{}`. Otherwise, an implementation-defined `source_location` value.
-
-[#]{.pnum} *Recommended practice*: [If `r` represents an annotation that was added with a call to `std::meta::annotate`, then implementations should return a value corresponding to the `source_location` argument passed to that function.]{.addu} If `r` represents an entity with a definition that is reachable from the evaluation context, a value corresponding to a definition should be returned.
 :::
 
 Update the meanings of `$has-type$`, `type_of` and `value_of` in [meta.reflection.queries]:
@@ -773,19 +745,6 @@ consteval vector<info> annotations_of_with_type(info item, info type);
 
 [#]{.pnum} *Returns* A `vector` containing each element, `e`, of `annotations_of(item)`, in order, such that `type_of(e) == dealias(type)`.
 
-
-```cpp
-consteval info annotate(info item, info constant, source_location loc = source_location::current());
-```
-
-[#]{.pnum} *Constant When*:
-
-* [#.#]{.pnum} `dealias(item)` represents a class type, variable, function, or a namespace; and
-* [#.#]{.pnum} `constant` represents either a value or an object of class type.
-
-[#]{.pnum} *Effects*: Produces an injected declaration ([expr.const]) at location `loc` redeclaring the entity represented by `dealias(item)`. That injected declaration has an annotation whose underlying constant is `constant` and its locus is immediately following the manifestly constant-evaluated expression currently under evaluation.
-
-[#]{.pnum} *Returns*: `dealias(item)`.
 
 :::
 :::
