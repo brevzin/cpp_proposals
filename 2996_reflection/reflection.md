@@ -6479,7 +6479,7 @@ namespace std::meta {
   template <reflection_range R = initializer_list<info>>
   consteval info define_aggregate(info type_class, R&&);
 
-  // [meta.reflection.unary.cat], primary type categories
+  // associated with [meta.unary.cat], primary type categories
   consteval bool is_void_type(info type);
   consteval bool is_null_pointer_type(info type);
   consteval bool is_integral_type(info type);
@@ -6496,7 +6496,7 @@ namespace std::meta {
   consteval bool is_function_type(info type);
   consteval bool is_reflection_type(info type);
 
-  // [meta.reflection.unary.comp], composite type categories
+  // associated with [meta.unary.comp], composite type categories
   consteval bool is_reference_type(info type);
   consteval bool is_arithmetic_type(info type);
   consteval bool is_fundamental_type(info type);
@@ -6505,7 +6505,7 @@ namespace std::meta {
   consteval bool is_compound_type(info type);
   consteval bool is_member_pointer_type(info type);
 
-  // [meta.reflection unary.prop], type properties
+  // associated with [meta.unary.prop], type properties
   consteval bool is_const_type(info type);
   consteval bool is_volatile_type(info type);
   consteval bool is_trivially_copyable_type(info type);
@@ -6575,11 +6575,11 @@ namespace std::meta {
   consteval bool reference_constructs_from_temporary(info type_dst, info type_src);
   consteval bool reference_converts_from_temporary(info type_dst, info type_src);
 
-  // [meta.reflection.unary.prop.query], type property queries
+  // associated with [meta.unary.prop.query], type property queries
   consteval size_t rank(info type);
   consteval size_t extent(info type, unsigned i = 0);
 
-  // [meta.reflection.rel], type relations
+  // associated with [meta.rel], type relations
   consteval bool is_same_type(info type1, info type2);
   consteval bool is_base_of_type(info type_base, info type_derived);
   consteval bool is_virtual_base_of_type(info type_base, info type_derived);
@@ -6598,7 +6598,7 @@ namespace std::meta {
   template <reflection_range R = initializer_list<info>>
     consteval bool is_nothrow_invocable_r_type(info type_result, info type, R&& type_args);
 
-  // [meta.reflection.trans.cv], const-volatile modifications
+  // associated with [meta.trans.cv], const-volatile modifications
   consteval info remove_const(info type);
   consteval info remove_volatile(info type);
   consteval info remove_cv(info type);
@@ -6606,24 +6606,24 @@ namespace std::meta {
   consteval info add_volatile(info type);
   consteval info add_cv(info type);
 
-  // [meta.reflection.trans.ref], reference modifications
+  // associated with [meta.trans.ref], reference modifications
   consteval info remove_reference(info type);
   consteval info add_lvalue_reference(info type);
   consteval info add_rvalue_reference(info type);
 
-  // [meta.reflection.trans.sign], sign modifications
+  // associated with [meta.trans.sign], sign modifications
   consteval info make_signed(info type);
   consteval info make_unsigned(info type);
 
-  // [meta.reflection.trans.arr], array modifications
+  // associated with [meta.trans.arr], array modifications
   consteval info remove_extent(info type);
   consteval info remove_all_extents(info type);
 
-  // [meta.reflection.trans.ptr], pointer modifications
+  // associated with [meta.trans.ptr], pointer modifications
   consteval info remove_pointer(info type);
   consteval info add_pointer(info type);
 
-  // [meta.reflection.trans.other], other transformations
+  // associated with [meta.trans.other], other transformations
   consteval info remove_cvref(info type);
   consteval info decay(info type);
   template <reflection_range R = initializer_list<info>>
@@ -6636,7 +6636,6 @@ namespace std::meta {
   consteval info unwrap_reference(info type);
   consteval info unwrap_ref_decay(info type);
 
-  // [meta.reflection.misc], miscellaneous reflection queries
   consteval size_t tuple_size(info type);
   consteval info tuple_element(size_t index, info type);
 
@@ -8076,14 +8075,8 @@ info meta::$VARIADIC$(info type, R&& args);
 
 [For those functions or function templates which return a reflection, that reflection always represents a type and never a type alias.]{.note}
 
-:::
-:::
-
-#### [meta.reflection.traits.unary.cat] Primary type categories  {-}
-
-::: std
-::: addu
 ```cpp
+  // associated with [meta.unary.cat], primary type categories
 consteval bool is_void_type(info type);
 consteval bool is_null_pointer_type(info type);
 consteval bool is_integral_type(info type);
@@ -8099,15 +8092,8 @@ consteval bool is_union_type(info type);
 consteval bool is_class_type(info type);
 consteval bool is_function_type(info type);
 consteval bool is_reflection_type(info type);
-```
-:::
-:::
 
-#### [meta.reflection.traits.unary.comp] Composite type categories  {-}
-
-::: std
-::: addu
-```cpp
+  // associated with [meta.unary.comp], composite type categories
 consteval bool is_reference_type(info type);
 consteval bool is_arithmetic_type(info type);
 consteval bool is_fundamental_type(info type);
@@ -8115,15 +8101,8 @@ consteval bool is_object_type(info type);
 consteval bool is_scalar_type(info type);
 consteval bool is_compound_type(info type);
 consteval bool is_member_pointer_type(info type);
-```
-:::
-:::
 
-#### [meta.reflection.traits.unary.prop] Type properties  {-}
-
-::: std
-::: addu
-```cpp
+// associated with [meta.unary.prop], type properties
 consteval bool is_const_type(info type);
 consteval bool is_volatile_type(info type);
 consteval bool is_trivially_copyable_type(info type);
@@ -8193,13 +8172,7 @@ consteval bool has_unique_object_representations(info type);
 consteval bool reference_constructs_from_temporary(info type_dst, info type_src);
 consteval bool reference_converts_from_temporary(info type_dst, info type_src);
 ```
-:::
-:::
 
-#### [meta.reflection.traits.unary.prop.query] Type property queries  {-}
-
-::: std
-::: addu
 ```cpp
 consteval size_t rank(info type);
 ```
@@ -8212,14 +8185,8 @@ consteval size_t extent(info type, unsigned i = 0);
 
 [#]{.pnum} *Returns*: `extent_v<T, I>`, where `T` is the type represented by `dealias(type)` and `I` is a constant equal to `i`.
 
-:::
-:::
-
-#### [meta.reflection.traits.rel], Type relations  {-}
-
-::: std
-::: addu
 ```cpp
+// associated with [meta.rel], type relations
 consteval bool is_same_type(info type1, info type2);
 consteval bool is_base_of_type(info type_base, info type_derived);
 consteval bool is_virtual_base_of_type(info type_base, info type_derived);
@@ -8240,75 +8207,42 @@ consteval bool is_nothrow_invocable_r_type(info type_result, info type, R&& type
 ```
 
 [#]{.pnum} [If `t` is a reflection of the type `int` and `u` is a reflection of an alias to the type `int`, then `t == u` is `false` but `is_same_type(t, u)` is `true`. Also, `t == dealias(u)` is `true`.]{.note}.
-:::
-:::
 
-
-#### [meta.reflection.traits.trans.cv], Transformations between types  {-}
-::: std
-::: addu
 ```cpp
+// associated with [meta.trans.cv], const-volatile modifications
 consteval info remove_const(info type);
 consteval info remove_volatile(info type);
 consteval info remove_cv(info type);
 consteval info add_const(info type);
 consteval info add_volatile(info type);
 consteval info add_cv(info type);
-```
-:::
-:::
 
-#### [meta.reflection.traits.trans.ref], Reference modifications  {-}
-
-::: std
-::: addu
-```cpp
+// associated with [meta.trans.ref], reference modifications
 consteval info remove_reference(info type);
 consteval info add_lvalue_reference(info type);
 consteval info add_rvalue_reference(info type);
-```
-:::
-:::
 
-#### [meta.reflection.traits.trans.sign], Sign modifications  {-}
-
-::: std
-::: addu
-```cpp
+// associated with [meta.trans.sign], sign modifications
 consteval info make_signed(info type);
 consteval info make_unsigned(info type);
-```
-:::
-:::
 
-#### [meta.reflection.traits.trans.arr], Array modifications  {-}
-
-::: std
-::: addu
-```cpp
+// associated with [meta.trans.arr], array modifications
 consteval info remove_extent(info type);
 consteval info remove_all_extents(info type);
-```
-:::
-:::
 
-#### [meta.reflection.traits.trans.ptr], Pointer modifications  {-}
-::: std
-::: addu
-```cpp
+// associated with [meta.trans.ptr], pointer modifications
 consteval info remove_pointer(info type);
 consteval info add_pointer(info type);
 ```
 :::
 :::
 
-#### [meta.reflection.traits.trans.other], Other transformations  {-}
-
 [There are four transformations that are deliberately omitted here. `type_identity` and `enable_if` are not useful, `conditional(cond, t, f)` would just be a long way of writing `cond ? t : f`, and `basic_common_reference` is a class template intended to be specialized and not directly invoked.]{.ednote}
 
 ::: std
 ::: addu
 ```cpp
+// associated with [meta.trans.other], other transformations
 consteval info remove_cvref(info type);
 consteval info decay(info type);
 template <reflection_range R = initializer_list<info>>
@@ -8325,8 +8259,6 @@ consteval info unwrap_ref_decay(info type);
 :::
 :::
 
-#### [meta.reflection.traits.misc], Miscellaneous Reflection Queries {-}
-
 [The below inclusion of `meta::type_order` assumes the acceptance of [@P2830R10].]{.ednote}
 
 ::: std
@@ -8335,7 +8267,7 @@ consteval info unwrap_ref_decay(info type);
 consteval size_t tuple_size(info type);
 ```
 
-[1]{.pnum} *Returns*: `tuple_size_v<$T$>` where `$T$` is the type represented by `dealias(type)`.
+[#]{.pnum} *Returns*: `tuple_size_v<$T$>` where `$T$` is the type represented by `dealias(type)`.
 
 ```cpp
 consteval info tuple_element(size_t index, info type);
