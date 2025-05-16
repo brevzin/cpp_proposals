@@ -5236,7 +5236,7 @@ Modify paragraphs 2 through 6 to relax the phrasing used to define the points in
 [6]{.pnum} In any other case, the instantiation context at a point within the program [comprises]{.rm} [contains]{.addu} that point.
 
 ::: addu
-[6+]{.pnum} During the implicit instantiation of any construct that resulted from the evaluation `$E$` of an expression, the instantiation context also contains each synthesized point ([expr.const]) corresponding to an injected declaration produced by any evaluation sequenced before `$E$` ([intro.execution]).
+[6+]{.pnum} During the evaluation `$E$` of an expression, or during the implicit instantiation of any construct that resulted from that evaluation, the instantiation context also contains each synthesized point ([expr.const]) corresponding to an injected declaration produced by any evaluation sequenced before `$E$` ([intro.execution]).
 
 [6++]{.pnum} The instantiation context contains only those points specified above.
 :::
