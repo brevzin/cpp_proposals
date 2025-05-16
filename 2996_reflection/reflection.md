@@ -32,7 +32,7 @@ Since [@P2996R11]:
   * better specify interaction between spliced function calls and overload resolution; integrate fix to [@CWG2701]
   * disallow reflection of local parameters introduced by `$requires-expression$`s
   * change "naming class" to "designating class" and define for `$splice-expression$`s
-  * clarified value reflection model and the interaction between `reflect_value`, `value_of`, and splicing.
+  * replaced `reflect_value` and `value_of` with `reflect_constant` and `constant_of`.
 * library wording updates
   * improve specification of `access_context::current()` (including examples)
   * `size_of(r)` is no longer constant if `r` is a bit-field
@@ -1563,7 +1563,7 @@ static_assert(&[:template_arguments_of(spec)[1]:] == &p[1]);
 ```
 :::
 
-Such reflections cannot generally be obtained using the `^^`-operator, but the `std::meta::reflect_value` and `std::meta::reflect_object` functions make it easy to reflect particular values or objects. The `std::meta::value_of` metafunction can also be used to map a reflection of an object to a reflection of its value.
+Such reflections cannot generally be obtained using the `^^`-operator, but the `std::meta::reflect_constant` and `std::meta::reflect_object` functions make it easy to reflect particular values or objects. The `std::meta::constant_of` metafunction can also be used to map a reflection of an object to a reflection of its value.
 
 ### Syntax discussion
 
@@ -1971,11 +1971,11 @@ constexpr std::meta::info r = ^^i, s = ^^i;
 static_assert(r == r && r == s);
 
 static_assert(^^i != ^^j);  // 'i' and 'j' are different entities.
-static_assert(value_of(^^i) == value_of(^^j));  // Two equivalent values.
-static_assert(^^i != std::meta::reflect_object(i))  // A variable is distinct from the
-                                                    // object it designates.
-static_assert(^^i != std::meta::reflect_value(42));  // A reflection of an object
-                                                     // is not the same as its value.
+static_assert(constant_of(^^i) == constant_of(^^j));    // Two equivalent values.
+static_assert(^^i != std::meta::reflect_object(i))      // A variable is distinct from the
+                                                        // object it designates.
+static_assert(^^i != std::meta::reflect_constant(42));  // A reflection of an object
+                                                        // is not the same as its value.
 ```
 :::
 
@@ -2655,9 +2655,9 @@ namespace std::meta {
   consteval auto parent_of(info r) -> info;
   consteval auto dealias(info r) -> info;
 
-  // @[object and value queries](#object_of-value_of)@
+  // @[object and constant queries](#object_of-constant_of)@
   consteval auto object_of(info r) -> info;
-  consteval auto value_of(info r) -> info;
+  consteval auto constant_of(info r) -> info;
 
   // @[template queries](#template_of-template_arguments_of)@
   consteval auto template_of(info r) -> info;
@@ -2678,7 +2678,7 @@ namespace std::meta {
 
   // @[reflect expression results](#reflect-expression-results)@
   template <typename T>
-    consteval auto reflect_value(const T& value) -> info;
+    consteval auto reflect_constant(const T& value) -> info;
   template <typename T>
     consteval auto reflect_object(T& value) -> info;
   template <typename T>
@@ -2853,13 +2853,13 @@ static_assert(dealias(^^Y) == ^^int);
 ```
 :::
 
-### `object_of`, `value_of`
+### `object_of`, `constant_of`
 
 ::: std
 ```c++
 namespace std::meta {
   consteval auto object_of(info r) -> info;
-  consteval auto value_of(info r) -> info;
+  consteval auto constant_of(info r) -> info;
 }
 ```
 :::
@@ -2876,7 +2876,12 @@ static_assert(object_of(^^x) == object_of(^^y));
 ```
 :::
 
-If `r` is a reflection of an enumerator, then `value_of(r)` is a reflection of the value of the enumerator. Otherwise, if `r` is a reflection of an object _usable in constant expressions_, then `value_of(r)` is a reflection of the value of the object. For all other inputs, `value_of(r)` is not a constant expression.
+If `r` is a reflection of an enumerator, then `constant_of(r)` is a reflection of the value of the enumerator. Otherwise, if `r` is a reflection of an object _usable in constant expressions_, then:
+
+* if `r` has scalar type, then `constant_of(r)` is a reflection of the value of the object.
+* otherwise, `constant_of(r)` is a reflection of the object.
+
+For all other inputs, `constant_of(r)` is not a constant expression. For more, see [`reflect_constant`](#reflect-expression-results).
 
 ### `template_of`, `template_arguments_of`
 
@@ -2971,12 +2976,12 @@ typename[:r:] si;  // Error: T::X is invalid for T = int.
 `can_substitute(templ, args)` simply checks if the substitution can succeed (with the same caveat about instantiations outside of the immediate context).
 If `can_substitute(templ, args)` is `false`, then `substitute(templ, args)` will be ill-formed.
 
-### `reflect_value`, `reflect_object`, `reflect_function` {#reflect-expression-results}
+### `reflect_constant`, `reflect_object`, `reflect_function` {#reflect-expression-results}
 
 ::: std
 ```c++
 namespace std::meta {
-  template<typename T> consteval auto reflect_value(const T& expr) -> info;
+  template<typename T> consteval auto reflect_constant(const T& expr) -> info;
   template<typename T> consteval auto reflect_object(T& expr) -> info;
   template<typename T> consteval auto reflect_function(T& expr) -> info;
 }
@@ -2985,10 +2990,34 @@ namespace std::meta {
 
 These metafunctions produce a reflection of the _result_ from evaluating the provided expression. One of the most common use-cases for such reflections is to specify the template arguments with which to build a specialization using `std::meta::substitute`.
 
-`reflect_value(expr)` produces a reflection of the value computed by an lvalue-to-rvalue conversion on `expr`. The type of the reflected value is the cv-unqualified (de-aliased) type of `expr`. The result needs to be a permitted result of a constant expression, and `T` cannot be of reference type.
+`reflect_constant(expr)` can best be understood from the equivalence that given the template
+
+::: std
+```cpp
+template <auto P> struct C { };
+```
+:::
+
+that:
+
+::: std
+```cpp
+reflect_constant(V) == template_arguments_of(^^C<V>)[0]
+```
+:::
+
+In other words, letting `T` be the cv-unqualified, de-aliased type of `expr`.
+
+* if `expr` has scalar type, then `reflect_constant(expr)` is a reflection of the value of `expr`, whose type is `T`.
+* if `expr` has class type, then `reflect_constant(expr)` is a reflection of the template parameter object that is template-argument-equivalent to an object of type `T` copy-initialized from `expr`.
+
+Either way, the result needs to be a permitted result of a constant expression. Notably, `reflect_constant(e)` can be either a reflection of a value or a reflection of an object, depending on the type of `e`. This seeming inconsistence is actually useful for two reasons:
+
+1. As mentioned above, it allows an equivalence with template arguments — where the argument is already either a value or an object.
+2. It avoids having to invest complexity into defining what it means to have a reflection of a value of class type. Particularly with regards to when/if copies happen.
 
 ```cpp
-static_assert(substitute(^^std::array, {^^int, std::meta::reflect_value(5)}) ==
+static_assert(substitute(^^std::array, {^^int, std::meta::reflect_constant(5)}) ==
               ^^std::array<int, 5>);
 ```
 
@@ -3795,7 +3824,7 @@ Add new paragraphs before the last paragraph of [basic.fundamental]{.sref} as fo
 
 [x]{.pnum} A value of type `std::meta::info` is called a _reflection_. There exists a unique _null reflection_; every other reflection is a representation of
 
-* [x.#]{.pnum} a value (see below) of structural type ([temp.param]),
+* [x.#]{.pnum} a value of scalar type ([temp.param]),
 * [x.#]{.pnum} an object with static storage duration ([basic.stc]),
 * [x.#]{.pnum} a variable ([basic.pre]),
 * [x.#]{.pnum} a structured binding ([dcl.struct.bind]),
@@ -3817,12 +3846,7 @@ Add new paragraphs before the last paragraph of [basic.fundamental]{.sref} as fo
 
 A reflection is said to _represent_ the corresponding construct.
 
-A reflection of a value of type `T` is associated with
-
-* [x.#]{.pnum} if `T` is a scalar type, then a value of type `T`, or
-* [x.#]{.pnum} if `T` is a class type, then a template parameter object ([temp.param]) of type `T`.
-
-[A reflection of a value can be produced by library functions such as `std::meta::value_of` and `std::meta::reflect_value`]{.note}
+[A reflection of a value can be produced by library functions such as `std::meta::constant_of` and `std::meta::reflect_constant`]{.note}
 
 ::: example
 ```cpp
@@ -4206,11 +4230,7 @@ auto g = typename [:^^int:](42);
 
   [The type of a `$splice-expression$` designating a variable or structured binding of reference type will be adjusted to a non-reference type ([expr.type]{.sref}).]{.note}
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue whose type is the same as that of `$S$` and whose value is determined as follows:
-
-  * [#.#.#]{.pnum} if `$S$` is an enumerator, then the value is the value of the enumerator;
-  * [#.#.#]{.pnum} otherwise, if `$S$` is a value of scalar type, then the value is `$S$`'s associated value;
-  * [#.#.#]{.pnum} otherwise (if `$S$` is a value of class type), then the value is the result of the lvalue-to-rvalue conversion applied to `$S$`'s associated template parameter object.
+* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue that computes `$S$` and whose type is the same as `$S$`.
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
@@ -6334,7 +6354,7 @@ namespace std::meta {
   // [meta.reflection.queries], reflection queries
   consteval info type_of(info r);
   consteval info object_of(info r);
-  consteval info value_of(info r);
+  consteval info constant_of(info r);
 
   consteval bool is_public(info r);
   consteval bool is_protected(info r);
@@ -6881,7 +6901,7 @@ static_assert(object_of(^^x) == object_of(^^y)); // OK, because y is a reference
 :::
 
 ```cpp
-consteval info value_of(info r);
+consteval info constant_of(info r);
 ```
 
 [#]{.pnum} Let `$R$` be a constant expression of type `info` such that `$R$ == r` is `true`.
@@ -6891,11 +6911,7 @@ consteval info value_of(info r);
 [#]{.pnum} *Effects*:  Equivalent to:
 
 ```cpp
-if (is_value(r)) {
-  return r;
-} else {
-  return reflect_value([: $R$ :]);
-}
+return reflect_constant([: $R$ :]);
 ```
 
 
@@ -6904,17 +6920,17 @@ if (is_value(r)) {
 constexpr int x = 0;
 constexpr int y = 0;
 
-static_assert(^^x != ^^y);                        // OK, x and y are different variables so their
-                                                  // reflections compare different
-static_assert(value_of(^^x) == value_of(^^y));    // OK, both value_of(^^x) and value_of(^^y) represent
-                                                  // the value 0
-static_assert(value_of(^^x) == reflect_value(0)); // OK, likewise
+static_assert(^^x != ^^y);                              // OK, x and y are different variables so their
+                                                        // reflections compare different
+static_assert(constant_of(^^x) == constant_of(^^y));    // OK, both constant_of(^^x) and constant_of(^^y)
+                                                        // represent the value 0
+static_assert(constant_of(^^x) == reflect_constant(0)); // OK, likewise
 
 info fn() {
   constexpr int x = 42;
   return ^^x;
 }
-info r = value_of(fn());  // error: x is outside its lifetime
+info r = constant_of(fn());  // error: x is outside its lifetime
 ```
 :::
 
@@ -7705,7 +7721,7 @@ template <class T>
   consteval T $extract-value$(info r); // exposition only
 ```
 
-[#]{.pnum} Let `U` be the type of the value that `r` represents.
+[#]{.pnum} Let `U` be the type of the value or object that `r` represents.
 
 [#]{.pnum} *Constant When*:
 
@@ -7714,7 +7730,7 @@ template <class T>
   - [#.#]{.pnum} `U` is an array type, `T` is pointer type, and the value `r` represents is convertible to `T`, or
   - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value that `r` represents is convertible to `T`.
 
-[#]{.pnum} *Returns*: The value that `r` represents, converted to `T`.
+[#]{.pnum} *Returns*: `static_cast<T>([:$R$:])`, where `$R$` is a constant expression of type `info` such that `$R$ == r` is `true`.
 
 ```cpp
 template <class T>
@@ -7729,7 +7745,7 @@ if (is_reference_type(^^T)) {
 } else if (is_nonstatic_data_member(r) || is_function(r)) {
   return $extract-member-or-function$<T>(r);
 } else {
-  return $extract-value$<T>(value_of(r));
+  return $extract-value$<T>(constant_of(r));
 }
 ```
 
@@ -7801,7 +7817,7 @@ constexpr bool r2 = can_substitute(^^fn2, {^^int});
 ::: example
 ```cpp
 consteval info to_integral_constant(unsigned i) {
-  return substitute(^^integral_constant, {^^unsigned, reflect_value(i)});
+  return substitute(^^integral_constant, {^^unsigned, reflect_constant(i)});
 }
 constexpr info r = to_integral_constant(2);
   // OK, r represents the type integral_constant<unsigned, 2>
@@ -7816,22 +7832,22 @@ constexpr info r = to_integral_constant(2);
 ::: addu
 [#]{.pnum} An object `$O$` of type `$T$` is *meta-reflectable* if an lvalue expression denoting `$O$` is suitable for use as a constant template argument for a constant template parameter of type `$T$&` ([temp.arg.nontype]).
 
-[#]{.pnum} The following are defined for exposition only to aid in the specification of `reflect_value`:
+[#]{.pnum} The following are defined for exposition only to aid in the specification of `reflect_constant`:
 
 ```cpp
 template <typename T>
-  consteval info $reflect-value-scalar$(T expr); // exposition only
+  consteval info $reflect-constant-scalar$(T expr); // exposition only
 ```
 
 Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
 
 [#]{.pnum} *Constant When*: `$V$` satisfies the constraints for the result of a prvalue constant expression ([expr.const]) and, if `$V$` is a pointer to an object, then that object is meta-reflectable.
 
-[#]{.pnum} *Returns*: A reflection of a value of type `$T$` associated with the computed value `$V$`.
+[#]{.pnum} *Returns*: A reflection of a value of type `$T$` with the computed value `$V$`.
 
 ```cpp
 template <typename T>
-  consteval info $reflect-value-class$(T const& expr); // exposition only
+  consteval info $reflect-constant-class$(T const& expr); // exposition only
 ```
 
 [#]{.pnum} *Mandates*: `T` is copy constructible and structural ([temp.param]).
@@ -7843,20 +7859,20 @@ template <typename T>
 * [#.#]{.pnum} `$O$` satisfies the constraints for the result of a glvalue constant expression ([expr.const]),
 * [#.#]{.pnum} every object referred to by a constituent reference of `$O$`, or pointed to by a constituent pointer value of `$O$`, is meta-reflectable.
 
-[#]{.pnum} *Returns*: A reflection of a value of type `T` associated with a template parameter object that is template-argument-equivalent to `$O$`.
+[#]{.pnum} *Returns*: A reflection of the template parameter object that is template-argument-equivalent to `$O$` ([temp.param]).
 
 ```cpp
 template <typename T>
-  consteval info reflect_value(const T& expr);
+  consteval info reflect_constant(const T& expr);
 ```
 
 [*]{.pnum} *Effects*: Equivalent to:
 
 ```cpp
 if (is_class_type(^^T)) {
-  return $reflect-value-class$(expr);
+  return $reflect-constant-class$(expr);
 } else {
-  return $reflect-value-scalar$(expr);
+  return $reflect-constant-scalar$(expr);
 }
 ```
 
