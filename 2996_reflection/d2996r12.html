@@ -1648,7 +1648,7 @@ implementations of examples is the following facility:</p>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> expand<span class="op">(</span>R range<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> args;</span>
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> r <span class="op">:</span> range<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    args<span class="op">.</span>push_back<span class="op">(</span>reflect_value<span class="op">(</span>r<span class="op">))</span>;</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    args<span class="op">.</span>push_back<span class="op">(</span>reflect_constant<span class="op">(</span>r<span class="op">))</span>;</span>
 <span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> substitute<span class="op">(^^</span>__impl<span class="op">::</span>replicator, args<span class="op">)</span>;</span>
 <span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
@@ -1860,7 +1860,7 @@ standard libraries today rely on an intrinsic for this):</p>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> std<span class="op">::</span>meta<span class="op">::</span>info make_integer_seq_refl<span class="op">(</span>T N<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  std<span class="op">::</span>vector args<span class="op">{^^</span>T<span class="op">}</span>;</span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span>T k <span class="op">=</span> <span class="dv">0</span>; k <span class="op">&lt;</span> N; <span class="op">++</span>k<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    args<span class="op">.</span>push_back<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>k<span class="op">))</span>;</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    args<span class="op">.</span>push_back<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>k<span class="op">))</span>;</span>
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> substitute<span class="op">(^^</span>std<span class="op">::</span>integer_sequence, args<span class="op">)</span>;</span>
 <span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
@@ -2313,7 +2313,7 @@ how other accesses work. This is instead proposed in <span class="citation" data
 <span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info member <span class="op">:</span> old_members<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> array_type <span class="op">=</span> substitute<span class="op">(^^</span>std<span class="op">::</span>array, <span class="op">{</span></span>
 <span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>            type_of<span class="op">(</span>member<span class="op">)</span>,</span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>N<span class="op">)</span>,</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>N<span class="op">)</span>,</span>
 <span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span>;</span>
 <span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> mem_descr <span class="op">=</span> data_member_spec<span class="op">(</span>array_type, <span class="op">{.</span>name <span class="op">=</span> identifier_of<span class="op">(</span>member<span class="op">)})</span>;</span>
 <span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>        new_members<span class="op">.</span>push_back<span class="op">(</span>mem_descr<span class="op">)</span>;</span>
@@ -2651,14 +2651,14 @@ Tuple<a href="#converting-a-struct-to-a-tuple" class="self-link"></a></h2>
 <span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>  std<span class="op">::</span>vector args <span class="op">=</span> <span class="op">{^^</span>To, <span class="op">^^</span>From<span class="op">}</span>;</span>
 <span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> mem <span class="op">:</span> nonstatic_data_members_of<span class="op">(^^</span>From, ctx<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>    args<span class="op">.</span>push_back<span class="op">(</span>reflect_value<span class="op">(</span>mem<span class="op">))</span>;</span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>    args<span class="op">.</span>push_back<span class="op">(</span>reflect_constant<span class="op">(</span>mem<span class="op">))</span>;</span>
 <span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>  <span class="co">/*</span></span>
 <span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a><span class="co">  Alternatively, with Ranges:</span></span>
 <span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a><span class="co">  args.append_range(</span></span>
 <span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a><span class="co">    nonstatic_data_members_of(^^From, ctx)</span></span>
-<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a><span class="co">    | std::views::transform(std::meta::reflect_value)</span></span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a><span class="co">    | std::views::transform(std::meta::reflect_constant)</span></span>
 <span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a><span class="co">    );</span></span>
 <span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a><span class="co">  */</span></span>
 <span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a></span>
@@ -2729,7 +2729,7 @@ the above): <a href="https://godbolt.org/z/1Tffn4vzn">EDG</a>, <a href="https://
 <span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> a2;</span>
 <span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>T x <span class="op">:</span> args<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>        a2<span class="op">.</span>push_back<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>x<span class="op">))</span>;</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>        a2<span class="op">.</span>push_back<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>x<span class="op">))</span>;</span>
 <span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> substitute<span class="op">(</span>tmpl, a2<span class="op">)</span>;</span>
@@ -2768,8 +2768,8 @@ that we can write <code class="sourceCode cpp">make_named_tuple<span class="op">
 or</li>
 <li>Can just do reflections all the way down so that we can write</li>
 </ol>
-<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>make_named_tuple<span class="op">&lt;^^</span><span class="dt">int</span>, std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span><span class="st">&quot;x&quot;</span><span class="op">)</span>,</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                 <span class="op">^^</span><span class="dt">double</span>, std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span><span class="st">&quot;y&quot;</span><span class="op">)&gt;()</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>make_named_tuple<span class="op">&lt;^^</span><span class="dt">int</span>, std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span><span class="st">&quot;x&quot;</span><span class="op">)</span>,</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                 <span class="op">^^</span><span class="dt">double</span>, std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span><span class="st">&quot;y&quot;</span><span class="op">)&gt;()</span></span></code></pre></div>
 <p>We do not currently support splicing string literals, and the
 <code class="sourceCode cpp">pair</code> approach follows the similar
 pattern already shown with
@@ -2858,14 +2858,14 @@ ways.</p>
 <span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">consteval</span> <span class="dt">int</span> latest<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> k <span class="op">=</span> <span class="dv">0</span>;</span>
 <span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>is_complete_type<span class="op">(</span>substitute<span class="op">(^^</span>Helper,</span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>                                       <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>k<span class="op">)</span> <span class="op">})))</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>                                       <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>k<span class="op">)</span> <span class="op">})))</span></span>
 <span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>      <span class="op">++</span>k;</span>
 <span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> k;</span>
 <span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">consteval</span> <span class="dt">void</span> increment<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>    define_aggregate<span class="op">(</span>substitute<span class="op">(^^</span>Helper,</span>
-<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>                                <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span>latest<span class="op">())})</span>,</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>                                <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>latest<span class="op">())})</span>,</span>
 <span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>                     <span class="op">{})</span>;</span>
 <span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
@@ -6630,7 +6630,7 @@ and <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="o
 <span id="cb121-17"><a href="#cb121-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb121-18"><a href="#cb121-18" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ctx <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">()</span>;</span>
 <span id="cb121-19"><a href="#cb121-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb121-20"><a href="#cb121-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r1 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_value<span class="op">(</span><span class="dv">42</span><span class="op">)</span>;  <span class="co">// represents int value of 42</span></span>
+<span id="cb121-20"><a href="#cb121-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r1 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span><span class="dv">42</span><span class="op">)</span>;  <span class="co">// represents int value of 42</span></span>
 <span id="cb121-21"><a href="#cb121-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb121-22"><a href="#cb121-22" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r2 <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_object<span class="op">(</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span>;  <span class="co">// represents int object</span></span>
 <span id="cb121-23"><a href="#cb121-23" aria-hidden="true" tabindex="-1"></a></span>
@@ -8667,7 +8667,7 @@ within a type-only context (<span>13.8.1 <a href="https://wg21.link/temp.res.gen
 <span id="cb147-3"><a href="#cb147-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:</span>R<span class="op">:]::</span>type member;  <span class="co">// typename applies to the qualified name</span></span>
 <span id="cb147-4"><a href="#cb147-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb147-5"><a href="#cb147-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-6"><a href="#cb147-6" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> fn<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb147-6"><a href="#cb147-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fn<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb147-7"><a href="#cb147-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">[:^^</span>S<span class="op">::</span>type<span class="op">:]</span> <span class="op">*</span>var;           <span class="co">// error: [:^^S::type:] is an expression</span></span>
 <span id="cb147-8"><a href="#cb147-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">typename</span> <span class="op">[:^^</span>S<span class="op">::</span>type<span class="op">:]</span> <span class="op">*</span>var;  <span class="co">// OK, declares variable with type int*</span></span>
 <span id="cb147-9"><a href="#cb147-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
@@ -10529,7 +10529,7 @@ type-only context.</span></p>
 <span id="cb168-5"><a href="#cb168-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb168-6"><a href="#cb168-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">struct</span> S <span class="op">{</span></span>
 <span id="cb168-7"><a href="#cb168-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> Ptr <span class="op">=</span> PtrTraits<span class="op">&lt;</span>T<span class="op">&gt;::</span>Ptr;  <span class="co">// OK, in a <em>defining-type-id</em></span></span>
-<span id="cb168-8"><a href="#cb168-8" aria-hidden="true" tabindex="-1"></a>  <span class="addu"><code class="sourceCode cpp"><span class="kw">using</span> Alias <span class="op">=</span> <span class="op">[:^^</span><span class="dt">int</span><span class="op">]</span>;         <span class="co">// OK, in a <em>defining-type-id</em></span></code></span></span>
+<span id="cb168-8"><a href="#cb168-8" aria-hidden="true" tabindex="-1"></a>  <span class="addu"><code class="sourceCode cpp"><span class="kw">using</span> Alias <span class="op">=</span> <span class="op">[:^^</span><span class="dt">int</span><span class="op">:]</span>;        <span class="co">// OK, in a <em>defining-type-id</em></span></code></span></span>
 <span id="cb168-9"><a href="#cb168-9" aria-hidden="true" tabindex="-1"></a>  T<span class="op">::</span>R f<span class="op">(</span>T<span class="op">::</span>P p<span class="op">)</span> <span class="op">{</span>                <span class="co">// OK, class scope</span></span>
 <span id="cb168-10"><a href="#cb168-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span>T<span class="op">::</span>R<span class="op">&gt;(</span>p<span class="op">)</span>;  <span class="co">// OK, <em>type-id</em> of a `static_cast`</span></span>
 <span id="cb168-11"><a href="#cb168-11" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
@@ -11660,7 +11660,7 @@ synopsis</strong></p>
 <span id="cb180-158"><a href="#cb180-158" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb180-159"><a href="#cb180-159" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.result], expression result reflection</span>
 <span id="cb180-160"><a href="#cb180-160" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb180-161"><a href="#cb180-161" aria-hidden="true" tabindex="-1"></a>    consteval info reflect_value(const T&amp; value);</span>
+<span id="cb180-161"><a href="#cb180-161" aria-hidden="true" tabindex="-1"></a>    consteval info reflect_constant(const T&amp; value);</span>
 <span id="cb180-162"><a href="#cb180-162" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
 <span id="cb180-163"><a href="#cb180-163" aria-hidden="true" tabindex="-1"></a>    consteval info reflect_object(T&amp; object);</span>
 <span id="cb180-164"><a href="#cb180-164" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
@@ -13072,14 +13072,16 @@ appears at <code class="sourceCode cpp"><em>P</em></code>, then a point
 determined as follows:
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_574" id="pnum_574">(6.1.1)</a></span>
-If <code class="sourceCode cpp"><em>I</em></code> is being used by an
-aggregate initialization that appears at point
-<code class="sourceCode cpp"><em>Q</em></code>, <code class="sourceCode cpp"><em>eval-point</em><span class="op">(</span><em>Q</em><span class="op">)</span></code>.</li>
+If an aggregate initialization is using
+<code class="sourceCode cpp"><em>I</em></code>, <code class="sourceCode cpp"><em>eval-point</em><span class="op">(</span><em>Q</em><span class="op">)</span></code>,
+where <code class="sourceCode cpp"><em>Q</em></code> is the point at
+which that aggregate initialization appears.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_575" id="pnum_575">(6.1.2)</a></span>
-Otherwise, if <code class="sourceCode cpp"><em>I</em></code> is being
-used for an initialization by an inherited constructor
-([class.inhctor.init]), a point whose immediate scope is the class scope
-corresponding to <code class="sourceCode cpp"><em>C</em></code>.</li>
+Otherwise, if an initialization by an inherited constructor
+([class.inhctor.init]) is using
+<code class="sourceCode cpp"><em>I</em></code>, a point whose immediate
+scope is the class scope corresponding to
+<code class="sourceCode cpp"><em>C</em></code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_576" id="pnum_576">(6.1.3)</a></span>
 Otherwise, a point whose immediate scope is the function parameter scope
 corresponding to the constructor definition that is using
@@ -13088,9 +13090,10 @@ corresponding to the constructor definition that is using
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_577" id="pnum_577">(6.2)</a></span>
 Otherwise, if a potentially-evaluated subexpression of a default
 argument ([dcl.fct.default]) appears at
-<code class="sourceCode cpp"><em>P</em></code>, and that default
-argument is being used by an invocation of a function ([expr.call]) that
-appears at point <code class="sourceCode cpp"><em>Q</em></code>, <code class="sourceCode cpp"><em>eval-point</em><span class="op">(</span><em>Q</em><span class="op">)</span></code>.</li>
+<code class="sourceCode cpp"><em>P</em></code>, <code class="sourceCode cpp"><em>eval-point</em><span class="op">(</span><em>Q</em><span class="op">)</span></code>,
+where <code class="sourceCode cpp"><em>Q</em></code> is the point at
+which the invocation of the function ([expr.call]) using that default
+argument appears.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_578" id="pnum_578">(6.3)</a></span>
 Otherwise, if the immediate scope of
 <code class="sourceCode cpp"><em>P</em></code> is a function parameter
@@ -13121,9 +13124,10 @@ Otherwise, if the immediate scope of
 innermost function parameter scope enclosing
 <code class="sourceCode cpp"><em>P</em></code> is introduced by a
 <code class="sourceCode cpp"><em>consteval-block-declaration</em></code>
-<code class="sourceCode cpp"><em>D</em></code> ([dcl.pre]), a point
-whose immediate scope is the scope inhabited by
-<code class="sourceCode cpp"><em>D</em></code>.</li>
+([dcl.pre]), a point whose immediate scope is the scope inhabited by the
+outermost
+<code class="sourceCode cpp"><em>consteval-block-declaration</em></code>
+that contains <code class="sourceCode cpp"><em>P</em></code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_581" id="pnum_581">(6.6)</a></span>
 Otherwise, <code class="sourceCode cpp"><em>P</em></code>.</li>
 </ul>
@@ -13135,16 +13139,16 @@ be the following scope:</p>
 If <code class="sourceCode cpp"><em>S</em></code> is a class scope or a
 namespace scope, <code class="sourceCode cpp"><em>S</em></code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_584" id="pnum_584">(7.2)</a></span>
+Otherwise, if <code class="sourceCode cpp"><em>S</em></code> is a
+function parameter scope introduced by the declaration of a function,
+<code class="sourceCode cpp"><em>S</em></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_585" id="pnum_585">(7.3)</a></span>
 Otherwise, if <code class="sourceCode cpp"><em>S</em></code> is a lambda
 scope introduced by a
 <code class="sourceCode cpp"><em>lambda-expression</em></code>
 <code class="sourceCode cpp"><em>L</em></code>, the function parameter
 scope corresponding to the call operator of the closure type for
 <code class="sourceCode cpp"><em>L</em></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_585" id="pnum_585">(7.3)</a></span>
-Otherwise, if <code class="sourceCode cpp"><em>S</em></code> is a
-function parameter scope introduced by the declaration of a function,
-<code class="sourceCode cpp"><em>S</em></code>.</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_586" id="pnum_586">(7.4)</a></span>
 Otherwise, <code class="sourceCode cpp"><em>ctx-scope</em><span class="op">(</span><em>S</em><span class="ch">&#39;)</span></code>
 where
@@ -13354,7 +13358,7 @@ note</em> ]</span></p>
 <span id="cb244-10"><a href="#cb244-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb244-11"><a href="#cb244-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb244-12"><a href="#cb244-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>is_accessible<span class="op">(</span>Cls<span class="op">::</span>r, fn<span class="op">()))</span>;                        <span class="co">// OK</span></span>
-<span id="cb244-13"><a href="#cb244-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>is_accessible<span class="op">(</span>Cls<span class="op">::</span>r, access_context<span class="op">::</span>current<span class="op">()))</span>;   <span class="co">// error: not accessible</span></span>
+<span id="cb244-13"><a href="#cb244-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>is_accessible<span class="op">(</span>Cls<span class="op">::</span>r, access_context<span class="op">::</span>current<span class="op">()))</span>;  <span class="co">// OK</span></span>
 <span id="cb244-14"><a href="#cb244-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>is_accessible<span class="op">(</span>Cls<span class="op">::</span>r, access_context<span class="op">::</span>unchecked<span class="op">()))</span>; <span class="co">// OK</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
@@ -13965,13 +13969,10 @@ specification of
 <code class="sourceCode cpp">reflect_constant</code>:</p>
 <div class="sourceCode" id="cb268"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb268-1"><a href="#cb268-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb268-2"><a href="#cb268-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info <em>reflect-constant-scalar</em><span class="op">(</span>T expr<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
-<p>Let <code class="sourceCode cpp"><em>V</em></code> be the value
-computed by an lvalue-to-rvalue conversion applied to
+<p>Let <code class="sourceCode cpp"><em>V</em></code> be the value of
 <code class="sourceCode cpp">expr</code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_702" id="pnum_702">3</a></span>
-<em>Constant When</em>: <code class="sourceCode cpp"><em>V</em></code>
-satisfies the constraints for the result of a prvalue constant
-expression ([expr.const]) and, if
+<em>Constant When</em>: If
 <code class="sourceCode cpp"><em>V</em></code> is a pointer to an
 object, then that object is meta-reflectable.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_703" id="pnum_703">4</a></span>
@@ -13981,11 +13982,14 @@ object, then that object is meta-reflectable.</p>
 <div class="sourceCode" id="cb269"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb269-1"><a href="#cb269-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb269-2"><a href="#cb269-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info <em>reflect-constant-class</em><span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> expr<span class="op">)</span>; <span class="co">// exposition only</span></span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_704" id="pnum_704">5</a></span>
-<em>Mandates</em>: <code class="sourceCode cpp">T</code> is copy
-constructible and structural ([temp.param]).</p>
+<em>Mandates</em>: <code class="sourceCode cpp">is_copy_constructible_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code> and
+<code class="sourceCode cpp">T</code> is structural ([temp.param]).</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_705" id="pnum_705">6</a></span>
-Let <code class="sourceCode cpp"><em>O</em></code> be an object
-copy-initialized from <code class="sourceCode cpp">expr</code>.</p>
+Let <code class="sourceCode cpp"><em>O</em></code> be an object of type
+<code class="sourceCode cpp"><em>T</em></code>
+direct-non-list-initialized from
+<code class="sourceCode cpp">expr</code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_706" id="pnum_706">7</a></span>
 <em>Constant When</em>:</p>
 <ul>

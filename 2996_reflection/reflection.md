@@ -331,7 +331,7 @@ template<typename R>
 consteval auto expand(R range) {
   std::vector<std::meta::info> args;
   for (auto r : range) {
-    args.push_back(reflect_value(r));
+    args.push_back(reflect_constant(r));
   }
   return substitute(^^__impl::replicator, args);
 }
@@ -532,7 +532,7 @@ template<typename T>
 consteval std::meta::info make_integer_seq_refl(T N) {
   std::vector args{^^T};
   for (T k = 0; k < N; ++k) {
-    args.push_back(std::meta::reflect_value(k));
+    args.push_back(std::meta::reflect_constant(k));
   }
   return substitute(^^std::integer_sequence, args);
 }
@@ -973,7 +973,7 @@ struct struct_of_arrays_impl {
     for (std::meta::info member : old_members) {
         auto array_type = substitute(^^std::array, {
             type_of(member),
-            std::meta::reflect_value(N),
+            std::meta::reflect_constant(N),
         });
         auto mem_descr = data_member_spec(array_type, {.name = identifier_of(member)});
         new_members.push_back(mem_descr);
@@ -1305,14 +1305,14 @@ consteval auto get_struct_to_tuple_helper() {
 
   std::vector args = {^^To, ^^From};
   for (auto mem : nonstatic_data_members_of(^^From, ctx)) {
-    args.push_back(reflect_value(mem));
+    args.push_back(reflect_constant(mem));
   }
 
   /*
   Alternatively, with Ranges:
   args.append_range(
     nonstatic_data_members_of(^^From, ctx)
-    | std::views::transform(std::meta::reflect_value)
+    | std::views::transform(std::meta::reflect_constant)
     );
   */
 
@@ -1365,7 +1365,7 @@ consteval auto subst_by_value(std::meta::info tmpl, std::vector<T> args)
 {
     std::vector<std::meta::info> a2;
     for (T x : args) {
-        a2.push_back(std::meta::reflect_value(x));
+        a2.push_back(std::meta::reflect_constant(x));
     }
 
     return substitute(tmpl, a2);
@@ -1402,8 +1402,8 @@ Because you cannot just pass `"x"` into a non-type template parameter of the for
 1. Can introduce a `pair` type so that we can write `make_named_tuple<pair<int, "x">, pair<double, "y">>()`, or
 2. Can just do reflections all the way down so that we can write
 ```cpp
-make_named_tuple<^^int, std::meta::reflect_value("x"),
-                 ^^double, std::meta::reflect_value("y")>()
+make_named_tuple<^^int, std::meta::reflect_constant("x"),
+                 ^^double, std::meta::reflect_constant("y")>()
 ```
 
 We do not currently support splicing string literals, and the `pair` approach follows the similar pattern already shown with `define_aggregate` (given a suitable `fixed_string` type):
@@ -1490,14 +1490,14 @@ struct TU_Ticket {
   static consteval int latest() {
     int k = 0;
     while (is_complete_type(substitute(^^Helper,
-                                       { std::meta::reflect_value(k) })))
+                                       { std::meta::reflect_constant(k) })))
       ++k;
     return k;
   }
 
   static consteval void increment() {
     define_aggregate(substitute(^^Helper,
-                                { std::meta::reflect_value(latest())}),
+                                { std::meta::reflect_constant(latest())}),
                      {});
   }
 };
@@ -3869,7 +3869,7 @@ namespace NSAlias = NS;
 
 constexpr auto ctx = std::meta::access_context::current();
 
-constexpr auto r1 = std::meta::reflect_value(42);  // represents int value of 42
+constexpr auto r1 = std::meta::reflect_constant(42);  // represents int value of 42
 
 constexpr auto r2 = std::meta::reflect_object(arr[1]);  // represents int object
 
@@ -4902,7 +4902,7 @@ template <auto R> struct TCls {
   typename [:R:]::type member;  // typename applies to the qualified name
 };
 
-int fn() {
+void fn() {
   [:^^S::type:] *var;           // error: [:^^S::type:] is an expression
   typename [:^^S::type:] *var;  // OK, declares variable with type int*
 }
@@ -5867,7 +5867,7 @@ template<class T> void f(T::R);   // ill-formed, no diagnostic required: attempt
 
 template<class T> struct S {
   using Ptr = PtrTraits<T>::Ptr;  // OK, in a $defining-type-id$
-  @[`using Alias = [:^^int];         // OK, in a $defining-type-id$`]{.addu}@
+  @[`using Alias = [:^^int:];        // OK, in a $defining-type-id$`]{.addu}@
   T::R f(T::P p) {                // OK, class scope
     return static_cast<T::R>(p);  // OK, $type-id$ of a `static_cast`
   }
@@ -6486,7 +6486,7 @@ namespace std::meta {
 
   // [meta.reflection.result], expression result reflection
   template<class T>
-    consteval info reflect_value(const T& value);
+    consteval info reflect_constant(const T& value);
   template<class T>
     consteval info reflect_object(T& object);
   template<class T>
@@ -7346,20 +7346,20 @@ static consteval access_context current() noexcept;
 [#]{.pnum} Given a program point `$P$`, let `$eval-point$($P$)` be the following program point:
 
 * [#.#]{.pnum} If a potentially-evaluated subexpression ([intro.execution]) of a default member initializer `$I$` for a member of a class `$C$` ([class.mem.general]) appears at `$P$`, then a point determined as follows:
-  * [#.#.#]{.pnum} If `$I$` is being used by an aggregate initialization that appears at point `$Q$`, `$eval-point$($Q$)`.
-  * [#.#.#]{.pnum} Otherwise, if `$I$` is being used for an initialization by an inherited constructor ([class.inhctor.init]), a point whose immediate scope is the class scope corresponding to `$C$`.
+  * [#.#.#]{.pnum} If an aggregate initialization is using `$I$`, `$eval-point$($Q$)`, where `$Q$` is the point at which that aggregate initialization appears.
+  * [#.#.#]{.pnum} Otherwise, if an initialization by an inherited constructor ([class.inhctor.init]) is using `$I$`, a point whose immediate scope is the class scope corresponding to `$C$`.
   * [#.#.#]{.pnum} Otherwise, a point whose immediate scope is the function parameter scope corresponding to the constructor definition that is using `$I$`.
-* [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, and that default argument is being used by an invocation of a function ([expr.call]) that appears at point `$Q$`, `$eval-point$($Q$)`.
+* [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, `$eval-point$($Q$)`, where `$Q$` is the point at which the invocation of the function ([expr.call]) using that default argument appears.
 * [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a function parameter scope introduced by a declaration `$D$`, and `$P$` appears either before the locus of `$D$` or within the trailing `$requires-clause$` of `$D$`, a point whose immediate scope is the innermost scope enclosing the locus of `$D$` that is not a template parameter scope.
 * [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a function parameter scope introduced by a `$lambda-expression$` `$L$` whose `$lambda-introducer$` appears at point `$Q$`, and `$P$` appears either within the `$trailing-return-type$` or the trailing `$requires-clause$` of `$L$`, `$eval-point$($Q$)`.
-* [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a block scope and the innermost function parameter scope enclosing `$P$` is introduced by a `$consteval-block-declaration$` `$D$` ([dcl.pre]), a point whose immediate scope is the scope inhabited by `$D$`.
+* [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a block scope and the innermost function parameter scope enclosing `$P$` is introduced by a `$consteval-block-declaration$` ([dcl.pre]), a point whose immediate scope is the scope inhabited by the outermost `$consteval-block-declaration$` that contains `$P$`.
 * [#.#]{.pnum} Otherwise, `$P$`.
 
 [#]{.pnum} Given a scope `$S$`, let `$ctx-scope$($S$)` be the following scope:
 
 * [#.#]{.pnum} If `$S$` is a class scope or a namespace scope, `$S$`.
-* [#.#]{.pnum} Otherwise, if `$S$` is a lambda scope introduced by a `$lambda-expression$` `$L$`, the function parameter scope corresponding to the call operator of the closure type for `$L$`.
 * [#.#]{.pnum} Otherwise, if `$S$` is a function parameter scope introduced by the declaration of a function, `$S$`.
+* [#.#]{.pnum} Otherwise, if `$S$` is a lambda scope introduced by a `$lambda-expression$` `$L$`, the function parameter scope corresponding to the call operator of the closure type for `$L$`.
 * [#.#]{.pnum} Otherwise, `$ctx-scope$($S$')` where `$S$'` is the parent scope of `$S$`.
 
 [#]{.pnum} An invocation of `current` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a scope corresponding to a templated entity.
@@ -7486,7 +7486,7 @@ public:
 };
 
 static_assert(is_accessible(Cls::r, fn()));                        // OK
-static_assert(is_accessible(Cls::r, access_context::current()));   // error: not accessible
+static_assert(!is_accessible(Cls::r, access_context::current()));  // OK
 static_assert(is_accessible(Cls::r, access_context::unchecked())); // OK
 ```
 :::
@@ -7839,9 +7839,9 @@ template <typename T>
   consteval info $reflect-constant-scalar$(T expr); // exposition only
 ```
 
-Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
+Let `$V$` be the value of `expr`.
 
-[#]{.pnum} *Constant When*: `$V$` satisfies the constraints for the result of a prvalue constant expression ([expr.const]) and, if `$V$` is a pointer to an object, then that object is meta-reflectable.
+[#]{.pnum} *Constant When*: If `$V$` is a pointer to an object, then that object is meta-reflectable.
 
 [#]{.pnum} *Returns*: A reflection of a value of type `$T$` with the computed value `$V$`.
 
@@ -7850,9 +7850,9 @@ template <typename T>
   consteval info $reflect-constant-class$(T const& expr); // exposition only
 ```
 
-[#]{.pnum} *Mandates*: `T` is copy constructible and structural ([temp.param]).
+[#]{.pnum} *Mandates*: `is_copy_constructible_v<T>` is `true` and `T` is structural ([temp.param]).
 
-[#]{.pnum} Let `$O$` be an object copy-initialized from `expr`.
+[#]{.pnum} Let `$O$` be an object of type `$T$` direct-non-list-initialized from `expr`.
 
 [#]{.pnum} *Constant When*:
 
