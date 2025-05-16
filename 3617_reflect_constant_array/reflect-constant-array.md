@@ -1,5 +1,5 @@
 ---
-title: "`std::reflect_constant_{array,string}`"
+title: "`std::meta::reflect_constant_{array,string}`"
 document: P3617R0
 date: today
 audience: LEWG
