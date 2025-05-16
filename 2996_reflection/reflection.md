@@ -8034,12 +8034,12 @@ Produces an injected declaration `$D$` ([expr.const]) that defines `$C$` and has
 ::: addu
 [1]{.pnum} Subclause [meta.reflection.traits] specifies consteval functions to query the properties of types ([meta.unary]), query the relationships between types ([meta.rel]), or transform types ([meta.trans]) at compile time. Each consteval function declared in this class has an associated class template declared elsewhere in this document.
 
-[#]{.pnum} Every function and function template declared in this clause has the following conditions required for a call to that function or function template to be a constant subexpression ([defns.const.subexpr]):
+[#]{.pnum} Every function and function template declared in this subclause has the following conditions required for a call to that function or function template to be a constant subexpression ([defns.const.subexpr]):
 
 * [#.#]{.pnum} For every parameter `p` of type `info`, `is_type(p)` is `true`.
 * [#.#]{.pnum} For every parameter `r` whose type is constrained on `reflection_range`, `ranges::all_of(r, is_type)` is `true`.
 
-[#]{.pnum} Unless otherwise specified, each function and function template described in this clause has the following behavior based on the signature of that function or function template. [The associated class template need not be instantiated.]{.note}
+[#]{.pnum} Unless otherwise specified, each function and function template described in this subclause has the following behavior based on the signature of that function or function template. [The associated class template need not be instantiated.]{.note}
 
 <table>
 <tr><th>Signature</th><th>*Returns*</th></tr>
