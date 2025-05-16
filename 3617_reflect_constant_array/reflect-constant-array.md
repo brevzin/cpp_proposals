@@ -57,7 +57,7 @@ This is a widely used pattern for being able to pass string literals as template
 |`using A = Test<"foo">;`|✅|
 |`using B = [: substitute(^^Test, {reflect_constant("foo"sv)}) :];`|❌ Error: `std::string_view` isn't structural, but even if it was, this wouldn't work because you couldn't deduce the size of `S`.|
 |`using C = Test<define_static_string("foo")>;`|❌ Error: cannot deduce the size of `S`|
-|`using D = [:substitute(^^Test, {define_static_string("foo")}):];`|❌ Error: cannot deduce the size of `S`|
+|`using D = [:substitute(^^Test, {reflect_constant(define_static_string("foo"))}):];`|❌ Error: cannot deduce the size of `S`|
 
 The issue here is that `define_static_string` returns a `char const*`, which loses size information. If, instead, we had a lower layer function that returned a reflection of an array, we could easily use that:
 
@@ -108,6 +108,7 @@ consteval auto expand_all(std::span<std::meta::info const> r)
 template <class T>
 struct SoaVector {
     // ...
+    // this is a span<info const>
     static constexpr auto ptr_mems =
         define_static_array(nsdms(^^Pointers));
     // ...
@@ -146,6 +147,7 @@ struct SoaVector {
 template <class T>
 struct SoaVector {
     // ...
+    // reflection of an object of type info const[N]
     static constexpr auto ptr_mems =
         reflect_constant_array(nsdms(^^Pointers));
     // ...
@@ -158,42 +160,74 @@ struct SoaVector {
 ```
 :::
 
+With the reflection of an array object, we can directly splice it and use structured bindings to get the pack of members we need all in one go — without any layers of indirection. It's a much more direct solution.
+
 Having the higher level facilities is very useful, having this additional lower level facility would also be useful.
 
 # Implementation Approach
 
 The implementation is actually very straightforward. `define_static_array` already has to produce a reflection of an array in order to do its job. So we simply split that step in two:
 
-::: std
+::: cmptable
+### Status Quo
 ```cpp
-namespace std {
-    template <typename T, T... Vs>
-    inline constexpr T __fixed_array[sizeof...(Vs)]{Vs...};
+template <typename T, T... Vs>
+inline constexpr T __fixed_array[sizeof...(Vs)]{Vs...};
 
-    template <ranges::input_range R>
-    consteval auto reflect_constant_array(R&& r) -> meta::info {
-        auto args = vector<meta::info>{^^ranges::range_value_t<R>};
-        for (auto&& elem : r) {
-            args.push_back(meta::reflect_constant(elem));
-        }
-        return substitute(^^__fixed_array, args);
+template <ranges::input_range R>
+consteval auto define_static_array(R&& r)
+    -> span<ranges::range_value_t<R> const>
+{
+    using T = ranges::range_value_t<R>;
+
+    // produce the array
+    auto args = vector<meta::info>{
+        ^^ranges::range_value_t<R>};
+    for (auto&& elem : r) {
+        args.push_back(meta::reflect_constant(elem));
     }
+    auto array =  substitute(^^__fixed_array, args);
 
-    template <ragnes::input_range R>
-    consteval auto define_static_array(R&& r) -> span<ranges::range_value_t<R> const> {
-        using T = ranges::range_value_t<R>;
+    // turn the array into a span
+    return span<T const>(
+        extract<T const*>(array),
+        extent(type_of(array)));
+}
+```
 
-        auto array = reflect_constant_array(r);
+### Proposed
+```cpp
+template <typename T, T... Vs>
+inline constexpr T __fixed_array[sizeof...(Vs)]{Vs...};
 
-        return span<T const>(
-            extract<T const*>(array),
-            extent(type_of(array)));
+template <ranges::input_range R>
+consteval auto reflect_constant_array(R&& r) -> meta::info {
+    auto args = vector<meta::info>{
+        ^^ranges::range_value_t<R>};
+    for (auto&& elem : r) {
+        args.push_back(meta::reflect_constant(elem));
     }
+    return substitute(^^__fixed_array, args);
+}
+
+template <ranges::input_range R>
+consteval auto define_static_array(R&& r)
+    -> span<ranges::range_value_t<R> const>
+{
+    using T = ranges::range_value_t<R>;
+
+    // produce the array
+    auto array = reflect_constant_array(r);
+
+    // turn the array into a span
+    return span<T const>(
+        extract<T const*>(array),
+        extent(type_of(array)));
 }
 ```
 :::
 
-The only difference is exposing `std::reflect_constant_array` instead of it being an implementation detail of `std::define_static_array`. And similar for `std::reflect_constant_string`.
+The only difference is exposing `std::reflect_constant_array` instead of it being an implementation detail of `std::define_static_array`. And similar for `std::reflect_constant_string`. It's a simple refactoring.
 
 # Scheduling for C++26
 
