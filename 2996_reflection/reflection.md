@@ -7862,7 +7862,7 @@ template <typename T>
 
   - [#.#]{.pnum} `$V$` satisfies the semantic constraints for the definition of a constexpr variable with static storage duration ([dcl.constexpr]) and
   - [#.#]{.pnum} given the invented template
-  
+
     ```cpp
     template <T P> struct TCls;
     ```
@@ -7887,6 +7887,27 @@ if constexpr (is_class_type(^^T)) {
 ```
 
 [Array-to-pointer and function-to-function-pointer decay occur.]{.note}
+
+::: example
+```cpp
+template <auto D>
+struct A { };
+
+struct N { int x; };
+struct K { char const* p; };
+
+constexpr auto r1 = reflect_constant(42);
+static_assert(is_value(r1));
+static_assert(r1 == template_arguments_of(^^A<42>)[0]);
+
+constexpr auto r2 = reflect_constant(N{42});
+static_assert(is_object(r2));
+static_assert(r2 == template_arguments_of(^^A<N{42}>)[0]);
+
+constexpr auto r3 = reflect_constant(K{nullptr}); // ok
+constexpr auto r4 = reflect_constant(K{"ebab"});  // error: constituent pointer points to string literal
+```
+:::
 
 ```cpp
 template <typename T>
