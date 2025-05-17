@@ -7852,14 +7852,24 @@ template <typename T>
 
 [#]{.pnum} *Mandates*: `is_copy_constructible_v<T>` is `true` and `T` is structural ([temp.param]).
 
-[#]{.pnum} Let `$O$` be an object of type `$T$` direct-non-list-initialized from `expr`.
+[#]{.pnum} Let `$V$` be an invented variable that would be introduced by the declaration
+
+  ```cpp
+  T $V$(expr);
+  ```
 
 [#]{.pnum} *Constant When*:
 
-* [#.#]{.pnum} `$O$` satisfies the constraints for the result of a glvalue constant expression ([expr.const]),
-* [#.#]{.pnum} every object referred to by a constituent reference of `$O$`, or pointed to by a constituent pointer value of `$O$`, is meta-reflectable.
+  - [#.#]{.pnum} `$V$` satisfies the semantic constraints for the definition of a constexpr variable with static storage duration ([dcl.constexpr]) and
+  - [#.#]{.pnum} given the invented template
+  
+    ```cpp
+    template <T P> struct TCls;
+    ```
 
-[#]{.pnum} *Returns*: A reflection of the template parameter object that is template-argument-equivalent to `$O$` ([temp.param]).
+     the `$template-id$` `TCls<$V$>` would be valid.
+
+[#]{.pnum} *Returns*: A reflection of the template parameter object that is template-argument-equivalent to the object denoted by `$V$` ([temp.param]).
 
 ```cpp
 template <typename T>
@@ -7869,7 +7879,7 @@ template <typename T>
 [*]{.pnum} *Effects*: Equivalent to:
 
 ```cpp
-if (is_class_type(^^T)) {
+if constexpr (is_class_type(^^T)) {
   return $reflect-constant-class$(expr);
 } else {
   return $reflect-constant-scalar$(expr);
