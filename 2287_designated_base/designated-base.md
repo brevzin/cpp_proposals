@@ -1,6 +1,6 @@
 ---
 title: "Designated-initializers for Base Classes"
-document: D2287R5
+document: P2287R5
 date: today
 audience: CWG
 author:
