@@ -51,7 +51,7 @@ To signal errors via throwing an exception, we need to settle on an exception ty
 
 Since these exceptions will never escape to runtime, we don't need to be concerned with deriving their type(s) from `std::exception`. However, it would be desirable for the exceptions to carry enough information for error recovery (when caught), enough information for high quality error messages (when uncaught), and for them to be suitable for error handling in user `constexpr` and `consteval` functions as well, in addition to standard ones.
 
-To that end, we propose the following exception type:
+To that end, we proposed the following exception type:
 
 ::: std
 ```cpp
@@ -169,45 +169,9 @@ For quality of implementation reasons, we want to include the identifier in the 
 
 There is no way to do that if we take and return `string_view` from the exception constructor and `what()`. Since the failure is caused by the identifier not being representable in the literal encoding, it trivially follows that we can't put it into an error string that uses the literal encoding.
 
-That is why we believe that the currently proposed interface, taking and returning `u8string_view`, is the path to take in order to maintain consistency with the current design of [@P2996R12], which is the result of extensive discussions in SG16.
+That is why we believe that taking and returning `u8string_view` is essential in order to maintain consistency with the current design of [@P2996R12], which is the result of extensive discussions in SG16.
 
-(The fact that the standard library doesn't provide adequate support for `char8_t` strings is fixable by... adding that support.)
-
-What if, however, we follow [@P2996R12] even more closely and provide two constructors for `meta::exception`, one taking `u8string_view` and one taking `string_view`?
-
-This is possible, and will allow users to take advantage of present standard library facilities for string manipulation when constructing the exception. We don't propose it here for two reasons. One, it allows writing code that isn't quite correct, even though it would probably work on all tested platforms.
-
-Consider this hypothetical user function:
-
-::: std
-```cpp
-consteval auto user_fn(info x)
-{
-    // ...
-
-    info y = member_of(x, i);
-
-    if( is_private(y) )
-    {
-        throw meta::exception(std::format("member {} is private", identifier_of(y)), ^^user_fn, ...);
-    }
-
-    // ...
-}
-```
-:::
-
-If the identifier of `y` is not representable in the literal encoding, this function will throw an exception that says that the identifier is not representable, instead of the correct one saying that the member is private.
-
-Since in the common case the literal encoding is UTF-8, this mistake is going to go undetected.
-
-Whether this is a problem worth worrying about is up for debate. The principled approach is to only take `u8string_view`, forcing correct user code whether the user likes it or not. A less principled but considerably more pragmatic approach would prefer ease of use over forced (over-)correctness and add the `string_view` constructor.
-
-But the second reason for our not proposing the additional `string_view` constructor is that it's easy to add at a later date.
-
-## Post-SG16 Telecon
-
-After the SG16 telecon on February 5th, 2025, which discussed the question of encoding above and whether we want `string_view` or `u8string_view` construction and access, we think the more usable API might be more like:
+To address the usability question, after the SG16 telecon on February 5th, 2025, we decided to provide a dual API, like the rest of [@P2996R12], and have two constructors, one taking `u8string_view` and one taking `string_view`:
 
 ::: std
 ```cpp
@@ -232,6 +196,7 @@ public:
   consteval u8string_view u8what() const noexcept {
     return $what_$;
   }
+
   consteval string what() const noexcept {
     return $u8-to-ordinary$($what_$);
   }
@@ -246,7 +211,6 @@ public:
 where `what()` fails to be constant if it cannot transcode. It would be nice if we had at least `$u8-to-ordinary$` and `$ordinary-to-u8$` already specified and present but, well, today is better than tomorrow.
 
 This gives us a maximally usable API — since the standard library has plenty of support for `string` formatting and that can be used here, the conversion from ordinary to UTF-8 is fine. It does still mean that attempting to call `what()` could fail, but... so be it.
-
 
 ## Single or Multiple Types
 
@@ -294,6 +258,55 @@ It's not as straightforward as just using an exception per function because func
 
 Furthermore, an exception hierarchy can be designed at a later date, with the functions changed to throw an appropriate type derived from the currently proposed `meta::exception`.
 Code written against this proposal will continue to work unmodified, and new code would be able to use more specific catch clauses.
+
+## Derivation from `std::exception`
+
+Our initial proposal did not derive `std::meta::exception` from `std::exception`, because `meta::exception` only exists at compile time, whereas `std::exception`-derived exceptions inhabit the runtime domain.
+
+However, we repeatedly received suggestions to the contrary, and we now think that the derivation would be desirable for consistency with all other standard exceptions, some of which will end up being used at compile time as well.
+
+`std::exception::what` returns `char const*`, rather than `std::string` as in the interface listed above, but this is surmountable by a slight modification.
+We just need to keep an `optional<string>` member with the `what` string in the ordinary encoding, in addition to the `u8string` member that holds the `what` string in UTF-8.
+If the conversion from UTF-8 to ordinary fails, we leave the `optional` disengaged and in that case `what()` fails.
+
+::: std
+```cpp
+namespace std::meta {
+
+class exception
+{
+private:
+  u8string $u8what_$;         // exposition only
+  optional<string> $what_$;   // exposition only
+  info $from_$  ;             // exposition only
+  source_location $where_$;   // exposition only
+
+public:
+  consteval exception(u8string_view what, info from,
+    source_location where = source_location::current()) noexcept
+    : $u8what_$(what), $from_$(from), $where_$(where) {
+      if($u8-to-ordinary-would-succeed$(what))
+        $what_$ = $u8-to-ordinary$(what);
+    }
+
+  consteval exception(string_view what, info from,
+    source_location where = source_location::current()) noexcept
+    : $u8what_$($ordinary-to-u8$(what)), $what_$(what), $from_$(from), $where_$(where) {}
+
+  consteval u8string_view u8what() const noexcept {
+    return $u8what_$;
+  }
+
+  constexpr char const* what() const noexcept {
+    return $what_$->c_str();
+  }
+
+  // ...
+};
+
+}
+```
+:::
 
 # Recoverable or Unrecoverable
 
