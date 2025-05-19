@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-05-11" />
+  <meta name="dcterms.date" content="2025-05-19" />
   <title>Error Handling in Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-05-11</td>
+    <td>2025-05-19</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -608,10 +608,9 @@ History<span></span></a></li>
 <li><a href="#exception-type" id="toc-exception-type"><span class="toc-section-number">3</span> Exception Type<span></span></a>
 <ul>
 <li><a href="#encoding" id="toc-encoding"><span class="toc-section-number">3.1</span> Encoding<span></span></a></li>
-<li><a href="#post-sg16-telecon" id="toc-post-sg16-telecon"><span class="toc-section-number">3.2</span> Post-SG16
-Telecon<span></span></a></li>
-<li><a href="#single-or-multiple-types" id="toc-single-or-multiple-types"><span class="toc-section-number">3.3</span> Single or Multiple
+<li><a href="#single-or-multiple-types" id="toc-single-or-multiple-types"><span class="toc-section-number">3.2</span> Single or Multiple
 Types<span></span></a></li>
+<li><a href="#derivation-from-stdexception" id="toc-derivation-from-stdexception"><span class="toc-section-number">3.3</span> Derivation from <code class="sourceCode cpp">std<span class="op">::</span>exception</code><span></span></a></li>
 </ul></li>
 <li><a href="#recoverable-or-unrecoverable" id="toc-recoverable-or-unrecoverable"><span class="toc-section-number">4</span> Recoverable or
 Unrecoverable<span></span></a></li>
@@ -724,7 +723,7 @@ for error handling in user
 and
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 functions as well, in addition to standard ones.</p>
-<p>To that end, we propose the following exception type:</p>
+<p>To that end, we proposed the following exception type:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
@@ -882,94 +881,46 @@ constructor and
 Since the failure is caused by the identifier not being representable in
 the literal encoding, it trivially follows that we can’t put it into an
 error string that uses the literal encoding.</p>
-<p>That is why we believe that the currently proposed interface, taking
-and returning <code class="sourceCode cpp">u8string_view</code>, is the
-path to take in order to maintain consistency with the current design of
-<span class="citation" data-cites="P2996R12"><a href="https://wg21.link/p2996r12" role="doc-biblioref">[P2996R12]</a></span>, which is the result of
+<p>That is why we believe that taking and returning
+<code class="sourceCode cpp">u8string_view</code> is essential in order
+to maintain consistency with the current design of <span class="citation" data-cites="P2996R12"><a href="https://wg21.link/p2996r12" role="doc-biblioref">[P2996R12]</a></span>, which is the result of
 extensive discussions in SG16.</p>
-<p>(The fact that the standard library doesn’t provide adequate support
-for <code class="sourceCode cpp"><span class="dt">char8_t</span></code>
-strings is fixable by… adding that support.)</p>
-<p>What if, however, we follow <span class="citation" data-cites="P2996R12"><a href="https://wg21.link/p2996r12" role="doc-biblioref">[P2996R12]</a></span> even more closely and provide
-two constructors for <code class="sourceCode cpp">meta<span class="op">::</span>exception</code>,
+<p>To address the usability question, after the SG16 telecon on February
+5th, 2025, we decided to provide a dual API, like the rest of <span class="citation" data-cites="P2996R12"><a href="https://wg21.link/p2996r12" role="doc-biblioref">[P2996R12]</a></span>, and have two constructors,
 one taking <code class="sourceCode cpp">u8string_view</code> and one
-taking <code class="sourceCode cpp">string_view</code>?</p>
-<p>This is possible, and will allow users to take advantage of present
-standard library facilities for string manipulation when constructing
-the exception. We don’t propose it here for two reasons. One, it allows
-writing code that isn’t quite correct, even though it would probably
-work on all tested platforms.</p>
-<p>Consider this hypothetical user function:</p>
+taking <code class="sourceCode cpp">string_view</code>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> user_fn<span class="op">(</span>info x<span class="op">)</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    info y <span class="op">=</span> member_of<span class="op">(</span>x, i<span class="op">)</span>;</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> is_private<span class="op">(</span>y<span class="op">)</span> <span class="op">)</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> meta<span class="op">::</span>exception<span class="op">(</span>std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;member {} is private&quot;</span>, identifier_of<span class="op">(</span>y<span class="op">))</span>, <span class="op">^^</span>user_fn, <span class="op">...)</span>;</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-</blockquote>
-</div>
-<p>If the identifier of <code class="sourceCode cpp">y</code> is not
-representable in the literal encoding, this function will throw an
-exception that says that the identifier is not representable, instead of
-the correct one saying that the member is private.</p>
-<p>Since in the common case the literal encoding is UTF-8, this mistake
-is going to go undetected.</p>
-<p>Whether this is a problem worth worrying about is up for debate. The
-principled approach is to only take
-<code class="sourceCode cpp">u8string_view</code>, forcing correct user
-code whether the user likes it or not. A less principled but
-considerably more pragmatic approach would prefer ease of use over
-forced (over-)correctness and add the
-<code class="sourceCode cpp">string_view</code> constructor.</p>
-<p>But the second reason for our not proposing the additional
-<code class="sourceCode cpp">string_view</code> constructor is that it’s
-easy to add at a later date.</p>
-<h2 data-number="3.2" id="post-sg16-telecon"><span class="header-section-number">3.2</span> Post-SG16 Telecon<a href="#post-sg16-telecon" class="self-link"></a></h2>
-<p>After the SG16 telecon on February 5th, 2025, which discussed the
-question of encoding above and whether we want
-<code class="sourceCode cpp">string_view</code> or
-<code class="sourceCode cpp">u8string_view</code> construction and
-access, we think the more usable API might be more like:</p>
-<div class="std">
-<blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> exception</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  u8string <em>what_</em>;         <span class="co">// exposition only</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  info <em>from_</em>;             <span class="co">// exposition only</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  source_location <em>where_</em>; <span class="co">// exposition only</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> exception<span class="op">(</span>u8string_view what, info from,</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> <em>what_</em><span class="op">(</span>what<span class="op">)</span>, <em>from_</em><span class="op">(</span>from<span class="op">)</span>, <em>where_</em><span class="op">(</span>where<span class="op">)</span> <span class="op">{}</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> exception<span class="op">(</span>string_view what, info from,</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span></span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> <em>what_</em><span class="op">(</span><em>ordinary-to-u8</em><span class="op">(</span>what<span class="op">))</span>, <em>from_</em><span class="op">(</span>from<span class="op">)</span>, <em>where_</em><span class="op">(</span>where<span class="op">)</span> <span class="op">{}</span></span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> u8string_view u8what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <em>what_</em>;</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> string what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <em>u8-to-ordinary</em><span class="op">(</span><em>what_</em><span class="op">)</span>;</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ...</span></span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> exception</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  u8string <em>what_</em>;         <span class="co">// exposition only</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  info <em>from_</em>;             <span class="co">// exposition only</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  source_location <em>where_</em>; <span class="co">// exposition only</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> exception<span class="op">(</span>u8string_view what, info from,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> <em>what_</em><span class="op">(</span>what<span class="op">)</span>, <em>from_</em><span class="op">(</span>from<span class="op">)</span>, <em>where_</em><span class="op">(</span>where<span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> exception<span class="op">(</span>string_view what, info from,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> <em>what_</em><span class="op">(</span><em>ordinary-to-u8</em><span class="op">(</span>what<span class="op">))</span>, <em>from_</em><span class="op">(</span>from<span class="op">)</span>, <em>where_</em><span class="op">(</span>where<span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> u8string_view u8what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <em>what_</em>;</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> string what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <em>u8-to-ordinary</em><span class="op">(</span><em>what_</em><span class="op">)</span>;</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ...</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>where
@@ -984,7 +935,7 @@ formatting and that can be used here, the conversion from ordinary to
 UTF-8 is fine. It does still mean that attempting to call
 <code class="sourceCode cpp">what<span class="op">()</span></code> could
 fail, but… so be it.</p>
-<h2 data-number="3.3" id="single-or-multiple-types"><span class="header-section-number">3.3</span> Single or Multiple Types<a href="#single-or-multiple-types" class="self-link"></a></h2>
+<h2 data-number="3.2" id="single-or-multiple-types"><span class="header-section-number">3.2</span> Single or Multiple Types<a href="#single-or-multiple-types" class="self-link"></a></h2>
 <p>We are proposing a single exception type. The runtime analogy is
 <code class="sourceCode cpp">std<span class="op">::</span>system_error</code>
 as opposed to a hierarchy of exception types.</p>
@@ -993,32 +944,32 @@ reason and do different things depending on it less convenient to write.
 It would have to look like this</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> x<span class="op">.</span>from<span class="op">()</span> <span class="op">==</span> <span class="op">^^</span>identifier_of <span class="op">)</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">// handle errors originating from identifier_of</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span><span class="op">(</span> x<span class="op">.</span>from<span class="op">()</span> <span class="op">==</span> <span class="op">^^</span>members_of <span class="op">)</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">// handle errors originating from members_of</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span> x<span class="op">.</span>from<span class="op">()</span> <span class="op">==</span> <span class="op">^^</span>identifier_of <span class="op">)</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">// handle errors originating from identifier_of</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span><span class="op">(</span> x<span class="op">.</span>from<span class="op">()</span> <span class="op">==</span> <span class="op">^^</span>members_of <span class="op">)</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">// handle errors originating from members_of</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>instead of, hypothetically, like this</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>identifier_exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle errors originating from identifier_of</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>members_exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle errors originating from members_of</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co">// ...</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>identifier_exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle errors originating from identifier_of</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span><span class="op">(</span> meta<span class="op">::</span>members_exception <span class="kw">const</span><span class="op">&amp;</span> x <span class="op">)</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle errors originating from members_of</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">// ...</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>(exception type names are illustrative.)</p>
@@ -1032,6 +983,68 @@ with the functions changed to throw an appropriate type derived from the
 currently proposed <code class="sourceCode cpp">meta<span class="op">::</span>exception</code>.
 Code written against this proposal will continue to work unmodified, and
 new code would be able to use more specific catch clauses.</p>
+<h2 data-number="3.3" id="derivation-from-stdexception"><span class="header-section-number">3.3</span> Derivation from <code class="sourceCode cpp">std<span class="op">::</span>exception</code><a href="#derivation-from-stdexception" class="self-link"></a></h2>
+<p>Our initial proposal did not derive <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>exception</code>
+from <code class="sourceCode cpp">std<span class="op">::</span>exception</code>,
+because <code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
+only exists at compile time, whereas <code class="sourceCode cpp">std<span class="op">::</span>exception</code>-derived
+exceptions inhabit the runtime domain.</p>
+<p>However, we repeatedly received suggestions to the contrary, and we
+now think that the derivation would be desirable for consistency with
+all other standard exceptions, some of which will end up being used at
+compile time as well.</p>
+<p><code class="sourceCode cpp">std<span class="op">::</span>exception<span class="op">::</span>what</code>
+returns <code class="sourceCode cpp"><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span></code>,
+rather than
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>
+as in the interface listed above, but this is surmountable by a slight
+modification. We just need to keep an <code class="sourceCode cpp">optional<span class="op">&lt;</span>string<span class="op">&gt;</span></code>
+member with the <code class="sourceCode cpp">what</code> string in the
+ordinary encoding, in addition to the
+<code class="sourceCode cpp">u8string</code> member that holds the
+<code class="sourceCode cpp">what</code> string in UTF-8. If the
+conversion from UTF-8 to ordinary fails, we leave the
+<code class="sourceCode cpp">optional</code> disengaged and in that case
+<code class="sourceCode cpp">what<span class="op">()</span></code>
+fails.</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std<span class="op">::</span>meta <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> exception</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  u8string <em>u8what_</em>;         <span class="co">// exposition only</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  optional<span class="op">&lt;</span>string<span class="op">&gt;</span> <em>what_</em>;   <span class="co">// exposition only</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  info <em>from_</em>  ;             <span class="co">// exposition only</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  source_location <em>where_</em>;   <span class="co">// exposition only</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> exception<span class="op">(</span>u8string_view what, info from,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> <em>u8what_</em><span class="op">(</span>what<span class="op">)</span>, <em>from_</em><span class="op">(</span>from<span class="op">)</span>, <em>where_</em><span class="op">(</span>where<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span><span class="op">(</span><em>u8-to-ordinary-would-succeed</em><span class="op">(</span>what<span class="op">))</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        <em>what_</em> <span class="op">=</span> <em>u8-to-ordinary</em><span class="op">(</span>what<span class="op">)</span>;</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> exception<span class="op">(</span>string_view what, info from,</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    source_location where <span class="op">=</span> source_location<span class="op">::</span>current<span class="op">())</span> <span class="kw">noexcept</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> <em>u8what_</em><span class="op">(</span><em>ordinary-to-u8</em><span class="op">(</span>what<span class="op">))</span>, <em>what_</em><span class="op">(</span>what<span class="op">)</span>, <em>from_</em><span class="op">(</span>from<span class="op">)</span>, <em>where_</em><span class="op">(</span>where<span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> u8string_view u8what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <em>u8what_</em>;</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> what<span class="op">()</span> <span class="kw">const</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <em>what_</em><span class="op">-&gt;</span>c_str<span class="op">()</span>;</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ...</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="recoverable-or-unrecoverable"><span class="header-section-number">4</span> Recoverable or Unrecoverable<a href="#recoverable-or-unrecoverable" class="self-link"></a></h1>
 <p>We went through the proposed API in <span class="citation" data-cites="P2996R12"><a href="https://wg21.link/p2996r12" role="doc-biblioref">[P2996R12]</a></span> and we think that all of the
 library functions should be recoverable — that is failing to meet the
