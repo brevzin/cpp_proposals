@@ -16,8 +16,7 @@ tag: reflection
 
 Since [@P3560R0]:
 
-* after discussion in an SG16 telecon, we changed the proposed API to be able to have a `string_view` constructor and `string` accessor. See [here](#post-sg16-telecon).
-* after LEWG discussion (and [@P3637R0]{.title}), changed to inherit from `std::exception`
+* after discussion in an SG16 telecon, LEWG discussion, and [@P3637R0]{.title}, we changed the proposed `std::meta::exception` type to inherit from `std::exception` ([see below](#derivation-from-stdexception)), and thus have a `char const* what()` accessor in addition to the `u8string_view u8what()` one.
 * rebased on [@P2996R12]
 
 # Introduction
