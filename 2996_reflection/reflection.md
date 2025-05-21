@@ -1,8 +1,8 @@
 ---
 title: "Reflection for C++26"
-document: P2996R12
+document: D2996R13
 date: today
-audience: CWG, EWG, LWG
+audience: CWG, LWG
 author:
     - name: Wyatt Childers
       email: <wcc@edg.com>
@@ -25,6 +25,11 @@ tag: reflection
 ---
 
 # Revision History
+
+Since [@P2996R12]:
+
+* core wording updates
+  * handle members of static anonymous unions / integrate suggested fix for [@CWG3026]
 
 Since [@P2996R11]:
 
@@ -4340,12 +4345,14 @@ Add `$reflect-expression$` to the grammar for `$unary-expression$` in paragraph 
 
 ### [expr.unary.op]{.sref} Unary operators {-}
 
+[The changes to paragraph 3.1 are part of the resolution to [@CWG3026].]{.ednote}
+
 Modify paragraphs 3 and 4 to permit forming a pointer-to-member with a splice.
 
 ::: std
 [3]{.pnum} The operand of the unary `&` operator shall be an lvalue of some type `T`.
 
-* [#.#]{.pnum} If the operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} [naming]{.rm} [designating]{.addu} a non-static or variant member of some class `C`, other than an explicit object member function, the result has type "pointer to member of class `C` of type `T`" and designates `C::m`.
+* [#.#]{.pnum} If the operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} [naming]{.rm} [designating]{.addu} a non-static [or variant]{.rm} member `m` [of some class `C`]{.rm}, other than an explicit object member function, [`m` shall be a direct member of some class `C` that is not an anonymous union.]{.addu} [the]{.rm} [The]{.addu} result has type "pointer to member of class `C` of type `T`" and designates `C::m`. [[A `$qualified-id$` that names a member of a namespace-scope anonymous union is considered to be a class member access expression ([expr.prim.id.general]) and cannot be used to form a pointer to member.]{.note}]{.addu}
 
 * [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]{.sref}) or function ([basic.compound]{.sref}). If the operand designates an explicit object member function ([dcl.fct]{.sref}), the operand shall be a `$qualified-id$` [or a `$splice-expression$`]{.addu}.
 
@@ -4414,6 +4421,7 @@ consteval void g(std::meta::info r, X<false> xv) {
   - [#.#.#]{.pnum} Otherwise, if the `$template-name$` denotes a primary class template, primary variable template, or alias template, `$R$` represents that template.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` names a type alias that was introduced by the declaration of a template parameter, `$R$` represents the underlying entity of that type alias. For any other `$identifier$` that names a type alias, `$R$` represents that type alias.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$class-name$` or an `$enum-name$`, `$R$` represents the denoted type.
+- [#.#]{.pnum} Otherwise, if the `$identifier$` names a class member of an anonymous union ([class.union.anon]), `$R$` represents that class member.
 - [#.#]{.pnum} Otherwise, the `$qualified-reflection-name$` shall be an `$id-expression$` `$I$` and `$R$` is `^^ $I$` (see below).
 
 [#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $type-id$` represents an entity determined as follows:
@@ -4592,16 +4600,17 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 No member of an injected declaration shall have a name reserved by the implementation ([lex.name]); no diagnostic is required.
 
-[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration `$D$` ([meta.reflection.define.aggregate]). The scope of `$D$` shall not enclose `$C$`. The program is ill-formed if a scope `$S$` encloses exactly one of `$C$` or `$D$` where `$S$` is
+[#]{.pnum} Let `$C$` be a `$consteval-block-declaration$`, the evaluation of whose corresponding expression produces an injected declaration for an entity `$E$` ([meta.reflection.define.aggregate]). The program is ill-formed if either
 
-* [#.#]{.pnum} a function parameter scope, or
-* [#.#]{.pnum} a class scope.
+- [#.#]{.pnum} `$C$` is enclosed by a scope associated with a declaration of `$E$` or
+- [#.#]{.pnum} letting `$P$` be a point whose immediate scope is that to which `$E$` belongs, there is a function parameter scope or class scope that encloses exactly one of `$C$` or `$P$`.
 
 ::: example
 ```cpp
 struct S0 {
   consteval {
-    std::meta::define_aggregate(^^S0, {}); // error: S0 encloses the consteval block
+    std::meta::define_aggregate(^^S0, {});
+      // error: scope associated with S0 encloses the consteval block
   }
 };
 
@@ -4614,7 +4623,7 @@ template <std::meta::info R> consteval void tfn1() {
 
 struct S2;
 consteval { tfn1<^^S2>(); }
-  // OK, tfn1<^^S2>() and S2 are enclosed by the same scope
+  // OK, tfn1<^^S2>() and the declaration of S2 are enclosed by the same scope
 
 template <std::meta::info R> consteval void tfn2() {
   consteval { std::meta::define_aggregate(R, {}); }
@@ -4623,7 +4632,8 @@ template <std::meta::info R> consteval void tfn2() {
 
 struct S3;
 consteval { tfn2<^^S3>(); }
-  // error: complete_type(^^S3) is enclosed tfn2<^^S3>, but S3 is not
+  // error: function parameter scope of tfn2<^^S3> intervenes between the declaration of S3
+  // and the consteval block that produces the injected declaration
 
 template <typename> struct TCls {
   struct S4;
@@ -6926,11 +6936,21 @@ static_assert(constant_of(^^x) == constant_of(^^y));    // OK, both constant_of(
                                                         // represent the value 0
 static_assert(constant_of(^^x) == reflect_constant(0)); // OK, likewise
 
-info fn() {
+struct S { int m; };
+constexpr S s {42};
+static_assert(is_object(constant_of(^^s)) &&
+              is_object(reflect_object(s)));
+static_assert(constant_of(^^s) != reflect_object(s));   // OK, template parameter object that is
+                                                        // template-argument-equivalent to s is a different
+                                                        // object than s
+static_assert(constant_of(constant_of(^^s)) ==
+              constant_of(reflect_object(s)));          // OK
+
+consteval info fn() {
   constexpr int x = 42;
   return ^^x;
 }
-info r = constant_of(fn());  // error: x is outside its lifetime
+constexpr info r = constant_of(fn());  // error: x is outside its lifetime
 ```
 :::
 
@@ -7378,6 +7398,7 @@ struct B : A {
   consteval B(int p, int q) : A(p * q) {}
   info s = access_context::current().scope();
 };
+struct C : B { using B::B; };
 
 struct Agg {
   consteval bool eq(info rhs = access_context::current().scope()) {
@@ -7391,6 +7412,7 @@ static_assert(Agg{}.s == access_context::current().scope());  // OK
 static_assert(Agg{}.eq());  // OK
 static_assert(B(1).s == ^^B);  // OK
 static_assert(is_constructor(B{1, 2}.s) && parent_of(B{1, 2}.s) == ^^B);  // OK
+static_assert(is_constructor(C{1, 2}.s) && parent_of(C{1, 2}.s) == ^^B);  // OK
 
 auto fn() -> [:is_namespace(access_context::current().scope()) ? ^^int : ^^bool:];
 static_assert(type_of(^^fn) == ^^auto()->int);  // OK
