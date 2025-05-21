@@ -6941,8 +6941,8 @@ constexpr S s {42};
 static_assert(is_object(constant_of(^^s)) &&
               is_object(reflect_object(s)));
 static_assert(constant_of(^^s) != reflect_object(s));   // OK, template parameter object that is
-                                                        // template-argument-equivalent to x is a different
-                                                        // object than x
+                                                        // template-argument-equivalent to s is a different
+                                                        // object than s
 static_assert(constant_of(constant_of(^^s)) ==
               constant_of(reflect_object(s)));          // OK
 
