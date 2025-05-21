@@ -1,6 +1,6 @@
 ---
 title: "`define_static_{string,object,array}`"
-document: P3491R2
+document: P3491R3
 date: today
 audience: CWG, LWG
 author:
@@ -17,6 +17,8 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [@P3491R2], merged in [@P3617R0]{.title} following LEWG telecon on May 20th.
 
 Since [@P3491R1], added support for all string literal types. Having discovered [@CWG2765]{.title}, referring to that issue and updating wording to assume its adoption. Retargeting CWG and LWG.
 
@@ -41,13 +43,29 @@ So having facilities to solve these problems until the general language solution
 
 # Proposal
 
-This paper proposes three new additions — `std::define_static_string`, `std::define_static_object`, and `std::define_static_array`, as well as a helper function for dealing with string literals:
+This paper proposes several new library functions, grouped into three kinds:
+
+* helper function for identifying string literals
+* three higher-level functions for defining static storage objects: `define_static_string`, `define_static_object`, and `define_static_array`. These are just in `std` as their interface is not strictly reflection-related
+* two lower-level functions for returning a reflection of an array: `meta::reflect_constant_string` and `meta::reflect_constant_array` (from [@P3617R0]).
+
 
 ::: std
 ```cpp
 namespace std {
   consteval auto is_string_literal(char const* p) -> bool;
+  consteval auto is_string_literal(wchar_t const* p) -> bool;
   consteval auto is_string_literal(char8_t const* p) -> bool;
+  consteval auto is_string_literal(char16_t const* p) -> bool;
+  consteval auto is_string_literal(char32_t const* p) -> bool;
+
+  namespace meta {
+    template <ranges::input_range R> // only if the value_type is char or char8_t
+    consteval auto reflect_constant_string(R&& r) -> info;
+
+    template <ranges::input_range R>
+    consteval auto reflect_constant_array(R&& r) -> info;
+  }
 
   template <ranges::input_range R> // only if the value_type is char or char8_t
   consteval auto define_static_string(R&& r) -> ranges::range_value_t<R> const*;
@@ -81,7 +99,7 @@ consteval auto define_static_string(string_view str) -> char const* {
 
 But that's a fairly awkward implementation, and the string use-case is sufficiently common as to merit a more ergonomic solution.
 
-There are two design questions that we have to address: whether objects can overlap and whether `define_static_array` needs to mandate structural.
+There are three design questions that we have to address: whether objects can overlap, whether `define_static_array` needs to mandate structural, and what the return type should be.
 
 ## The Overlapping Question
 
@@ -235,54 +253,221 @@ None of these options is particularly appealing. The last prevents some very mot
 
 For now, this paper proposes the last option, as it's the simplest (and the relative cost will hopefully decrease over time). Allowing the call but rejecting use as non-type template parameters is appealing though.
 
-## Possible Implementation
+## Return Type and Layering
 
-`define_static_string` can be nearly implemented with the facilities in [@P2996R7], we just need `is_string_literal` to handle the different signature proposed in this paper.
+[This section was migrated from [@P3617R0]]{.ednote}
 
- `define_static_array` for is similar:
+`define_static_array` returning a `span<T const>` and `define_static_string` returning a `char const*` is useful, but sometimes it's insufficient. Matthias Wippich sent us some examples of such cases. Consider C++20 code such as:
 
 ::: std
 ```cpp
-template <auto V>
-inline constexpr auto __array = V.data();
+template <size_t N>
+struct FixedString {
+    char data[N] = {};
 
-template <size_t N, class T, class R>
-consteval auto define_static_string_impl(R& r) -> T const* {
-    array<T, N+1> arr;
-    ranges::copy(r, arr.data());
-    arr[N] = '\0'; // null terminator
-    return extract<T const*>(substitute(^^__array, {meta::reflect_value(arr)}));
-}
+    constexpr FixedString(char const(&str)[N]) {
+        std::ranges::copy(str, str+N, data);
+    }
+};
 
-template <ranges::input_range R>
-consteval auto define_static_string(R&& r) -> ranges::range_value_t<R> const* {
-    using T = ranges::range_value_t<R>;
-    static_assert(std::same_as<T, char> or std::same_as<T, char8_t>);
+template <FixedString S>
+struct Test { };
+```
+:::
 
-    if constexpr (not ranges::forward_range<R>) {
-        return define_static_string(ranges::to<std::vector>(r));
-    } else {
-        if constexpr (requires { is_string_literal(r); }) {
-            // if it's an array, check if it's a string literal and adjust accordingly
-            if (is_string_literal(r)) {
-                return define_static_string(basic_string_view(r));
-            }
-        }
+This is a widely used pattern for being able to pass string literals as template arguments. However, there is no way to programmatically produce a string to pass in as an argument:
 
-        auto impl = extract<auto(*)(R&) -> T const*>(
-            substitute(^^define_static_string_impl,
-                       {
-                           meta::reflect_value(ranges::distance(r)),
-                           ^^T,
-                           remove_reference(^^R)
-                       }));
-        return impl(r);
+|Approach|Result|
+|--|-|
+|`using A = Test<"foo">;`|✅|
+|`using B = [: substitute(^^Test, {reflect_constant("foo"sv)}) :];`|❌ Error: `std::string_view` isn't structural, but even if it was, this wouldn't work because you couldn't deduce the size of `S`.|
+|`using C = Test<define_static_string("foo")>;`|❌ Error: cannot deduce the size of `S`|
+|`using D = [:substitute(^^Test, {reflect_constant(define_static_string("foo"))}):];`|❌ Error: cannot deduce the size of `S`|
+
+The issue here is that `define_static_string` returns a `char const*`, which loses size information. If, instead, we had a lower layer function that returned a reflection of an array, we could easily use that:
+
+|Approach|Result|
+|--|-|
+|`using E = Test<[:reflect_constant_string("foo"):]>;`|✅|
+|`using F = [:substitute(^^Test, {reflect_constant_string("foo")}):];`|✅|
+
+Another situation in which this comes up is in dealing with reflections of members. When you want to iterate over your members one-at-a-time, then `define_static_array` coupled with [@P1306R4]{.title} is perfectly sufficient:
+
+::: std
+```cpp
+template <class T>
+auto f(T const& var) -> void {
+    template for (constexpr auto M : define_static_array(nsdms(^^T))) {
+        do_something_with(var.[:M:]);
     }
 }
 ```
 :::
 
-[Demo](https://compiler-explorer.com/z/x5c3c7zKE).
+However, some situations require _all_ the members at once. Such as in this [struct of arrays](https://brevzin.github.io/c++/2025/05/02/soa/) implementation. `define_static_array` simply returns a `span`, but if we had a function that returned a reflection of an array, then combining [@P1061R10]{.title} with [@P2686R5]{.title} lets us do this instead:
+
+::: cmptable
+### Status Quo
+```cpp
+template <auto... V>
+struct replicator_type {
+template<typename F>
+    constexpr auto operator>>(F body) const -> decltype(auto) {
+        return body.template operator()<V...>();
+    }
+};
+
+template <auto... V>
+replicator_type<V...> replicator = {};
+
+consteval auto expand_all(std::span<std::meta::info const> r)
+    -> std::meta::info
+{
+    std::vector<std::meta::info> rv;
+    for (std::meta::info i : r) {
+        rv.push_back(reflect_value(i));
+    }
+    return substitute(^^replicator, rv);
+}
+
+template <class T>
+struct SoaVector {
+    // ...
+    // this is a span<info const>
+    static constexpr auto ptr_mems =
+        define_static_array(nsdms(^^Pointers));
+    // ...
+
+    auto operator[](size_t idx) const -> T {
+        return [: expand_all(ptr_mems) :] >> [this, idx]<auto... M>{
+            return T{pointers_.[:M:][idx]...};
+        };
+    }
+};
+```
+
+### Proposed
+```cpp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <class T>
+struct SoaVector {
+    // ...
+    // reflection of an object of type info const[N]
+    static constexpr auto ptr_mems =
+        reflect_constant_array(nsdms(^^Pointers));
+    // ...
+
+    auto operator[](size_t idx) const -> T {
+        constexpr auto [...M] = [: ptr_mems :];
+        return T{pointers_.[:M:][idx]...};
+    }
+};
+```
+:::
+
+With the reflection of an array object, we can directly splice it and use structured bindings to get the pack of members we need all in one go — without any layers of indirection. It's a much more direct solution.
+
+Having the higher level facilities is very useful, having this additional lower level facility would also be useful.
+
+## Possible Implementation
+
+`define_static_string` can be nearly implemented with the facilities in [@P2996R7], we just need `is_string_literal` to handle the different signature proposed in this paper.
+
+ `define_static_array` is similar and simpler, so we'll present that here:
+
+::: std
+```cpp
+namespace meta {
+    template <typename T, T... Vs>
+    inline constexpr T __fixed_array[sizeof...(Vs)]{Vs...};
+
+    template <ranges::input_range R>
+    consteval auto reflect_constant_array(R&& r) -> info {
+        auto args = vector<info>{^^ranges::range_value_t<R>};
+        for (auto&& elem : r) {
+            args.push_back(reflect_constant(elem));
+        }
+        return substitute(^^__fixed_array, args);
+    }
+
+    template <ranges::input_range R>
+    consteval auto reflect_constant_string(R&& r) -> info {
+        using T = ranges::range_value_t<R>;
+        static_assert(std::same_as<T, char> or std::same_as<T, char8_t>);
+
+        auto args = vector<info>{^^ranges::range_value_t<R>};
+        for (auto&& elem : r) {
+            args.push_back(reflect_constant(elem));
+        }
+
+        // add a the null terminator, unless we're a string literal
+        bool const add_null = [&]{
+            if constexpr (requires { is_string_literal(r); }) {
+                if (is_string_literal(r)) {
+                    return false;
+                }
+            }
+            return true;
+        }();
+
+        if (add_null) {
+            args.push_back(reflect_constant(T()));
+        }
+        return substitute(^^__fixed_array, args);
+    }
+
+}
+
+template <ranges::input_range R>
+consteval auto define_static_string(R&& r)
+    -> ranges::range_value_t<R> const*
+{
+    using T = ranges::range_value_t<R>;
+    static_assert(std::same_as<T, char> or std::same_as<T, char8_t>);
+
+    // produce the array
+    auto array = meta::reflect_constant_string(r);
+
+    // extract the pointer
+    return extract<T const*>(array);
+}
+
+template <ranges::input_range R>
+consteval auto define_static_array(R&& r)
+    -> span<ranges::range_value_t<R> const>
+{
+    using T = ranges::range_value_t<R>;
+
+    // produce the array
+    auto array = meta::reflect_constant_array(r);
+
+    // turn the array into a span
+    return span<T const>(extract<T const*>(array), extent(type_of(array)));
+}
+```
+:::
+
+[Demo](https://compiler-explorer.com/z/jThqbcEMj) (note that the p2996 fork already has these functions, so they're named slightly differently in the link)
 
 Note that this implementation gives the guarantee we talked about in the [previous section](#the-overlapping-question). Two invocations of `define_static_string` with the same contents will both end up returning a pointer into the same specialization of the (extern linkage) variable template `__array<V>`. We rely on the mangling of `V` (and `std::array` is a structural type if `T` is, which `char` and `char8_t` are) to ensure this for us. This won't ever produce overlapping arrays, would need implementation help for that, but it is a viable solution for all use-cases.
 
@@ -372,7 +557,7 @@ Or at least, this will work once `string_view` becomes structural. Until then, t
 
 ### With Expansion Statements
 
-Something like this — [@P1306R2]{.title} — is not doable without non-transient constexpr allocation :
+Something like this — [@P1306R4]{.title} — is not doable without non-transient constexpr allocation :
 
 ::: std
 ```cpp
@@ -394,6 +579,17 @@ consteval void g() {
     template for (constexpr int I : define_static_array(f())) {
         // ok!
     }
+}
+```
+:::
+
+And the lower layer would let us [expand the whole pack](https://compiler-explorer.com/z/sGbf8Y3vT) in one go:
+
+::: std
+```cpp
+consteval void g() {
+    constexpr auto [...m] = [: reflect_constant_array(f()) :];
+    static_assert((... + m) == 6);
 }
 ```
 :::
@@ -458,21 +654,21 @@ consteval auto define_static_string(R&& r) -> ranges::range_value_t<R> const* {
 
 # Wording
 
-Change [intro.object]{.sref} to add the results of `define_static_string` and `define_static_array` as being potentially non-unique:
+Change [intro.object]{.sref} to add the results of `reflect_constant_array` and `reflect_constant_string` as being potentially non-unique:
 
 ::: std
 [9]{.pnum} An object is a *potentially non-unique object* if it is
 
 * [9.1]{.pnum} a string literal object ([lex.string]),
 * [9.2]{.pnum} the backing array of an initializer list ([dcl.init.ref]),
-* [9.3]{.pnum} [the object declared by a call to `std::define_static_string` or `std::define_static_array`]{.addu}, or
+* [9.3]{.pnum} [the object declared by a call to `std::meta::reflect_constant_array` or `std::meta::reflect_constant_string`]{.addu}, or
 * [9.4]{.pnum} a subobject thereof.
 :::
 
 Update the wording in [@CWG2765] to account for these as well, in [basic.compound]{.sref}/x:
 
 ::: std
-[?]{.pnum} A pointer value pointing to a potentially non-unique object `$O$` ([intro.object]) is *associated with* the evaluation of the `$string-literal$` ([lex.string])[,]{.addu} [or]{.rm} initializer list ([dcl.init.list])[, or a call to either `std::define_static_string` or `std::define_static_array` ([meta.define.static])]{.addu} that resulted in the string literal object or backing array, respectively, that is `$O$` or of which `$O$` is a subobject. [A pointer value obtained by pointer arithmetic ([expr.add]) from a pointer value associated with an evaluation `$E$` is also associated with `$E$`.]{.note}
+[?]{.pnum} A pointer value pointing to a potentially non-unique object `$O$` ([intro.object]) is *associated with* the evaluation of the `$string-literal$` ([lex.string])[,]{.addu} [or]{.rm} initializer list ([dcl.init.list])[, or a call to either `std::meta::reflect_constant_string` or `std::meta::reflect_constant_array` ([meta.reflection.array])]{.addu} that resulted in the string literal object or backing array, respectively, that is `$O$` or of which `$O$` is a subobject. [A pointer value obtained by pointer arithmetic ([expr.add]) from a pointer value associated with an evaluation `$E$` is also associated with `$E$`.]{.note}
 :::
 
 No change to [expr.eq]{.sref} is necessary, [@CWG2765] takes care of it.
@@ -481,28 +677,99 @@ Add to [meta.syn]{.sref}:
 
 ::: std
 ```diff
-namespace std {
-+ // [meta.string.literal], checking string literals
-+ consteval bool is_string_literal(const char* p);
-+ consteval bool is_string_literal(const wchar_t* p);
-+ consteval bool is_string_literal(const char8_t* p);
-+ consteval bool is_string_literal(const char16_t* p);
-+ consteval bool is_string_literal(const char32_t* p);
+#include <initializer_list>
 
-+ // [meta.define.static], promoting to runtime storage
-+ template <ranges::input_range R>
-+   consteval const ranges::range_value_t<R>* define_static_string(R&& r);
+- namespace std::meta {
++ namespace std {
++   // [meta.string.literal], checking string literals
++   consteval bool is_string_literal(const char* p);
++   consteval bool is_string_literal(const wchar_t* p);
++   consteval bool is_string_literal(const char8_t* p);
++   consteval bool is_string_literal(const char16_t* p);
++   consteval bool is_string_literal(const char32_t* p);
+
++   // [meta.define.static], promoting to runtime storage
++   template <ranges::input_range R>
++     consteval const ranges::range_value_t<R>* define_static_string(R&& r);
 +
-+ template <class T>
-+   consteval const remove_reference_t<T>* define_static_object(T&& r);
++    template <ranges::input_range R>
++      consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
++
++   template <class T>
++     consteval const remove_cvref_t<T>* define_static_object(T&& r);
++
++ namespace meta {
+    using info = decltype(^^::);
+    // ...
+
+    // [meta.reflection.result], expression result reflection
+    template<class T>
+      consteval info reflect_value(const T& value);
+    template<class T>
+      consteval info reflect_object(T& object);
+    template<class T>
+      consteval info reflect_function(T& fn);
+
++   // [meta.reflection.array], promoting to runtime storage
++   template <ranges::input_range R>
++   consteval info reflect_constant_string(R&& r);
 +
 +  template <ranges::input_range R>
-+    consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
-}
++    consteval info reflect_constant_array(R&& r);
+
+    // ...
++ }
+  }
 ```
 :::
 
-Add to the new clause [meta.string.literal]:
+Add the new subclause [meta.reflection.array]:
+
+::: std
+::: addu
+[1]{.pnum} The functions in this subclause are useful for promoting compile-time storage into runtime storage.
+
+```cpp
+template <ranges::input_range R>
+consteval info reflect_constant_string(R&& r);
+```
+
+[#]{.pnum} Let `$CharT$` be `ranges::range_value_t<R>`.
+
+[#]{.pnum} *Mandates*: `$CharT$` is one of `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`.
+
+[#]{.pnum} Let `$V$` be the pack of elements of type `$CharT$` in `r`. If `r` is a string literal, then `$V$` does not include the trailing null terminator of `r`.
+
+[#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const $CharT$[sizeof...(V)+1]` initialized with `{V..., $CharT$()}`.
+
+[#]{.pnum} *Returns*: `^^$P$`.
+
+[#]{.pnum} [`$P$` is a potentially non-unique object ([intro.object])]{.note}
+
+```cpp
+template <ranges::input_range R>
+consteval info reflect_constant_array(R&& r);
+```
+
+[#]{.pnum} Let `$T$` be `ranges::range_value_t<R>`.
+
+[#]{.pnum} *Mandates*: `$T$` is a structural type ([temp.param]), `is_constructible_v<$T$, ranges::range_reference_t<R>>` is `true`, and `is_copy_constructible_v<$T$>` is `true`.
+
+[#]{.pnum} Let `$V$` be the pack of elements of type `$T$` constructed from the elements of `r`.
+
+[#]{.pnum} Let `$P$` be an invented variable that would be introduced by the declaration
+
+```cpp
+const $T$ $P$[sizeof...($V$)]{$V$...};
+```
+
+[#]{.pnum} *Returns*: A reflection of the template parameter object that is template-argument-equivalent to the object denoted by `$P$` ([temp.param]).
+
+[#]{.pnum} [That template parameter object is a potentially non-unique object ([intro.object])]{.note}
+:::
+:::
+
+Add to the new subclause [meta.string.literal]:
 
 ::: std
 ::: addu
@@ -519,7 +786,7 @@ consteval bool is_string_literal(const char32_t* p);
 :::
 :::
 
-Add to the new clause [meta.define.static]
+Add to the new subclause [meta.define.static]
 
 ::: std
 ::: addu
@@ -531,47 +798,42 @@ template <ranges::input_range R>
 consteval const ranges::range_value_t<R>* define_static_string(R&& r);
 ```
 
-[#]{.pnum} Let `$CharT$` be `ranges::range_value_t<R>`.
-
-[#]{.pnum} *Mandates*: `$CharT$` is one of `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`.
-
-[#]{.pnum} Let `$V$` be the pack of elements of type `$CharT$` in `r`. If `r` is a string literal, then `$V$` does not include the trailing null terminator of `r`.
-
-[#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const $CharT$[sizeof...(V)+1]` initialized with `{V..., $CharT$()}`.
-
-[#]{.pnum} *Returns*: `$P$`.
-
-[#]{.pnum} [`$P$` is a potentially non-unique object ([intro.object])]{.note}
+[#]{.pnum} *Effects*: Equivalent to:
 
 ```cpp
-template <class T>
-consteval const remove_cvref_t<T>* define_static_object(T&& t);
+return extract<const ranges::range_value_t<R>*>(meta::reflect_constant_string(r));
 ```
-
-[#]{.pnum} Let `U` be `remove_cvref_t<T>`.
-
-[#]{.pnum} *Mandates*: `U` is a structural type ([temp.param]) and `constructible_from<U, T>` is `true`.
-
-[#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const U` initialized with `t`.
-
-[#]{.pnum} *Returns*: `std::addressof($P$)`.
 
 ```cpp
 template <ranges::input_range R>
 consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
 ```
 
-[#]{.pnum} Let `$T$` be `ranges::range_value_t<R>`.
+[#]{.pnum} *Effects*: Equivalent to:
 
-[#]{.pnum} *Mandates*: `$T$` is a structural type ([temp.param]) and `constructible_from<$T$, ranges::range_reference_t<R>>` is `true` and `copy_constructible<$T$>` is `true`.
+  ```cpp
+  using T = ranges::range_value_t<R>;
+  meta::info array = meta::reflect_constant_array(r);
+  return span<const T>(extract<const T*>(array), extent(type_of(array)));
+  ```
 
-[#]{.pnum} Let `$V$` be the pack of elements of type `$T$` constructed from the elements of `r`.
+```cpp
+template <class T>
+consteval const remove_cvref_t<T>* define_static_object(T&& t);
+```
 
-[#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const $T$[sizeof...(V)]` initialized with `{V...}`.
+[#]{.pnum} *Effects*: Equivalent to:
 
-[#]{.pnum} *Returns*: `span<const $T$>($P$)`.
+```cpp
+using U = remove_cvref_t<T>;
+if constexpr (is_class_type(^^U)) {
+    return std::address_of(extract<const U&>(meta::reflect_constant(t)));
+} else {
+    return define_static_array(views::single(t)).data();
+}
+```
 
-[#]{.pnum} [`$P$` is a potentially non-unique object ([intro.object])]{.note}
+[#]{.pnum} [For class types, `define_static_object` provides the address of the template parameter object ([temp.param]) that is template-argument-equivalent to `t`]{.note}
 :::
 :::
 
