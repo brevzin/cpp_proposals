@@ -829,7 +829,7 @@ using U = remove_cvref_t<T>;
 if constexpr (is_class_type(^^U)) {
     return std::address_of(extract<const U&>(meta::reflect_constant(t)));
 } else {
-    return define_static_array(views::single(t)).data();
+    return define_static_array(span(&t, 1)).data();
 }
 ```
 
