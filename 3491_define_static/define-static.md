@@ -825,9 +825,15 @@ consteval const remove_cvref_t<T>* define_static_object(T&& t);
 [#]{.pnum} *Effects*: Equivalent to:
 
 ```cpp
-return define_static_array(span(std::addressof(t), 1)).data();
+using U = remove_cvref_t<T>;
+if constexpr (is_class_type(^^U)) {
+    return std::address_of(extract<const U&>(meta::reflect_constant(t)));
+} else {
+    return define_static_array(views::single(t)).data();
+}
 ```
 
+[#]{.pnum} [For class types, `define_static_object` provides the address of the template parameter object ([temp.param]) that is template-argument-equivalent to `t`]{.note}
 :::
 :::
 
