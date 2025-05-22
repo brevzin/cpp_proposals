@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-05-21" />
+  <meta name="dcterms.date" content="2025-05-22" />
   <title>define_static_{string,object,array}</title>
   <style>
       code{white-space: pre-wrap;}
@@ -576,7 +576,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-05-21</td>
+    <td>2025-05-22</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1751,19 +1751,7 @@ storage into runtime storage.</p>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;*</span> define_static_object<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">4</a></span>
 <em>Effects</em>: Equivalent to:</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> U <span class="op">=</span> remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>;</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_class_type<span class="op">(^^</span>U<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> std<span class="op">::</span>address_of<span class="op">(</span>extract<span class="op">&lt;</span><span class="kw">const</span> U<span class="op">&amp;&gt;(</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>t<span class="op">)))</span>;</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> define_static_array<span class="op">(</span>views<span class="op">::</span>single<span class="op">(</span>t<span class="op">)).</span>data<span class="op">()</span>;</span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">5</a></span>
-<span class="note"><span>[ <em>Note 4:</em> </span>For class types,
-<code class="sourceCode cpp">define_static_object</code> provides the
-address of the template parameter object ([temp.param]) that is
-template-argument-equivalent to
-<code class="sourceCode cpp">t</code><span> — <em>end
-note</em> ]</span></span></p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> define_static_array<span class="op">(</span>span<span class="op">(</span>std<span class="op">::</span>addressof<span class="op">(</span>t<span class="op">)</span>, <span class="dv">1</span><span class="op">)).</span>data<span class="op">()</span>;</span></code></pre></div>
 </div>
 </blockquote>
 </div>
