@@ -30,6 +30,8 @@ Since [@P2996R12]:
 
 * core wording updates
   * handle members of static anonymous unions / integrate suggested fix for [@CWG3026]
+* library wording updates
+  * specification of `reflect_constant`/`reflect_object`/`reflect_function`
 
 Since [@P2996R11]:
 
@@ -3378,10 +3380,10 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
   During the analysis and translation of tokens, certain expressions are evaluated ([expr.const]). Constructs appearing at a program point `$P$` are analyzed in a context where each side effect of evaluating an expression `$E$` as a full-expression is complete if and only if
 
   - [7-8.#]{.pnum} `$E$` is the expression corresponding to a `$consteval-block-declaration$` ([dcl.pre]), and
-  - [7-8.#]{.pnum} either that `$consteval-block-declaration$` or the template definition from which it is instantiated is reachable from
+  - [7-8.#]{.pnum} either that `$consteval-block-declaration$` or the template definition from which it is instantiated is reachable from ([module.reach])
 
     - [7-8.#.#]{.pnum} `$P$`, or
-    - [7-8.#.#]{.pnum} the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context.
+    - [7-8.#.#]{.pnum} the point immediately following the `$class-specifier$` of the outermost class for which `$P$` is in a complete-class context ([class.mem.general]).
 
 ::: example
 ```cpp
@@ -3406,7 +3408,7 @@ class S {
 :::
 :::
 
-  [8]{.pnum} [All]{.rm} [Translated translation units are combined and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
+  [8]{.pnum} [All]{.rm} [Translated translation units are combined, and all]{.addu} external entity references are resolved. Library components are linked to satisfy external references to entities not defined in the current translation. All such translator output is collected into a program image which contains information needed for execution in its execution environment.
 
 :::
 
@@ -7852,63 +7854,27 @@ constexpr info r = to_integral_constant(2);
 
 ::: std
 ::: addu
-[#]{.pnum} An object `$O$` of type `$T$` is *meta-reflectable* if an lvalue expression denoting `$O$` is suitable for use as a constant template argument for a constant template parameter of type `$T$&` ([temp.arg.nontype]).
-
-[#]{.pnum} The following are defined for exposition only to aid in the specification of `reflect_constant`:
-
 ```cpp
 template <typename T>
-  consteval info $reflect-constant-scalar$(T expr); // exposition only
+  consteval info reflect_constant(T expr);
 ```
 
-Let `$V$` be the value of `expr`.
+[#]{.pnum} *Mandates*: `is_copy_constructible_v<T>` is `true` and `T` is a cv-unqualified structural type ([temp.param]) that is not a reference type.
 
-[#]{.pnum} *Constant When*: If `$V$` is a pointer to an object, then that object is meta-reflectable.
+[#]{.pnum} Let `$V$` be:
 
-[#]{.pnum} *Returns*: A reflection of a value of type `$T$` with the computed value `$V$`.
+* [#.#]{.pnum} if `T` is a class type, then an object that is template-argument-equivalent to the value of `expr`;
+* [#.#]{.pnum} otherwise, the value of `expr`.
+
+[#]{.pnum} *Constant When*: Given the invented template
 
 ```cpp
-template <typename T>
-  consteval info $reflect-constant-class$(T const& expr); // exposition only
+template <T P> struct TCls;
 ```
 
-[#]{.pnum} *Mandates*: `is_copy_constructible_v<T>` is `true` and `T` is structural ([temp.param]).
+the `$template-id$` `TCls<$V$>` would be valid.
 
-[#]{.pnum} Let `$V$` be an invented variable that would be introduced by the declaration
-
-  ```cpp
-  T $V$(expr);
-  ```
-
-[#]{.pnum} *Constant When*:
-
-  - [#.#]{.pnum} `$V$` satisfies the semantic constraints for the definition of a constexpr variable with static storage duration ([dcl.constexpr]) and
-  - [#.#]{.pnum} given the invented template
-
-    ```cpp
-    template <T P> struct TCls;
-    ```
-
-     the `$template-id$` `TCls<$V$>` would be valid.
-
-[#]{.pnum} *Returns*: A reflection of the template parameter object that is template-argument-equivalent to the object denoted by `$V$` ([temp.param]).
-
-```cpp
-template <typename T>
-  consteval info reflect_constant(const T& expr);
-```
-
-[*]{.pnum} *Effects*: Equivalent to:
-
-```cpp
-if constexpr (is_class_type(^^T)) {
-  return $reflect-constant-class$(expr);
-} else {
-  return $reflect-constant-scalar$(expr);
-}
-```
-
-[Array-to-pointer and function-to-function-pointer decay occur.]{.note}
+[#]{.pnum} *Returns*: `template_arguments_of(^^TCls<$V$>)[0]`. [This is a reflection of an object for class types and a reflection of a value otherwise.]{.note}
 
 ::: example
 ```cpp
@@ -7918,16 +7884,16 @@ struct A { };
 struct N { int x; };
 struct K { char const* p; };
 
-constexpr auto r1 = reflect_constant(42);
+constexpr info r1 = reflect_constant(42);
 static_assert(is_value(r1));
 static_assert(r1 == template_arguments_of(^^A<42>)[0]);
 
-constexpr auto r2 = reflect_constant(N{42});
+constexpr info r2 = reflect_constant(N{42});
 static_assert(is_object(r2));
 static_assert(r2 == template_arguments_of(^^A<N{42}>)[0]);
 
-constexpr auto r3 = reflect_constant(K{nullptr}); // ok
-constexpr auto r4 = reflect_constant(K{"ebab"});  // error: constituent pointer points to string literal
+constexpr info r3 = reflect_constant(K{nullptr}); // ok
+constexpr info r4 = reflect_constant(K{"ebab"});  // error: constituent pointer points to string literal
 ```
 :::
 
@@ -7936,9 +7902,9 @@ template <typename T>
   consteval info reflect_object(T& expr);
 ```
 
-[#]{.pnum} *Mandates*: `T` is not a function type.
+[#]{.pnum} *Mandates*: `T` is an object type.
 
-[#]{.pnum} *Constant When*: `expr` designates a meta-reflectable object.
+[#]{.pnum} *Constant When*: `expr` is suitable for use as a constant template argument for a constant template parameter of type `T&` ([temp.arg.nontype]).
 
 [#]{.pnum} *Returns*: A reflection of the object designated by `expr`.
 
@@ -7948,6 +7914,8 @@ template <typename T>
 ```
 
 [#]{.pnum} *Mandates*: `T` is a function type.
+
+[#]{.pnum} *Constant When*: `fn` is suitable for use as a constant template argument for a constant template parameter of type `T&` ([temp.arg.nontype]).
 
 [#]{.pnum} *Returns*: A reflection of the function designated by `fn`.
 :::
