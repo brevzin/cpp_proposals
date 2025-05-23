@@ -641,9 +641,7 @@ Space<span></span></a></li>
 <li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">4.1</span> Feature-Test
 Macro<span></span></a></li>
 </ul></li>
-<li><a href="#acknowledgements" id="toc-acknowledgements"><span class="toc-section-number">5</span>
-Acknowledgements<span></span></a></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
@@ -1652,52 +1650,63 @@ associated with <code class="sourceCode cpp"><em>E</em></code>.<span>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">1</a></span>
 The functions in this subclause are useful for promoting compile-time
 storage into runtime storage.</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, T<span class="op">...</span> V<span class="op">&gt;</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> T <em>non-unique</em><span class="op">[</span><span class="kw">sizeof</span><span class="op">...(</span>V<span class="op">)]{</span>V<span class="op">...}</span>; <span class="co">// exposition-only</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info reflect_constant_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">2</a></span>
-For the purposes of exposition, the variable template
-<code class="sourceCode cpp"><em>non-unique</em></code> is used in this
-subclause. Instantiations of
-<code class="sourceCode cpp"><em>non-unique</em></code> are potentially
-non-unique objects ([intro.object]) and have static storage
-duration.</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info reflect_constant_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">3</a></span>
 Let <code class="sourceCode cpp"><em>CharT</em></code> be <code class="sourceCode cpp">ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">3</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp"><em>CharT</em></code> is
 one of <code class="sourceCode cpp"><span class="dt">char</span></code>,
 <code class="sourceCode cpp"><span class="dt">wchar_t</span></code>,
 <code class="sourceCode cpp"><span class="dt">char8_t</span></code>,
 <code class="sourceCode cpp"><span class="dt">char16_t</span></code>, or
 <code class="sourceCode cpp"><span class="dt">char32_t</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">4</a></span>
 Let <code class="sourceCode cpp"><em>V</em></code> be the pack of
 elements of type <code class="sourceCode cpp"><em>CharT</em></code> in
 <code class="sourceCode cpp">r</code>. If
 <code class="sourceCode cpp">r</code> is a string literal, then
 <code class="sourceCode cpp"><em>V</em></code> does not include the
 trailing null terminator of <code class="sourceCode cpp">r</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">5</a></span>
+Let <code class="sourceCode cpp"><em>P</em></code> be the template
+parameter object ([temp.param]) of type <code class="sourceCode cpp"><span class="kw">const</span> <em>CharT</em><span class="op">[</span><span class="kw">sizeof</span><span class="op">...(</span>V<span class="op">)+</span><span class="dv">1</span><span class="op">]</span></code>
+initialized with <code class="sourceCode cpp"><span class="op">{</span>V<span class="op">...</span>, <em>CharT</em><span class="op">()}</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">6</a></span>
-<em>Returns</em>: <code class="sourceCode cpp"><span class="op">^^</span><em>non-unique</em><span class="op">&lt;</span><em>CharT</em>, V<span class="op">...</span>, <em>CharT</em><span class="op">()&gt;</span></code>.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info reflect_constant_array<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
+<em>Returns</em>:
+<code class="sourceCode cpp"><span class="op">^^</span><em>P</em></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">7</a></span>
-Let <code class="sourceCode cpp"><em>T</em></code> be <code class="sourceCode cpp">ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>.</p>
+<span class="note"><span>[ <em>Note 2:</em>
+</span><code class="sourceCode cpp"><em>P</em></code> is a potentially
+non-unique object ([intro.object])<span> — <em>end
+note</em> ]</span></span></p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info reflect_constant_array<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">8</a></span>
+Let <code class="sourceCode cpp"><em>T</em></code> be <code class="sourceCode cpp">ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">9</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp"><em>T</em></code> is a
 structural type ([temp.param]), <code class="sourceCode cpp">is_constructible_v<span class="op">&lt;</span><em>T</em>, ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>, and
 <code class="sourceCode cpp">is_copy_constructible_v<span class="op">&lt;</span><em>T</em><span class="op">&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">10</a></span>
 Let <code class="sourceCode cpp"><em>V</em></code> be the pack of
 elements of type <code class="sourceCode cpp"><em>T</em></code>
 constructed from the elements of
 <code class="sourceCode cpp">r</code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">10</a></span>
-<em>Returns</em>: <code class="sourceCode cpp"><span class="op">^^</span><em>non-unique</em><span class="op">&lt;</span>T, V<span class="op">...&gt;</span></code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">11</a></span>
+Let <code class="sourceCode cpp"><em>P</em></code> be an invented
+variable that would be introduced by the declaration</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <em>T</em> <em>P</em><span class="op">[</span><span class="kw">sizeof</span><span class="op">...(</span><em>V</em><span class="op">)]{</span><em>V</em><span class="op">...}</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">12</a></span>
+<em>Returns</em>: A reflection of the template parameter object that is
+template-argument-equivalent to the object denoted by
+<code class="sourceCode cpp"><em>P</em></code> ([temp.param]).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">13</a></span>
+<span class="note"><span>[ <em>Note 3:</em> </span>That template
+parameter object is a potentially non-unique object
+([intro.object])<span> — <em>end note</em> ]</span></span></p>
 </div>
 </blockquote>
 </div>
@@ -1710,7 +1719,7 @@ constructed from the elements of
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_string_literal<span class="op">(</span><span class="kw">const</span> <span class="dt">char8_t</span><span class="op">*</span> p<span class="op">)</span>;</span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_string_literal<span class="op">(</span><span class="kw">const</span> <span class="dt">char16_t</span><span class="op">*</span> p<span class="op">)</span>;</span>
 <span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_string_literal<span class="op">(</span><span class="kw">const</span> <span class="dt">char32_t</span><span class="op">*</span> p<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">1</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">p</code> points to a
 string literal or a subobject thereof,
 <code class="sourceCode cpp"><span class="kw">true</span></code>.
@@ -1723,24 +1732,24 @@ Otherwise,
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">1</a></span>
 The functions in this clause are useful for promoting compile-time
 storage into runtime storage.</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;*</span> define_static_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">2</a></span>
 <em>Effects</em>: Equivalent to:</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> extract<span class="op">&lt;</span><span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;*&gt;(</span>meta<span class="op">::</span>reflect_constant_string<span class="op">(</span>r<span class="op">))</span>;</span></code></pre></div>
 <div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> span<span class="op">&lt;</span><span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> define_static_array<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">3</a></span>
 <em>Effects</em>: Equivalent to:</p>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> T <span class="op">=</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>;</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>meta<span class="op">::</span>info array <span class="op">=</span> meta<span class="op">::</span>reflect_constant_array<span class="op">(</span>r<span class="op">)</span>;</span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> span<span class="op">&lt;</span><span class="kw">const</span> T<span class="op">&gt;(</span>extract<span class="op">&lt;</span><span class="kw">const</span> T<span class="op">*&gt;(</span>array<span class="op">)</span>, extent<span class="op">(</span>type_of<span class="op">(</span>array<span class="op">)))</span>;</span></code></pre></div>
 <div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;*</span> define_static_object<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">4</a></span>
 <em>Effects</em>: Equivalent to:</p>
 <div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> U <span class="op">=</span> remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>;</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_class_type<span class="op">(^^</span>U<span class="op">))</span> <span class="op">{</span></span>
@@ -1748,8 +1757,8 @@ storage into runtime storage.</p>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
 <span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> define_static_array<span class="op">(</span>span<span class="op">(&amp;</span>t, <span class="dv">1</span><span class="op">)).</span>data<span class="op">()</span>;</span>
 <span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">5</a></span>
-<span class="note"><span>[ <em>Note 2:</em> </span>For class types,
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">5</a></span>
+<span class="note"><span>[ <em>Note 4:</em> </span>For class types,
 <code class="sourceCode cpp">define_static_object</code> provides the
 address of the template parameter object ([temp.param]) that is
 template-argument-equivalent to
@@ -1765,12 +1774,7 @@ note</em> ]</span></span></p>
 <div class="sourceCode" id="cb37"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>#define __cpp_lib_define_static 2025XX // freestanding, also in &lt;meta&gt;</span></code></pre></div>
 </div>
 </blockquote>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgements"><span class="header-section-number">5</span>
-Acknowledgements<a href="#acknowledgements" class="self-link"></a></h1>
-<p>Thanks to Matthias Wippich for the insightful observation that led to
-the introduction of <code class="sourceCode cpp">meta<span class="op">::</span>reflect_constant_array</code>
-and <code class="sourceCode cpp">meta<span class="op">::</span>reflect_constant_string</code>.</p>
-<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
 <div id="ref-CWG2765" class="csl-entry" role="doc-biblioentry">

@@ -730,13 +730,6 @@ Add the new subclause [meta.reflection.array]:
 [1]{.pnum} The functions in this subclause are useful for promoting compile-time storage into runtime storage.
 
 ```cpp
-template <class T, T... V>
-constexpr T $non-unique$[sizeof...(V)]{V...}; // exposition-only
-```
-
-[#]{.pnum} For the purposes of exposition, the variable template `$non-unique$` is used in this subclause. Instantiations of `$non-unique$` are potentially non-unique objects ([intro.object]) and have static storage duration.
-
-```cpp
 template <ranges::input_range R>
 consteval info reflect_constant_string(R&& r);
 ```
@@ -747,8 +740,11 @@ consteval info reflect_constant_string(R&& r);
 
 [#]{.pnum} Let `$V$` be the pack of elements of type `$CharT$` in `r`. If `r` is a string literal, then `$V$` does not include the trailing null terminator of `r`.
 
-[#]{.pnum} *Returns*: `^^$non-unique$<$CharT$, V..., $CharT$()>`.
+[#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const $CharT$[sizeof...(V)+1]` initialized with `{V..., $CharT$()}`.
 
+[#]{.pnum} *Returns*: `^^$P$`.
+
+[#]{.pnum} [`$P$` is a potentially non-unique object ([intro.object])]{.note}
 
 ```cpp
 template <ranges::input_range R>
@@ -761,8 +757,15 @@ consteval info reflect_constant_array(R&& r);
 
 [#]{.pnum} Let `$V$` be the pack of elements of type `$T$` constructed from the elements of `r`.
 
-[#]{.pnum} *Returns*: `^^$non-unique$<T, V...>`.
+[#]{.pnum} Let `$P$` be an invented variable that would be introduced by the declaration
 
+```cpp
+const $T$ $P$[sizeof...($V$)]{$V$...};
+```
+
+[#]{.pnum} *Returns*: A reflection of the template parameter object that is template-argument-equivalent to the object denoted by `$P$` ([temp.param]).
+
+[#]{.pnum} [That template parameter object is a potentially non-unique object ([intro.object])]{.note}
 :::
 :::
 
@@ -845,10 +848,6 @@ Add to [version.syn]{.sref}:
 ```
 :::
 :::
-
-# Acknowledgements
-
-Thanks to Matthias Wippich for the insightful observation that led to the introduction of `meta::reflect_constant_array` and `meta::reflect_constant_string`.
 
 ---
 references:
