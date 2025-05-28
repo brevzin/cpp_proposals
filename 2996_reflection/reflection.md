@@ -1273,7 +1273,7 @@ constexpr auto struct_to_tuple(T const& t) {
   constexpr auto ctx = std::meta::access_context::current();
 
   constexpr std::size_t N = nonstatic_data_members_of(^^T, ctx).size();
-  auto members = nonstatic_data_members(^^T, ctx);
+  auto members = nonstatic_data_members_of(^^T, ctx);
 
   constexpr auto indices = []{
     std::array<int, N> indices;
