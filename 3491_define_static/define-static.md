@@ -849,6 +849,10 @@ Add to [version.syn]{.sref}:
 :::
 :::
 
+# Acknowledgements
+
+Thanks to Matthias Wippich for the insightful observation that led to the additions of `meta::reflect_constant_array` and `meta::reflect_constant_string`.
+
 ---
 references:
   - id: P3380R1
