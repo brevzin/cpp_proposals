@@ -3553,17 +3553,6 @@ In the following example, the set of potential results of the initializer of `n`
 :::
 :::
 
-Break bullet 4.1 into sub-bullets and modify it to cover splicing of functions:
-
-::: std
-- [4.1]{.pnum} A function is named by an expression or conversion [`$E$`]{.addu} if it is the selected member of an overload set ([basic.lookup], [over.match], [over.over]) in an overload resolution performed as part of forming that expression or conversion, unless it is a pure virtual function and [either the expression]{.rm}[\ ]{.addu}
-
-  - [#.#.#]{.pnum} [`$E$`]{.addu} is not an `$id-expression$` naming the function with an explicitly qualified name[,]{.addu}
-  - [[#.#.#]{.pnum} [`$E$`]{.addu} is a `$splice-expression$`,]{.addu} or
-  - [#.#.#]{.pnum} [the expression]{.rm} [`$E$`]{.addu} forms a pointer to member ([expr.unary.op]).
-
-:::
-
 Modify the first sentence of paragraph 5 to cover splicing of variables:
 
 ::: std
@@ -4928,6 +4917,21 @@ using alias = [:^^S::type:];    // OK, type-only context
 [#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template. The `$splice-type-specifier$` designates the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`.
 
 :::
+:::
+
+### [dcl.mptr]{.sref} Pointers to members {-}
+
+Prefer "designates", and disallow pointers to anonymous unions, in paragraph 2.
+
+::: std
+[2]{.pnum} In a declaration `T D` where `D` has the form
+
+```
+$nested-name-specifier$ * $attribute-specifier-seq$@~_opt_~@ $cv-qualifier-seq$@~_opt_~@ D1
+```
+
+and the `$nested-name-specifier$` [denotes]{.rm} [designates]{.addu} a class, and the type of the contained `$declarator-id$` in the declaration `T D1` is "_derived-declarator-type-list_ `T`", the type of the `$declarator-id$` in `D` is "_derived-declarator-type-list_ `$cv-qualifier-seq$` pointer to member of class `$nested-name-specifier$` of type `T`". The optional `$attribute-specifier-seq$` ([dcl.attr.grammar]) appertains to the pointer-to-member. [`T` shall not be an anonymous union.]{.addu}
+
 :::
 
 ### [dcl.array]{.sref} Arrays {-}
@@ -7764,9 +7768,9 @@ template <class T>
 [#]{.pnum} *Effects*: Equivalent to:
 
 ```cpp
-if (is_reference_type(^^T)) {
+if constexpr (is_reference_type(^^T)) {
   return $extract-ref$<T>(r);
-} else if (is_nonstatic_data_member(r) || is_function(r)) {
+} else if constexpr (is_nonstatic_data_member(r) || is_function(r)) {
   return $extract-member-or-function$<T>(r);
 } else {
   return $extract-value$<T>(constant_of(r));
@@ -8323,7 +8327,7 @@ consteval size_t variant_size(info type);
 consteval info variant_alternative(size_t index, info type);
 ```
 
-[#]{.pnum} *Returns*: A reflection representing the type denoted by `variant_alterantive_t<$I$, $T$>` where `$T$` is the type represented by `dealias(type)` and `$I$` is a constant equal to `index`.
+[#]{.pnum} *Returns*: A reflection representing the type denoted by `variant_alternative_t<$I$, $T$>` where `$T$` is the type represented by `dealias(type)` and `$I$` is a constant equal to `index`.
 
 ```cpp
 consteval strong_ordering type_order(info t1, info t2);
