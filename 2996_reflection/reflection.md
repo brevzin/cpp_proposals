@@ -3571,8 +3571,7 @@ Prepend before paragraph 15 of [basic.def.odr]{.sref}:
 ::: std
 
 ::: addu
-[15pre]{.pnum} If a class `C` is defined in a translation unit as a result of a call to a specialization of `std::meta::define_aggregate` and another translation unit contains a definition of `C` that is not a result of calling the same specialization with the same function arguments, the program is ill-formed; a diagnostic is required only if `C` is attached to a named module and a prior definition is reachable at the point where a later definition occurs.
-
+[15pre]{.pnum} If a class `C` is defined in a translation unit as the side effect of a call `std::meta::define_aggregate(c1, r1)` ([meta.reflection.define.aggregate]) and another translation unit contains a definition of `C` that is not the side effect of a call `std::meta::define_aggregate(c2, r2)` where `std::ranges::equal(r1, r2)` is `true`, the program is ill-formed; a diagnostic is required only if `C` is attached to a named module and a prior definition is reachable at the point where a later definition occurs.
 :::
 
 
@@ -3712,7 +3711,7 @@ $splice-specialization-specifier$:
 
 [A `$splice-specifier$` is dependent if the converted `$constant-expression$` is value-dependent ([temp.dep.splice]).]{.note}
 
-[#]{.pnum} The `$splice-specifier$` of a non-dependent `$splice-specialization-specifier$` shall designate a template.
+[#]{.pnum} A non-dependent `$splice-specifier$` of a `$splice-specialization-specifier$` shall designate a template.
 
 [#]{.pnum} [A `<` following a `$splice-specifier$` is interpreted as the delimiter of a `$template-argument-list$` when the `$splice-specifier$` is preceded by `typename` or `template`, or when it appears in a type-only context ([temp.names]{.sref}).]{.note}
 
@@ -3730,7 +3729,7 @@ using alias = [:^^TCls:]<[:^^v:]>;
 static_assert(alias::s == 2);
 
 auto o1 = [:^^TCls:]<[:^^v:]>();          // error: < means less than
-auto o2 = typename [:^^TCls:]<[:^^v:]>(); // ok, o2 is an object of type TCls<1>
+auto o2 = typename [:^^TCls:]<[:^^v:]>(); // OK, o2 is an object of type TCls<1>
 
 consteval int bad_splice(std::meta::info v) {
     return [:v:]; // error: v is not constant
@@ -3751,7 +3750,7 @@ Add a bullet to paragraph 13 and handle `$splice-expression$`s in the existing b
 
 * [13.1]{.pnum} `$D$` contains a `$lambda-expression$` whose closure type is `$E$`,
 * [13.1+]{.pnum} [`$D$` contains a manifestly constant-evaluated expression of type `std::meta::info` that represents `$E$`,]{.addu}
-* [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an `$id-expression$`, `$type-specifier$`, `$nested-name-specifier$`, `$template-name$`, or `$concept-name$` denoting `$E$` [or a `$splice-specifier$` or `$splice-expression$` designating `$E$`]{.addu}, or
+* [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an `$id-expression$`, `$type-specifier$`, `$nested-name-specifier$`, `$template-name$`, or `$concept-name$` denoting `$E$`, or
 * [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an `$id-expression$` [or `$splice-expression$`]{.addu} that refers to a set of overloads that contains `$E$`.
 
 :::
@@ -3781,7 +3780,7 @@ Extend the definition of _TU-local_ values and objects in p16 to include reflect
 :::addu
 * [16.1+]{.pnum} it is a reflection representing either
   * [16.1+.#]{.pnum} an entity, value, or object that is TU-local, or
-  * [16.1+.#]{.pnum} a direct base class relationship introduced by an exposure, or
+  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) introduced by an exposure, or
 :::
 * [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
