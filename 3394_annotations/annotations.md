@@ -1,7 +1,7 @@
 ---
 title: Annotations for Reflection
 tag: reflection
-document: P3394R3
+document: D3394R4
 date: today
 audience: CWG, LWG
 hackmd: true
@@ -586,7 +586,7 @@ Adjust the restriction on ellipses in [dcl.attr.grammar]{.sref}/4:
 
 ::: std
 [4]{.pnum} In an `$attribute-list$`, an ellipsis may [appear only]{.rm} [only appear following an `$attribute$`]{.addu} if that `$attribute$`'s specification permits it. An [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu} followed by an ellipsis is a pack expansion. An `$attribute-specifier$` that contains no `$attribute$`s has no effect.
-The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [Evaluating an `$annotation$` produces a reflection of an annotation whose underlying constant is `std::meta::reflect_constant($constant-expression$)`.]{.addu} [...]
+The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [An `$annotation$` produces an annotation whose underlying constant is `std::meta::reflect_constant($constant-expression$)`.]{.addu} [...]
 
 [5]{.pnum} Each `$attribute-specifier-seq$` is said to appertain to some entity or statement, identified by the syntactic context where it appears ([stmt.stmt], [dcl.dcl], [dcl.decl]).
 If an `$attribute-specifier-seq$` that appertains to some entity or statement contains an `$attribute$` or `$alignment-specifier$` that is not allowed to apply to that entity or statement, the program is ill-formed.
@@ -658,7 +658,7 @@ consteval info type_of(info r);
 :::
 
 - [#.2]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
-  - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that is reachable from a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
+  - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that precedes a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
   - [#.#.#]{.pnum} Otherwise, a reflection of the type of `$N$` prior to the closing brace of the `$enum-specifier$` as specified in [dcl.enum].
 - [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class.
 - [#.#]{.pnum} Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), a reflection of the type `$T$`.
@@ -696,19 +696,17 @@ Add the new section [meta.reflection.annotation]:
 
 ::: std
 ::: addu
-[1]{.pnum} Annotations can be used to add additional information to declarations for future introspection.
-
 ```cpp
 consteval vector<info> annotations_of(info item);
 ```
 
-[#]{.pnum} *Constant When*: `dealias(item)` represents a type, variable, function, or a namespace.
+[1]{.pnum} *Constant When*: `dealias(item)` represents a type, variable, function, or namespace.
 
 [#]{.pnum} *Returns*: A `vector` containing the following reflections:
 
 * For each declaration `$D$` of the entity represented by `item` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of a class for which such a point is in a complete-class context,
 * For each `$annotation$` `$A$` in each `$attribute-specifier-seq$` appertaining to `$D$`,
-* A reflection `$R$` representing `$A$`, whose value is the result of the corresponding `$constant-expression$`.
+* A reflection `$R$` representing `$A$`.
 
 For  any two reflections `@*R*~1~@` and `@*R*~2~@` returned, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` is sequenced before `@*R*~2~@` in the returned `vector`.
 
@@ -741,10 +739,12 @@ static_assert(!extract<Option>(annotations_of(^^C::b)[0]).value);
 consteval vector<info> annotations_of_with_type(info item, info type);
 ```
 
-[#]{.pnum} *Constant When*: `annotations_of(item)` is constant and `dealias(type)` is a reflection representing a complete type.
+[#]{.pnum} *Constant When*:
 
-[#]{.pnum} *Returns* A `vector` containing each element, `e`, of `annotations_of(item)`, in order, such that `type_of(e) == dealias(type)`.
+- [#.#]{.pnum} `annotations_of(item)` is a constant subexpression and
+- [#.#]{.pnum} `dealias(type)` represents a complete type.
 
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `annotations_of(item)` such that `type_of(e) == dealias(type)`, preserving their order.
 
 :::
 :::
