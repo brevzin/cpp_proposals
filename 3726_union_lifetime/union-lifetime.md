@@ -7,7 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
     - name: Tomasz Kamiński
-      email: tkaminsk@redhat.com
+      email: <tkaminsk@redhat.com>
 toc: true
 tag: constexpr
 ---
