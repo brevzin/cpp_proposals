@@ -6882,7 +6882,7 @@ consteval info type_of(info r);
 
 - [#.#]{.pnum} If `r` represents a value, object, variable, function, non-static data member, or unnamed bit-field, then the type of what is represented by `r`.
 - [#.#]{.pnum} Otherwise, if `r` represents an enumerator `$N$` of an enumeration `$E$`, then:
-  - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that is reachable from a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
+  - [#.#.#]{.pnum} If `$E$` is defined by a declaration `$D$` that precedes a point `$P$` in the evaluation context and `$P$` does not occur within an `$enum-specifier$` of `$D$`, then a reflection of `$E$`.
   - [#.#.#]{.pnum} Otherwise, a reflection of the type of `$N$` prior to the closing brace of the `$enum-specifier$` as specified in [dcl.enum].
 - [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then a reflection of the type of the direct base class.
 - [#.#]{.pnum} Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]), a reflection of the type `$T$`.
