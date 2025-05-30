@@ -593,7 +593,7 @@ Lifetime Rules</h1>
     <td style="vertical-align:top">Reply-to:</td>
     <td>
       Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
-      Tomasz Kamiński<br>&lt;<a href="mailto:tkaminsk@redhat.com" class="email">tkaminsk@redhat.com</a>&gt;<br>
+      Tomasz Kamiński<br>&lt;<a href="mailto:tomaszkam@gmail.com" class="email">tomaszkam@gmail.com</a>&gt;<br>
     </td>
   </tr>
 </table>
@@ -608,6 +608,7 @@ Lifetime Starts<span></span></a>
 <ul>
 <li><a href="#template-argument-equivalence" id="toc-template-argument-equivalence"><span class="toc-section-number">2.1</span>
 Template-Argument-Equivalence<span></span></a></li>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">2.2</span> Wording<span></span></a></li>
 </ul></li>
 <li><a href="#proposal-2-fixing-which-values-are-constituent-values" id="toc-proposal-2-fixing-which-values-are-constituent-values"><span class="toc-section-number">3</span> Proposal 2: Fixing Which Values are
 Constituent Values<span></span></a></li>
@@ -925,19 +926,109 @@ new member to the union:</p>
 <p>Now, <code class="sourceCode cpp">v1</code> and
 <code class="sourceCode cpp">v2</code> are in the same state: the active
 member of the union is <code class="sourceCode cpp">empty</code>.</p>
+<h2 data-number="2.2" id="wording"><span class="header-section-number">2.2</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Change <span>11.5.1 <a href="https://wg21.link/class.union.general">[class.union.general]</a></span>/5:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">5</a></span>
+When <span class="addu">either</span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(5.a)</a></span>
+the left operand of an assignment operator involves a member access
+expression ([expr.ref]) that nominates a union member <span class="addu">or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(5.b)</a></span>
+<span class="addu">the placement argument to a
+<code class="sourceCode cpp"><em>new-expression</em></code> ([expr.new])
+that is a non-allocating form ([new.delete.placement]) involves such a
+member access expression,</span></li>
+</ul>
+<p>it may begin the lifetime of that union member, as described below.
+For an expression <code class="sourceCode cpp">E</code>, define the set
+<code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
+of subexpressions of <code class="sourceCode cpp">E</code> as
+follows:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(5.1)</a></span>
+If <code class="sourceCode cpp">E</code> is of the form
+<code class="sourceCode cpp">A<span class="op">.</span>B</code>, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
+contains the elements of <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class="op">)</span></code>,
+and also contains
+<code class="sourceCode cpp">A<span class="op">.</span>B</code> if
+<code class="sourceCode cpp">B</code> names a union member of a
+non-class, non-array type, or of a class type with a trivial default
+constructor that is not deleted, or an array of such types.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(5.2)</a></span>
+If <code class="sourceCode cpp">E</code> is of the form <code class="sourceCode cpp">A<span class="op">[</span>B<span class="op">]</span></code>
+and is interpreted as a built-in array subscripting operator, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
+is <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class="op">)</span></code>
+if <code class="sourceCode cpp">A</code> is of array type, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>B<span class="op">)</span></code>
+if <code class="sourceCode cpp">B</code> is of array type, and empty
+otherwise.</li>
+</ul>
+<div class="addu">
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(5.x)</a></span>
+If <code class="sourceCode cpp">E</code> is of the form
+<code class="sourceCode cpp"><span class="op">&amp;</span>A</code>,
+<code class="sourceCode cpp">E</code> is interpreted as a built-in
+address operator, and the initial expression is a
+<code class="sourceCode cpp"><em>new-expression</em></code>, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
+is <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class="op">)</span></code>.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(5.y)</a></span>
+If <code class="sourceCode cpp">E</code> is of the form
+<code class="sourceCode cpp">A <span class="op">+</span> B</code>,
+<code class="sourceCode cpp">E</code> is interpreted as a built-in
+addition operator, and the initial expression is a
+<code class="sourceCode cpp"><em>new-expression</em></code>, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
+is <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class="op">)</span></code>
+if <code class="sourceCode cpp">A</code> is of array type, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>B<span class="op">)</span></code>
+if <code class="sourceCode cpp">B</code> is of array type, and empty
+otherwise.</li>
+</ul>
+</div>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(5.3)</a></span>
+Otherwise, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
+is empty.</li>
+</ul>
+<p>In an assignment expression of the form
+<code class="sourceCode cpp">E1 <span class="op">=</span> E2</code> that
+uses either the built-in assignment operator ([expr.assign]) or a
+trivial assignment operator ([class.copy.assign]), for each element
+<code class="sourceCode cpp">X</code> of <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E1<span class="op">)</span></code>
+and each anonymous union member <code class="sourceCode cpp">X</code>
+([class.union.anon]) that is a member of a union and has such an element
+as an immediate subobject (recursively), if modification of
+<code class="sourceCode cpp">X</code> would have undefined behavior
+under [basic.life], an object of the type of
+<code class="sourceCode cpp">X</code> is implicitly created in the
+nominated storage; no initialization is performed and the beginning of
+its lifetime is sequenced after the value computation of the left and
+right operands and before the assignment.</p>
+<div class="addu">
+<p>In a <code class="sourceCode cpp"><em>new-expression</em></code> of
+the form <code class="sourceCode cpp"><span class="kw">new</span> <span class="op">(</span>E1<span class="op">)</span> E2</code>,
+every element <code class="sourceCode cpp">X</code> of <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E1<span class="op">)</span></code>
+begins its lifetime.</p>
+</div>
+<p><span class="note"><span>[ <em>Note 1:</em> </span>This ends the
+lifetime of the previously-active member of the union, if any
+([basic.life]).<span> — <em>end note</em> ]</span></span></p>
+</blockquote>
+</div>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposal-2-fixing-which-values-are-constituent-values"><span class="header-section-number">3</span> Proposal 2: Fixing Which Values
 are Constituent Values<a href="#proposal-2-fixing-which-values-are-constituent-values" class="self-link"></a></h1>
 <p>The current rule for constituent values is, from <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/2:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">2</a></span>
 The <em>constituent values</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(2.1)</a></span>
 if <code class="sourceCode cpp"><em>o</em></code> has scalar type, the
 value of <code class="sourceCode cpp"><em>o</em></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(2.2)</a></span>
 otherwise, the constituent values of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 members.</li>
@@ -959,9 +1050,9 @@ add:</p>
 <div class="addu">
 <p>A <em>possibly inactive union subobject</em> is:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">1</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">1</a></span>
 A direct member of a union,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">2</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">2</a></span>
 An element of a possibly inactive union subobject
 <code class="sourceCode cpp"><em>M</em></code> where the type of
 <code class="sourceCode cpp"><em>M</em></code> is an aggregate that has
@@ -975,14 +1066,14 @@ subobject that is not within its lifetime.</p>
 <p>Something like this:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">2</a></span>
 The <em>constituent values</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(2.1)</a></span>
 if <code class="sourceCode cpp"><em>o</em></code> has scalar type, the
 value of <code class="sourceCode cpp"><em>o</em></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(2.2)</a></span>
 otherwise, the constituent values of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 <span class="rm" style="color: #bf0303"><del>members</del></span> <span class="addu">subobjects ([class.union])</span>.</li>
@@ -990,10 +1081,10 @@ otherwise, the constituent values of any direct subobjects of
 <p>The <em>constituent references</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(2.3)</a></span>
 any direct members of <code class="sourceCode cpp"><em>o</em></code>
 that have reference type, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(2.4)</a></span>
 the constituent references of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 <span class="rm" style="color: #bf0303"><del>members</del></span> <span class="addu">subobjects</span>.</li>

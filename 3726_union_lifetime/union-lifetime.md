@@ -7,7 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
     - name: Tomasz Kamiński
-      email: <tkaminsk@redhat.com>
+      email: <tomaszkam@gmail.com>
 toc: true
 tag: constexpr
 ---
@@ -210,6 +210,38 @@ struct FixedVector {
 :::
 
 Now, `v1` and `v2` are in the same state: the active member of the union is `empty`.
+
+## Wording
+
+Change [class.union.general]{.sref}/5:
+
+::: std
+[5]{.pnum} When [either]{.addu}
+
+* [5.a]{.pnum} the left operand of an assignment operator involves a member access expression ([expr.ref]) that nominates a union member [or]{.addu}
+* [5.b]{.pnum} [the placement argument to a `$new-expression$` ([expr.new]) that is a non-allocating form ([new.delete.placement]) involves such a member access expression,]{.addu}
+
+it may begin the lifetime of that union member, as described below. For an expression `E`, define the set `$S$(E)` of subexpressions of `E` as follows:
+
+* [5.1]{.pnum} If `E` is of the form `A.B`, `$S$(E)` contains the elements of `$S$(A)`, and also contains `A.B` if `B` names a union member of a non-class, non-array type, or of a class type with a trivial default constructor that is not deleted, or an array of such types.
+* [5.2]{.pnum} If `E` is of the form `A[B]` and is interpreted as a built-in array subscripting operator, `$S$(E)` is `$S$(A)` if `A` is of array type, `$S$(B)` if `B` is of array type, and empty otherwise.
+
+::: addu
+* [5.x]{.pnum} If `E` is of the form `&A`, `E` is interpreted as a built-in address operator, and the initial expression is a `$new-expression$`, `$S$(E)` is `$S$(A)`.
+* [5.y]{.pnum} If `E` is of the form `A + B`, `E` is interpreted as a built-in addition operator, and the initial expression is a `$new-expression$`, `$S$(E)` is `$S$(A)` if `A` is of array type, `$S$(B)` if `B` is of array type, and empty otherwise.
+:::
+
+* [5.3]{.pnum} Otherwise, `$S$(E)` is empty.
+
+In an assignment expression of the form `E1 = E2` that uses either the built-in assignment operator ([expr.assign]) or a trivial assignment operator ([class.copy.assign]), for each element `X` of `$S$(E1)` and each anonymous union member `X` ([class.union.anon]) that is a member of a union and has such an element as an immediate subobject (recursively), if modification of `X` would have undefined behavior under [basic.life], an object of the type of `X` is implicitly created in the nominated storage; no initialization is performed and the beginning of its lifetime is sequenced after the value computation of the left and right operands and before the assignment.
+
+::: addu
+In a `$new-expression$` of the form `new (E1) E2`, every element `X` of `$S$(E1)` begins its lifetime.
+:::
+
+[This ends the lifetime of the previously-active member of the union, if any ([basic.life]).]{.note}
+
+:::
 
 
 # Proposal 2: Fixing Which Values are Constituent Values
