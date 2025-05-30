@@ -4930,7 +4930,7 @@ Prefer "designates", and disallow pointers to anonymous unions, in paragraph 2.
 $nested-name-specifier$ * $attribute-specifier-seq$@~_opt_~@ $cv-qualifier-seq$@~_opt_~@ D1
 ```
 
-and the `$nested-name-specifier$` [denotes]{.rm} [designates]{.addu} a class, and the type of the contained `$declarator-id$` in the declaration `T D1` is "_derived-declarator-type-list_ `T`", the type of the `$declarator-id$` in `D` is "_derived-declarator-type-list_ `$cv-qualifier-seq$` pointer to member of class `$nested-name-specifier$` of type `T`". The optional `$attribute-specifier-seq$` ([dcl.attr.grammar]) appertains to the pointer-to-member. [`T` shall not be an anonymous union.]{.addu}
+and the `$nested-name-specifier$` [denotes]{.rm} [designates]{.addu} a class, and the type of the contained `$declarator-id$` in the declaration `T D1` is "_derived-declarator-type-list_ `T`", the type of the `$declarator-id$` in `D` is "_derived-declarator-type-list_ `$cv-qualifier-seq$` pointer to member of class `$nested-name-specifier$` of type `T`". The optional `$attribute-specifier-seq$` ([dcl.attr.grammar]) appertains to the pointer-to-member. [The `$nested-name-specifier$` shall not designate an anonymous union.]{.addu}
 
 :::
 
