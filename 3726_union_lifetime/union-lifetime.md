@@ -239,7 +239,7 @@ For an expression `E`, define the set `$S$(E)` of subexpressions of `E` as follo
 In an assignment expression of the form `E1 = E2` that uses either the built-in assignment operator ([expr.assign]) or a trivial assignment operator ([class.copy.assign]), for each element `X` of `$S$(E1)` and each anonymous union member `X` ([class.union.anon]) that is a member of a union and has such an element as an immediate subobject (recursively), if modification of `X` would have undefined behavior under [basic.life], an object of the type of `X` is implicitly created in the nominated storage; no initialization is performed and the beginning of its lifetime is sequenced after the value computation of the left and right operands and before the assignment.
 
 ::: addu
-Define the set `$P$(E)` of subexpressions of `E` as follows:
+For an expression `E`, define the set `$P$(E)` of subexpressions of `E` as follows:
 
 * [5.4]{.pnum} If `E` is of the form `&A[B]`, `E` is interpreted as a built-in address operator, and `A[B]` is interpreted as a built-in array subscripting operator, then `$P$(E)` is `A` if `A` is of array type, `B` if `B` is of array type, and empty otherwise.
 * [5.#]{.pnum} If `E` has pointer type and is either
