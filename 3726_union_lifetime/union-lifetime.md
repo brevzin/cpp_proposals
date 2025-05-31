@@ -234,18 +234,22 @@ For an expression `E`, define the set `$S$(E)` of subexpressions of `E` as follo
 
 * [5.1]{.pnum} If `E` is of the form `A.B`, `$S$(E)` contains the elements of `$S$(A)`, and also contains `A.B` if `B` names a union member of a non-class, non-array type, or of a class type with a trivial default constructor that is not deleted, or an array of such types.
 * [5.2]{.pnum} If `E` is of the form `A[B]` and is interpreted as a built-in array subscripting operator, `$S$(E)` is `$S$(A)` if `A` is of array type, `$S$(B)` if `B` is of array type, and empty otherwise.
-
-::: addu
-* [5.x]{.pnum} If `E` is of the form `&A`, `E` is interpreted as a built-in address operator, and the initial expression is a `$new-expression$`, `$S$(E)` is `$S$(A)`.
-* [5.y]{.pnum} If `E` is of the form `A + B`, `E` is interpreted as a built-in addition operator, and the initial expression is a `$new-expression$`, `$S$(E)` is `$S$(A)` if `A` is of array type, `$S$(B)` if `B` is of array type, and empty otherwise.
-:::
-
 * [5.3]{.pnum} Otherwise, `$S$(E)` is empty.
 
 In an assignment expression of the form `E1 = E2` that uses either the built-in assignment operator ([expr.assign]) or a trivial assignment operator ([class.copy.assign]), for each element `X` of `$S$(E1)` and each anonymous union member `X` ([class.union.anon]) that is a member of a union and has such an element as an immediate subobject (recursively), if modification of `X` would have undefined behavior under [basic.life], an object of the type of `X` is implicitly created in the nominated storage; no initialization is performed and the beginning of its lifetime is sequenced after the value computation of the left and right operands and before the assignment.
 
 ::: addu
-In a `$new-expression$` of the form `new (E1) E2` that uses a non-allocating form ([new.delete.placement]), for each element `X` of `$S$(E1)` and each anonymous union member `X` that is a member of a union and has such an element as an immediate subobject (recursively), if `X` is not within its lifetime, an object of the type of `X` is implicitly created in the nominated storage; no initialization is performed and the beginning of its lifetime is sequenced immediately before the value computation of `E1`.
+In a `$new-expression$` with a `$new-placement$` of the form `(E)` that uses a non-allocating form ([new.delete.placement]), define the set `$P$(E)` of subexpressions of `E` as follows:
+
+* [5.4]{.pnum} If `E` is of the form `&A[B]`, `E` is interpreted as a built-in address operator, and `A[B]` is interpreted as a built-in array subscripting operator, then `$P$(E)` is `A` if `A` is of array type, `B` if `B` is of array type, and empty otherwise.
+* [5.#]{.pnum} If `E` has pointer type and is either
+    * [5.#.#]{.pnum} of the form `A + B` and is interpreted as a built-in addition operator or
+    * [5.#.#]{.pnum} of the form `A - B` and is interpreted as a built-in subtraction operator,
+
+    then `$P$(E)` is `A` if `A` is of array type, `B` if `B` is of array type, and the union of `$P$(A)` and `$P$(B)` otherwise.
+* [5.#]{.pnum} Otherwise, `$P$(E)` is empty.
+
+For each element `X` of `$P$(E)` and each anonymous union member `X` that is a member of a union and has such an element as an immediate subobject (recursively), if `X` is not within its lifetime, an object of the type of `X` is implicitly created in the nominated storage; no subobjects are created and the beginning of its lifetime is sequenced immediately before the value computation of `E`.
 :::
 
 [This ends the lifetime of the previously-active member of the union, if any ([basic.life]).]{.note}
@@ -266,7 +270,23 @@ The current rule for constituent values is, from [expr.const]{.sref}/2:
 
 As mentioned earlier, this means that if we have a `union { T storage[4]; }` then either there are no constituent values (if `storage` is inactive) or we consider all of the `T`s as constituent values (even if we only constructed the first two). So we'll need to loosen this rule to permit objects with union members to be more usable as constant expressions.
 
-Something like this:
+For the `FixedVector` (aka `static_vector` aka `inplace_vector`) example, we really only need to allow "holes" at the end of the array. But if we want to support a different container, that is more bidirectional and supports cheap `push_front` and `pop_front`, we will also want to support "holes" at the front of the array. So for simplicity, we're proposing to support holes _anywhere_ in the array. Note that we're still not proposing nice syntax for actually constructing such an array with holes. Richard on the reflector had suggested
+
+::: std
+```cpp
+// short array initializer:
+// initializes arr[0] and arr[1],
+// does not start lifetime of rest
+int arr[42] = {a, b, short};
+
+// in std::allocator<T>::allocate:
+return new (ptr) T[n]{short};
+```
+:::
+
+That is definitely a cute syntax. But we don't think it's necessary right now. Maybe a future proposal can pick that up.
+
+Until then, we're proposing something like this change to [expr.const]{.sref}:
 
 ::: std
 [2]{.pnum} The *constituent values* of an object `$o$` are

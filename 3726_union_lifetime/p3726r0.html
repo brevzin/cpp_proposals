@@ -991,30 +991,7 @@ is <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class=
 if <code class="sourceCode cpp">A</code> is of array type, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>B<span class="op">)</span></code>
 if <code class="sourceCode cpp">B</code> is of array type, and empty
 otherwise.</li>
-</ul>
-<div class="addu">
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(5.x)</a></span>
-If <code class="sourceCode cpp">E</code> is of the form
-<code class="sourceCode cpp"><span class="op">&amp;</span>A</code>,
-<code class="sourceCode cpp">E</code> is interpreted as a built-in
-address operator, and the initial expression is a
-<code class="sourceCode cpp"><em>new-expression</em></code>, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
-is <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class="op">)</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(5.y)</a></span>
-If <code class="sourceCode cpp">E</code> is of the form
-<code class="sourceCode cpp">A <span class="op">+</span> B</code>,
-<code class="sourceCode cpp">E</code> is interpreted as a built-in
-addition operator, and the initial expression is a
-<code class="sourceCode cpp"><em>new-expression</em></code>, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
-is <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class="op">)</span></code>
-if <code class="sourceCode cpp">A</code> is of array type, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>B<span class="op">)</span></code>
-if <code class="sourceCode cpp">B</code> is of array type, and empty
-otherwise.</li>
-</ul>
-</div>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(5.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(5.3)</a></span>
 Otherwise, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
 is empty.</li>
 </ul>
@@ -1033,18 +1010,57 @@ nominated storage; no initialization is performed and the beginning of
 its lifetime is sequenced after the value computation of the left and
 right operands and before the assignment.</p>
 <div class="addu">
-<p>In a <code class="sourceCode cpp"><em>new-expression</em></code> of
-the form <code class="sourceCode cpp"><span class="kw">new</span> <span class="op">(</span>E1<span class="op">)</span> E2</code>
-that uses a non-allocating form ([new.delete.placement]), for each
-element <code class="sourceCode cpp">X</code> of <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E1<span class="op">)</span></code>
+<p>In a <code class="sourceCode cpp"><em>new-expression</em></code> with
+a <code class="sourceCode cpp"><em>new-placement</em></code> of the form
+<code class="sourceCode cpp"><span class="op">(</span>E<span class="op">)</span></code>
+that uses a non-allocating form ([new.delete.placement]), define the set
+<code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
+of subexpressions of <code class="sourceCode cpp">E</code> as
+follows:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(5.4)</a></span>
+If <code class="sourceCode cpp">E</code> is of the form <code class="sourceCode cpp"><span class="op">&amp;</span>A<span class="op">[</span>B<span class="op">]</span></code>,
+<code class="sourceCode cpp">E</code> is interpreted as a built-in
+address operator, and <code class="sourceCode cpp">A<span class="op">[</span>B<span class="op">]</span></code>
+is interpreted as a built-in array subscripting operator, then <code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
+is <code class="sourceCode cpp">A</code> if
+<code class="sourceCode cpp">A</code> is of array type,
+<code class="sourceCode cpp">B</code> if
+<code class="sourceCode cpp">B</code> is of array type, and empty
+otherwise.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(5.5)</a></span>
+If <code class="sourceCode cpp">E</code> has pointer type and is either
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(5.5.1)</a></span>
+of the form
+<code class="sourceCode cpp">A <span class="op">+</span> B</code> and is
+interpreted as a built-in addition operator or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(5.5.2)</a></span>
+of the form
+<code class="sourceCode cpp">A <span class="op">-</span> B</code> and is
+interpreted as a built-in subtraction operator,</li>
+</ul>
+then <code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
+is <code class="sourceCode cpp">A</code> if
+<code class="sourceCode cpp">A</code> is of array type,
+<code class="sourceCode cpp">B</code> if
+<code class="sourceCode cpp">B</code> is of array type, and the union of
+<code class="sourceCode cpp"><em>P</em><span class="op">(</span>A<span class="op">)</span></code>
+and <code class="sourceCode cpp"><em>P</em><span class="op">(</span>B<span class="op">)</span></code>
+otherwise.</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(5.6)</a></span>
+Otherwise, <code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
+is empty.</li>
+</ul>
+<p>For each element <code class="sourceCode cpp">X</code> of <code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
 and each anonymous union member <code class="sourceCode cpp">X</code>
 that is a member of a union and has such an element as an immediate
 subobject (recursively), if <code class="sourceCode cpp">X</code> is not
 within its lifetime, an object of the type of
 <code class="sourceCode cpp">X</code> is implicitly created in the
-nominated storage; no initialization is performed and the beginning of
-its lifetime is sequenced immediately before the value computation of
-<code class="sourceCode cpp">E1</code>.</p>
+nominated storage; no subobjects are created and the beginning of its
+lifetime is sequenced immediately before the value computation of
+<code class="sourceCode cpp">E</code>.</p>
 </div>
 <p><span class="note"><span>[ <em>Note 2:</em> </span>This ends the
 lifetime of the previously-active member of the union, if any
@@ -1056,14 +1072,14 @@ are Constituent Values<a href="#proposal-2-fixing-which-values-are-constituent-v
 <p>The current rule for constituent values is, from <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/2:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">2</a></span>
 The <em>constituent values</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(2.1)</a></span>
 if <code class="sourceCode cpp"><em>o</em></code> has scalar type, the
 value of <code class="sourceCode cpp"><em>o</em></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(2.2)</a></span>
 otherwise, the constituent values of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 members.</li>
@@ -1077,17 +1093,42 @@ all of the <code class="sourceCode cpp">T</code>s as constituent values
 (even if we only constructed the first two). So we’ll need to loosen
 this rule to permit objects with union members to be more usable as
 constant expressions.</p>
-<p>Something like this:</p>
+<p>For the <code class="sourceCode cpp">FixedVector</code> (aka
+<code class="sourceCode cpp">static_vector</code> aka
+<code class="sourceCode cpp">inplace_vector</code>) example, we really
+only need to allow “holes” at the end of the array. But if we want to
+support a different container, that is more bidirectional and supports
+cheap <code class="sourceCode cpp">push_front</code> and
+<code class="sourceCode cpp">pop_front</code>, we will also want to
+support “holes” at the front of the array. So for simplicity, we’re
+proposing to support holes <em>anywhere</em> in the array. Note that
+we’re still not proposing nice syntax for actually constructing such an
+array with holes. Richard on the reflector had suggested</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">2</a></span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">// short array initializer:</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">// initializes arr[0] and arr[1],</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">// does not start lifetime of rest</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> arr<span class="op">[</span><span class="dv">42</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span>a, b, <span class="dt">short</span><span class="op">}</span>;</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">// in std::allocator&lt;T&gt;::allocate:</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="kw">new</span> <span class="op">(</span>ptr<span class="op">)</span> T<span class="op">[</span>n<span class="op">]{</span><span class="dt">short</span><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>That is definitely a cute syntax. But we don’t think it’s necessary
+right now. Maybe a future proposal can pick that up.</p>
+<p>Until then, we’re proposing something like this change to <span>7.7
+<a href="https://wg21.link/expr.const">[expr.const]</a></span>:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">2</a></span>
 The <em>constituent values</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(2.1)</a></span>
 if <code class="sourceCode cpp"><em>o</em></code> has scalar type, the
 value of <code class="sourceCode cpp"><em>o</em></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(2.2)</a></span>
 otherwise, the constituent values of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 <span class="rm" style="color: #bf0303"><del>members</del></span> <span class="addu">subobjects (see below)</span>.</li>
@@ -1095,10 +1136,10 @@ otherwise, the constituent values of any direct subobjects of
 <p>The <em>constituent references</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(2.3)</a></span>
 any direct members of <code class="sourceCode cpp"><em>o</em></code>
 that have reference type, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(2.4)</a></span>
 the constituent references of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 <span class="rm" style="color: #bf0303"><del>members</del></span> <span class="addu">subobjects</span>.</li>
@@ -1106,9 +1147,9 @@ the constituent references of any direct subobjects of
 <div class="addu">
 <p>An <em>inactive union subobject</em> is either:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(2.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(2.5)</a></span>
 an inactive union member or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(2.6)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(2.6)</a></span>
 an element <code class="sourceCode cpp"><em>A</em></code> of an active
 union member <code class="sourceCode cpp"><em>B</em></code> of a union
 where <code class="sourceCode cpp"><em>B</em></code> has array type and
@@ -1117,39 +1158,39 @@ lifetime.</li>
 </ul>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> X <span class="op">{</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> i;</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> j;</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Y <span class="op">{</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        X x1;</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        X x2;</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> i;</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> arr<span class="op">[</span><span class="dv">4</span><span class="op">]</span>;</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        Y y;</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v1;       <span class="co">// ok, no constituent values</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v2<span class="op">{.</span>i<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// ok, the constituent values are {v2.i}</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v3 <span class="op">=</span> <span class="op">[]{</span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    A a;</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// ok, the constituent values are {v3.arr[1], v3.arr[2]}</span></span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v4 <span class="op">=</span> <span class="op">[]{</span></span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    A a;</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x1<span class="op">.</span>i <span class="op">=</span> <span class="dv">1</span>;</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x2<span class="op">.</span>j <span class="op">=</span> <span class="dv">2</span>;</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// error: the constituent values include v4.y.x1.j and v4.y.x2.i</span></span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="co">//                   // which have erroneous value</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> X <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> i;</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> j;</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Y <span class="op">{</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        X x1;</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        X x2;</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> i;</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> arr<span class="op">[</span><span class="dv">4</span><span class="op">]</span>;</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        Y y;</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v1;       <span class="co">// ok, no constituent values</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v2<span class="op">{.</span>i<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// ok, the constituent values are {v2.i}</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v3 <span class="op">=</span> <span class="op">[]{</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    A a;</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// ok, the constituent values are {v3.arr[1], v3.arr[2]}</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v4 <span class="op">=</span> <span class="op">[]{</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>    A a;</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x1<span class="op">.</span>i <span class="op">=</span> <span class="dv">1</span>;</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x2<span class="op">.</span>j <span class="op">=</span> <span class="dv">2</span>;</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// error: the constituent values include v4.y.x1.j and v4.y.x2.i</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a><span class="co">//                   // which have erroneous value</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -1158,7 +1199,7 @@ lifetime.</li>
 <p>That fix ensures that:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>inplace_vector<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">4</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>inplace_vector<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">4</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>is a valid constexpr variable if the implementation uses a <code class="sourceCode cpp"><span class="kw">union</span> <span class="op">{</span> <span class="dt">int</span> storage<span class="op">[</span><span class="dv">4</span><span class="op">]</span>; <span class="op">}</span></code>
