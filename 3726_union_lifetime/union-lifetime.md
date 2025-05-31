@@ -50,9 +50,9 @@ That paper solved this problem by:
 1. Making `union`s have trivial default constructors and trivial destructors, by default, and
 2. Implicitly starting the lifetime of the first `union` member, if that member has implicit-lifetime type.
 
-The first avoids pointless no-op empty constructors and destructors, and the second would start the lifetime of the `T[N]` member — which we need in order for the placement new to be well-defined. Which seemed to be a pretty nice thing, as the code just works, without any complicated interventino.
+The first avoids pointless no-op empty constructors and destructors, and the second would start the lifetime of the `T[N]` member — which we need in order for the placement new to be well-defined. Which seemed to be a pretty nice thing, as the code just works, without any complicated intervention.
 
-However, there is an important principle in C++ language design that I missed: we can't have nice things because there are no nice things. Richard Smith sent out this example:
+However, there is an important principle in C++ language design that Barry missed: we can't have nice things because there are no nice things. Richard Smith sent out this example:
 
 ::: std
 ```cpp
@@ -63,9 +63,9 @@ void f(X<make()>) {}
 ```
 :::
 
-He pointed out that today this is valid because template argument of `X` is a union object with no active member. But with the P3074 changes, this:
+He pointed out that today this is valid because template argument of `X` is a union object with no active member. But with the [@P3074R7] changes, this:
 
-1. Causes the union object to have an active member, and thus would have to be mangled differently. That makes this an ABI break (although not all implementations mangle these cases differently, which is probably a bug, so the potential damage of ABI break isn't tremendous)
+1. Causes the union object to have an active member, and thus would have to be mangled differently. That change makes this an ABI break (although not all implementations mangle these cases differently, which is probably a bug, so the potential damage of ABI break isn't tremendous)
 2. Causes the example to fail to compile because it's no longer a valid template argument.
 
 The relevant rule here is is [expr.const]{.sref} which says that:
@@ -89,7 +89,7 @@ where, in that same section:
 
 Note that inactive union members are excluded, but active-yet-uninitialized union members are disallowed.
 
-This is also a problem because the original goal of the paper was to make types like `std::inplace_vector` completely usable at compile-time, and this rule (even separate from P3074) makes that impossible:
+This is also a problem because the original goal of the paper was to make types like `std::inplace_vector` completely usable at compile-time, and this rule (even separate from [@P3074R7]) makes that impossible:
 
 ::: std
 ```cpp
@@ -97,9 +97,9 @@ constexpr std::inplace_vector<int, 4> v = {1, 2};
 ```
 :::
 
-A "normal" implementation would have a union with an `int[4]` in it, of which the first two elements are initialized but the last two are not. And thus have indeterminate value, so this isn't a valid constant expression. For `int` specifically (and trivial types more braodly), this is fixable by having the implementation simply have a `T storage[N];` instead of a `union { T storage[N]; };` and initialize all the objects — since that's free. But for types that either aren't trivially default constructible or aren't trivially destructible, that's not an option, and that really shouldn't be the limiting factor of whether you can create `constexpr` variables (or non-type template arguments) of such types.
+A "normal" implementation would have `union { int storage[4]; }`, of which the first two elements are initialized but the last two are not. And thus have indeterminate value, so this isn't a valid constant expression. For `int` specifically (and trivial types more broadly), this is fixable by having the implementation simply have a `int storage[4];` instead and initialize all the objects — since that's free. But for types that either aren't trivially default constructible or aren't trivially destructible, that's not an option, and that really shouldn't be the limiting factor of whether you can create `constexpr` variables (or non-type template arguments) of such types.
 
-I'm hoping to fix both of those issues in this paper, with two fairly independent fixes.
+We're hoping to fix both of those issues in this paper, with two fairly independent fixes.
 
 # Proposal 1: Fixing When Implicit Lifetime Starts
 
@@ -144,7 +144,7 @@ static_assert(silly_test() == 1);
 
 This will work for the following reason:
 
-|P3074|This Paper
+|[@P3074R7]|This Paper
 |-|-|
 |Default constructor starts lifetime of array (but not any elements)|Default constructor does not start any lifetime|
 |`storage + size` is well-defined, because array lifetime storage|`storage + size` is initially UB, but instead we see that this is a placement new onto an aggregate element and start the lifetime of that array. It becomes the active member.|
@@ -213,6 +213,13 @@ Now, `v1` and `v2` are in the same state: the active member of the union is `emp
 
 ## Wording
 
+Revert the change in [class.default.ctor]/4:
+
+::: std
+[4]{.pnum} [If a default constructor of a union-like class `X` is trivial, then for each union `U` that is either `X` or an anonymous union member of `X`, if the first variant member, if any, of `U` has implicit-lifetime type ([basic.types.general]), the default constructor of `X` begins the lifetime of that member if it is not the active member of its union. [It is already the active member if `U` was value-initialized.]{.note}]{.rm} [An]{.addu} [Otherwise, an]{.rm} implicitly-defined ([dcl.fct.def.default]) default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no ctor-initializer ([class.base.init]) and an empty compound-statement.
+
+:::
+
 Change [class.union.general]{.sref}/5:
 
 ::: std
@@ -221,7 +228,9 @@ Change [class.union.general]{.sref}/5:
 * [5.a]{.pnum} the left operand of an assignment operator involves a member access expression ([expr.ref]) that nominates a union member [or]{.addu}
 * [5.b]{.pnum} [the placement argument to a `$new-expression$` ([expr.new]) that is a non-allocating form ([new.delete.placement]) involves such a member access expression,]{.addu}
 
-it may begin the lifetime of that union member, as described below. For an expression `E`, define the set `$S$(E)` of subexpressions of `E` as follows:
+it may begin the lifetime of that union member, as described below.
+
+For an expression `E`, define the set `$S$(E)` of subexpressions of `E` as follows:
 
 * [5.1]{.pnum} If `E` is of the form `A.B`, `$S$(E)` contains the elements of `$S$(A)`, and also contains `A.B` if `B` names a union member of a non-class, non-array type, or of a class type with a trivial default constructor that is not deleted, or an array of such types.
 * [5.2]{.pnum} If `E` is of the form `A[B]` and is interpreted as a built-in array subscripting operator, `$S$(E)` is `$S$(A)` if `A` is of array type, `$S$(B)` if `B` is of array type, and empty otherwise.
@@ -236,7 +245,7 @@ it may begin the lifetime of that union member, as described below. For an expre
 In an assignment expression of the form `E1 = E2` that uses either the built-in assignment operator ([expr.assign]) or a trivial assignment operator ([class.copy.assign]), for each element `X` of `$S$(E1)` and each anonymous union member `X` ([class.union.anon]) that is a member of a union and has such an element as an immediate subobject (recursively), if modification of `X` would have undefined behavior under [basic.life], an object of the type of `X` is implicitly created in the nominated storage; no initialization is performed and the beginning of its lifetime is sequenced after the value computation of the left and right operands and before the assignment.
 
 ::: addu
-In a `$new-expression$` of the form `new (E1) E2`, every element `X` of `$S$(E1)` begins its lifetime.
+In a `$new-expression$` of the form `new (E1) E2` that uses a non-allocating form ([new.delete.placement]), for each element `X` of `$S$(E1)` and each anonymous union member `X` that is a member of a union and has such an element as an immediate subobject (recursively), if `X` is not within its lifetime, an object of the type of `X` is implicitly created in the nominated storage; no initialization is performed and the beginning of its lifetime is sequenced immediately before the value computation of `E1`.
 :::
 
 [This ends the lifetime of the previously-active member of the union, if any ([basic.life]).]{.note}
@@ -257,27 +266,13 @@ The current rule for constituent values is, from [expr.const]{.sref}/2:
 
 As mentioned earlier, this means that if we have a `union { T storage[4]; }` then either there are no constituent values (if `storage` is inactive) or we consider all of the `T`s as constituent values (even if we only constructed the first two). So we'll need to loosen this rule to permit objects with union members to be more usable as constant expressions.
 
-So first we need to introduce the concept of an inactive union subobject. Somewhere in [class.union]{.sref} we can add:
-
-::: std
-::: addu
-A *possibly inactive union subobject* is:
-
-* [1]{.pnum} A direct member of a union,
-* [2]{.pnum} An element of a possibly inactive union subobject `$M$` where the type of `$M$` is an aggregate that has implicit-lifetime type ([basic.types.general]).
-
-An *inactive union subobject* is a possibly-inactive union subobject that is not within its lifetime.
-:::
-:::
-
-
 Something like this:
 
 ::: std
 [2]{.pnum} The *constituent values* of an object `$o$` are
 
 * [2.1]{.pnum} if `$o$` has scalar type, the value of `$o$`;
-* [2.2]{.pnum} otherwise, the constituent values of any direct subobjects of `$o$` other than inactive union [members]{.rm} [subobjects ([class.union])]{.addu}.
+* [2.2]{.pnum} otherwise, the constituent values of any direct subobjects of `$o$` other than inactive union [members]{.rm} [subobjects (see below)]{.addu}.
 
 The *constituent references* of an object `$o$` are
 
@@ -285,6 +280,11 @@ The *constituent references* of an object `$o$` are
 * [2.4]{.pnum} the constituent references of any direct subobjects of `$o$` other than inactive union [members]{.rm} [subobjects]{.addu}.
 
 ::: addu
+An *inactive union subobject* is either:
+
+* [2.5]{.pnum} an inactive union member or
+* [2.6]{.pnum} an element `$A$` of an active union member `$B$` of a union where `$B$` has array type and `$A$` is not within its lifetime.
+
 ::: example
 ```cpp
 struct A {
@@ -305,20 +305,21 @@ struct A {
     };
 };
 
-constexpr A v1;       // no constituent values
-constexpr A v2{.i=1}; // the constituent values are {v2.i}
+constexpr A v1;       // ok, no constituent values
+constexpr A v2{.i=1}; // ok, the constituent values are {v2.i}
 constexpr A v3 = []{
     A a;
-    new (&a.arr[0]) int(0);
     new (&a.arr[1]) int(1);
+    new (&a.arr[2]) int(2);
     return a;
-}();                 // the constituent values are {v3.arr[0], v3.arr[1]}
+}();                 // ok, the constituent values are {v3.arr[1], v3.arr[2]}
 constexpr A v4 = []{
     A a;
     a.y.x1.i = 1;
     a.y.x2.j = 2;
     return a;
-}();                 // the constituent values are {v4.y.x1.i, v4.y.x2.j}
+}();                 // error: the constituent values include v4.y.x1.j and v4.y.x2.i
+//                   // which have erroneous value
 ```
 :::
 :::

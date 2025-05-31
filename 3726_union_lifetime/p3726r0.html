@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-05-30" />
+  <meta name="dcterms.date" content="2025-05-31" />
   <title>Adjustments to Union Lifetime Rules</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ Lifetime Rules</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-05-30</td>
+    <td>2025-05-31</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -666,10 +666,10 @@ member, if that member has implicit-lifetime type.</li>
 and the second would start the lifetime of the <code class="sourceCode cpp">T<span class="op">[</span>N<span class="op">]</span></code>
 member — which we need in order for the placement new to be
 well-defined. Which seemed to be a pretty nice thing, as the code just
-works, without any complicated interventino.</p>
+works, without any complicated intervention.</p>
 <p>However, there is an important principle in C++ language design that
-I missed: we can’t have nice things because there are no nice things.
-Richard Smith sent out this example:</p>
+Barry missed: we can’t have nice things because there are no nice
+things. Richard Smith sent out this example:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">union</span> U <span class="op">{</span> <span class="dt">int</span> a, b; <span class="op">}</span>;</span>
@@ -680,12 +680,12 @@ Richard Smith sent out this example:</p>
 </div>
 <p>He pointed out that today this is valid because template argument of
 <code class="sourceCode cpp">X</code> is a union object with no active
-member. But with the P3074 changes, this:</p>
+member. But with the <span class="citation" data-cites="P3074R7"><a href="https://wg21.link/p3074r7" role="doc-biblioref">[P3074R7]</a></span> changes, this:</p>
 <ol type="1">
 <li>Causes the union object to have an active member, and thus would
-have to be mangled differently. That makes this an ABI break (although
-not all implementations mangle these cases differently, which is
-probably a bug, so the potential damage of ABI break isn’t
+have to be mangled differently. That change makes this an ABI break
+(although not all implementations mangle these cases differently, which
+is probably a bug, so the potential damage of ABI break isn’t
 tremendous)</li>
 <li>Causes the example to fail to compile because it’s no longer a valid
 template argument.</li>
@@ -733,28 +733,27 @@ active-yet-uninitialized union members are disallowed.</p>
 <p>This is also a problem because the original goal of the paper was to
 make types like <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>
 completely usable at compile-time, and this rule (even separate from
-P3074) makes that impossible:</p>
+<span class="citation" data-cites="P3074R7"><a href="https://wg21.link/p3074r7" role="doc-biblioref">[P3074R7]</a></span>) makes that impossible:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>inplace_vector<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">4</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>A “normal” implementation would have a union with an <code class="sourceCode cpp"><span class="dt">int</span><span class="op">[</span><span class="dv">4</span><span class="op">]</span></code>
-in it, of which the first two elements are initialized but the last two
-are not. And thus have indeterminate value, so this isn’t a valid
-constant expression. For
+<p>A “normal” implementation would have <code class="sourceCode cpp"><span class="kw">union</span> <span class="op">{</span> <span class="dt">int</span> storage<span class="op">[</span><span class="dv">4</span><span class="op">]</span>; <span class="op">}</span></code>,
+of which the first two elements are initialized but the last two are
+not. And thus have indeterminate value, so this isn’t a valid constant
+expression. For
 <code class="sourceCode cpp"><span class="dt">int</span></code>
-specifically (and trivial types more braodly), this is fixable by having
-the implementation simply have a <code class="sourceCode cpp">T storage<span class="op">[</span>N<span class="op">]</span>;</code>
-instead of a <code class="sourceCode cpp"><span class="kw">union</span> <span class="op">{</span> T storage<span class="op">[</span>N<span class="op">]</span>; <span class="op">}</span>;</code>
-and initialize all the objects — since that’s free. But for types that
-either aren’t trivially default constructible or aren’t trivially
-destructible, that’s not an option, and that really shouldn’t be the
-limiting factor of whether you can create
+specifically (and trivial types more broadly), this is fixable by having
+the implementation simply have a <code class="sourceCode cpp"><span class="dt">int</span> storage<span class="op">[</span><span class="dv">4</span><span class="op">]</span>;</code>
+instead and initialize all the objects — since that’s free. But for
+types that either aren’t trivially default constructible or aren’t
+trivially destructible, that’s not an option, and that really shouldn’t
+be the limiting factor of whether you can create
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 variables (or non-type template arguments) of such types.</p>
-<p>I’m hoping to fix both of those issues in this paper, with two fairly
-independent fixes.</p>
+<p>We’re hoping to fix both of those issues in this paper, with two
+fairly independent fixes.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal-1-fixing-when-implicit-lifetime-starts"><span class="header-section-number">2</span> Proposal 1: Fixing When Implicit
 Lifetime Starts<a href="#proposal-1-fixing-when-implicit-lifetime-starts" class="self-link"></a></h1>
 <p><span class="citation" data-cites="P3074R7"><a href="https://wg21.link/p3074r7" role="doc-biblioref">[P3074R7]</a></span> added this wording to
@@ -821,7 +820,7 @@ lifetime of the aggregate. That is, given the above implementation:</p>
 <thead>
 <tr class="header">
 <th><div style="text-align:center">
-<strong>P3074</strong>
+<strong><span class="citation" data-cites="P3074R7"><a href="https://wg21.link/p3074r7" role="doc-biblioref">[P3074R7]</a></span></strong>
 </div></th>
 <th><div style="text-align:center">
 <strong>This Paper</strong>
@@ -927,28 +926,56 @@ new member to the union:</p>
 <code class="sourceCode cpp">v2</code> are in the same state: the active
 member of the union is <code class="sourceCode cpp">empty</code>.</p>
 <h2 data-number="2.2" id="wording"><span class="header-section-number">2.2</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Revert the change in [class.default.ctor]/4:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">4</a></span>
+<span class="rm" style="color: #bf0303"><del>If a default constructor of
+a union-like class
+<span><code class="sourceCode default">X</code></span> is trivial, then
+for each union <span><code class="sourceCode default">U</code></span>
+that is either <span><code class="sourceCode default">X</code></span> or
+an anonymous union member of
+<span><code class="sourceCode default">X</code></span>, if the first
+variant member, if any, of
+<span><code class="sourceCode default">U</code></span> has
+implicit-lifetime type ([basic.types.general]), the default constructor
+of <span><code class="sourceCode default">X</code></span> begins the
+lifetime of that member if it is not the active member of its union.
+<span class="note"><span>[ <em>Note 1:</em> </span>It is already the
+active member if <span><code class="sourceCode default">U</code></span>
+was value-initialized.<span> — <em>end
+note</em> ]</span></span></del></span> <span class="addu">An</span>
+<span class="rm" style="color: #bf0303"><del>Otherwise, an</del></span>
+implicitly-defined ([dcl.fct.def.default]) default constructor performs
+the set of initializations of the class that would be performed by a
+user-written default constructor for that class with no ctor-initializer
+([class.base.init]) and an empty compound-statement.</p>
+</blockquote>
+</div>
 <p>Change <span>11.5.1 <a href="https://wg21.link/class.union.general">[class.union.general]</a></span>/5:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">5</a></span>
 When <span class="addu">either</span></p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(5.a)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(5.a)</a></span>
 the left operand of an assignment operator involves a member access
 expression ([expr.ref]) that nominates a union member <span class="addu">or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(5.b)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(5.b)</a></span>
 <span class="addu">the placement argument to a
 <code class="sourceCode cpp"><em>new-expression</em></code> ([expr.new])
 that is a non-allocating form ([new.delete.placement]) involves such a
 member access expression,</span></li>
 </ul>
-<p>it may begin the lifetime of that union member, as described below.
-For an expression <code class="sourceCode cpp">E</code>, define the set
-<code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
+<p>it may begin the lifetime of that union member, as described
+below.</p>
+<p>For an expression <code class="sourceCode cpp">E</code>, define the
+set <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
 of subexpressions of <code class="sourceCode cpp">E</code> as
 follows:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(5.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(5.1)</a></span>
 If <code class="sourceCode cpp">E</code> is of the form
 <code class="sourceCode cpp">A<span class="op">.</span>B</code>, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
 contains the elements of <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class="op">)</span></code>,
@@ -957,7 +984,7 @@ and also contains
 <code class="sourceCode cpp">B</code> names a union member of a
 non-class, non-array type, or of a class type with a trivial default
 constructor that is not deleted, or an array of such types.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(5.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(5.2)</a></span>
 If <code class="sourceCode cpp">E</code> is of the form <code class="sourceCode cpp">A<span class="op">[</span>B<span class="op">]</span></code>
 and is interpreted as a built-in array subscripting operator, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
 is <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class="op">)</span></code>
@@ -967,14 +994,14 @@ otherwise.</li>
 </ul>
 <div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(5.x)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(5.x)</a></span>
 If <code class="sourceCode cpp">E</code> is of the form
 <code class="sourceCode cpp"><span class="op">&amp;</span>A</code>,
 <code class="sourceCode cpp">E</code> is interpreted as a built-in
 address operator, and the initial expression is a
 <code class="sourceCode cpp"><em>new-expression</em></code>, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
 is <code class="sourceCode cpp"><em>S</em><span class="op">(</span>A<span class="op">)</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(5.y)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(5.y)</a></span>
 If <code class="sourceCode cpp">E</code> is of the form
 <code class="sourceCode cpp">A <span class="op">+</span> B</code>,
 <code class="sourceCode cpp">E</code> is interpreted as a built-in
@@ -987,7 +1014,7 @@ otherwise.</li>
 </ul>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(5.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(5.3)</a></span>
 Otherwise, <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E<span class="op">)</span></code>
 is empty.</li>
 </ul>
@@ -1007,11 +1034,19 @@ its lifetime is sequenced after the value computation of the left and
 right operands and before the assignment.</p>
 <div class="addu">
 <p>In a <code class="sourceCode cpp"><em>new-expression</em></code> of
-the form <code class="sourceCode cpp"><span class="kw">new</span> <span class="op">(</span>E1<span class="op">)</span> E2</code>,
-every element <code class="sourceCode cpp">X</code> of <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E1<span class="op">)</span></code>
-begins its lifetime.</p>
+the form <code class="sourceCode cpp"><span class="kw">new</span> <span class="op">(</span>E1<span class="op">)</span> E2</code>
+that uses a non-allocating form ([new.delete.placement]), for each
+element <code class="sourceCode cpp">X</code> of <code class="sourceCode cpp"><em>S</em><span class="op">(</span>E1<span class="op">)</span></code>
+and each anonymous union member <code class="sourceCode cpp">X</code>
+that is a member of a union and has such an element as an immediate
+subobject (recursively), if <code class="sourceCode cpp">X</code> is not
+within its lifetime, an object of the type of
+<code class="sourceCode cpp">X</code> is implicitly created in the
+nominated storage; no initialization is performed and the beginning of
+its lifetime is sequenced immediately before the value computation of
+<code class="sourceCode cpp">E1</code>.</p>
 </div>
-<p><span class="note"><span>[ <em>Note 1:</em> </span>This ends the
+<p><span class="note"><span>[ <em>Note 2:</em> </span>This ends the
 lifetime of the previously-active member of the union, if any
 ([basic.life]).<span> — <em>end note</em> ]</span></span></p>
 </blockquote>
@@ -1021,14 +1056,14 @@ are Constituent Values<a href="#proposal-2-fixing-which-values-are-constituent-v
 <p>The current rule for constituent values is, from <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/2:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">2</a></span>
 The <em>constituent values</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(2.1)</a></span>
 if <code class="sourceCode cpp"><em>o</em></code> has scalar type, the
 value of <code class="sourceCode cpp"><em>o</em></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(2.2)</a></span>
 otherwise, the constituent values of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 members.</li>
@@ -1042,54 +1077,44 @@ all of the <code class="sourceCode cpp">T</code>s as constituent values
 (even if we only constructed the first two). So we’ll need to loosen
 this rule to permit objects with union members to be more usable as
 constant expressions.</p>
-<p>So first we need to introduce the concept of an inactive union
-subobject. Somewhere in <span>11.5 <a href="https://wg21.link/class.union">[class.union]</a></span> we can
-add:</p>
-<div class="std">
-<blockquote>
-<div class="addu">
-<p>A <em>possibly inactive union subobject</em> is:</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">1</a></span>
-A direct member of a union,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">2</a></span>
-An element of a possibly inactive union subobject
-<code class="sourceCode cpp"><em>M</em></code> where the type of
-<code class="sourceCode cpp"><em>M</em></code> is an aggregate that has
-implicit-lifetime type ([basic.types.general]).</li>
-</ul>
-<p>An <em>inactive union subobject</em> is a possibly-inactive union
-subobject that is not within its lifetime.</p>
-</div>
-</blockquote>
-</div>
 <p>Something like this:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">2</a></span>
 The <em>constituent values</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(2.1)</a></span>
 if <code class="sourceCode cpp"><em>o</em></code> has scalar type, the
 value of <code class="sourceCode cpp"><em>o</em></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(2.2)</a></span>
 otherwise, the constituent values of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
-<span class="rm" style="color: #bf0303"><del>members</del></span> <span class="addu">subobjects ([class.union])</span>.</li>
+<span class="rm" style="color: #bf0303"><del>members</del></span> <span class="addu">subobjects (see below)</span>.</li>
 </ul>
 <p>The <em>constituent references</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(2.3)</a></span>
 any direct members of <code class="sourceCode cpp"><em>o</em></code>
 that have reference type, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(2.4)</a></span>
 the constituent references of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 <span class="rm" style="color: #bf0303"><del>members</del></span> <span class="addu">subobjects</span>.</li>
 </ul>
 <div class="addu">
+<p>An <em>inactive union subobject</em> is either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(2.5)</a></span>
+an inactive union member or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(2.6)</a></span>
+an element <code class="sourceCode cpp"><em>A</em></code> of an active
+union member <code class="sourceCode cpp"><em>B</em></code> of a union
+where <code class="sourceCode cpp"><em>B</em></code> has array type and
+<code class="sourceCode cpp"><em>A</em></code> is not within its
+lifetime.</li>
+</ul>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span></span>
@@ -1110,20 +1135,21 @@ the constituent references of any direct subobjects of
 <span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
 <span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
 <span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v1;       <span class="co">// no constituent values</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v2<span class="op">{.</span>i<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// the constituent values are {v2.i}</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v1;       <span class="co">// ok, no constituent values</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v2<span class="op">{.</span>i<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// ok, the constituent values are {v2.i}</span></span>
 <span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v3 <span class="op">=</span> <span class="op">[]{</span></span>
 <span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    A a;</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">0</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">0</span><span class="op">)</span>;</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
 <span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// the constituent values are {v3.arr[0], v3.arr[1]}</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// ok, the constituent values are {v3.arr[1], v3.arr[2]}</span></span>
 <span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v4 <span class="op">=</span> <span class="op">[]{</span></span>
 <span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    A a;</span>
 <span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x1<span class="op">.</span>i <span class="op">=</span> <span class="dv">1</span>;</span>
 <span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x2<span class="op">.</span>j <span class="op">=</span> <span class="dv">2</span>;</span>
 <span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// the constituent values are {v4.y.x1.i, v4.y.x2.j}</span></span></code></pre></div>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// error: the constituent values include v4.y.x1.j and v4.y.x2.i</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="co">//                   // which have erroneous value</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
