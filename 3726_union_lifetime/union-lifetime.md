@@ -303,7 +303,7 @@ The *constituent references* of an object `$o$` are
 An *inactive union subobject* is either:
 
 * [2.5]{.pnum} an inactive union member or
-* [2.6]{.pnum} an element `$A$` of a union member `$B$` where `$B$` has array type and `$A$` is not within its lifetime.
+* [2.6]{.pnum} an element `$A$` of an array member of a union where `$A$` is not within its lifetime.
 
 ::: example
 ```cpp
