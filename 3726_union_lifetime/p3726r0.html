@@ -834,12 +834,9 @@ elements)</td>
 <td>Default constructor does not start any lifetime</td>
 </tr>
 <tr class="even">
-<td><code class="sourceCode cpp">storage <span class="op">+</span> size</code> is
-well-defined, because array lifetime storage</td>
-<td><code class="sourceCode cpp">storage <span class="op">+</span> size</code> is
-initially UB, but instead we see that this is a placement new onto an
-aggregate element and start the lifetime of that array. It becomes the
-active member.</td>
+<td>The array is already within lifetime and is the active member</td>
+<td>The act of placement-new onto the array starts the lifetime of the
+array and makes it the active member</td>
 </tr>
 <tr class="odd">
 <td>Placement new is well-defined</td>
@@ -1010,11 +1007,7 @@ nominated storage; no initialization is performed and the beginning of
 its lifetime is sequenced after the value computation of the left and
 right operands and before the assignment.</p>
 <div class="addu">
-<p>In a <code class="sourceCode cpp"><em>new-expression</em></code> with
-a <code class="sourceCode cpp"><em>new-placement</em></code> of the form
-<code class="sourceCode cpp"><span class="op">(</span>E<span class="op">)</span></code>
-that uses a non-allocating form ([new.delete.placement]), define the set
-<code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
+<p>Define the set <code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
 of subexpressions of <code class="sourceCode cpp">E</code> as
 follows:</p>
 <ul>
@@ -1052,15 +1045,20 @@ otherwise.</li>
 Otherwise, <code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
 is empty.</li>
 </ul>
-<p>For each element <code class="sourceCode cpp">X</code> of <code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
+<p>In a <code class="sourceCode cpp"><em>new-expression</em></code> with
+a <code class="sourceCode cpp"><em>new-placement</em></code> of the form
+<code class="sourceCode cpp"><span class="op">(</span>E<span class="op">)</span></code>
+that uses a non-allocating form ([new.delete.placement]), for each
+element <code class="sourceCode cpp">X</code> of <code class="sourceCode cpp"><em>P</em><span class="op">(</span>E<span class="op">)</span></code>
 that names a union member and each anonymous union member
 <code class="sourceCode cpp">X</code> that is a member of a union and
 has such an element as an immediate subobject (recursively), if
-<code class="sourceCode cpp">X</code> is not within its lifetime, an
-object of the type of <code class="sourceCode cpp">X</code> is
-implicitly created in the nominated storage; no subobjects are created
-and the beginning of its lifetime is sequenced immediately before the
-value computation of <code class="sourceCode cpp">E</code>.</p>
+<code class="sourceCode cpp">X</code> is not within its lifetime, the
+lifetime of an object of the type of
+<code class="sourceCode cpp">X</code> is started in the nominated
+storage; no subobjects are created and the beginning of its lifetime is
+sequenced immediately before the value computation of
+<code class="sourceCode cpp">E</code>.</p>
 </div>
 <p><span class="note"><span>[ <em>Note 2:</em> </span>This ends the
 lifetime of the previously-active member of the union, if any
@@ -1103,7 +1101,8 @@ cheap <code class="sourceCode cpp">push_front</code> and
 support “holes” at the front of the array. So for simplicity, we’re
 proposing to support holes <em>anywhere</em> in the array. Note that
 we’re still not proposing nice syntax for actually constructing such an
-array with holes. Richard on the reflector had suggested</p>
+array with holes. Richard on the reflector had suggested a strawperson
+syntax:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">// short array initializer:</span></span>
@@ -1115,8 +1114,9 @@ array with holes. Richard on the reflector had suggested</p>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="kw">new</span> <span class="op">(</span>ptr<span class="op">)</span> T<span class="op">[</span>n<span class="op">]{</span><span class="dt">short</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>That is definitely a cute syntax. But we don’t think it’s necessary
-right now. Maybe a future proposal can pick that up.</p>
+<p>I don’t think we strictly need to solve that problem right now, but
+at least we can put in the groundwork for supporting it in the
+future.</p>
 <p>Until then, we’re proposing something like this change to <span>7.7
 <a href="https://wg21.link/expr.const">[expr.const]</a></span>:</p>
 <div class="std">
