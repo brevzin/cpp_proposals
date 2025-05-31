@@ -249,7 +249,7 @@ In a `$new-expression$` with a `$new-placement$` of the form `(E)` that uses a n
     then `$P$(E)` is `A` if `A` is of array type, `B` if `B` is of array type, and the union of `$P$(A)` and `$P$(B)` otherwise.
 * [5.#]{.pnum} Otherwise, `$P$(E)` is empty.
 
-For each element `X` of `$P$(E)` and each anonymous union member `X` that is a member of a union and has such an element as an immediate subobject (recursively), if `X` is not within its lifetime, an object of the type of `X` is implicitly created in the nominated storage; no subobjects are created and the beginning of its lifetime is sequenced immediately before the value computation of `E`.
+For each element `X` of `$P$(E)` that names a union member and each anonymous union member `X` that is a member of a union and has such an element as an immediate subobject (recursively), if `X` is not within its lifetime, an object of the type of `X` is implicitly created in the nominated storage; no subobjects are created and the beginning of its lifetime is sequenced immediately before the value computation of `E`.
 :::
 
 [This ends the lifetime of the previously-active member of the union, if any ([basic.life]).]{.note}
@@ -303,7 +303,7 @@ The *constituent references* of an object `$o$` are
 An *inactive union subobject* is either:
 
 * [2.5]{.pnum} an inactive union member or
-* [2.6]{.pnum} an element `$A$` of an active union member `$B$` of a union where `$B$` has array type and `$A$` is not within its lifetime.
+* [2.6]{.pnum} an element `$A$` of a union member `$B$` where `$B$` has array type and `$A$` is not within its lifetime.
 
 ::: example
 ```cpp
