@@ -345,6 +345,16 @@ constexpr A v4 = []{
 :::
 :::
 
+And extend the template-argument-equivalent rules to understand this, in [temp.type]{.sref}:
+
+::: std
+[2]{.pnum} Two values are *template-argument-equivalent* if they are of the same type and
+
+* [2.1]{.pnum} [...]
+* [2.8]{.pnum} they are of array type and their corresponding elements are [either both within lifetime and]{.addu} template-argument-equivalent [or both not within their lifetime]{.addu}, or
+* [2.9]{.pnum} [...]
+:::
+
 That fix ensures that:
 
 ::: std
