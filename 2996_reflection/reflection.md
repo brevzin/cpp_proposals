@@ -3777,6 +3777,32 @@ Extend the definition of _TU-local_ values and objects in p16 to include reflect
 
 :::
 
+Add examples demonstrating the above rules to the example in paragraph 19:
+
+::: std
+::: example4
+Translation unit #1:
+```cpp
+export module A;
+[...]
+
+inline void h(auto x) { adl(x); }  // OK, but certain specializations are exposures
+
+@[`using Alias = int;`]{.addu}@
+@[`template <auto R> struct T {};`]{.addu}@
+@[`static constexpr auto r1 = ^^Alias;  // OK, value is TU-local but so is r1`]{.addu}@
+@[`constexpr auto r2 = ^^Alias;         // error: value is TU-local but r2 is not`]{.addu}@
+@[`export T<^^Alias> t;                 // error: ^^Alias is a TU-local value`]{.addu}@
+```
+
+Translation unit #2:
+```cpp
+module A;
+[...]
+```
+:::
+:::
+
 ### [basic.types.general]{.sref} General {-}
 
 Change the first sentence in paragraph 9 of [basic.types.general]{.sref} as follows:
