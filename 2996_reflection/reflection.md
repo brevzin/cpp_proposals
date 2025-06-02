@@ -5236,6 +5236,20 @@ Prefer "type alias" to "`$typedef-name$`" in paragraph 2.
 [2]{.pnum} The attribute may be applied to the declaration of a class, [`$typedef-name$`]{.rm} [type alias]{.addu}, variable (including a structured binding declaration), structured binding, non-static data member, function, enumeration, or enumerator, or to an `$identifier$` label ([stmt.label]{.sref}).
 :::
 
+### [module.interface]{.sref} Module interface {-}
+
+Update paragraph 5, and the note that follows, to account for type aliases now being entities.
+
+::: std
+[5]{.pnum} If an exported declaration is a `$using-declaration$` ([namespace.udecl]) and is not within a header unit, all entities [to which all of]{.rm} [denoted by]{.addu} the `$using-declarator$`s [ultimately refer]{.rm} (if any) shall have been introduced with a name having external linkage.
+
+::: example2
+[...]
+:::
+
+[[The underlying entity of an exported type alias need not have a name with external linkage.]{.addu} [These constraints do not apply to type names introduced by `typedef` declarations and `$alias-declaration$`s]{.rm}.]{.note2}
+:::
+
 ### [module.global.frag]{.sref} Global module fragment {-}
 
 Specify in paragraph 3 that it is unspecified whether spliced types are replaced by their designated types, and renumber accordingly. Add an additional bullet further clarifying that it is unspecified whether any splice specifier is replaced.
