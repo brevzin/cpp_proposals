@@ -3749,20 +3749,9 @@ Add a bullet to paragraph 13 and handle `$splice-expression$`s in the existing b
 [13]{.pnum} A declaration `$D$` _names_ an entity `$E$` if
 
 * [13.1]{.pnum} `$D$` contains a `$lambda-expression$` whose closure type is `$E$`,
-* [13.1+]{.pnum} [`$D$` contains a manifestly constant-evaluated expression of type `std::meta::info` that represents `$E$`,]{.addu}
+* [13.*]{.pnum} [`$D$` contains a `$reflect-expression$` or a `$splice-specifier$` that, respectively, represents or designates `$E$`,]{.addu}
 * [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an `$id-expression$`, `$type-specifier$`, `$nested-name-specifier$`, `$template-name$`, or `$concept-name$` denoting `$E$`, or
-* [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an `$id-expression$` [or `$splice-expression$`]{.addu} that refers to a set of overloads that contains `$E$`.
-
-:::
-
-Modify paragraph 15 to make all type aliases and namespace aliases explicitly TU-local.
-
-::: std
-An entity is _TU-local_ if it is
-
-* [15.#]{.pnum} a type, function, variable, or template that [...]
-* [[15.1+]{.pnum} a type alias or a namespace alias,]{.addu}
-* [15.#]{.pnum} [...]
+* [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an `$id-expression$` that refers to a set of overloads that contains `$E$`.
 
 :::
 
@@ -3780,7 +3769,9 @@ Extend the definition of _TU-local_ values and objects in p16 to include reflect
 :::addu
 * [16.1+]{.pnum} it is a reflection representing either
   * [16.1+.#]{.pnum} an entity, value, or object that is TU-local, or
-  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) introduced by an exposure, or
+  * [16.1+.#]{.pnum} a type alias or a namespace alias, or
+  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) for which the base class or the derived class is TU-local, or
+  * [16.1+.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$T$` is a type alias or a TU-local type, or
 :::
 * [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
@@ -4654,12 +4645,13 @@ consteval { // #1
 ```
 :::
 
-[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$E$` as a core constant expression, the evaluation context is defined as follows:
+[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation `$X$` of an expression `$E$` as a core constant expression, the evaluation context consists of the following points:
 
-- [#.#]{.pnum} If `$E$` is a potentially-evaluated subexpression ([intro.execution]) of a default member initializer used by an aggregate initialization that appears at a point `$Q$`, the evaluation context of `$Q$`.
-- [#.#]{.pnum} Otherwise, if `$E$` is a potentially-evaluated subexpression of a default argument ([dcl.fct.default]), and that default argument is being used by an invocation of a function ([expr.call]) that appears at a point `$Q$`, the evaluation context of `$Q$`.
-- [#.#]{.pnum} Otherwise, the instantiation context of the point at which `$E$` appears.
-
+  - [#.#]{.pnum} `$EVAL-PT$($P$@~_$E$_~@)`, where `$P$@~_$E$_~@` is the point at which `$E$` appears and `$EVAL-PT$($P$)` is a point determined as follows:
+    - [#.#]{.pnum} If a potentially-evaluated subexpression ([intro.execution]) of a default member initializer `$I$` appears at `$P$`, and a (possibly aggregate) initialization is using `$I$`, `$EVAL-PT$($Q$)` where `$Q$` is the point at which that initialization appears.
+    - [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, `$EVAL-PT$($Q$)` where `$Q$` is the point at which the invocation of the function ([expr.call]) using that default argument appears.
+    - [#.#]{.pnum} Otherwise, `$P$`.
+  - [#.#]{.pnum} Each synthesized point corresponding to an injected declaration produced by any evaluation sequenced before `$X$` ([intro.execution]).
 :::
 :::
 
@@ -5251,7 +5243,7 @@ Modify paragraphs 2 through 6 to relax the phrasing used to define the points in
 [6]{.pnum} In any other case, the instantiation context at a point within the program [comprises]{.rm} [contains]{.addu} that point.
 
 ::: addu
-[6+]{.pnum} During the evaluation `$E$` of an expression, or during the implicit instantiation of any construct that resulted from that evaluation, the instantiation context also contains each synthesized point ([expr.const]) corresponding to an injected declaration produced by any evaluation sequenced before `$E$` ([intro.execution]).
+[6+]{.pnum} During the implicit instantiation of any construct that resulted from the evaluation of an expression as a core constant expression, the instantiation context also contains each point ([expr.const]) in the evaluation context ([expr.const]).
 
 [6++]{.pnum} The instantiation context contains only those points specified above.
 :::
