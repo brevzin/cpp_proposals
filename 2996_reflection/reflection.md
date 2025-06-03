@@ -7525,7 +7525,7 @@ consteval bool is_accessible(info r, access_context ctx);
 
 * [#.#]{.pnum} Otherwise, letting `$P$` be a program point whose immediate scope is the function parameter scope, class scope, or namespace scope corresponding to the function, class, or namespace represented by `ctx.scope()`:
   * [#.#.#]{.pnum} If `r` represents a direct base class relationship with base class `$B$`, then `true` if base class `$B$` of `$DESIGNATING-CLS$(r, ctx)` is accessible at `$P$` ([class.access.base]); otherwise, `false`.
-  * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` would be accessible at `$P$` when designated in `$DESIGNATING-CLS$(r, ctx)` ([class.access.base]) if the effect of any `$using-declaration$`s ([namespace.udecl]) were ignored. Otherwise, `false`.
+  * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` would be accessible at `$P$` with the designating class ([class.access.base]) as `$DESIGNATING-CLS$(r, ctx)` if the effect of any `$using-declaration$`s ([namespace.udecl]) were ignored. Otherwise, `false`.
 
 ::: note
 The definitions of when a class member or base class is accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
