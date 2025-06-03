@@ -4113,7 +4113,7 @@ A declarative `$nested-name-specifier$` shall not have a `$computed-type-specifi
 
 Break the next paragraph into a bulleted list, extend it to also cover splices, and prefer the verb "designate" over "nominate":
 
-[Here and in a few other places, the wording for the entity represented by a `$splice-specialization-specifier$` is complicated. This is primarily because the possibility that such a construct might form a `$concept-id$` (which is a prvalue) precludes us from generically saying that a `$splice-specialization-specifier$` designates an entity.]{.draftnote}
+[Here and in a few other places, the wording for the entity referred to by a `$splice-specialization-specifier$` is complicated. This is primarily because a `$splice-specialization-specifier$` whose `$splice-specifier$` designates a function template can have a partially deduced set of template arguments, such that the `$splice-specialization-specifier$` alone cannot designate an entity.]{.draftnote}
 
 ::: std
 [3]{.pnum} [The entity designated by a `$nested-name-specifier$` is determined as follows:]{.addu}
