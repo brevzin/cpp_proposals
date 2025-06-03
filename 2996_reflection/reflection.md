@@ -3603,7 +3603,7 @@ And add a bullet thereafter that factors the result of a `$reflect-expression$` 
 
 ::: std
 ::: addu
-- [15.11+]{.pnum} In each such definition, corresponding `$reflect-expression$`s ([expr.reflect]) compute equivalent values ([expr.eq]).
+- [15.11+]{.pnum} In each such definition, corresponding `$reflect-expression$`s ([expr.reflect]) compute equivalent values ([expr.eq]) that are not TU-local ([basic.link]) to different translation units.
 
 :::
 :::
@@ -5846,15 +5846,15 @@ Two `$template-id$`s [or `$splice-specialization-specifier$`s]{.addu} that are t
 
 :::
 
-Extend *template-argument-equivalent* in paragraph 2 to handle `std::meta::info`:
+Extend _template-argument-equivalent_ in paragraph 2 to handle `std::meta::info`:
 
 ::: std
-[2]{.pnum} Two values are *template-argument-equivalent* if they are of the same type and
+[2]{.pnum} Two values are _template-argument-equivalent_ if they are of the same type and
 
 * [2.1]{.pnum} they are of integral type and their values are the same, or
 * [2.2]{.pnum} they are of floating-point type and their values are identical, or
 * [2.3]{.pnum} they are of type `std::nullptr_t`, or
-* [2.*]{.pnum} [they are of type `std::meta::info` and their values are the same, or]{.addu}
+* [2.*]{.pnum} [they are of type `std::meta::info`, they are not TU-local ([basic.link]) to different translation units, and their values are the same, or]{.addu}
 * [2.4]{.pnum} they are of enumeration type and their values are the same, or
 * [2.5]{.pnum} [...]
 :::
