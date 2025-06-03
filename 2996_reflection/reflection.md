@@ -3603,7 +3603,9 @@ And add a bullet thereafter that factors the result of a `$reflect-expression$` 
 
 ::: std
 ::: addu
-- [15.11+]{.pnum} In each such definition, corresponding `$reflect-expression$`s ([expr.reflect]) compute equivalent values ([expr.eq]) that are not TU-local ([basic.link]) to different translation units.
+- [15.11+]{.pnum} In each such definition, corresponding `$reflect-expression$`s ([expr.reflect]) compute equivalent values ([expr.eq]).
+
+  [Values that are TU-local to different translation units are never considered equivalent ([basic.link]).]{.note4}
 
 :::
 :::
@@ -3774,6 +3776,8 @@ Extend the definition of _TU-local_ values and objects in p16 to include reflect
   * [16.1+.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$T$` is a type alias or a TU-local type, or
 :::
 * [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
+
+[Values that are TU-local to different translation units are never considered equivalent.]{.addu}
 
 :::
 
@@ -5839,14 +5843,14 @@ Extend paragraph 1 to also define the "sameness" of `$splice-specialization-spec
 
 * [#.#]{.pnum} their `$template-name$`s, `$operator-function-id$`s, [or]{.rm} `$literal-operator-id$`s[, or `$splice-specifier$`s]{.addu} refer to the same template, and
 * [#.#]{.pnum} their corresponding type `$template-argument$`s are the same type, and
-* [#.#]{.pnum} the template parameter values determined by their corresponding constant template arguments ([temp.arg.nontype]{.sref}) are template-argument-equivalent (see below), and
+* [#.#]{.pnum} the template parameter values determined by their corresponding constant template arguments ([temp.arg.nontype]) are template-argument-equivalent (see below), and
 * [#.#]{.pnum} their corresponding template `$template-argument$`s refer to the same template.
 
 Two `$template-id$`s [or `$splice-specialization-specifier$`s]{.addu} that are the same refer to the same class, function, or variable.
 
 :::
 
-Extend _template-argument-equivalent_ in paragraph 2 to handle `std::meta::info`:
+Extend _template-argument-equivalent_ in paragraph 2 to handle `std::meta::info`, and add a note between that paragraph and the following example:
 
 ::: std
 [2]{.pnum} Two values are _template-argument-equivalent_ if they are of the same type and
@@ -5854,9 +5858,18 @@ Extend _template-argument-equivalent_ in paragraph 2 to handle `std::meta::info`
 * [2.1]{.pnum} they are of integral type and their values are the same, or
 * [2.2]{.pnum} they are of floating-point type and their values are identical, or
 * [2.3]{.pnum} they are of type `std::nullptr_t`, or
-* [2.*]{.pnum} [they are of type `std::meta::info`, they are not TU-local ([basic.link]) to different translation units, and their values are the same, or]{.addu}
+* [2.*]{.pnum} [they are of type `std::meta::info` and their values are equivalent, or]{.addu}
 * [2.4]{.pnum} they are of enumeration type and their values are the same, or
 * [2.5]{.pnum} [...]
+
+[[Values that are TU-local to different translation units are never considered equivalent.]{.note}]{.addu}
+
+::: example1
+```cpp
+template<class E, int size> class buffer { /* ... */ };
+[...]
+```
+:::
 :::
 
 ### [temp.deduct.guide]{.sref} Deduction guides {-}
