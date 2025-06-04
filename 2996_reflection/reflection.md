@@ -6731,7 +6731,7 @@ enum class operators {
 using enum operators;
 ```
 
-[#]{.pnum} This enum class specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
+[#]{.pnum} The enumeration type `operators` specifies constants used to identify operators that can be overloaded, with the meanings listed in Table 1. The values of the constants are distinct.
 
 [The names here are chosen after the punctuation marks, not the semantic operation, and we are sticking with the Unicode names — or resorting to the secondary name when the primary name is not well known (e.g. `solidus` -> `slash`)]{.draftnote}
 
