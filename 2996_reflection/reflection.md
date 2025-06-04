@@ -4679,7 +4679,7 @@ consteval { // #1
 
   - [#.#]{.pnum} `$EVAL-PT$($P$@~_$E$_~@)`, where `$P$@~_$E$_~@` is the point at which `$E$` appears and `$EVAL-PT$($P$)` is a point determined as follows:
     - [#.#]{.pnum} If a potentially-evaluated subexpression ([intro.execution]) of a default member initializer `$I$` appears at `$P$`, and a (possibly aggregate) initialization is using `$I$`, `$EVAL-PT$($Q$)` where `$Q$` is the point at which that initialization appears.
-    - [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, `$EVAL-PT$($Q$)` where `$Q$` is the point at which the invocation of the function ([expr.call]) using that default argument appears.
+    - [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, and an invocation of a function ([expr.call]) is using that default argument, `$EVAL-PT$($Q$)` where `$Q$` is the point at which that invocation appears.
     - [#.#]{.pnum} Otherwise, `$P$`.
   - [#.#]{.pnum} Each synthesized point corresponding to an injected declaration produced by any evaluation sequenced before `$X$` ([intro.execution]).
 :::
