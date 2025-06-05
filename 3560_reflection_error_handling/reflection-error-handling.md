@@ -1,6 +1,6 @@
 ---
 title: "Error Handling in Reflection"
-document: P3560R1
+document: P3560R2
 date: today
 audience: EWG, LEWG
 author:
@@ -13,6 +13,10 @@ tag: reflection
 ---
 
 # Revision History
+
+Since [@P3560R1]:
+
+* fixing wording
 
 Since [@P3560R0]:
 
@@ -349,7 +353,7 @@ Add a new subclause as follows:
 ::: std
 ::: addu
 ```cpp
-class exception : std::exception
+class exception : public std::exception
 {
 private:
   optional<string> $what_$;   // exposition only

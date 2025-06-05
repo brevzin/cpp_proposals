@@ -365,6 +365,18 @@ constexpr std::inplace_vector<int, 4> v = {1, 2};
 
 is a valid constexpr variable if the implementation uses a `union { int storage[4]; }` to hold the data, because we would only consider the first two elements of `storage` as constituent values — the fact that the last two elements are uninitialized no longer counts against us when we consider whether `v` is a valid result of a constant expression.
 
+# Feature-Test Macro
+
+And bump the feature-test macro added by [@P3074R7]:
+
+::: std
+```diff
+- __cpp_trivial_union 202502L
++ __cpp_trivial_union 2025XXL
+```
+:::
+
+
 # Acknowledgmenets
 
 Thank you to Richard Smith for bringing the issue to our attention and for all the helpful suggestions.
