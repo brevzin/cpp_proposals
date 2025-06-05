@@ -3606,6 +3606,8 @@ And add a bullet thereafter that factors the result of a `$reflect-expression$` 
 ::: addu
 - [15.11+]{.pnum} In each such definition, corresponding `$reflect-expression$`s ([expr.reflect]) compute equivalent values ([expr.eq]).
 
+  [Values that are TU-local to different translation units are never considered equivalent ([basic.link]).]{.note4}
+
 :::
 :::
 
@@ -3750,20 +3752,9 @@ Add a bullet to paragraph 13 and handle `$splice-expression$`s in the existing b
 [13]{.pnum} A declaration `$D$` _names_ an entity `$E$` if
 
 * [13.1]{.pnum} `$D$` contains a `$lambda-expression$` whose closure type is `$E$`,
-* [13.1+]{.pnum} [`$D$` contains a manifestly constant-evaluated expression of type `std::meta::info` that represents `$E$`,]{.addu}
+* [13.*]{.pnum} [`$D$` contains a `$reflect-expression$` or a `$splice-specifier$` that, respectively, represents or designates `$E$`,]{.addu}
 * [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an `$id-expression$`, `$type-specifier$`, `$nested-name-specifier$`, `$template-name$`, or `$concept-name$` denoting `$E$`, or
-* [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an `$id-expression$` [or `$splice-expression$`]{.addu} that refers to a set of overloads that contains `$E$`.
-
-:::
-
-Modify paragraph 15 to make all type aliases and namespace aliases explicitly TU-local.
-
-::: std
-An entity is _TU-local_ if it is
-
-* [15.#]{.pnum} a type, function, variable, or template that [...]
-* [[15.1+]{.pnum} a type alias or a namespace alias,]{.addu}
-* [15.#]{.pnum} [...]
+* [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an `$id-expression$` that refers to a set of overloads that contains `$E$`.
 
 :::
 
@@ -3781,10 +3772,40 @@ Extend the definition of _TU-local_ values and objects in p16 to include reflect
 :::addu
 * [16.1+]{.pnum} it is a reflection representing either
   * [16.1+.#]{.pnum} an entity, value, or object that is TU-local, or
-  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) introduced by an exposure, or
+  * [16.1+.#]{.pnum} a type alias or a namespace alias, or
+  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) for which the base class or the derived class is TU-local, or
+  * [16.1+.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$T$` is a type alias or a TU-local type, or
 :::
 * [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
+[Values that are TU-local to different translation units are never considered equivalent.]{.addu}
+
+:::
+
+Add examples demonstrating the above rules to the example in paragraph 19:
+
+::: std
+::: example4
+Translation unit #1:
+```cpp
+export module A;
+[...]
+
+inline void h(auto x) { adl(x); }  // OK, but certain specializations are exposures
+
+@[`using Alias = int;`]{.addu}@
+@[`template <auto R> struct T {};`]{.addu}@
+@[`static constexpr auto r1 = ^^Alias;  // OK, value is TU-local but so is r1`]{.addu}@
+@[`constexpr auto r2 = ^^Alias;         // error: value is TU-local but r2 is not`]{.addu}@
+@[`export T<^^Alias> t;                 // error: ^^Alias is a TU-local value`]{.addu}@
+```
+
+Translation unit #2:
+```cpp
+module A;
+[...]
+```
+:::
 :::
 
 ### [basic.types.general]{.sref} General {-}
@@ -4097,7 +4118,7 @@ A declarative `$nested-name-specifier$` shall not have a `$computed-type-specifi
 
 Break the next paragraph into a bulleted list, extend it to also cover splices, and prefer the verb "designate" over "nominate":
 
-[Here and in a few other places, the wording for the entity represented by a `$splice-specialization-specifier$` is complicated. This is primarily because the possibility that such a construct might form a `$concept-id$` (which is a prvalue) precludes us from generically saying that a `$splice-specialization-specifier$` designates an entity.]{.draftnote}
+[Here and in a few other places, the wording for the entity referred to by a `$splice-specialization-specifier$` is complicated. This is primarily because a `$splice-specialization-specifier$` whose `$splice-specifier$` designates a function template can have a partially deduced set of template arguments, such that the `$splice-specialization-specifier$` alone cannot designate an entity.]{.draftnote}
 
 ::: std
 [3]{.pnum} [The entity designated by a `$nested-name-specifier$` is determined as follows:]{.addu}
@@ -4655,12 +4676,13 @@ consteval { // #1
 ```
 :::
 
-[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$E$` as a core constant expression, the evaluation context is defined as follows:
+[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation `$X$` of an expression `$E$` as a core constant expression, the evaluation context consists of the following points:
 
-- [#.#]{.pnum} If `$E$` is a potentially-evaluated subexpression ([intro.execution]) of a default member initializer used by an aggregate initialization that appears at a point `$Q$`, the evaluation context of `$Q$`.
-- [#.#]{.pnum} Otherwise, if `$E$` is a potentially-evaluated subexpression of a default argument ([dcl.fct.default]), and that default argument is being used by an invocation of a function ([expr.call]) that appears at a point `$Q$`, the evaluation context of `$Q$`.
-- [#.#]{.pnum} Otherwise, the instantiation context of the point at which `$E$` appears.
-
+  - [#.#]{.pnum} `$EVAL-PT$($P$@~_$E$_~@)`, where `$P$@~_$E$_~@` is the point at which `$E$` appears and `$EVAL-PT$($P$)` is a point determined as follows:
+    - [#.#]{.pnum} If a potentially-evaluated subexpression ([intro.execution]) of a default member initializer `$I$` appears at `$P$`, and a (possibly aggregate) initialization is using `$I$`, `$EVAL-PT$($Q$)` where `$Q$` is the point at which that initialization appears.
+    - [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, and an invocation of a function ([expr.call]) is using that default argument, `$EVAL-PT$($Q$)` where `$Q$` is the point at which that invocation appears.
+    - [#.#]{.pnum} Otherwise, `$P$`.
+  - [#.#]{.pnum} Each synthesized point corresponding to an injected declaration produced by any evaluation sequenced before `$X$` ([intro.execution]).
 :::
 :::
 
@@ -5219,6 +5241,20 @@ Prefer "type alias" to "`$typedef-name$`" in paragraph 2.
 [2]{.pnum} The attribute may be applied to the declaration of a class, [`$typedef-name$`]{.rm} [type alias]{.addu}, variable (including a structured binding declaration), structured binding, non-static data member, function, enumeration, or enumerator, or to an `$identifier$` label ([stmt.label]{.sref}).
 :::
 
+### [module.interface]{.sref} Module interface {-}
+
+Update paragraph 5, and the note that follows, to account for type aliases now being entities.
+
+::: std
+[5]{.pnum} If an exported declaration is a `$using-declaration$` ([namespace.udecl]) and is not within a header unit, all entities [to which all of]{.rm} [denoted by]{.addu} the `$using-declarator$`s [ultimately refer]{.rm} (if any) shall have been introduced with a name having external linkage.
+
+::: example2
+[...]
+:::
+
+[[The underlying entity of an exported type alias need not have a name with external linkage.]{.addu} [These constraints do not apply to type names introduced by `typedef` declarations and `$alias-declaration$`s]{.rm}.]{.note2}
+:::
+
 ### [module.global.frag]{.sref} Global module fragment {-}
 
 Specify in paragraph 3 that it is unspecified whether spliced types are replaced by their designated types, and renumber accordingly. Add an additional bullet further clarifying that it is unspecified whether any splice specifier is replaced.
@@ -5252,7 +5288,7 @@ Modify paragraphs 2 through 6 to relax the phrasing used to define the points in
 [6]{.pnum} In any other case, the instantiation context at a point within the program [comprises]{.rm} [contains]{.addu} that point.
 
 ::: addu
-[6+]{.pnum} During the evaluation `$E$` of an expression, or during the implicit instantiation of any construct that resulted from that evaluation, the instantiation context also contains each synthesized point ([expr.const]) corresponding to an injected declaration produced by any evaluation sequenced before `$E$` ([intro.execution]).
+[6+]{.pnum} During the implicit instantiation of any construct that resulted from the evaluation of an expression as a core constant expression, the instantiation context also contains each point ([expr.const]) in the evaluation context ([expr.const]).
 
 [6++]{.pnum} The instantiation context contains only those points specified above.
 :::
@@ -5710,24 +5746,33 @@ Extend paragraph 1 to also define the "sameness" of `$splice-specialization-spec
 
 * [#.#]{.pnum} their `$template-name$`s, `$operator-function-id$`s, [or]{.rm} `$literal-operator-id$`s[, or `$splice-specifier$`s]{.addu} refer to the same template, and
 * [#.#]{.pnum} their corresponding type `$template-argument$`s are the same type, and
-* [#.#]{.pnum} the template parameter values determined by their corresponding constant template arguments ([temp.arg.nontype]{.sref}) are template-argument-equivalent (see below), and
+* [#.#]{.pnum} the template parameter values determined by their corresponding constant template arguments ([temp.arg.nontype]) are template-argument-equivalent (see below), and
 * [#.#]{.pnum} their corresponding template `$template-argument$`s refer to the same template.
 
 Two `$template-id$`s [or `$splice-specialization-specifier$`s]{.addu} that are the same refer to the same class, function, or variable.
 
 :::
 
-Extend *template-argument-equivalent* in paragraph 2 to handle `std::meta::info`:
+Extend _template-argument-equivalent_ in paragraph 2 to handle `std::meta::info`, and add a note between that paragraph and the following example:
 
 ::: std
-[2]{.pnum} Two values are *template-argument-equivalent* if they are of the same type and
+[2]{.pnum} Two values are _template-argument-equivalent_ if they are of the same type and
 
 * [2.1]{.pnum} they are of integral type and their values are the same, or
 * [2.2]{.pnum} they are of floating-point type and their values are identical, or
 * [2.3]{.pnum} they are of type `std::nullptr_t`, or
-* [2.*]{.pnum} [they are of type `std::meta::info` and their values are the same, or]{.addu}
+* [2.*]{.pnum} [they are of type `std::meta::info` and their values are equivalent, or]{.addu}
 * [2.4]{.pnum} they are of enumeration type and their values are the same, or
 * [2.5]{.pnum} [...]
+
+[[Values that are TU-local to different translation units are never considered equivalent.]{.note}]{.addu}
+
+::: example1
+```cpp
+template<class E, int size> class buffer { /* ... */ };
+[...]
+```
+:::
 :::
 
 ### [temp.deduct.guide]{.sref} Deduction guides {-}
@@ -7385,7 +7430,7 @@ consteval bool is_accessible(info r, access_context ctx);
 
 * [#.#]{.pnum} Otherwise, letting `$P$` be a program point whose immediate scope is the function parameter scope, class scope, or namespace scope corresponding to the function, class, or namespace represented by `ctx.scope()`:
   * [#.#.#]{.pnum} If `r` represents a direct base class relationship with base class `$B$`, then `true` if base class `$B$` of `$DESIGNATING-CLS$(r, ctx)` is accessible at `$P$` ([class.access.base]); otherwise, `false`.
-  * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` would be accessible at `$P$` when designated in `$DESIGNATING-CLS$(r, ctx)` ([class.access.base]) if the effect of any `$using-declaration$`s ([namespace.udecl]) were ignored. Otherwise, `false`.
+  * [#.#.#]{.pnum} Otherwise, `r` represents a class member `$M$`; `true` if `$M$` would be accessible at `$P$` with the designating class ([class.access.base]) as `$DESIGNATING-CLS$(r, ctx)` if the effect of any `$using-declaration$`s ([namespace.udecl]) were ignored. Otherwise, `false`.
 
 ::: note
 The definitions of when a class member or base class is accessible from a point `$P$` do not consider whether a declaration of that entity is reachable from `$P$`.
