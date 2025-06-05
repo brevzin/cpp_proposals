@@ -30,6 +30,7 @@ Since [@P2996R12]:
 
 * core wording updates
   * handle members of static anonymous unions / integrate suggested fix for [@CWG3026]
+  * removed splice template arguments (following EWG poll for [@P3687R0])
 * library wording updates
   * specification of `reflect_constant`/`reflect_object`/`reflect_function`
 
@@ -5600,27 +5601,6 @@ bool operator!=(T, T);
 
 ### [temp.param]{.sref} Template parameters {-}
 
-Extend `$type-tt-parameter-default$` and `$variable-tt-parameter$` to permit `$splice-specifier$`s as default template arguments for template template parameters.
-
-::: std
-```diff
-  $type-tt-parameter-default$:
-      $nested-name-specifier$@~_opt_~@ $template-name$
-      $nested-name-specifier$ template $template-name$
-+     $splice-template-argument$
-
-  $variable-tt-parameter$:
-      $template-head$ auto ...@~_opt_~@ $identifier@~_opt_~@
-      $template-head$ auto $identifier$@~_opt_~@ = $nested-name-specifier$@~_opt_~@ $template-name$
-+     $template-head$ auto $identifier$@~_opt_~@ = $splice-template-argument$
-
-  $concept-tt-parameter$:
-      template < $template-parameter-list$ > concept ...@~_opt_~@ $identifier$@~_opt_~@
-      template < $template-parameter-list$ > concept $identifier$@~_opt_~@ = $nested-name-specifier$@~_opt_~@ $template-name$
-+     template < $template-parameter-list$ > concept $identifier$@~_opt_~@ = $splice-template-argument$
-```
-:::
-
 Add a paragraph after paragraph 3 to disallow dependent concepts being used in a `$type-constraint$`:
 
 ::: std
@@ -5630,22 +5610,6 @@ Add a paragraph after paragraph 3 to disallow dependent concepts being used in a
 :::
 
 ### [temp.names]{.sref} Names of template specializations {-}
-
-Define the term `$splice-template-argument$`, and add it as a production for `$template-argument$`.
-
-::: std
-```diff
-  $template-argument$:
-      $constant-expression$
-      $type-id$
-      $nested-name-specifier$@~_opt_~@ $template-name$
-      $nested-name-specifier$@~_opt_~@ template $template-name$
-+     $splice-template-argument$
-
-+ $splice-template-argument$:
-+     $splice-specifier$
-```
-:::
 
 Extend and re-format paragraph 3 of [temp.names]{.sref}:
 
@@ -5723,33 +5687,10 @@ Modify footnote 108 to account for `$splice-specialization-specifier$`s:
 
 ### [temp.arg.general]{.sref} General {-}
 
-Modify paragraph 1; there are now _four_ forms of `$template-argument$`.
+Modify paragraph 1 to account for `$splice-specialization-specifier$`s.
 
 ::: std
-[1]{.pnum} The type and form of each `$template-argument$` specified in a `$template-id$` [or in a `$splice-specialization-specifier$`]{.addu} shall match the type and form specified for the corresponding parameter declared by the template in its `$template-parameter-list$`. [A `$template-argument$` that is a splice template argument is considered to match the form specified for the corresponding template parameter.]{.addu} When the parameter declared by the template is a template parameter pack, it will correspond to zero or more `$template-argument$`s.
-
-:::
-
-Clarify ambiguity between `$splice-expression$`s and `$splice-template-argument$`s in paragraph 3:
-
-::: std
-
-[3]{.pnum} [A `$template-argument$` of the form `$splice-specifier$` is interpreted as a `$splice-template-argument$`.]{.addu} [In a]{.rm} [For any other]{.addu} `$template-argument$`, an ambiguity between a `$type-id$` and an expression is resolved to a `$type-id$`, regardless of the form of the corresponding `$template-parameter$`.
-
-::: example2
-```diff
-  template<class T> void f(); @[\ \ // #1]{.addu}@
-  template<int I> void f(); @[\ \ \  // #2]{.addu}@
-
-  void g() {
-    f<int()>();       // int() is a type-id: call@[s (#1)]{.addu}@ @[`the first f()`]{.rm}@
-
-+   constexpr int x = 42;
-+   f<[:^^int:]>();    // splice-template-argument: calls (#1)
-+   f<[:^^x:]>();      // splice-template-argument: calls (#2)
-  }
-```
-:::
+[1]{.pnum} The type and form of each `$template-argument$` specified in a `$template-id$` [or in a `$splice-specialization-specifier$`]{.addu} shall match the type and form specified for the corresponding parameter declared by the template in its `$template-parameter-list$`. When the parameter declared by the template is a template parameter pack, it will correspond to zero or more `$template-argument$`s.
 
 :::
 
@@ -5757,44 +5698,6 @@ Clarify in paragraph 9 that default template arguments also apply to `$splice-sp
 
 ::: std
 [9]{.pnum} When a `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} does not [name]{.rm} [designate]{.addu} a function, a default `$template-argument$` is implicitly instantiated when the value of that default argument is needed.
-
-:::
-
-### [temp.arg.type]{.sref} Template type arguments {-}
-
-Extend [temp.arg.type]{.sref}/1 to cover splice template arguments:
-
-::: std
-[1]{.pnum} A `$template-argument$` for a type template parameter shall [either]{.addu} be a `$type-id$` [or a `$splice-template-argument$` whose `$splice-specifier$` designates a type]{.addu}.
-:::
-
-### [temp.arg.nontype]{.sref} Constant template arguments {-}
-
-[We don't think we have to change anything here, since if `E` is a `$splice-specifier$` that can be interpreted as a `$splice-expression$`, the requirements already fall out based on how paragraphs 1 and 3 are already worded]{.draftnote}
-
-::: std
-[1]{.pnum} If the type `T` of a *template-parameter* ([temp.param]) contains a placeholder type ([dcl.spec.auto]) or a placeholder for a deduced class type ([dcl.type.class.deduct]), the type of the parameter is the type deduced for the variable x in the invented
-declaration
-```cpp
-T x = $E$ ;
-```
-where `$E$` is the template argument provided for the parameter.
-
-[2]{.pnum} The value of a constant template parameter `P` of (possibly deduced) type `T` [...]
-
-[3]{.pnum} Otherwise, a temporary variable
-```cpp
-constexpr T v = $A$;
-```
-is introduced.
-:::
-
-### [temp.arg.template]{.sref} Template template arguments {-}
-
-Extend paragraph 1 to cover splice template arguments:
-
-::: std
-[1]{.pnum} A `$template-argument$` for a template template parameter shall [either]{.addu} be the name of a template [or a `$splice-template-argument$`]{.addu}. For a `$type-tt-parameter$`, the name [or `$splice-template-argument$`]{.addu} shall [denote]{.rm} [designate]{.addu} a class template or alias template. For a `$variable-tt-parameter$`, the name [or `$splice-template-argument$`]{.addu} shall [denote]{.rm} [designate]{.addu} a variable template. For a `$concept-tt-parameter$`, the name [or `$splice-template-argument$`]{.addu} shall [denote]{.rm} [designate]{.addu} a concept. Only primary templates are considered when matching the template argument with the corresponding parameter; partial specializations are not considered even if their parameter lists match that of the template template parameter.
 
 :::
 
@@ -6030,17 +5933,6 @@ S<V2> s2; // OK
 :::
 
 :::
-:::
-
-### [temp.dep.temp]{.sref} Dependent template arguments {-}
-
-Add a new paragraph to cover dependent splice template arguments.
-
-::: std
-[5]{.pnum} A template `$template-parameter$` is dependent if it names a `$template-parameter$` or if its terminal name is dependent.
-
-[[5+]{.pnum} A splice template argument is dependent if its `$splice-specifier$` is dependent.]{.addu}
-
 :::
 
 ### 13.8.3.6 [temp.dep.namespace] Dependent namespaces {-}
