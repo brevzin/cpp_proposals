@@ -30,7 +30,7 @@ Since [@P2996R12]:
 
 * core wording updates
   * handle members of static anonymous unions / integrate suggested fix for [@CWG3026]
-  * removed splice template arguments (following EWG poll for P3687)
+  * removed splice template arguments (following EWG poll for [@P3687R0])
 * library wording updates
   * specification of `reflect_constant`/`reflect_object`/`reflect_function`
 
