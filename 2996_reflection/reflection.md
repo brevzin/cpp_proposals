@@ -3771,10 +3771,10 @@ Extend the definition of _TU-local_ values and objects in p16 to include reflect
 
 :::addu
 * [16.1+]{.pnum} it is a reflection representing either
-  * [16.1+.#]{.pnum} an entity, value, or object that is TU-local, or
-  * [16.1+.#]{.pnum} a type alias or a namespace alias, or
-  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) for which the base class or the derived class is TU-local, or
-  * [16.1+.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$T$` is a type alias or a TU-local type, or
+  * [16.1+.#]{.pnum} an entity that is either TU-local or introduced by an exposure, or
+  * [16.1+.#]{.pnum} a value, or object that is TU-local, or
+  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) for which the base class or the derived class is either TU-local or introduced by an exposure, or
+  * [16.1+.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$T$` is either TU-local or introduced by an exposure, or
 :::
 * [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
@@ -4073,7 +4073,7 @@ Add a paragraph after paragraph 1 specifying the rules for parsing a `$splice-sc
 
 ::: std
 ::: addu
-[1+]{.pnum} A `$splice-specifier$` or `$splice-specialization-specifier$` that is not followed by `::` is never interpreted as part of a `$splice-scope-specifier$`. The `template` may only be omitted from the form `template@~_opt_~@ $splice-specialization-specifier$ ::` when the `$splice-specialization-specifier$` is preceded by `typename`.
+[1+]{.pnum} A `$splice-specifier$` or `$splice-specialization-specifier$` that is not followed by `::` is never interpreted as part of a `$splice-scope-specifier$`. The keyword `template` may only be omitted from the form `template@~_opt_~@ $splice-specialization-specifier$ ::` when the `$splice-specialization-specifier$` is preceded by `typename`.
 
 ::: example
 ```cpp
@@ -4083,20 +4083,18 @@ struct TCls {
   using type = int;
 };
 
-constexpr int v1 = [:^^TCls<1>:]::s;
-constexpr int v2 = template [:^^TCls:]<2>::s;
-  // OK, template binds to splice-scope-specifier
+int v1 = [:^^TCls<1>:]::s;
+int v2 = template [:^^TCls:]<2>::s;
+    // OK, template binds to splice-scope-specifier
 
-constexpr typename [:^^TCls:]<3>::type v3 = 3;
-  // OK, typename binds to the qualified name
+typename [:^^TCls:]<3>::type v3 = 3;
+    // OK, typename binds to the qualified name
 
 template [:^^TCls:]<3>::type v4 = 4;
-  // OK, template binds to the splice-scope-specifier
+    // OK, template binds to the splice-scope-specifier
 
-void fn() {
-  constexpr [:^^TCls:]<3>::type v5 = 5;
-    // error: < means less than
-}
+[:^^TCls:]<3>::type v5 = 5;
+    // error: unexpected <
 ```
 
 :::
@@ -4126,12 +4124,12 @@ Break the next paragraph into a bulleted list, extend it to also cover splices, 
   - [#.#]{.pnum} The `$nested-name-specifier$` `::` [nominates]{.rm} [designates]{.addu} the global namespace.[\ ]{.addu}
   - [#.#]{.pnum} A `$nested-name-specifier$` with a `$computed-type-specifier$` [nominates]{.rm} [designates]{.addu} the [same]{.addu} type [denoted]{.rm} [designated]{.addu} by the `$computed-type-specifier$`, which shall be a class or enumeration type.[\ ]{.addu}
   - [[#.#]{.pnum} For a `$nested-name-specifier$` of the form `$splice-specifier$ ::`, the `$splice-specifier$` shall designate a class or enumeration type or a namespace. The `$nested-name-specifier$` designates the same entity as the `$splice-specifier$`.]{.addu}
-  - [[#.#]{.pnum} For a `$nested-name-specifier$` of the form `template@~_opt_~@ $splice-specialization-specifier$ ::`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template `$T$`. Letting `$S$` be the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`, `$S$` shall either be a class template specialization or an alias template specialization that denotes a class or enumeration type. The `$nested-name-specifier$` designates `$S$` if `$T$` is a class template or the type denoted by `$S$` if `$T$` is an alias template.]{.addu}
-  - [#.#]{.pnum} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template [nominated]{.rm} [designated]{.addu} by _N_ without _A_. _T_ shall be a class template.
+  - [[#.#]{.pnum} For a `$nested-name-specifier$` of the form `template@~_opt_~@ $splice-specialization-specifier$ ::`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template `$T$`. Letting `$S$` be the specialization of `$T$` corresponding to the template argument list of the `$splice-specialization-specifier$`, `$S$` shall either be a class template specialization or an alias template specialization that denotes a class or enumeration type. The `$nested-name-specifier$` designates `$S$` if `$T$` is a class template or the type denoted by `$S$` if `$T$` is an alias template.]{.addu}
+  - [#.#]{.pnum} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template nominated by _N_ without _A_. _T_ shall be a class template.
     - [#.#.#]{.pnum} If `$A$` is the template argument list ([temp.arg]{.sref}) of the corresponding `$template-head$` `$H$` ([temp.mem]{.sref}), `$N$` [nominates]{.rm} [designates]{.addu} the primary template of `$T$`; `$H$` shall be equivalent to the `$template-head$` of `$T$` ([temp.over.link]{.sref}).
     - [#.#.#]{.pnum} Otherwise, `$N$` [nominates]{.rm} [designates]{.addu} the partial specialization ([temp.spec.partial]{.sref}) of `$T$` whose template argument list is equivalent to `$A$` ([temp.over.link]{.sref}); the program is ill-formed if no such partial specialization exists.
 
-  - [#.#]{.pnum} Any other `$nested-name-specifier$` [nominates]{.rm} [designates]{.addu} the entity [denoted]{.rm} [designated]{.addu} by its `$type-name$`, `$namespace-name$`, `$identifier$`, or `$simple-template-id$`. If the `$nested-name-specifier$` is not declarative, the entity shall not be a template.
+  - [#.#]{.pnum} Any other `$nested-name-specifier$` [nominates]{.rm} [designates]{.addu} the entity denoted by its `$type-name$`, `$namespace-name$`, `$identifier$`, or `$simple-template-id$`. If the `$nested-name-specifier$` is not declarative, the entity shall not be a template.
 
 :::
 
@@ -4153,14 +4151,6 @@ And say that the call operator is a direct member:
 [4]{.pnum} The closure type for a *lambda-expression* has a public inline function call operator (for a non-generic lambda) or function call operator template (for a generic lambda) ([over.call]) whose parameters and return type are those of the lambda-expression's parameter-declaration-clause and trailing-return-type respectively,  and whose template-parameter-list consists of the specified template-parameter-list, if any. [The function call operator or the function call operator template are direct members of the closure type.]{.addu} The *requires-clause* of the function call operator template [...]
 :::
 
-And that the conversion function is:
-
-::: std
-[10]{.pnum} The closure type for a non-generic lambda-expression with no lambda-capture and no explicit object parameter ([dcl.fct]) whose constraints (if any) are satisfied has a conversion function to pointer to function with C++ language linkage having the same parameter and return types as the closure type's function call operator. [The conversion function is a direct member of the closure type.]{.addu} The conversion is to “pointer to noexcept function” if the function call operator has a non-throwing exception specification.
-
-[11]{.pnum} For a generic lambda with no lambda-capture and no explicit object parameter ([dcl.fct]), the closure type has a conversion function template to pointer to function. [The conversion function template is a direct member of the closure type.]{.addu} The conversion function template has the same invented template parameter list, [...]
-:::
-
 ### [expr.prim.req.type]{.sref} Type requirements {-}
 
 Allow splices in type requirements:
@@ -4173,7 +4163,7 @@ Allow splices in type requirements:
 +   typename $splice-specialization-specifier$
 ```
 
-[1]{.pnum} A `$type-requirement$` asserts the validity of a type. The component names [(if any)]{.addu} of a `$type-requirement$` are those of its `$nested-name-specifier$` [(if any)]{.rm} and `$type-name$`.
+[1]{.pnum} A `$type-requirement$` asserts the validity of a type. The component names of a `$type-requirement$` are those of its `$nested-name-specifier$` (if any) and `$type-name$` [(if any)]{.addu}.
 
 ::: example
 ```diff
@@ -4215,16 +4205,16 @@ $splice-expression$:
 struct S { static constexpr int a = 1; };
 template <typename> struct TCls { static constexpr int b = 2; };
 
-constexpr int c = [:^^S:]::a;                   // [:^^S:] is not an expression
+constexpr int c = [:^^S:]::a;                   // OK, [:^^S:] is not an expression
 
-constexpr int d = template [:^^TCls:]<int>::b;  // template [:^^TCls:]<int> is not
+constexpr int d = template [:^^TCls:]<int>::b;  // OK, template [:^^TCls:]<int> is not
                                                 // an expression
 
-template <auto V> constexpr int e = [:V:];   // splice-expression
-constexpr int f = template [:^^e:]<^^S::a>;  // splice-expression
+template <auto V> constexpr int e = [:V:];   // OK
+constexpr int f = template [:^^e:]<^^S::a>;  // OK
 
 auto g = typename [:^^int:](42);
-  // [:^^int:] forms part of a type, not a splice-expression
+  // OK, typename [:^^int:] is a splice-type-specifier
 ```
 
 :::
@@ -4239,7 +4229,7 @@ auto g = typename [:^^int:](42);
     * [#.#.#.#]{.pnum} there is a lambda scope that intervenes between the expression and the point at which `$S$` was introduced and
     * [#.#.#.#]{.pnum} the expression would be potentially evaluated if the effect of any enclosing `typeid` expressions ([expr.typeid]) were ignored.
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a function `$F$`, the expression denotes an overload set containing all declarations of `$F$` that precede either the expression or the point immediately following the `$class-specifier$` of the outermost class for which the expression is in a complete-class context; overload resolution is performed to select a unique function ([over.match], [over.over]).
+* [#.#]{.pnum} Otherwise, if `$S$` is a function `$F$`, the expression denotes an overload set containing all declarations of `$F$` that precede either the expression or the point immediately following the `$class-specifier$` of the outermost class for which the expression is in a complete-class context; overload resolution is performed ([over.match], [over.over]).
 
 * [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field. [The implicit transformation ([expr.prim.id]{.sref}) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
 
@@ -7493,10 +7483,12 @@ consteval vector<info> members_of(info r, access_context ctx);
 
 [#]{.pnum} A declaration `$D$` of a member `$M$` of a class or namespace `$Q$` is _`$Q$`-members-of-eligible_ if
 
+* [#.#]{.pnum} `$D$` is not a friend declaration,
+* [#.#]{.pnum} `$D$` does not inhabit a block scope,
+* [#.#]{.pnum} the target scope of `$D$` is `$Q$`,
 * [#.#]{.pnum} `$M$` is not a closure type ([expr.prim.lambda.closure]),
 * [#.#]{.pnum} `$M$` is not a specialization of a template ([temp.pre]),
-* [#.#]{.pnum} if `$Q$` is a class that is not a closure type, then `$M$` is a direct member of `$Q$` ([class.mem.general]) that is not a variant member of a nested anonymous union of `$Q$` ([class.union.anon]),
-* [#.#]{.pnum} if `$Q$` is a namespace, then `$D$` inhabits the namespace scope of `$Q$`, and
+* [#.#]{.pnum} if `$Q$` is a class that is not a closure type, then `$M$` is a direct member of `$Q$` ([class.mem.general]) that is not a variant member of a nested anonymous union of `$Q$` ([class.union.anon]), and
 * [#.#]{.pnum} if `$Q$` is a closure type, then `$M$` is a function call operator or function call operator template.
 
 It is implementation-defined whether declarations of other members of a closure type `$Q$` are `$Q$`-members-of-eligible.
@@ -7671,7 +7663,7 @@ template <class T>
 
 [#]{.pnum} *Constant When*:
 
-- [#.#]{.pnum} `r` represents a non-static data member with type `X`, that is not a bit-field, that is a direct member of a class `C` and `T` is `X C::*`;
+- [#.#]{.pnum} `r` represents a non-static data member with type `X`, that is not a bit-field, that is a direct member of a class `C`, `T` and `X C::*` are similar types ([conv.qual]), and `is_convertible_v<X C::*, T>` is `true`;
 - [#.#]{.pnum} `r` represents an implicit object member function with type `F` or `F noexcept` that is a direct member of a class `C` and `T` is `F C::*`; or
 - [#.#]{.pnum} `r` represents a non-member function, static member function, or explicit object member function of function type `F` or `F noexcept` and `T` is `F*`.
 
@@ -7689,7 +7681,7 @@ template <class T>
 
 [#]{.pnum} *Constant When*:
 
-  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
+  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are either similar or both function types, and `is_convertible_v<U, T>` is `true`,
   - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same,
   - [#.#]{.pnum} `U` is an array type, `T` is a pointer type, and the value that `r` represents is convertible to `T`, or
   - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value that `r` represents is convertible to `T`.
@@ -7701,15 +7693,15 @@ template <class T>
   consteval T extract(info r);
 ```
 
-[#]{.pnum} *Effects*: Equivalent to:
+[#]{.pnum} *Effects*: Let `U` be `remove_cv_t<T>`. Equivalent to:
 
 ```cpp
 if constexpr (is_reference_type(^^T)) {
   return $extract-ref$<T>(r);
 } else if constexpr (is_nonstatic_data_member(r) || is_function(r)) {
-  return $extract-member-or-function$<T>(r);
+  return $extract-member-or-function$<U>(r);
 } else {
-  return $extract-value$<T>(constant_of(r));
+  return $extract-value$<U>(constant_of(r));
 }
 ```
 
