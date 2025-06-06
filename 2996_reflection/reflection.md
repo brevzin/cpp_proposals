@@ -6263,7 +6263,7 @@ struct is_consteval_only;
 :::
 </td><td>
 ::: addu
-<br>
+`remove_all_extents_t<T>` shall be a complete type or `$cv$ void`.
 :::
 </td></tr>
 </table>
@@ -6619,7 +6619,7 @@ namespace std::meta {
 }
 ```
 
-[1]{.pnum} Unless otherwise specified, each function, and each instantiation of any function template, specified in this header is a designated addressable function ([namespace.std]).
+[1]{.pnum} Unless otherwise specified, each function, and each specialization of any function template, specified in this header is a designated addressable function ([namespace.std]).
 
 [2]{.pnum} The behavior of any function specified in namespace `std::meta` is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
 
@@ -6651,9 +6651,9 @@ static_assert(sv == "C");
 static_assert(sv.data()[0] == 'C');
 static_assert(sv.data()[1] == '\0');
 ```
-
-[4]{.pnum} Throughout this clause, variables are introduced to designate various source constructs. For the purpose of exposition, `^^$E$` is used to a mean a reflection representing `$E$` when `$E$` is such an exposition-only variable.
 :::
+
+[4]{.pnum} For the purpose of exposition, throughout this clause `^^$E$` is used to indicate a reflection representing source construct `$E$`.
 :::
 :::
 
@@ -6736,7 +6736,7 @@ consteval u8string_view u8symbol_of(operators op);
 
 [#]{.pnum} *Constant When*: The value of `op` corresponds to one of the enumerators in `operators`.
 
-[#]{.pnum} *Returns*: `string_view` or `u8string_view` containing the characters of the operator symbol name corresponding to `op`, respectively encoded with the ordinary literal encoding or with UTF-8.
+[#]{.pnum} *Returns*: A `string_view` or `u8string_view` containing the characters of the operator symbol name corresponding to `op`, respectively encoded with the ordinary literal encoding or with UTF-8.
 :::
 :::
 
@@ -6753,7 +6753,7 @@ consteval bool has_identifier(info r);
 * [#.#]{.pnum} If `r` represents an entity that has a typedef name for linkage purposes ([dcl.typedef]), then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents an unnamed entity, then `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents a class type, then `!has_template_arguments(r)`.
-* [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if `!has_template_arguments(r)` and the function is not a constructor, destructor, operator function, or conversion function. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, if `r` represents a function, then `true` if `has_template_arguments(r)` is `false` and the function is not a constructor, destructor, operator function, or conversion function. Otherwise, `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents a template, then `true` if `r` does not represent a constructor template, operator function template, or conversion function template. Otherwise, `false`.
 * [#.#]{.pnum} Otherwise, if `r` represents a variable, then `false` if the declaration of that variable was instantiated from a function parameter pack. Otherwise, `!has_template_arguments(r)`.
 * [#.#]{.pnum} Otherwise, if `r` represents a structured binding, then `false` if the declaration of that structured binding was instantiated from a structured binding pack. Otherwise, `true`.
@@ -6767,7 +6767,7 @@ consteval string_view identifier_of(info r);
 consteval u8string_view u8identifier_of(info r);
 ```
 
-[#]{.pnum} Let *E* be UTF-8 if returning a `u8string_view`, and otherwise the ordinary literal encoding.
+[#]{.pnum} Let *E* be UTF-8 for `u8identifier_of`, and otherwise the ordinary literal encoding.
 
 [#]{.pnum} *Constant When*: `has_identifier(r)` is `true` and the identifier that would be returned (see below) is representable by `$E$`.
 
@@ -6838,7 +6838,7 @@ consteval info object_of(info r);
 
 * [#.#]{.pnum} If `r` represents an object, then `r`.
 * [#.#]{.pnum} Otherwise, if `r` represents a reference, then a reflection of the object referred to by that reference.
-* [#.#]{.pnum} Otherwise (if `r` represents any other variable), a reflection of the object declared by that variable.
+* [#.#]{.pnum} Otherwise, `r` represents a variable; a reflection of the object declared by that variable.
 
 ::: example
 ```cpp
@@ -6885,7 +6885,7 @@ static_assert(is_object(constant_of(^^s)) &&
 static_assert(constant_of(^^s) != reflect_object(s));   // OK, template parameter object that is
                                                         // template-argument-equivalent to s is a different
                                                         // object than s
-static_assert(constant_of(constant_of(^^s)) ==
+static_assert(constant_of(^^s) ==
               constant_of(reflect_object(s)));          // OK
 
 consteval info fn() {
@@ -6902,7 +6902,7 @@ consteval bool is_protected(info r);
 consteval bool is_private(info r);
 ```
 
-[#]{.pnum} *Returns*: `true` if `r` represents a class member or direct base class relationship that is public, protected, or private, respectively. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if `r` represents a class member, unnamed bit-field, or direct base class relationship that is public, protected, or private, respectively. Otherwise, `false`.
 
 ```cpp
 consteval bool is_virtual(info r);
@@ -7163,7 +7163,7 @@ consteval info parent_of(info r);
 - [#.#]{.pnum} If `r` represents a non-static data member that is a direct member of an anonymous union, or an unnamed bit-field declared within the `$member-specification$` of such a union, then a reflection representing the innermost enclosing anonymous union.
 - [#.#]{.pnum} Otherwise, if `r` represents an enumerator, then a reflection representing the corresponding enumeration type.
 - [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship between a class `$D$` and a direct base class `$B$`, then a reflection representing `$D$`.
-- [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope is, respectively, the innermost such scope that either is, or encloses, the target scope of a declaration of what is represented by `r`.
+- [#.#]{.pnum} Otherwise, let `$E$` be the class, function, or namespace whose class scope, function parameter scope, or namespace scope, respectively, is the innermost such scope that either is, or encloses, the target scope of a declaration of what is represented by `r`.
   - [#.#]{.pnum} If `$E$` is the function call operator of a closure type for a `$consteval-block-declaration$` ([dcl.pre]), then `parent_of(parent_of(^^$E$))`. [In this case, the first `parent_of` will be the closure type, so the second `parent_of` is necessary to give the parent of that closure type.]{.note}
   - [#.#]{.pnum} Otherwise, `^^$E$`.
 
@@ -7235,7 +7235,7 @@ consteval vector<info> template_arguments_of(info r);
 * [#.#]{.pnum} Otherwise, if `$A$` denotes a class template, variable template, concept, or alias template, then `$R$` is a reflection representing `$A$`.
 * [#.#]{.pnum} Otherwise, `$A$` is a constant template argument ([temp.arg.nontype]). Let `$P$` be the corresponding template parameter.
 
-  * [#.#.#]{.pnum} If `$P$` has reference type, then `$R$` is a reflection representing the object referred to by `$A$`.
+  * [#.#.#]{.pnum} If `$P$` has reference type, then `$R$` is a reflection representing the object or function referred to by `$A$`.
   * [#.#.#]{.pnum} Otherwise, if `$P$` has class type, then `$R$` represents the corresponding template parameter object.
   * [#.#.#]{.pnum} Otherwise, `$R$` is a reflection representing the value computed by `$A$`.
 
@@ -7326,7 +7326,7 @@ static consteval access_context current() noexcept;
 
 [#]{.pnum} An invocation of `current` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a scope corresponding to a templated entity.
 
-[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope represents the function, class, or namespace whose corresponding function parameter scope, class scope, or namespace scope is `$eval-ctx$($S$)`, where `$S$` is the immediate scope of `$eval-point$($P$)` and `$P$` is the point at which the invocation of `current` lexically appears.
+[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope represents the function, class, or namespace whose corresponding function parameter scope, class scope, or namespace scope is `$ctx-scope$($S$)`, where `$S$` is the immediate scope of `$eval-point$($P$)` and `$P$` is the point at which the invocation of `current` lexically appears.
 
 
 ::: example
@@ -7404,7 +7404,7 @@ consteval bool is_accessible(info r, access_context ctx);
 
 [#]{.pnum} Let `$PARENT-CLS$(r)` be:
 
-- [#.#]{.pnum} If `parent_of(r)` represents a class `$C$`, then the class `$C$`.
+- [#.#]{.pnum} If `parent_of(r)` represents a class `$C$`, then `$C$`.
 - [#.#]{.pnum} Otherwise, `$PARENT-CLS$(parent_of(r))`.
 
 [#]{.pnum} *Constant When*:
@@ -7691,7 +7691,7 @@ template <class T>
 
   - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
   - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same,
-  - [#.#]{.pnum} `U` is an array type, `T` is pointer type, and the value `r` represents is convertible to `T`, or
+  - [#.#]{.pnum} `U` is an array type, `T` is a pointer type, and the value that `r` represents is convertible to `T`, or
   - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value that `r` represents is convertible to `T`.
 
 [#]{.pnum} *Returns*: `static_cast<T>([:$R$:])`, where `$R$` is a constant expression of type `info` such that `$R$ == r` is `true`.
@@ -7734,7 +7734,7 @@ consteval bool can_substitute(info templ, R&& arguments);
 ```
 [1]{.pnum} *Constant When*: `templ` represents a template and every reflection in `arguments` represents a construct usable as a template argument ([temp.arg]).
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the reflections held by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the reflections held by the elements of `arguments`, in order.
 
 [#]{.pnum} *Returns*: `true` if `Z<[:Args:]...>` is a valid `$template-id$` ([temp.names]) that does not name a function whose type contains an undeduced placeholder type. Otherwise, `false`.
 
@@ -7747,7 +7747,7 @@ consteval info substitute(info templ, R&& arguments);
 
 [#]{.pnum} *Constant When*: `can_substitute(templ, arguments)` is `true`.
 
-[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the reflections held by the elements of `arguments`.
+[#]{.pnum} Let `Z` be the template represented by `templ` and let `Args...` be a sequence of prvalue constant expressions that compute the reflections held by the elements of `arguments`, in order.
 
 [#]{.pnum} *Returns*: `^^Z<[:Args:]...>`.
 
@@ -8000,61 +8000,8 @@ Produces an injected declaration `$D$` ([expr.const]) that defines `$C$` and has
 * [#.#]{.pnum} For every parameter `p` of type `info`, `is_type(p)` is `true`.
 * [#.#]{.pnum} For every parameter `r` whose type is constrained on `reflection_range`, `ranges::all_of(r, is_type)` is `true`.
 
-[#]{.pnum} Unless otherwise specified, each function and function template described in this subclause has the following behavior based on the signature of that function or function template. [The associated class template need not be instantiated.]{.note}
-
-<table>
-<tr><th>Signature</th><th>*Returns*</th></tr>
-<tr><td>
 ```cpp
-bool meta::$UNARY$(info type);
-bool meta::$UNARY$_type(info type);
-```
-</td><td>`std::$UNARY$_v<$T$>`, where `$T$` is the type or type alias represented by `type`</td></tr>
-<tr><td>
-```cpp
-bool meta::$BINARY$(info t1, info t2);
-bool meta::$BINARY$_type(info t1, info t2);
-```
-</td><td>`std::$BINARY$_v<$T1$, $T2$>`, where `$T1$` and `$T2$` are the types or type aliases represented by `t1` and `t2`, respectively</td></tr>
-<tr><td>
-```cpp
-template <reflection_range R>
-bool meta::$VARIADIC$_type(info type, R&& args);
-```
-</td>
-<td>`std::$VARIADIC$_v<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
-<tr><td>
-```cpp
-template <reflection_range R>
-bool meta::$VARIADIC$_type(info t1, info t2, R&& args);
-```
-</td>
-<td>`std::$VARIADIC$_v<$T1$, $T2$, $U$...>` where `$T1$` and `$T2$` are the types or type aliases represented by `t1` and `t2`, respectively, and `$U$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
-<tr><td>
-```cpp
-info meta::$UNARY$(info type);
-```
-</td><td>A reflection representing the type denoted by `std::$UNARY$_t<$T$>`, where `$T$` is the type or type alias represented by `type`</td></tr>
-<tr><td>
-```cpp
-template <reflection_range R>
-info meta::$VARIADIC$(R&& args);
-```
-</td>
-<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$...>` where `$T$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
-<tr><td>
-```cpp
-template <reflection_range R>
-info meta::$VARIADIC$(info type, R&& args);
-```
-</td>
-<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
-</table>
-
-[For those functions or function templates which return a reflection, that reflection always represents a type and never a type alias.]{.note}
-
-```cpp
-  // associated with [meta.unary.cat], primary type categories
+// associated with [meta.unary.cat], primary type categories
 consteval bool is_void_type(info type);
 consteval bool is_null_pointer_type(info type);
 consteval bool is_integral_type(info type);
@@ -8149,21 +8096,7 @@ consteval bool has_unique_object_representations(info type);
 
 consteval bool reference_constructs_from_temporary(info type_dst, info type_src);
 consteval bool reference_converts_from_temporary(info type_dst, info type_src);
-```
 
-```cpp
-consteval size_t rank(info type);
-```
-
-[#]{.pnum} *Returns*: `rank_v<T>`, where `T` is the type represented by `dealias(type)`.
-
-```cpp
-consteval size_t extent(info type, unsigned i = 0);
-```
-
-[#]{.pnum} *Returns*: `extent_v<T, I>`, where `T` is the type represented by `dealias(type)` and `I` is a constant equal to `i`.
-
-```cpp
 // associated with [meta.rel], type relations
 consteval bool is_same_type(info type1, info type2);
 consteval bool is_base_of_type(info type_base, info type_derived);
@@ -8182,11 +8115,7 @@ template <reflection_range R = initializer_list<info>>
 consteval bool is_nothrow_invocable_type(info type, R&& type_args);
 template <reflection_range R = initializer_list<info>>
 consteval bool is_nothrow_invocable_r_type(info type_result, info type, R&& type_args);
-```
 
-[#]{.pnum} [If `t` is a reflection of the type `int` and `u` is a reflection of an alias to the type `int`, then `t == u` is `false` but `is_same_type(t, u)` is `true`. Also, `t == dealias(u)` is `true`.]{.note}.
-
-```cpp
 // associated with [meta.trans.cv], const-volatile modifications
 consteval info remove_const(info type);
 consteval info remove_volatile(info type);
@@ -8211,15 +8140,7 @@ consteval info remove_all_extents(info type);
 // associated with [meta.trans.ptr], pointer modifications
 consteval info remove_pointer(info type);
 consteval info add_pointer(info type);
-```
-:::
-:::
 
-[There are four transformations that are deliberately omitted here. `type_identity` and `enable_if` are not useful, `conditional(cond, t, f)` would just be a long way of writing `cond ? t : f`, and `basic_common_reference` is a class template intended to be specialized and not directly invoked.]{.ednote}
-
-::: std
-::: addu
-```cpp
 // associated with [meta.trans.other], other transformations
 consteval info remove_cvref(info type);
 consteval info decay(info type);
@@ -8234,6 +8155,73 @@ consteval info unwrap_reference(info type);
 consteval info unwrap_ref_decay(info type);
 ```
 
+[#]{.pnum} Each function or function template declared above has the following behavior based on the signature and return type of that function or function template. [The associated class template need not be instantiated.]{.note}
+
+<table>
+<tr><th>Signature and Return Type</th><th>*Returns*</th></tr>
+<tr><td>
+```cpp
+bool meta::$UNARY$(info type);
+bool meta::$UNARY$_type(info type);
+```
+</td><td>`std::$UNARY$_v<$T$>`, where `$T$` is the type or type alias represented by `type`</td></tr>
+<tr><td>
+```cpp
+bool meta::$BINARY$(info t1, info t2);
+bool meta::$BINARY$_type(info t1, info t2);
+```
+</td><td>`std::$BINARY$_v<$T1$, $T2$>`, where `$T1$` and `$T2$` are the types or type aliases represented by `t1` and `t2`, respectively</td></tr>
+<tr><td>
+```cpp
+template <reflection_range R>
+bool meta::$VARIADIC$_type(info type, R&& args);
+```
+</td>
+<td>`std::$VARIADIC$_v<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
+<tr><td>
+```cpp
+template <reflection_range R>
+bool meta::$VARIADIC$_type(info t1, info t2, R&& args);
+```
+</td>
+<td>`std::$VARIADIC$_v<$T1$, $T2$, $U$...>` where `$T1$` and `$T2$` are the types or type aliases represented by `t1` and `t2`, respectively, and `$U$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
+<tr><td>
+```cpp
+info meta::$UNARY$(info type);
+```
+</td><td>A reflection representing the type denoted by `std::$UNARY$_t<$T$>`, where `$T$` is the type or type alias represented by `type`</td></tr>
+<tr><td>
+```cpp
+template <reflection_range R>
+info meta::$VARIADIC$(R&& args);
+```
+</td>
+<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$...>` where `$T$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
+<tr><td>
+```cpp
+template <reflection_range R>
+info meta::$VARIADIC$(info type, R&& args);
+```
+</td>
+<td>A reflection representing the  type denoted by `std::$VARIADIC$_t<$T$, $U$...>` where `$T$` is the type or type alias represented by `type` and `$U$...` is the pack of types or type aliases whose elements are represented by the corresponding elements of `args`</td></tr>
+</table>
+
+[#]{.pnum} [For those functions or function templates which return a reflection, that reflection always represents a type and never a type alias.]{.note}
+
+[#]{.pnum} [If `t` is a reflection of the type `int` and `u` is a reflection of an alias to the type `int`, then `t == u` is `false` but `is_same_type(t, u)` is `true`. Also, `t == dealias(u)` is `true`.]{.note}.
+
+
+```cpp
+consteval size_t rank(info type);
+```
+
+[#]{.pnum} *Returns*: `rank_v<T>`, where `T` is the type represented by `dealias(type)`.
+
+```cpp
+consteval size_t extent(info type, unsigned i = 0);
+```
+
+[#]{.pnum} *Returns*: `extent_v<T, I>`, where `T` is the type represented by `dealias(type)` and `I` is a constant equal to `i`.
 :::
 :::
 
