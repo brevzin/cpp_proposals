@@ -7681,7 +7681,7 @@ template <class T>
 
 [#]{.pnum} *Constant When*:
 
-  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are either similar or both function types, and `is_convertible_v<U, T>` is `true`,
+  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are either similar or both function pointer types, and `is_convertible_v<U, T>` is `true`,
   - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same,
   - [#.#]{.pnum} `U` is an array type, `T` is a pointer type, and the value that `r` represents is convertible to `T`, or
   - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value that `r` represents is convertible to `T`.
