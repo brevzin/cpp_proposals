@@ -4729,7 +4729,7 @@ consteval { // #1
 ```
 :::
 
-[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation `$X$` of an expression `$E$` as a core constant expression, the evaluation context consists of the following points:
+[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$E$` as a core constant expression, the evaluation context of an evaluation `$X$` ([intro.execution]) consists of the following points:
 
   - [#.#]{.pnum} `$EVAL-PT$($P$@~_$E$_~@)`, where `$P$@~_$E$_~@` is the point at which `$E$` appears and `$EVAL-PT$($P$)` is a point determined as follows:
     - [#.#]{.pnum} If a potentially-evaluated subexpression ([intro.execution]) of a default member initializer `$I$` appears at `$P$`, and a (possibly aggregate) initialization is using `$I$`, `$EVAL-PT$($Q$)` where `$Q$` is the point at which that initialization appears.
