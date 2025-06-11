@@ -3728,14 +3728,14 @@ template <int V> struct TCls {
   static constexpr int s = V + 1;
 };
 
-using alias = [:^^TCls:]<[:^^v:]>;
-  // OK, a splice-specialization-specifier with a splice-specifier
+using alias = [:^^TCls:]<([:^^v:])>;
+  // OK, a splice-specialization-specifier with a splice-expression
   // as a template argument
 
 static_assert(alias::s == 2);
 
-auto o1 = [:^^TCls:]<[:^^v:]>();          // error: < means less than
-auto o2 = typename [:^^TCls:]<[:^^v:]>(); // OK, o2 is an object of type TCls<1>
+auto o1 = [:^^TCls:]<([:^^v:])>();          // error: < means less than
+auto o2 = typename [:^^TCls:]<([:^^v:])>(); // OK, o2 is an object of type TCls<1>
 
 consteval int bad_splice(std::meta::info v) {
     return [:v:]; // error: v is not constant
@@ -3748,7 +3748,7 @@ consteval int bad_splice(std::meta::info v) {
 
 ### [basic.link]{.sref} Program and Linkage {-}
 
-Add a bullet to paragraph 13 and handle `$splice-expression$`s in the existing bullets:
+Consider `$reflect-expression$`s and `$splice-specifiers$`s to naming entities and extend the definition of TU-local values and objects to include reflections. The below addition of "value or object of a TU-local type" is a drive-by fix to make sure that enumerators in a TU-local enumeration are also TU-local.
 
 ::: std
 
@@ -3761,11 +3761,6 @@ Add a bullet to paragraph 13 and handle `$splice-expression$`s in the existing b
 
   [Non-dependent names in an instantiated declaration do not refer to a set of overload ([temp.res]).]{.note7}
 
-:::
-
-[No changes are proposed to paragraphs 14-15, but they are reproduced below for ease of reference.]{.draftnote}
-
-::: std
 [14]{.pnum} A declaration is an _exposure_ if it either names a TU-local entity (defined below), ignoring
 
 - [#.#]{.pnum} the `$function-body$` for a non-inline function or function template (but not the deduced return type for a (possibly instantiated) definition of a function with a declared return type that uses a placeholder ytpe ([dcl.spec.auto])),
@@ -3788,13 +3783,6 @@ or defines a constexpr variable initialized to a TU-local value (defined below).
 - [#.#]{.pnum} a specialization of a template whose (possibly instantiated) declaration is an exposure.
 
   [A specialization can be produced by implicit or explicit instantiation.]{.note9}
-:::
-
-[The below addition of "value or object of a TU-local type" is in part a drive-by fix to make sure that enumerators in a TU-local enumeration are also TU-local]{.ednote}
-
-Extend the definition of _TU-local_ values and objects in paragraph 16 to include reflections:
-
-::: std
 
 [16]{.pnum} A value or object is _TU-local_ if
 
@@ -3811,15 +3799,9 @@ Extend the definition of _TU-local_ values and objects in paragraph 16 to includ
 
 [Values that are TU-local to different translation units are never considered equivalent.]{.addu}
 
-:::
-
-[No changes are proposed to paragraphs 17-18, but they are reproduced below for ease of reference.]{.draftnote}
-
-::: std
 [17]{.pnum} If a (possibly instantiated) declaration of, or a deduction guide for, a non-TU-local entity in a module interface unit (outside the `$private-module-fragment$`, if any) or module partition ([module.unit]) is an exposure, the program is ill-formed. Such a declaration in any other context is deprecated ([depr.local]).
 
 [18]{.pnum} If a declaration that appears in one translation unit names a TU-local entity declared in another translation unit that is not a header unit, the program is ill-formed. A declaration instantiated for a template specialization ([temp.spec]) appears at the point of instantiation of the specialization ([temp.point]).make
-
 
 :::
 
@@ -3844,11 +3826,11 @@ inline void h(auto x) { adl(x); }  // OK, but certain specializations are exposu
 @[`namespace N2 {`]{.addu}@
 @[`static constexpr auto r2 = ^^g<1>;  // OK, r2 is TU-local`]{.addu}@
 @[`}`]{.addu}@
-@[`constexpr auto r3 = ^^r2;         // error: r3 is an exposure`]{.addu}@
+@[`constexpr auto r3 = ^^r2;         // error: r3 is an exposure of N2::r2`]{.addu}@
 
 @[`constexpr auto ctx = std::meta::access_context::current();`]{.addu}@
-@[`constexpr auto r4 = std::meta::members_of(^^N2, ctx);`]{.addu}@
-@[\ \ `// error: r4 is an exposure because initializer computes a TU-local value`]{.addu}@
+@[`constexpr auto r4 = std::meta::members_of(^^N2, ctx)[0];`]{.addu}@
+@[\ \ `// error: r4 is also an exposure of N2::r2`]{.addu}@
 ```
 
 Translation unit #2:
@@ -4250,8 +4232,6 @@ $splice-expression$:
 ```
 
 [#]{.pnum} A `$splice-specifier$` or `$splice-specialization-specifier$` immediately followed by `::` or preceded by `typename` is never interpreted as part of a `$splice-expression$`.
-
-[#]{.pnum} An unparenthesized `$splice-expression$` shall not be used as a template argument.
 
 ::: example
 ```cpp
@@ -5742,6 +5722,26 @@ Clarify that the `>` disambiguation in paragraph 4 also applies to the parsing o
 
 [The second `>` token produced by this replacement rule can terminate an enclosing `$template-id$` [or `$splice-specialization-specifier$`]{.addu} construct or it can be part of a different construct (e.g., a cast).]{.note}
 
+:::
+
+Add a new paragraph and example after paragraph 5 that disallows unparenthesized splice expressions as template arguments.
+
+::: std
+[5]{.pnum} The keyword `template` shall not appear immediately after a declarative `$nested-name-specifier$` ([expr.prim.id.qual]).
+
+::: addu
+[5+]{.pnum} The `$constant-expression$` of a `$template-argument$` shall not be an unparenthesized `$splice-expression$`.
+
+::: example2
+```cpp
+template<int> struct S;
+
+constexpr int k = 5;
+S<[:^^k:]> s1;    // error: unparenthesized splice expression used as template argument
+S<([:^^k:])> s2;  // OK
+```
+:::
+:::
 :::
 
 Extend the definition of a _valid_ `$template-id$` to also cover `$splice-specialization-specifier$`s:
