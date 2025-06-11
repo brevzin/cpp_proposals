@@ -3748,7 +3748,7 @@ consteval int bad_splice(std::meta::info v) {
 
 ### [basic.link]{.sref} Program and Linkage {-}
 
-Consider `$reflect-expression$`s and `$splice-specifiers$`s to naming entities and extend the definition of TU-local values and objects to include reflections. The below addition of "value or object of a TU-local type" is a drive-by fix to make sure that enumerators in a TU-local enumeration are also TU-local.
+Consider `$reflect-expression$`s and `$splice-specifier$`s to naming entities and extend the definition of TU-local values and objects to include reflections. The below addition of "value or object of a TU-local type" is a drive-by fix to make sure that enumerators in a TU-local enumeration are also TU-local.
 
 ::: std
 
@@ -5734,11 +5734,13 @@ Add a new paragraph and example after paragraph 5 that disallows unparenthesized
 
 ::: example2
 ```cpp
-template<int> struct S;
+template<int> struct S { };
 
 constexpr int k = 5;
-S<[:^^k:]> s1;    // error: unparenthesized splice expression used as template argument
+constexpr auto r = ^^k;
+S<[:^^k:]> s1;    // error
 S<([:^^k:])> s2;  // OK
+S<[:r:] + 1> s3;  // OK
 ```
 :::
 :::

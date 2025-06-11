@@ -6407,9 +6407,9 @@ when it appears in a type-only context (<span>13.3 <a href="https://wg21.link/te
 Linkage<a href="#basic.link-program-and-linkage" class="self-link"></a></h3>
 <p>Consider
 <code class="sourceCode cpp"><em>reflect-expression</em></code>s and
-<code class="sourceCode cpp"><em>splice-specifiers</em></code>s to
-naming entities and extend the definition of TU-local values and objects
-to include reflections. The below addition of “value or object of a
+<code class="sourceCode cpp"><em>splice-specifier</em></code>s to naming
+entities and extend the definition of TU-local values and objects to
+include reflections. The below addition of “value or object of a
 TU-local type” is a drive-by fix to make sure that enumerators in a
 TU-local enumeration are also TU-local.</p>
 <div class="std">
@@ -10271,11 +10271,13 @@ not be an unparenthesized
 <code class="sourceCode cpp"><em>splice-expression</em></code>.</p>
 <div class="example2">
 <span>[ <em>Example 2:</em> </span>
-<div class="sourceCode" id="cb166"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb166-1"><a href="#cb166-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">struct</span> S;</span>
+<div class="sourceCode" id="cb166"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb166-1"><a href="#cb166-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">struct</span> S <span class="op">{</span> <span class="op">}</span>;</span>
 <span id="cb166-2"><a href="#cb166-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb166-3"><a href="#cb166-3" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> k <span class="op">=</span> <span class="dv">5</span>;</span>
-<span id="cb166-4"><a href="#cb166-4" aria-hidden="true" tabindex="-1"></a>S<span class="op">&lt;[:^^</span>k<span class="op">:]&gt;</span> s1;    <span class="co">// error: unparenthesized splice expression used as template argument</span></span>
-<span id="cb166-5"><a href="#cb166-5" aria-hidden="true" tabindex="-1"></a>S<span class="op">&lt;([:^^</span>k<span class="op">:])&gt;</span> s2;  <span class="co">// OK</span></span></code></pre></div>
+<span id="cb166-4"><a href="#cb166-4" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">=</span> <span class="op">^^</span>k;</span>
+<span id="cb166-5"><a href="#cb166-5" aria-hidden="true" tabindex="-1"></a>S<span class="op">&lt;[:^^</span>k<span class="op">:]&gt;</span> s1;    <span class="co">// error</span></span>
+<span id="cb166-6"><a href="#cb166-6" aria-hidden="true" tabindex="-1"></a>S<span class="op">&lt;([:^^</span>k<span class="op">:])&gt;</span> s2;  <span class="co">// OK</span></span>
+<span id="cb166-7"><a href="#cb166-7" aria-hidden="true" tabindex="-1"></a>S<span class="op">&lt;[:</span>r<span class="op">:]</span> <span class="op">+</span> <span class="dv">1</span><span class="op">&gt;</span> s3;  <span class="co">// OK</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
