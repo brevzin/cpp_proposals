@@ -30,7 +30,10 @@ Since [@P2996R12]:
 
 * core wording updates
   * handle members of static anonymous unions / integrate suggested fix for [@CWG3026]
-  * removed splice template arguments, following EWG poll for [@P3687R0]{.title}
+  * integrate EWG updates from [@P3687R0]{.title}
+    * removed splice template arguments
+    * unparenthesized `$splice-expression$`s are ill-formed when used as template arguments
+    * `$reflect-expression$`s are ill-formed when the operand names a `$using-declarator$`
 * library wording updates
   * specification of `reflect_constant`/`reflect_object`/`reflect_function`
 
@@ -3725,14 +3728,14 @@ template <int V> struct TCls {
   static constexpr int s = V + 1;
 };
 
-using alias = [:^^TCls:]<[:^^v:]>;
-  // OK, a splice-specialization-specifier with a splice-specifier
+using alias = [:^^TCls:]<([:^^v:])>;
+  // OK, a splice-specialization-specifier with a splice-expression
   // as a template argument
 
 static_assert(alias::s == 2);
 
-auto o1 = [:^^TCls:]<[:^^v:]>();          // error: < means less than
-auto o2 = typename [:^^TCls:]<[:^^v:]>(); // OK, o2 is an object of type TCls<1>
+auto o1 = [:^^TCls:]<([:^^v:])>();          // error: < means less than
+auto o2 = typename [:^^TCls:]<([:^^v:])>(); // OK, o2 is an object of type TCls<1>
 
 consteval int bad_splice(std::meta::info v) {
     return [:v:]; // error: v is not constant
@@ -3745,7 +3748,7 @@ consteval int bad_splice(std::meta::info v) {
 
 ### [basic.link]{.sref} Program and Linkage {-}
 
-Add a bullet to paragraph 13 and handle `$splice-expression$`s in the existing bullets:
+Consider `$reflect-expression$`s and `$splice-specifier$`s to naming entities and extend the definition of TU-local values and objects to include reflections. The below addition of "value or object of a TU-local type" is a drive-by fix to make sure that enumerators in a TU-local enumeration are also TU-local.
 
 ::: std
 
@@ -3756,13 +3759,30 @@ Add a bullet to paragraph 13 and handle `$splice-expression$`s in the existing b
 * [13.2]{.pnum} `$E$` is not a function or function template and `$D$` contains an `$id-expression$`, `$type-specifier$`, `$nested-name-specifier$`, `$template-name$`, or `$concept-name$` denoting `$E$`, or
 * [13.#]{.pnum} `$E$` is a function or function template and `$D$` contains an expression that names `$E$` ([basic.def.odr]) or an `$id-expression$` that refers to a set of overloads that contains `$E$`.
 
-:::
+  [Non-dependent names in an instantiated declaration do not refer to a set of overload ([temp.res]).]{.note7}
 
-[The below addition of "value or object of a TU-local type" is in part a drive-by fix to make sure that enumerators in a TU-local enumeration are also TU-local]{.ednote}
+[14]{.pnum} A declaration is an _exposure_ if it either names a TU-local entity (defined below), ignoring
 
-Extend the definition of _TU-local_ values and objects in p16 to include reflections:
+- [#.#]{.pnum} the `$function-body$` for a non-inline function or function template (but not the deduced return type for a (possibly instantiated) definition of a function with a declared return type that uses a placeholder ytpe ([dcl.spec.auto])),
+- [#.#]{.pnum} the `$initializer$` for a variable or variable template (but not the variable's type),
+- [#.#]{.pnum} friend declarations in a class definition, and
+- [#.#]{.pnum} any reference to a non-volatile const object or reference with internal or no linkage initialized with a constant expression that is not an odr-use ([basic.def.odr]),
 
-::: std
+or defines a constexpr variable initialized to a TU-local value (defined below).
+
+[An inline function template can be an exposure even though certain explicit specializations of it would be usable in other translation units.]{.note8}
+
+[15]{.pnum} An entity is _TU-local_ if it is
+
+- [#.#]{.pnum} a type, function, variable, or template that
+  - [#.#.#]{.pnum} has a name with internal linkage, or
+  - [#.#.#]{.pnum} does not have a name with linkage and is declared, or introduced by a `$lambda-expression$`, within the definition of a TU-local entity,
+- [#.#]{.pnum} a type with no name that is defined outside a `$class-specifier$`, function body, or `$initializer$` or is introduced by a `$defining-type-specifier$` that is used to declare only TU-local entities,
+- [#.#]{.pnum} a specialization of a TU-local template,
+- [#.#]{.pnum} a specialization of a template with any TU-local template arguments, or
+- [#.#]{.pnum} a specialization of a template whose (possibly instantiated) declaration is an exposure.
+
+  [A specialization can be produced by implicit or explicit instantiation.]{.note9}
 
 [16]{.pnum} A value or object is _TU-local_ if
 
@@ -3770,15 +3790,18 @@ Extend the definition of _TU-local_ values and objects in p16 to include reflect
 * [16.1]{.pnum} it is, or is a pointer to, a TU-local function or the object associated with a TU-local variable, [or]{.rm}
 
 :::addu
-* [16.1+]{.pnum} it is a reflection representing either
-  * [16.1+.#]{.pnum} an entity that is either TU-local or introduced by an exposure, or
-  * [16.1+.#]{.pnum} a value, or object that is TU-local, or
-  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) for which the base class or the derived class is either TU-local or introduced by an exposure, or
-  * [16.1+.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$T$` is either TU-local or introduced by an exposure, or
+* [16.1+]{.pnum} it is a reflection that represents either
+  * [16.1+.#]{.pnum} an entity, value, or object, that is TU-local, or
+  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) for which the base class or the derived class is TU-local, or
+  * [16.1+.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$T$` is TU-local, or
 :::
 * [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
 [Values that are TU-local to different translation units are never considered equivalent.]{.addu}
+
+[17]{.pnum} If a (possibly instantiated) declaration of, or a deduction guide for, a non-TU-local entity in a module interface unit (outside the `$private-module-fragment$`, if any) or module partition ([module.unit]) is an exposure, the program is ill-formed. Such a declaration in any other context is deprecated ([depr.local]).
+
+[18]{.pnum} If a declaration that appears in one translation unit names a TU-local entity declared in another translation unit that is not a header unit, the program is ill-formed. A declaration instantiated for a template specialization ([temp.spec]) appears at the point of instantiation of the specialization ([temp.point]).make
 
 :::
 
@@ -3789,15 +3812,25 @@ Add examples demonstrating the above rules to the example in paragraph 19:
 Translation unit #1:
 ```cpp
 export module A;
+static void f() {}
+inline void it() { f(); }          // error: is an exposure of f
+static inline void its() { f(); }  // OK
+template<int> void g() { its(); }  // OK
+template void g<0>();
+
 [...]
 
 inline void h(auto x) { adl(x); }  // OK, but certain specializations are exposures
 
-@[`using Alias = int;`]{.addu}@
-@[`template <auto R> struct T {};`]{.addu}@
-@[`static constexpr auto r1 = ^^Alias;  // OK, value is TU-local but so is r1`]{.addu}@
-@[`constexpr auto r2 = ^^Alias;         // error: value is TU-local but r2 is not`]{.addu}@
-@[`export T<^^Alias> t;                 // error: ^^Alias is a TU-local value`]{.addu}@
+@[`constexpr auto r1 = ^^g<0>;  // OK`]{.addu}@
+@[`namespace N2 {`]{.addu}@
+@[`static constexpr auto r2 = ^^g<1>;  // OK, r2 is TU-local`]{.addu}@
+@[`}`]{.addu}@
+@[`constexpr auto r3 = ^^r2;         // error: r3 is an exposure of N2::r2`]{.addu}@
+
+@[`constexpr auto ctx = std::meta::access_context::current();`]{.addu}@
+@[`constexpr auto r4 = std::meta::members_of(^^N2, ctx)[0];`]{.addu}@
+@[\ \ `// error: r4 is also an exposure of N2::r2`]{.addu}@
 ```
 
 Translation unit #2:
@@ -4213,8 +4246,13 @@ constexpr int d = template [:^^TCls:]<int>::b;  // OK, template [:^^TCls:]<int> 
 template <auto V> constexpr int e = [:V:];   // OK
 constexpr int f = template [:^^e:]<^^S::a>;  // OK
 
-auto g = typename [:^^int:](42);
+constexpr auto g = typename [:^^int:](42);
   // OK, typename [:^^int:] is a splice-type-specifier
+
+constexpr auto h = ^^g;
+constexpr auto i = e<[:^^h:]>;
+  // error: unparenthesized splice-expression used as template argument
+constexpr auto j = e<([:^^h:])>;  // OK
 ```
 
 :::
@@ -4413,7 +4451,8 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} If a `$reflect-expression$` `$R$` matches the form `^^ $qualified-reflection-name$`, it is interpreted as such and its representation is determined as follows:
 
-- [#.#]{.pnum} If the `$identifier$` is a `$namespace-name$` that names a namespace alias ([namespace.alias]), `$R$` represents that namespace alias. For any other `$namespace-name$`, `$R$` represents the denoted namespace.
+- [#.#]{.pnum} If the `$identifier$` names a `$using-declarator$` ([namespace.udecl]), `$R$` is ill-formed.
+- [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$namespace-name$` that names a namespace alias ([namespace.alias]), `$R$` represents that namespace alias. For any other `$namespace-name$`, `$R$` represents the denoted namespace.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$concept-name$` ([temp.concept]), `$R$` represents the denoted concept.
 - [#.#]{.pnum} Otherwise, if the `$identifier$` is a `$template-name$` ([temp.names]), the representation of `$R$` is determined as follows:
   - [#.#.#]{.pnum} If the `$template-name$` names an injected-class-name ([class.pre]), then:
@@ -4475,6 +4514,10 @@ typedef struct X {} Y;
 typedef struct Z {} Z;
 constexpr auto e = ^^Y;  // OK, represents the type alias Y
 constexpr auto f = ^^Z;  // OK, represents the type Z (not the type alias)
+
+struct B { int m; };
+struct D : B { using B::m; };
+constexpr auto g = ^^D::m;  // error: D::m names a using-declarator
 ```
 :::
 
@@ -4666,7 +4709,7 @@ consteval { // #1
 ```
 :::
 
-[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation `$X$` of an expression `$E$` as a core constant expression, the evaluation context consists of the following points:
+[#]{.pnum} The _evaluation context_ is a set of program points that determines the behavior of certain functions used for reflection ([meta.reflection]). During the evaluation of an expression `$E$` as a core constant expression, the evaluation context of an evaluation `$X$` ([intro.execution]) consists of the following points:
 
   - [#.#]{.pnum} `$EVAL-PT$($P$@~_$E$_~@)`, where `$P$@~_$E$_~@` is the point at which `$E$` appears and `$EVAL-PT$($P$)` is a point determined as follows:
     - [#.#]{.pnum} If a potentially-evaluated subexpression ([intro.execution]) of a default member initializer `$I$` appears at `$P$`, and a (possibly aggregate) initialization is using `$I$`, `$EVAL-PT$($Q$)` where `$Q$` is the point at which that initialization appears.
@@ -5679,6 +5722,28 @@ Clarify that the `>` disambiguation in paragraph 4 also applies to the parsing o
 
 [The second `>` token produced by this replacement rule can terminate an enclosing `$template-id$` [or `$splice-specialization-specifier$`]{.addu} construct or it can be part of a different construct (e.g., a cast).]{.note}
 
+:::
+
+Add a new paragraph and example after paragraph 5 that disallows unparenthesized splice expressions as template arguments.
+
+::: std
+[5]{.pnum} The keyword `template` shall not appear immediately after a declarative `$nested-name-specifier$` ([expr.prim.id.qual]).
+
+::: addu
+[5+]{.pnum} The `$constant-expression$` of a `$template-argument$` shall not be an unparenthesized `$splice-expression$`.
+
+::: example2
+```cpp
+template<int> struct S { };
+
+constexpr int k = 5;
+constexpr auto r = ^^k;
+S<[:r:]> s1;      // error: unparenthesized splice expression used as template argument
+S<([:r:])> s2;    // OK
+S<[:r:] + 1> s3;  // OK
+```
+:::
+:::
 :::
 
 Extend the definition of a _valid_ `$template-id$` to also cover `$splice-specialization-specifier$`s:
