@@ -5738,8 +5738,8 @@ template<int> struct S { };
 
 constexpr int k = 5;
 constexpr auto r = ^^k;
-S<[:^^k:]> s1;    // error
-S<([:^^k:])> s2;  // OK
+S<[:r:]> s1;      // error: unparenthesized splice expression used as template argument
+S<([:r:])> s2;    // OK
 S<[:r:] + 1> s3;  // OK
 ```
 :::
