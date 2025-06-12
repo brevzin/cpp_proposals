@@ -5931,10 +5931,16 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 Add two new paragraphs to the end of [temp.dep.constexpr] to specify the value-dependence of `$reflect-expression$`s and `$splice-expression$`s:
 
 ::: std
-[6]{.pnum} An expression of the form `&$qualified-id$` where the `$qualified-id$` names a dependent member of the current instantiation is value-dependent. An expression of the form `&$cast-expression$` is also value-dependent if evaluating `$cast-expression$` as a core constant expression succeeds and the result of the evaluation refers to a templated entity that is an object with static or thread storage duration or a member function.
-
 :::addu
-[6+]{.pnum} An expression of the form `^^ $qualified-reflection-name$` is value-dependent if the `$qualified-reflection-name$` either is a dependent qualified name or a dependent `$namespace-name$` ([temp.dep.namespace]) or names a template parameter or a dependent member of the current instantiation ([temp.dep.type]). An expression of the form `^^ $type-id$` or `^^ $id-expression$` is also value-dependent if, respectively, the `$type-id$` denotes a dependent type or the `$id-expression$` is value-dependent or type-dependent.
+[6+]{.pnum} A `$reflect-expression$` is value-dependent if
+
+- [6+.#]{.pnum} it is of the form `^^ $qualified-reflection-name$` and the `$qualified-reflection-name$`
+  - [6+.#.#]{.pnum} is a dependent qualified name,
+  - [6+.#.#]{.pnum} is a dependent `$namespace-name$`,
+  - [6+.#.#]{.pnum} is the name of a template parameter, or
+  - [6+.#.#]{.pnum} names a dependent member of the current instantiation ([temp.dep.type]),
+- [6+.#]{.pnum} is of the form `^^ $type-id$` and the `$type-id$` denotes a dependent type, or
+- [6+.#]{.pnum} is of the form `^^ $id-expression$` and the `$id-expression$` is value-dependent or type-dependent.
 
 [6++]{.pnum} Expressions of the following form are value-dependent if the `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]):
 
