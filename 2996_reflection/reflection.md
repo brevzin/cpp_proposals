@@ -4197,7 +4197,7 @@ struct S1 {
 ```
 :::
 
-Further, [unless the `$compound-statement$` is that of a `$conteval-block-declaration$` ([dcl.pre]),]{.addu} a variable `__func__` is implicitly defined at the beginning of the `$compound-statement$` of the `$lambda-expression$`, with semantics as described in [dcl.fct.def.general].
+[Further]{.rm} [Unless the `$compound-statement$` is that of a `$conteval-block-declaration$` ([dcl.pre])]{.addu}, a variable `__func__` is implicitly defined at the beginning of the `$compound-statement$` of the `$lambda-expression$`, with semantics as described in [dcl.fct.def.general].
 
 :::
 
