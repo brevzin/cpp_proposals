@@ -4226,8 +4226,8 @@ template<typename T> concept C = requires {
                             // fails if T::type does not exist as a type to which 0 can be implicitly converted
   typename Ref<T>;          // required alias template substitution, fails if T is void
 + typename [:T::r1:];       // fails if T::r1 is not a reflection of a type
-+ typename [:T::r2:]<int>;  // fails if T::r2 is not a reflection of a template T for
-+                           // which T<int> is a type
++ typename [:T::r2:]<int>;  // fails if T::r2 is not a reflection of a template Z for
++                           // which Z<int> is a type
 };
 ```
 :::
@@ -4600,7 +4600,7 @@ Modify paragraph 22 to disallow returning non-consteval-only pointers and refere
 
   consteval const Base& fn(const Derived& derived) { return derived; }
 
-  constexpr auto obj = Derived{^^::}; // OK
+  constexpr auto obj = Derived{.r=^^::}; // OK
   constexpr auto const& d = obj; // OK
   constexpr auto const& b = fn(obj); // error: not a constant expression
     // because Derived is a consteval-only type but Base is not.
@@ -4686,7 +4686,6 @@ consteval { tfn1<^^S2>(); }
 
 template <std::meta::info R> consteval void tfn2() {
   consteval { std::meta::define_aggregate(R, {}); }
-  return b;
 }
 
 struct S3;
@@ -4699,7 +4698,7 @@ template <typename> struct TCls {
   static void sfn() requires ([] {
     consteval { std::meta::define_aggregate(^^S4, {}); }
     return true;
-  }) { }
+  }()) { }
 };
 
 consteval { TCls<void>::sfn(); }
