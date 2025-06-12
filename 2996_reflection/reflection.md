@@ -5058,7 +5058,7 @@ class X {
   @[`int mem4(int i = [:^^a:]); // error: non-static member a designated in default argument`]{.addu}@
 
   static int b;
-}
+};
 ```
 
 [...]
@@ -5301,8 +5301,6 @@ Modify paragraphs 2 through 6 to relax the phrasing used to define the points in
 [6]{.pnum} In any other case, the instantiation context at a point within the program [comprises]{.rm} [contains]{.addu} that point.
 
 [[6+]{.pnum} The instantiation context contains only the points specified above.]{.addu}
-:::
-
 :::
 
 ### [module.reach]{.sref} Reachability {-}
