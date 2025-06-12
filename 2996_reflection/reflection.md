@@ -5280,7 +5280,7 @@ In this determination, it is unspecified
 - [3.6]{.pnum} whether a reference to an `$alias-declaration$`, `typedef` declaration, `$using-declaration$`, or `$namespace-alias-definition$` is replaced by the declarations they name prior to this determination,
 - [#.#]{.pnum} [...]
 - [#.#]{.pnum} whether a non-value-dependent constant expression is replaced by the result of constant evaluation prior to this determination[.]{.rm}[, and]{.addu}
-- [[#.#]{.pnum} whether a `$splice-expression$`, a `$splice-type-specifier$`, a `$splice-scope-specifier$`, or any `$splice-specifier$` or `$splice-specialization-specifier$` appearing otherwise in any context, that is not dependent, is replaced by the construct that it designates prior to this determination.]{.addu}
+- [[#.#]{.pnum} whether a `$splice-expression$`, a `$splice-type-specifier$`, a `$splice-scope-specifier$`, or any `$splice-specifier$` or `$splice-specialization-specifier$` appearing otherwise in any non-dependent context, is replaced by the construct that it designates prior to this determination.]{.addu}
 
 :::
 
@@ -5931,8 +5931,10 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 Add two new paragraphs to the end of [temp.dep.constexpr] to specify the value-dependence of `$reflect-expression$`s and `$splice-expression$`s:
 
 ::: std
+[6]{.pnum} An expression of the form `&$qualified-id$` where the `$qualified-id$` names a dependent member of the current instantiation is value-dependent. An expression of the form `&$cast-expression$` is also value-dependent if evaluating `$cast-expression$` as a core constant expression succeeds and the result of the evaluation refers to a templated entity that is an object with static or thread storage duration or a member function.
+
 :::addu
-[6+]{.pnum} An expression of the form `^^ $qualified-reflection-name$` is value-dependent if the `$qualified-reflection-name$` is either a dependent qualified name or a dependent `$namespace-name$` ([temp.dep.namespace]) or names either a template parameter or a dependent member of the current instantiation ([temp.dep.type]). An expression of the form `^^ $type-id$` or `^^ $id-expression$` is also value-dependent if, respectively, the `$type-id$` denotes a dependent type or the `$id-expression$` is value-dependent or type-dependent.
+[6+]{.pnum} An expression of the form `^^ $qualified-reflection-name$` is value-dependent if the `$qualified-reflection-name$` either is a dependent qualified name or a dependent `$namespace-name$` ([temp.dep.namespace]) or names a template parameter or a dependent member of the current instantiation ([temp.dep.type]). An expression of the form `^^ $type-id$` or `^^ $id-expression$` is also value-dependent if, respectively, the `$type-id$` denotes a dependent type or the `$id-expression$` is value-dependent or type-dependent.
 
 [6++]{.pnum} Expressions of the following form are value-dependent if the `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]):
 
