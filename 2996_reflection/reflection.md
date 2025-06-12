@@ -4439,9 +4439,9 @@ $qualified-reflection-name$:
 
 [#]{.pnum} The unary `^^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]).
 
-[This document places no restriction on representing, by reflections, constructs not described by this document or using such constructs as operands of `$reflect-expression$`s.]{.note}
+[This document places no restriction on representing, by reflections, constructs not described by this document or using the names of such constructs as operands of `$reflect-expression$`s.]{.note}
 
-[#]{.pnum} The component names of a `$qualified-reflection-name$` are those of its `$nested-name-specifier$` (if any) and its `$identifier$`.
+[#]{.pnum} The component names of a `$qualified-reflection-name$` are those of its `$nested-name-specifier$` (if any) and its `$identifier$`. The terminal name of a `$qualified-reflection-name$` of the form `$nested-name-specifier$ template $identifier$` shall denote a template.
 
 [#]{.pnum} A `$reflect-expression$` is parsed as the longest possible sequence of tokens that could syntactically form a `$reflect-expression$`. An unparenthesized `$reflect-expression$` that represents a template shall not be followed by `<`.
 
@@ -4501,7 +4501,7 @@ consteval void g(std::meta::info r, X<false> xv) {
     then `$R$` is ill-formed.
   - [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]); `$R$` represents that function.
   - [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member, `$R$` represents that entity.
-  - [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and constant template parameters.]{.note}
+  - [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$unqualified-id$`s that name a constant template parameter and `$pack-index-expression$`s.]{.note}
 
   The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]).
 
@@ -4734,7 +4734,7 @@ consteval { // #1
 
 ### [dcl.pre]{.sref} Preamble {-}
 
-Introduce the non-terminal `$vacuous-declaration$` in paragraph 9.1 to encompass static assertions, empty declarations, and consteval blocks:
+Introduce the non-terminal `$vacuous-declaration$` in paragraph 9.1 to encompass static assertions and consteval blocks:
 
 ::: std
 ```diff
@@ -4849,10 +4849,10 @@ Extend the grammar for `$computed-type-specifier$` as follows:
 Extend the definition of "placeholder for a deduced class type" in p3 to accommodate `$splice-type-specifier$`s.
 
 ::: std
-[3]{.pnum} A `$placeholder-type-specifier$` is a placeholder for a type to be deduced ([dcl.spec.auto]). A `$type-specifier$` [of the form `typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ $template-name$`]{.rm} is a placeholder for a deduced class type ([dcl.type.class.deduct]) [if it either\ ]{.addu}
+[3]{.pnum} A `$placeholder-type-specifier$` is a placeholder for a type to be deduced ([dcl.spec.auto]). A `$type-specifier$` [of the form `typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ $template-name$`]{.rm} is a placeholder for a deduced class type ([dcl.type.class.deduct]) [if either\ ]{.addu}
 
-- [[#.#]{.pnum} is of the form `typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ $template-name$`, or]{.addu}
-- [[#.#]{.pnum} is of the form `typename@~_opt_~@ $splice-specifier$` and the `$splice-specifier$` designates a class template or alias template.]{.addu}
+- [[#.#]{.pnum} it is of the form `typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ $template-name$` or]{.addu}
+- [[#.#]{.pnum} it is of the form `typename@~_opt_~@ $splice-specifier$` and the `$splice-specifier$` designates a class template or alias template.]{.addu}
 
 The `$nested-name-specifier$` [or `$splice-specifier$`]{.addu}, if any, shall be non-dependent and the `$template-name$` [or `$splice-specifier$`]{.addu} shall [name]{.rm} [designate]{.addu} a deducible template. A _deducible template_ is either a class template or is an alias template whose `$defining-type-id$` is of the form
 
@@ -5413,15 +5413,6 @@ Data member descriptions are represented by reflections ([basic.fundamental]) re
 :::
 :::
 
-### [class.union.anon]{.sref} Anonymous unions {-}
-
-Replace `$static_assert-declaration$` with `$vacuous-declaration$` in paragraph 1.
-
-::: std
-[1]{.pnum} [...] Each `$member-declaration$` in the `$member-specification$` of an anonymous union shall either define one or more public non-static data members or be a [`$static_assert-declaration$`]{.rm} [`$vacuous-declaration$`]{.addu}.  [...]
-
-:::
-
 ### [class.derived.general]{.sref} General {-}
 
 Introduce the term "direct base class relationship" to paragraph 2.
@@ -5732,7 +5723,7 @@ Extend the definition of a _valid_ `$template-id$` to also cover `$splice-specia
 * [#.#]{.pnum} substitution of each template argument into the following template parameters (if any) succeeds, and
 * [#.#]{.pnum} if the `$template-id$` [or `$splice-specialization-specifier$`]{.addu} is non-dependent, the associated constraints are satisfied as specified in the next paragraph.
 
-A `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} shall be valid unless it names a function template specialization ([temp.deduct]).
+A `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} shall be valid unless [it names]{.rm} [its respective `$template-name$` or `$splice-specifier$` names or designates]{.addu} a function template [specialization]{.rm} ([temp.deduct]).
 
 :::
 
@@ -5774,7 +5765,7 @@ Extend paragraph 1 to also define the "sameness" of `$splice-specialization-spec
 ::: std
 [1]{.pnum} Two `$template-id$`s [or `$splice-specialization-specifier$`s]{.addu} are the same if
 
-* [#.#]{.pnum} their `$template-name$`s, `$operator-function-id$`s, [or]{.rm} `$literal-operator-id$`s[, or `$splice-specifier$`s]{.addu} refer to the same template, and
+* [#.#]{.pnum} their `$template-name$`s, `$operator-function-id$`s, [or]{.rm} `$literal-operator-id$`s[, or `$splice-specifier$`s]{.addu} [refer to]{.rm} [designate]{.addu} the same template, and
 * [#.#]{.pnum} their corresponding type `$template-argument$`s are the same type, and
 * [#.#]{.pnum} the template parameter values determined by their corresponding constant template arguments ([temp.arg.nontype]) are template-argument-equivalent (see below), and
 * [#.#]{.pnum} their corresponding template `$template-argument$`s refer to the same template.
