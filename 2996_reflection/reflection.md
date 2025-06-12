@@ -4184,6 +4184,23 @@ And say that the call operator is a direct member:
 [4]{.pnum} The closure type for a *lambda-expression* has a public inline function call operator (for a non-generic lambda) or function call operator template (for a generic lambda) ([over.call]) whose parameters and return type are those of the lambda-expression's parameter-declaration-clause and trailing-return-type respectively,  and whose template-parameter-list consists of the specified template-parameter-list, if any. [The function call operator or the function call operator template are direct members of the closure type.]{.addu} The *requires-clause* of the function call operator template [...]
 :::
 
+Add a carveout to paragraph 15 to avoid implicitly defining `__func__` in a consteval block:
+
+::: std
+[15]{.pnum} The `$lambda-expression$`'s `$compound-statement$` yields the `$function-body$` ([dcl.fct.def]) of the function call operator, but it is not within the scope of the closure type.
+
+:::example10
+```cpp
+struct S1 {
+  [...]
+};
+```
+:::
+
+Further, [unless the `$compound-statement$` is that of a `$conteval-block-declaration$` ([dcl.pre]),]{.addu} a variable `__func__` is implicitly defined at the beginning of the `$compound-statement$` of the `$lambda-expression$`, with semantics as described in [dcl.fct.def.general].
+
+:::
+
 ### [expr.prim.req.type]{.sref} Type requirements {-}
 
 Allow splices in type requirements:
@@ -5079,16 +5096,6 @@ Change paragraphs 6-8 of [dcl.init.general] [No changes are necessary for value-
 If a program calls for the default-initialization of an object of a const-qualified type `T`, `T` shall be [`std::meta::info` or]{.addu} a const-default-constructible class type, or array thereof.
 
 [9]{.pnum} To value-initialize an object of type T means: [...]
-:::
-
-### [dcl.fct.def.general]{.sref} Function definitions {-}
-
-Disallow using `__func__` in a `consteval` block:
-
-::: std
-[7]{.pnum} A *function-local predefined variable* is a variable with static storage duration that is implicitly defined in [a]{.rm} [every]{.addu} function parameter scope [that is not associated with the call operator invoked by the expression corresponding to a `$consteval-block-declaration$`]{.addu}.
-
-[8]{.pnum} The function-local predefined variable `__func__` is defined as if a definition of the form [...]
 :::
 
 ### [dcl.fct.def.delete]{.sref} Deleted definitions {-}
