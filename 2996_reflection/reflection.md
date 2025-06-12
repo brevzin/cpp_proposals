@@ -7202,7 +7202,7 @@ struct F : I {
 
   enum N {
     A
-  }
+  };
 };
 
 constexpr auto ctx = std::meta::access_context::current();
