@@ -162,7 +162,7 @@ Since [@P2996R5]:
 * fixed broken "Emulating typeful reflection" example.
 * removed linkage restrictions on objects of consteval-only type that were introduced in St. Louis.
 * make friends with modules: define _injected declarations_ and _injected points_, as well as the _evaluation context_; modify _TU-local_ and related definitions, clarify behavior of `members_of` and `define_class`. An informal elaboration on this is included in a new section on "Reachability and injected declarations".
-* `type_of` no longer returns reflections of `$typedef-names$`; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
+* `type_of` no longer returns reflections of `$typedef-name$`s; added elaboration of reasoning to the ["Handling Aliases"](#handling-aliases) section.
 * added `define_static_array`, `has_complete_definition`.
 * removed `subobjects_of` and `accessible_subobjects_of` (will be reintroduced by [@P3293R1]).
 * specified constraints for `enumerators_of` in terms of `has_complete_definition`.
@@ -1583,7 +1583,7 @@ As more examples were discussed, it became clear that that syntax was both (a) t
 SG7 eventually agreed upon the prefix `^` operator. The "upward arrow" interpretation of the caret matches the "lift" or "raise" verbs that are sometimes used to describe the reflection operation in other contexts.
 
 The caret already has a meaning as a binary operator in C++ ("exclusive OR"), but that is clearly not conflicting with a prefix operator.
-In C++/CLI (a Microsoft C++ dialect) the caret is also used as a new kind of `$ptr-operator$` ([dcl.decl.general]{.sref}) to declare ["handles"](https://learn.microsoft.com/en-us/cpp/extensions/handle-to-object-operator-hat-cpp-component-extensions?view=msvc-170).
+In C++/CLI (a Microsoft C++ dialect) the caret is also used as a new kind of `$ptr-operator$` ([dcl.decl.general]) to declare ["handles"](https://learn.microsoft.com/en-us/cpp/extensions/handle-to-object-operator-hat-cpp-component-extensions?view=msvc-170).
 That is also not conflicting with the use of the caret as a unary operator because C++/CLI uses the usual prefix `*` operator to dereference handles.
 
 Apple also uses the caret in [syntax "blocks"](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/WorkingwithBlocks/WorkingwithBlocks.html) and unfortunately we believe that does conflict with our proposed use of the caret.
@@ -3348,11 +3348,11 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
 ::: std
 
-[7-8]{.pnum} Each preprocessing token is converted into a token ([lex.token]{.sref}). Whitespace characters separating tokens are no longer significant. The resulting tokens constitute a _translation unit_ and are syntactically and semantically analyzed as a `$translation-unit$` ([basic.link]) and translated.
+[7-8]{.pnum} Each preprocessing token is converted into a token ([lex.token]). Whitespace characters separating tokens are no longer significant. The resulting tokens constitute a _translation unit_ and are syntactically and semantically analyzed as a `$translation-unit$` ([basic.link]) and translated.
 
   [The process of analyzing and translating the tokens can occasionally result in one token being replaced by a sequence of other tokens ([temp.names])]{.note3}
 
-  It is implementation-defined whether the sources for module-units and header units on which the current translation unit has an interface dependency ([module.unit]{.sref}, [module.import]{.sref}) are required to be available.
+  It is implementation-defined whether the sources for module-units and header units on which the current translation unit has an interface dependency ([module.unit], [module.import]) are required to be available.
 
   [Source files, translation units and translated translation units need not necessarily be stored as files, nor need there be any one-to-one correspondence between these entities and any external representation. The description is conceptual only, and does not specify any particular implementation.]{.note}
 
@@ -3366,7 +3366,7 @@ Modify the wording for phases 7-8 of [lex.phases]{.sref} as follows:
 
   [This can include instantiations which have been explicitly requested ([temp.explicit]).]{.note5}
 
-  [The contexts from which instantiations may be performed are determined by their respective points of instantiation ([temp.point]{.sref}).]{.addu}
+  [The contexts from which instantiations may be performed are determined by their respective points of instantiation ([temp.point]).]{.addu}
 
   [[Other requirements in this document can further constrain the  context from which an instantiation can be performed. For example, a constexpr function template specialization might have a point of instantation at the end of a translation unit, but its use in certain constant expressions could require that it be instantiated at an earlier point ([temp.inst]).]{.note}]{.addu}
 
@@ -3473,7 +3473,7 @@ Add type aliases and namespace aliases to the list of entities in paragraph 8. A
 Modify the third sentence of paragraph 1 to clarify that type aliases are now entities.
 
 ::: std
-[1]{.pnum} [...] A declaration of an entity [or `$typedef-name$`]{.rm} `$X$` is a redeclaration of `$X$` if another declaration of `$X$` is reachable from it ([module.reach]{.sref}); otherwise, it is a _first declaration_. [...]
+[1]{.pnum} [...] A declaration of an entity [or `$typedef-name$`]{.rm} `$X$` is a redeclaration of `$X$` if another declaration of `$X$` is reachable from it ([module.reach]); otherwise, it is a _first declaration_. [...]
 
 :::
 
@@ -3538,7 +3538,7 @@ Add `$splice-expression$`s to the set of potential results of an expression in p
 ::: std
 [3]{.pnum} An expression or conversion is _potentially evaluated_ unless it is an unevaluated operand ([expr.context]), a subexpression thereof, or a conversion in an initialization or conversion sequence in such a context. The set of _potential results_ of an expression `$E$` is defined as follows:
 
-- [#.#]{.pnum} If `$E$` is an `$id-expression$` ([expr.prim.id]{.sref}) [or a `$splice-expression$` ([expr.prim.splice])]{.addu}, the set contains only `$E$`.
+- [#.#]{.pnum} If `$E$` is an `$id-expression$` ([expr.prim.id]) [or a `$splice-expression$` ([expr.prim.splice])]{.addu}, the set contains only `$E$`.
 - [#.#]{.pnum} [...]
 
 [This set is a (possibly-empty) set of `$id-expression$`s [and `$splice-expression$`s]{.addu}, each of which is either `$E$` or a subexpression of `$E$`.]{.note}
@@ -3710,16 +3710,16 @@ $splice-specialization-specifier$:
   $splice-specifier$ < $template-argument-list$@~_opt_~@ >
 ```
 
-[1]{.pnum} The `$constant-expression$` of a `$splice-specifier$` shall be a converted constant expression of type `std::meta::info` ([expr.const]{.sref}). A `$splice-specifier$` whose converted `$constant-expression$` represents a construct `$X$` is said to _designate_ either
+[1]{.pnum} The `$constant-expression$` of a `$splice-specifier$` shall be a converted constant expression of type `std::meta::info` ([expr.const]). A `$splice-specifier$` whose converted `$constant-expression$` represents a construct `$X$` is said to _designate_ either
 
-* [#.#]{.pnum} the underlying entity of `$X$` if `$X$` is an entity ([basic.pre]{.sref}), or
+* [#.#]{.pnum} the underlying entity of `$X$` if `$X$` is an entity ([basic.pre]), or
 * [#.#]{.pnum} `$X$` otherwise.
 
 [A `$splice-specifier$` is dependent if the converted `$constant-expression$` is value-dependent ([temp.dep.splice]).]{.note}
 
 [#]{.pnum} A non-dependent `$splice-specifier$` of a `$splice-specialization-specifier$` shall designate a template.
 
-[#]{.pnum} [A `<` following a `$splice-specifier$` is interpreted as the delimiter of a `$template-argument-list$` when the `$splice-specifier$` is preceded by `typename` or `template`, or when it appears in a type-only context ([temp.names]{.sref}).]{.note}
+[#]{.pnum} [A `<` following a `$splice-specifier$` is interpreted as the delimiter of a `$template-argument-list$` when the `$splice-specifier$` is preceded by `typename` or `template`, or when it appears in a type-only context ([temp.names]).]{.note}
 
 ::: example
 ```cpp
@@ -3846,7 +3846,7 @@ module A;
 Change the first sentence in paragraph 9 of [basic.types.general]{.sref} as follows:
 
 ::: std
-[9]{.pnum} Arithmetic types ([basic.fundamental]{.sref}), enumeration types, pointer types, pointer-to-member types ([basic.compound]{.sref}), [`std::meta::info`,]{.addu} `std::nullptr_t`, and cv-qualified versions of these types are collectively called _scalar types_. ...
+[9]{.pnum} Arithmetic types ([basic.fundamental]), enumeration types, pointer types, pointer-to-member types ([basic.compound]), [`std::meta::info`,]{.addu} `std::nullptr_t`, and cv-qualified versions of these types are collectively called _scalar types_. ...
 :::
 
 Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
@@ -3857,7 +3857,7 @@ Add a new paragraph at the end of [basic.types.general]{.sref} as follows:
 [12]{.pnum} A type is _consteval-only_ if it is either `std::meta::info` or a type compounded from a consteval-only type ([basic.compound]). Every object of consteval-only type shall be
 
   - [#.#]{.pnum} the object associated with a constexpr variable or a subobject thereof,
-  - [#.#]{.pnum} a template parameter object ([temp.param]{.sref}) or a subobject thereof, or
+  - [#.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
   - [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a core constant expression.
 
 :::
@@ -4037,12 +4037,12 @@ Add `$splice-expression$` to the grammar for `$primary-expression$`:
 Modify paragraph 2 to avoid transforming non-static members into implicit member accesses when named as operands to `$reflect-expression$`s.
 
 ::: std
-[2]{.pnum} If an `$id-expression$` `$E$` denotes a non-static non-type member of some class `C` at a point where the current class ([expr.prim.this]{.sref}) is `X` and
+[2]{.pnum} If an `$id-expression$` `$E$` denotes a non-static non-type member of some class `C` at a point where the current class ([expr.prim.this]) is `X` and
 
 * [#.#]{.pnum} `$E$` is potentially evaluated or `C` is `X` or a base class of `X`, and
-* [#.#]{.pnum} `$E$` is not the `$id-expression$` of a class member access expression ([expr.ref]{.sref}), and
+* [#.#]{.pnum} `$E$` is not the `$id-expression$` of a class member access expression ([expr.ref]), and
 * [[#.2+]{.pnum} `$E$` is not the `$id-expression$` of a `$reflect-expression$` ([expr.reflect]), and]{.addu}
-* [#.3]{.pnum} if `$E$` is a `$qualified-id$`, `$E$` is not the un-parenthesized operand of the unary `&` operator ([expr.unary.op]{.sref}),
+* [#.3]{.pnum} if `$E$` is a `$qualified-id$`, `$E$` is not the un-parenthesized operand of the unary `&` operator ([expr.unary.op]),
 
 the `$id-expression$` is transformed into a class member access expression using `(*this)` as the object expression.
 :::
@@ -4159,8 +4159,8 @@ Break the next paragraph into a bulleted list, extend it to also cover splices, 
   - [[#.#]{.pnum} For a `$nested-name-specifier$` of the form `$splice-specifier$ ::`, the `$splice-specifier$` shall designate a class or enumeration type or a namespace. The `$nested-name-specifier$` designates the same entity as the `$splice-specifier$`.]{.addu}
   - [[#.#]{.pnum} For a `$nested-name-specifier$` of the form `template@~_opt_~@ $splice-specialization-specifier$ ::`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template `$T$`. Letting `$S$` be the specialization of `$T$` corresponding to the template argument list of the `$splice-specialization-specifier$`, `$S$` shall either be a class template specialization or an alias template specialization that denotes a class or enumeration type. The `$nested-name-specifier$` designates `$S$` if `$T$` is a class template or the type denoted by `$S$` if `$T$` is an alias template.]{.addu}
   - [#.#]{.pnum} If a `$nested-name-specifier$` _N_ is declarative and has a `$simple-template-id$` with a template argument list _A_ that involves a template parameter, let _T_ be the template nominated by _N_ without _A_. _T_ shall be a class template.
-    - [#.#.#]{.pnum} If `$A$` is the template argument list ([temp.arg]{.sref}) of the corresponding `$template-head$` `$H$` ([temp.mem]{.sref}), `$N$` [nominates]{.rm} [designates]{.addu} the primary template of `$T$`; `$H$` shall be equivalent to the `$template-head$` of `$T$` ([temp.over.link]{.sref}).
-    - [#.#.#]{.pnum} Otherwise, `$N$` [nominates]{.rm} [designates]{.addu} the partial specialization ([temp.spec.partial]{.sref}) of `$T$` whose template argument list is equivalent to `$A$` ([temp.over.link]{.sref}); the program is ill-formed if no such partial specialization exists.
+    - [#.#.#]{.pnum} If `$A$` is the template argument list ([temp.arg]) of the corresponding `$template-head$` `$H$` ([temp.mem]), `$N$` [nominates]{.rm} [designates]{.addu} the primary template of `$T$`; `$H$` shall be equivalent to the `$template-head$` of `$T$` ([temp.over.link]).
+    - [#.#.#]{.pnum} Otherwise, `$N$` [nominates]{.rm} [designates]{.addu} the partial specialization ([temp.spec.partial]) of `$T$` whose template argument list is equivalent to `$A$` ([temp.over.link]); the program is ill-formed if no such partial specialization exists.
 
   - [#.#]{.pnum} Any other `$nested-name-specifier$` [nominates]{.rm} [designates]{.addu} the entity denoted by its `$type-name$`, `$namespace-name$`, `$identifier$`, or `$simple-template-id$`. If the `$nested-name-specifier$` is not declarative, the entity shall not be a template.
 
@@ -4182,6 +4182,23 @@ And say that the call operator is a direct member:
 
 ::: std
 [4]{.pnum} The closure type for a *lambda-expression* has a public inline function call operator (for a non-generic lambda) or function call operator template (for a generic lambda) ([over.call]) whose parameters and return type are those of the lambda-expression's parameter-declaration-clause and trailing-return-type respectively,  and whose template-parameter-list consists of the specified template-parameter-list, if any. [The function call operator or the function call operator template are direct members of the closure type.]{.addu} The *requires-clause* of the function call operator template [...]
+:::
+
+Carve out an exception to the implicit definition of `__func__` in consteval blocks from paragraph 15:
+
+::: std
+[15]{.pnum} The `$lambda-expression$`'s `$compound-statement$` yields the `$function-body$` ([dcl.fct.def]) of the function call operator, but it is not within the scope of the closure type.
+
+:::example10
+```cpp
+struct S1 {
+  [...]
+};
+```
+:::
+
+[Further]{.rm} [Unless the `$compound-statement$` is that of a `$conteval-block-declaration$` ([dcl.pre])]{.addu}, a variable `__func__` is implicitly defined at the beginning of the `$compound-statement$` of the `$lambda-expression$`, with semantics as described in [dcl.fct.def.general].
+
 :::
 
 ### [expr.prim.req.type]{.sref} Type requirements {-}
@@ -4269,11 +4286,11 @@ constexpr auto j = e<([:^^h:])>;  // OK
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a function `$F$`, the expression denotes an overload set containing all declarations of `$F$` that precede either the expression or the point immediately following the `$class-specifier$` of the outermost class for which the expression is in a complete-class context; overload resolution is performed ([over.match], [over.over]).
 
-* [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field. [The implicit transformation ([expr.prim.id]{.sref}) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
+* [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field. [The implicit transformation ([expr.prim.id]) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a variable or a structured binding, `$S$` shall either have static or thread storage duration or shall inhabit a scope enclosing the expression. The expression is an lvalue referring to the object or function `$X$` associated with or referenced by `$S$`, has the same type as `$S$`, and is a bit-field if and only if `$X$` is a bit-field.
 
-  [The type of a `$splice-expression$` designating a variable or structured binding of reference type will be adjusted to a non-reference type ([expr.type]{.sref}).]{.note}
+  [The type of a `$splice-expression$` designating a variable or structured binding of reference type will be adjusted to a non-reference type ([expr.type]).]{.note}
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue that computes `$S$` and whose type is the same as `$S$`.
 
@@ -4317,14 +4334,14 @@ Modify paragraph 1 to account for splices in member access expressions:
 ::: std
 [1]{.pnum} A postfix expression followed by a dot `.` or an arrow `->`, optionally followed by the keyword `template`, and then followed by an `$id-expression$` [or a `$splice-expression$`]{.addu}, is a postfix expression.
 
-[If the keyword `template` is used, the following unqualified name is considered to refer to a template ([temp.names]). If a `$simple-template-id$` results and is followed by a `::`, the `$id-expression$` is a `$qualified-id$`.]{.note}
+[If the keyword `template` is used, [the following]{.rm} [an]{.addu} unqualified name [that follows after]{.addu} is considered to refer to a template ([temp.names]). If a `$simple-template-id$` results and is followed by a `::`, the `$id-expression$` is a `$qualified-id$`.]{.note}
 
 :::
 
 Modify paragraph 2 to account for splices in member access expressions:
 
 ::: std
-[2]{.pnum} For [the first option (dot), if the]{.rm} [a dot that is followed by an]{.addu} `$id-expression$` [names]{.rm} [ or `$splice-expression$` that designates]{.addu} a static member or an enumerator, the first expression is a discarded-value expression ([expr.context]); if the `$id-expression$` [or `$splice-expression$` designates]{.addu} [names]{.rm} a non-static data member, the first expression shall be a glvalue. [For the second option (arrow), the first expression]{.rm} [A postfix expression that is followed by an arrow]{.addu} shall be a prvalue having pointer type. The expression `E1->E2` is converted to the equivalent form `(*(E1)).E2`; the remainder of [expr.ref] will address only [the first option (dot)]{.rm} [the form using a dot]{.addu}^49^.
+[2]{.pnum} For [the first option (dot), if the]{.rm} [a dot that is followed by an]{.addu} `$id-expression$` [names]{.rm} [ or a `$splice-expression$` that designates]{.addu} a static member or an enumerator, the first expression is a discarded-value expression ([expr.context]); if the `$id-expression$` [or `$splice-expression$` designates]{.addu} [names]{.rm} a non-static data member, the first expression shall be a glvalue. [For the second option (arrow), the first expression]{.rm} [A postfix expression that is followed by an arrow]{.addu} shall be a prvalue having pointer type. The expression `E1->E2` is converted to the equivalent form `(*(E1)).E2`; the remainder of [expr.ref] will address only [the first option (dot)]{.rm} [the form using a dot]{.addu}^49^.
 :::
 
 Modify paragraph 3 to account for splices in member access expressions:
@@ -4363,7 +4380,7 @@ Adjust the language in paragraphs 6-9 to account for `$splice-expression$`s. Exp
 
 * [[#.#]{.pnum} Otherwise, the program is ill-formed.]{.addu}
 
-[#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a non-static member, the program is ill-formed if the class of which `E2` [is directly]{.rm} [designates]{.addu} a [direct]{.addu} member is an ambiguous base ([class.member.lookup]{.sref}) of the [naming]{.rm} [designating]{.addu} class ([class.access.base]{.sref}) of `E2`.
+[#]{.pnum} If `E2` [is]{.rm} [designates]{.addu} a non-static member, the program is ill-formed if the class of which `E2` [is directly]{.rm} [designates]{.addu} a [direct]{.addu} member is an ambiguous base ([class.member.lookup]) of the [naming]{.rm} [designating]{.addu} class ([class.access.base]) of `E2`.
 
 [#]{.pnum} If [the entity designated by]{.addu} `E2` is a non-static member and the result of `E1` is an object whose type is not similar ([conv.qual]) to the type of `E1`, the behavior is undefined.
 
@@ -4394,7 +4411,7 @@ Modify paragraphs 3 and 4 to permit forming a pointer-to-member with a splice.
 
 * [#.#]{.pnum} If the operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} [naming]{.rm} [designating]{.addu} a non-static [or variant]{.rm} member `m` [of some class `C`]{.rm}, other than an explicit object member function, [`m` shall be a direct member of some class `C` that is not an anonymous union.]{.addu} [the]{.rm} [The]{.addu} result has type "pointer to member of class `C` of type `T`" and designates `C::m`. [[A `$qualified-id$` that names a member of a namespace-scope anonymous union is considered to be a class member access expression ([expr.prim.id.general]) and cannot be used to form a pointer to member.]{.note}]{.addu}
 
-* [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]{.sref}) or function ([basic.compound]{.sref}). If the operand designates an explicit object member function ([dcl.fct]{.sref}), the operand shall be a `$qualified-id$` [or a `$splice-expression$`]{.addu}.
+* [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]) or function ([basic.compound]). If the operand designates an explicit object member function ([dcl.fct]), the operand shall be a `$qualified-id$` [or a `$splice-expression$`]{.addu}.
 
 [4]{.pnum} A pointer to member is only formed when an explicit `&` is used and its operand is a `$qualified-id$` [or `$splice-expression$`]{.addu} not enclosed in parentheses.
 
@@ -4420,16 +4437,16 @@ $qualified-reflection-name$:
    $nested-name-specifier$ template $identifier$
 ```
 
-[#]{.pnum} The unary `^^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]{.sref}).
+[#]{.pnum} The unary `^^` operator, called the _reflection operator_, yields a prvalue of type `std::meta::info` ([basic.fundamental]).
 
 [This document places no restriction on representing, by reflections, constructs not described by this document or using such constructs as operands of `$reflect-expression$`s.]{.note}
 
 [#]{.pnum} The component names of a `$qualified-reflection-name$` are those of its `$nested-name-specifier$` (if any) and its `$identifier$`.
 
-[#]{.pnum} A `$reflect-expression$` is parsed as the longest possible sequence of tokens that could syntactically form a `$reflect-expression$`. A `$reflect-expression$` whose terminal name is a `$concept-name$` or a `$template-name$` shall not be followed by `<`.
+[#]{.pnum} A `$reflect-expression$` is parsed as the longest possible sequence of tokens that could syntactically form a `$reflect-expression$`. An unparenthesized `$reflect-expression$` that represents a template shall not be followed by `<`.
 
 ::: example
-```
+```cpp
 static_assert(std::meta::is_type(^^int()));  // ^^ applies to the type-id "int()"
 
 template<bool> struct X {};
@@ -4442,8 +4459,8 @@ consteval void g(std::meta::info r, X<false> xv) {
   ^^X < xv;              // error: reflect-expression whose terminal name is a
                          // template-name is followed by <
   (^^X) < xv;            // OK
+  ^^X<true> < xv;        // OK
 }
-
 ```
 :::
 
@@ -4475,19 +4492,16 @@ consteval void g(std::meta::info r, X<false> xv) {
 
 [#]{.pnum} A `$reflect-expression$` `$R$` of the form `^^ $id-expression$` represents an entity determined as follows:
 
-  * [#.#]{.pnum} If the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]); `$R$` represents that function.
+  - [#.#]{.pnum} If the `$id-expression$` denotes
+    - [#.#.#]{.pnum} a variable declared by an `$init-capture$` ([expr.prim.lambda.capture]),
+    - [#.#.#]{.pnum} a function-local predefined variable ([dcl.fct.def.general]),
+    - [#.#.#]{.pnum} a local parameter introduced by a `$requires-expression$` ([expr.prim.req]), or
+    - [#.#.#]{.pnum} a local entity `$E$` ([basic.pre]) for which a lambda scope intervenes between the point at which `$E$` was introduced and `$R$`,
 
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable declared by an `$init-capture$` ([expr.prim.lambda.capture]), `$R$` is ill-formed.
-
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local parameter introduced by a `$requires-expression$` ([expr.prim.req]), `$R$` is ill-formed.
-
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a local entity `$E$` ([basic.pre]) for which there is a lambda scope that intervenes between `$R$` and the point at which `$E$` was introduced, `$R$` is ill-formed.
-
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a function-local predefined variable ([dcl.fct.def.general]), `$R$` is ill-formed. For any other `$id-expression$` that denotes a variable, `$R$` represents that variable.
-
-  * [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a structured binding, enumerator, or non-static data member, `$R$` represents that entity.
-
-  * [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and constant template parameters.]{.note}
+    then `$R$` is ill-formed.
+  - [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes an overload set `$S$`, overload resolution for the expression `&$S$` with no target shall select a unique function ([over.over]); `$R$` represents that function.
+  - [#.#]{.pnum} Otherwise, if the `$id-expression$` denotes a variable, structured binding, enumerator, or non-static data member, `$R$` represents that entity.
+  - [#.#]{.pnum} Otherwise, `$R$` is ill-formed. [This includes `$pack-index-expression$`s and constant template parameters.]{.note}
 
   The `$id-expression$` of a `$reflect-expression$` is an unevaluated operand ([expr.context]).
 
@@ -4536,11 +4550,11 @@ Add a new paragraph between paragraphs 5 and 6:
 [5+]{.pnum} If both operands are of type `std::meta::info`, comparison is defined as follows:
 
 * [5+.#]{.pnum} If one operand is a null reflection value, then they compare equal if and only if the other operand is also a null reflection value.
-* [5+.#]{.pnum} Otherwise, if one operand represents a value, then they compare equal if and only if the other operand represents a value that is template-argument-equivalent ([temp.type]{.sref}).
+* [5+.#]{.pnum} Otherwise, if one operand represents a value, then they compare equal if and only if the other operand represents a value that is template-argument-equivalent ([temp.type]).
 * [5+.#]{.pnum} Otherwise, if one operand represents an object, then they compare equal if and only if the other operand represents the same object.
 * [5+.#]{.pnum} Otherwise, if one operand represents an entity, then they compare equal if and only if the other operand represents the same entity.
 * [5+.#]{.pnum} Otherwise, if one operand represents a direct base class relationship, then they compare equal if and only if the other operand represents the same direct base class relationship.
-* [5+.#]{.pnum} Otherwise, both operands `O@~_1_~@` and `O@~_2_~@` represent data member descriptions. The operands compare equal if and only if the data member descriptions represented by `O@~_1_~@` and `O@~_2_~@` compare equal ([class.mem.general]{.sref}).
+* [5+.#]{.pnum} Otherwise, both operands represent data member descriptions. The operands compare equal if and only if the represented data member descriptions are equal ([class.mem.general]).
 :::
 
 [6]{.pnum} If two operands compare equal, the result is `true` for the `==` operator and `false` for the `!=` operator. If two operands compare unequal, the result is `false` for the `==` operator and `true` for the `!=` operator. Otherwise, the result of each of the operators is unspecified.
@@ -4576,7 +4590,7 @@ Modify paragraph 22 to disallow returning non-consteval-only pointers and refere
 [22]{.pnum} A _constant expression_ is either a glvalue core constant expression [`$E$`]{.addu} that [\ ]{.addu}
 
 * [#.#]{.pnum} refers to an object or a non-immediate function[, and]{.addu}
-* [[#.#]{.pnum} if `$E$` designates a function of consteval-only type ([basic.types.general]{.sref}) or an object whose complete object is of consteval-only type, then `$E$` is also of consteval-only type,]{.addu}
+* [[#.#]{.pnum} if `$E$` designates a function of consteval-only type ([basic.types.general]) or an object whose complete object is of consteval-only type, then `$E$` is also of consteval-only type,]{.addu}
 
   ::: addu
   ::: example
@@ -4598,7 +4612,7 @@ Modify paragraph 22 to disallow returning non-consteval-only pointers and refere
 or a prvalue core constant expression whose result object ([basic.lval]) satisfies the following constraints:
 
 * [#.#]{.pnum} each constituent reference refers to an object or a non-immediate function,
-* [#.#]{.pnum} no constituent value of scalar type is an indeterminate value or erroneous value ([basic.indet]{.sref}),
+* [#.#]{.pnum} no constituent value of scalar type is an indeterminate value or erroneous value ([basic.indet]),
 * [#.#]{.pnum} no constituent value of pointer type is a pointer to an immediate function or an invalid pointer value ([basic.compound]), [and]{.rm}
 * [#.#]{.pnum} no constituent value of pointer-to-member type designates an immediate function[.]{.rm}[, and]{.addu}
 
@@ -4615,11 +4629,11 @@ or a prvalue core constant expression whose result object ([basic.lval]) satisfi
 Modify (and clean up) the definition of _immediate-escalating expression_ in paragraph 25 to also apply to expressions of consteval-only type.
 
 ::: std
-[25]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and it is [either]{.rm}
+[25]{.pnum} A[n]{.rm} [potentially-evaluated]{.addu} expression or conversion is _immediate-escalating_ if it is [not]{.rm} [neither]{.addu} initially in an immediate function context [nor a subexpression of an immediate invocation,]{.addu} and [it is either]{.rm}
 
-* [#.#]{.pnum} [a potentially-evaluated]{.rm} [an]{.addu} `$id-expression$` [or `$splice-expression$`]{.addu} that [denotes]{.rm} [designates]{.addu} an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
-* [#.#]{.pnum} an immediate invocation that is not a constant expression[, or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
-* [[#.#]{.pnum} of consteval-only type ([basic.types.general]{.sref}).]{.addu}
+* [#.#]{.pnum} [a potentially-evaluated]{.rm} [it is an]{.addu} `$id-expression$` [or `$splice-expression$`]{.addu} that [denotes]{.rm} [designates]{.addu} an immediate function[,]{.addu} [that is not a subexpression of an immediate invocation, or]{.rm}
+* [#.#]{.pnum} [it is]{.addu} an immediate invocation that is not a constant expression[, or]{.addu} [and is not a subexpression of an immediate invocation.]{.rm}
+* [[#.#]{.pnum} [it is]{.addu} of consteval-only type ([basic.types.general]).]{.addu}
 
 :::
 
@@ -4641,7 +4655,7 @@ After the example following the definition of _manifestly constant-evaluated_, i
 
 [#]{.pnum} The evaluation of an expression can introduce one or more _injected declarations_. Each such declaration has an associated _synthesized point_ which follows the last non-synthesized program point in the translation unit containing that declaration. The evaluation is said to _produce_ the declaration.
 
-[Special rules concerning reachability apply to synthesized points ([module.reach]{.sref}).]{.note13}
+[Special rules concerning reachability apply to synthesized points ([module.reach]).]{.note13}
 
 No member of an injected declaration shall have a name reserved by the implementation ([lex.name]); no diagnostic is required.
 
@@ -4755,7 +4769,7 @@ Introduce the non-terminal `$vacuous-declaration$` in paragraph 9.1 to encompass
 Strike the assertion that a `$typedef-name$` is synonymous with its associated type from paragraph 8 (type aliases are entities now).
 
 ::: std
-[8]{.pnum} If the `$decl-specifier-seq$` contains the `typedef` specifier, the declaration is a _typedef declaration_ and each `$declarator-id$` is declared to be a `$typedef-name$`[, synonymous with its associated type]{.rm} ([dcl.typedef]{.sref}).
+[8]{.pnum} If the `$decl-specifier-seq$` contains the `typedef` specifier, the declaration is a _typedef declaration_ and each `$declarator-id$` is declared to be a `$typedef-name$`[, synonymous with its associated type]{.rm} ([dcl.typedef]).
 
 :::
 
@@ -4777,7 +4791,7 @@ Insert the following after paragraph 14 in relation to consteval blocks:
 static_assert(($E$, true));
 ```
 
-[Evaluating a `$consteval-block-declaration$` can produce injected declarations as side effects ([expr.const]).]{.note}
+[The evaluation of the expression corresponding to a `$consteval-block-declaration$` can produce injected declarations as side effects ([expr.const]).]{.note}
 
 ::: example
 ```cpp
@@ -4806,7 +4820,7 @@ consteval {
 Modify paragraphs 1-2 to clarify that the `typedef` specifier now introduces an entity.
 
 ::: std
-[1]{.pnum} Declarations containing the `$decl-specifier$` `typedef` declare [identifiers that can be used later for naming]{.rm} [type aliases whose underlying entities are]{.addu} fundamental ([basic.fundamental]{.sref}) or compound ([basic.compound]{.sref}) types. The `typedef` specifier shall not be combined in a `$decl-specifier-seq$` with any other kind of specifier except a `$defining-type-specifier$`, and it shall not be used in the `$decl-specifier-seq$` of a `$parameter-declaration$` ([dcl.fct]{.sref}) nor in the `$decl-specifier-seq$` of a `$function-definition$` ([dcl.fct.def]{.sref}). If a `$typedef-specifier$` appears in a declaration without a `$declarator$`, the program is ill-formed.
+[1]{.pnum} Declarations containing the `$decl-specifier$` `typedef` declare [identifiers that can be used later for naming]{.rm} [type aliases whose underlying entities are]{.addu} fundamental ([basic.fundamental]) or compound ([basic.compound]) types. The `typedef` specifier shall not be combined in a `$decl-specifier-seq$` with any other kind of specifier except a `$defining-type-specifier$`, and it shall not be used in the `$decl-specifier-seq$` of a `$parameter-declaration$` ([dcl.fct]) nor in the `$decl-specifier-seq$` of a `$function-definition$` ([dcl.fct.def]). If a `$typedef-specifier$` appears in a declaration without a `$declarator$`, the program is ill-formed.
 
 ```
   $typedef-name$:
@@ -4814,7 +4828,7 @@ Modify paragraphs 1-2 to clarify that the `typedef` specifier now introduces an 
       $simple-template-id$
 ```
 
-A name declared with the `typedef` specifier becomes a `$typedef-name$`. [A `$typedef-name$` names]{.rm} [The underlying entity of the type alias is]{.addu} the type associated with the `$identifier$` ([dcl.decl]{.sref}) or `$simple-template-id$` ([temp.pre]{.sref}); a `$typedef-name$` [is]{.rm} thus [a synonym for]{.rm} [denotes]{.addu} another type. A `$typedef-name$` does not introduce a new type the way a class declaration ([class.name]{.sref}) or enum declaration ([dcl.enum]{.sref}) does.
+A name declared with the `typedef` specifier becomes a `$typedef-name$`. [A `$typedef-name$` names]{.rm} [The underlying entity of the type alias is]{.addu} the type associated with the `$identifier$` ([dcl.decl]) or `$simple-template-id$` ([temp.pre]); a `$typedef-name$` [is]{.rm} thus [a synonym for]{.rm} [denotes]{.addu} another type. A `$typedef-name$` does not introduce a new type the way a class declaration ([class.name]) or enum declaration ([dcl.enum]) does.
 
 [2]{.pnum} A [`$typedef-name$`]{.rm} [type alias]{.addu} can also be [introduced]{.rm} [declared]{.addu} by an `$alias-declaration$`. The `$identifier$` following the `using` keyword is not looked up; it becomes [a]{.rm} [the]{.addu} `$typedef-name$` [of a type alias]{.addu} and the optional `$attribute-specifier-seq$` following the `$identifier$` appertains to that [`$typedef-name$`]{.rm} [type alias]{.addu}. Such a [`$typedef-name$`]{.rm} [type alias]{.addu} has the same semantics as if it were introduced by the `typedef` specifier. In particular, it does not define a new type.
 
@@ -4907,37 +4921,9 @@ void f() {
 
 :::
 
-### [dcl.spec.auto.general]{.sref} Placeholder type specifiers {-}
-
-Extend the wording in [dcl.spec.auto.general]{.sref}/13 to account for splicing:
-
-::: std
-[13]{.pnum} If a variable or function with an undeduced placeholder type is [either]{.addu} named by an expression ([basic.def.odr]) [or designated by a `$splice-specifier$` in an expression]{.addu}, the program is ill-formed. Once a non-discarded `return` statement has been seen in a function, however, the return type deduced from that statement can be used in the rest of the function, including in other `return` statements.
-
-::: example
-```diff
-  auto n = n;                     // error: n's initializer refers to n
-  auto f();
-  void g() { &f; }                // error: f's return type is unknown
-  auto sum(int i) {
-    if (i == 1)
-      return i;                   // sum's return type is int
-    else
-      return sum(i-1)+i;          // OK, sum's return type has been deduced
-  }
-
-+ auto f2() {
-+   int x;
-+   return [:std::meta::parent_of(^^x):](); // error: f2's return type is unknown
-+ }
-```
-:::
-:::
-
-
 ### 9.2.9.8+ [dcl.type.splice] Type splicing {-}
 
-Add a new subsection of ([dcl.type]{.sref}) following ([dcl.type.class.deduct]{.sref}).
+Add a new subsection of ([dcl.type]) following ([dcl.type.class.deduct]).
 
 ::: std
 ::: addu
@@ -4949,7 +4935,7 @@ $splice-type-specifier$:
    typename@~_opt_~@ $splice-specialization-specifier$
 ```
 
-[#]{.pnum} A `$splice-specifier$` or `$splice-specialization-specifier$` immediately followed by `::` is never interpreted as part of a `$splice-type-specifier$`. A `$splice-specifier$` or `$splice-specialization-specifier$` not preceded by `typename` is only interpreted as a `$splice-type-specifier$` within a type-only context ([temp.res.general]{.sref}).
+[#]{.pnum} A `$splice-specifier$` or `$splice-specialization-specifier$` immediately followed by `::` is never interpreted as part of a `$splice-type-specifier$`. A `$splice-specifier$` or `$splice-specialization-specifier$` not preceded by `typename` is only interpreted as a `$splice-type-specifier$` within a type-only context ([temp.res.general]).
 
 ::: example
 ```cpp
@@ -4969,7 +4955,7 @@ using alias = [:^^S::type:];    // OK, type-only context
 
 [#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specifier$`, the `$splice-specifier$` shall designate a type, a primary class template, or an alias template. The `$splice-type-specifier$` designates the same entity as the `$splice-specifier$`.
 
-[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a primary class template or an alias template. The `$splice-type-specifier$` designates the specialization of `$T$` corresponding to the `$template-argument-list$` (if any) of the `$splice-specialization-specifier$`.
+[#]{.pnum} For a `$splice-type-specifier$` of the form `typename@~_opt_~@ $splice-specialization-specifier$`, the `$splice-specifier$` of the `$splice-specialization-specifier$` shall designate a template `$T$` that is either a primary class template or an alias template. The `$splice-type-specifier$` designates the specialization of `$T$` corresponding to the template argument list of the `$splice-specialization-specifier$`.
 
 :::
 :::
@@ -5047,14 +5033,18 @@ Use "host scope" in lieu of "inhabits" in paragraph 4:
 
 :::
 
-Modify paragraph 9 to allow reflections of non-static data members to appear in default function arguments, extend example 8 which follows, and use "host scope" rather than "inhabits" following example 9.
+Modify paragraph 9 to allow reflections of non-static data members to appear in default function arguments, extend example 8 which follows, and use "host scope" rather than "inhabits" following example 9. Break the list of exemptions in paragraph 9 into bullets for better readability.
 
 ::: std
 [9]{.pnum} A default argument is evaluated each time the function is called with no argument for the corresponding parameter.
 
 [...]
 
-A non-static member shall not appear [or be designated]{.addu} in a default argument unless it appears as the `$id-expression$` [or `$splice-expression$`]{.addu} of a class member access expression ([expr.ref]) or unless it is used to form a pointer to member ([expr.unary.op]) [or a reflection ([expr.reflect])]{.addu}.
+A non-static member shall not [appear]{.rm} [be designated]{.addu} in a default argument unless[\ ]{.addu}
+
+- [#.#]{.pnum} it [appears as]{.rm} [is designated by]{.addu} the `$id-expression$` [or `$splice-expression$`]{.addu} of a class member access expression ([expr.ref]), [or unless]{.rm}
+- [#.#]{.pnum} it is [designated by an expression]{.addu} used to form a pointer to member ([expr.unary.op])[, or]{.addu}
+- [[#.#]{.pnum} it appears as the operand of a `$reflect-expression$` ([expr.reflect])]{.addu}.
 
 ::: example8
 The declaration of `X::mem1()` in the following example is ill-formed because no object is supplied for the non-static member `X::a` used as an initializer.
@@ -5076,20 +5066,20 @@ class X {
 
 When an overload set contains a declaration of a function [that inhabits a]{.rm} [whose host]{.addu} scope [is]{.addu} `$S$`, any default argument associated with any reachable declaration [that inhabits]{.rm} [whose host scope is]{.addu} `$S$` is available to the call.
 
-[The candidate might have been found through a `$using-declarator$` from which the declaration that provides the default argument is not reaachable.]{.note7}
+[The candidate might have been found through a `$using-declarator$` from which the declaration that provides the default argument is not reachable.]{.note7}
 
 :::
 :::
 
 ### [dcl.init.general]{.sref} Initializers (General) {-}
 
-Change paragraphs 6-8 of [dcl.init.general]{.sref} [No changes are necessary for value-initialization, which already forwards to zero-initialization for scalar types]{.ednote}:
+Change paragraphs 6-8 of [dcl.init.general] [No changes are necessary for value-initialization, which already forwards to zero-initialization for scalar types]{.ednote}:
 
 ::: std
 [6]{.pnum} To *zero-initialize* an object or reference of type `T` means:
 
 * [6.0]{.pnum} [if `T` is `std::meta::info`, the object is initialized to a null reflection value;]{.addu}
-* [6.1]{.pnum} if `T` is [a]{.rm} [any other]{.addu} scalar type ([basic.types.general]{.sref}), the object is initialized to the value obtained by converting the integer literal `0` (zero) to `T`;
+* [6.1]{.pnum} if `T` is [a]{.rm} [any other]{.addu} scalar type ([basic.types.general]), the object is initialized to the value obtained by converting the integer literal `0` (zero) to `T`;
 * [6.2]{.pnum} [...]
 
 [7]{.pnum} To *default-initialize* an object of type `T` means:
@@ -5108,23 +5098,13 @@ If a program calls for the default-initialization of an object of a const-qualif
 [9]{.pnum} To value-initialize an object of type T means: [...]
 :::
 
-### [dcl.fct.def.general]{.sref} Function definitions {-}
-
-Disallow using `__func__` in a `consteval` block:
-
-::: std
-[7]{.pnum} A *function-local predefined variable* is a variable with static storage duration that is implicitly defined in a function parameter scope[, other than the function parameter scope of the expression corresponding to a `$consteval-block-declaration$`]{.addu}.
-
-[8]{.pnum} The function-local predefined variable `__func__` is defined as if a definition of the form [...]
-:::
-
 ### [dcl.fct.def.delete]{.sref} Deleted definitions {-}
 
 Change paragraph 2 of [dcl.fct.def.delete]{.sref} to allow for reflections of deleted functions:
 
 ::: std
 
-[2]{.pnum} A program that refers to a deleted function implicitly or explicitly, other than to declare it [or to use as the operand of a `$reflect-expression$` ([expr.reflect])]{.addu}, is ill-formed.
+[2]{.pnum} A program that refers to a deleted function implicitly or explicitly, other than to declare it [or to appear as the operand of a `$reflect-expression$` ([expr.reflect])]{.addu}, is ill-formed.
 :::
 
 ### [enum.udecl]{.sref} The `using enum` declaration {-}
@@ -5147,7 +5127,7 @@ Modify paragraph 1 to handle `$splice-type-specifier$`s:
 
 ::: std
 
-[1]{.pnum} [A `$using-enum-declarator$` of the form `$splice-type-specifier$` designates the same construct designated by the `$splice-type-specifier$`. Any other]{.addu} [A]{.rm} `$using-enum-declarator$` names the set of declarations found by type-only lookup ([basic.lookup.general]) for the `$using-enum-declarator$` ([basic.lookup.unqual]{.sref}, [basic.lookup.qual]{.sref}). The `$using-enum-declarator$` shall designate a non-dependent type with a reachable `$enum-specifier$`.
+[1]{.pnum} [A `$using-enum-declarator$` of the form `$splice-type-specifier$` designates the same construct designated by the `$splice-type-specifier$`. Any other]{.addu} [A]{.rm} `$using-enum-declarator$` names the set of declarations found by type-only lookup ([basic.lookup.general]) for the `$using-enum-declarator$` ([basic.lookup.unqual], [basic.lookup.qual]). The `$using-enum-declarator$` shall designate a non-dependent type with a reachable `$enum-specifier$`.
 :::
 
 ### [namespace.alias]{.sref} Namespace alias {-}
@@ -5169,7 +5149,7 @@ Modify the grammar for `$namespace-alias-definition$` in paragraph 1, and clarif
       $nested-name-specifier$@~_opt_~@ $namespace-name$
 ```
 
-[The `$splice-specifier$` (if any) shall designate a namespace other than the global namespace.]{.addu}
+[The `$splice-specifier$` (if any) shall designate a namespace that is not the global namespace.]{.addu}
 :::
 
 Remove the details about what the `$namespace-alias$` denotes; this will fall out from the "underlying entity" of the namespace alias defined below:
@@ -5183,7 +5163,7 @@ Add the following paragraph after paragraph 2 and before the note:
 
 ::: std
 ::: addu
-[2+]{.pnum} The underlying entity ([basic.pre]{.sref}) of the namespace alias is the namespace either denoted by the `$qualified-namespace-specifier$` or designated by the `$splice-specifier$`.
+[2+]{.pnum} The underlying entity ([basic.pre]) of the namespace alias is the namespace either denoted by the `$qualified-namespace-specifier$` or designated by the `$splice-specifier$`.
 
 :::
 :::
@@ -5200,11 +5180,11 @@ Add `$splice-specifier$` to the grammar for `$using-directive$`:
 ```
 :::
 
-Add the following prior to the first paragraph of [namespace.udir]{.sref}, and renumber accordingly:
+Add the following prior to the first paragraph of [namespace.udir], and renumber accordingly:
 
 ::: std
 ::: addu
-[0]{.pnum} The `$splice-specifier$` (if any) shall designate a namespace other than the global namespace. The `$nested-name-specifier$`, `$namespace-name$`, and `$splice-specifier$` shall not be dependent.
+[0]{.pnum} The `$splice-specifier$` (if any) shall designate a namespace that is not the global namespace. The `$nested-name-specifier$`, `$namespace-name$`, and `$splice-specifier$` shall not be dependent.
 :::
 
 [1]{.pnum} A `$using-directive$` shall not appear in class scope, but may appear in namespace scope or in block scope.
@@ -5219,7 +5199,7 @@ Prefer the verb "designate" rather than "nominate" in the notes that follow:
 
 [...]
 
-[A `$using-directive$` is transitive: if a scope contains a `$using-directive$` that [nominates]{.rm} [designates]{.addu} a namespace that itself contains `$using-directives$`, the namespaces [nominated]{.rm} [designated]{.addu} by those `$using-directives$` are also eligible to be considered.]{.note4}
+[A `$using-directive$` is transitive: if a scope contains a `$using-directive$` that [nominates]{.rm} [designates]{.addu} a namespace that itself contains `$using-directive$`s, the namespaces [nominated]{.rm} [designated]{.addu} by those `$using-directive$`s are also eligible to be considered.]{.note4}
 :::
 
 
@@ -5254,7 +5234,7 @@ Change a sentence in paragraph 4 of [dcl.attr.grammar]{.sref} as follows:
 
 ::: std
 
-[4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[That includes an `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` which is thus equivalent to replacing the `:]` token by the two-token sequence `:` `]`.]{.note}]{.addu} ...
+[4]{.pnum} [...] An `$attribute-specifier$` that contains no `$attribute$`s [and no `$alignment-specifier$`]{.addu} has no effect. [[An `$attribute-specifier$` of the form `[ [ using $attribute-namespace$ :] ]` has the same effect as if the `:]` token were replaced by the two-token sequence `:` `]`.]{.note}]{.addu} ...
 :::
 
 ### [dcl.attr.deprecated]{.sref} Deprecated attribute {-}
@@ -5271,7 +5251,7 @@ Prefer "type alias" to "`$typedef-name$`" in paragraph 2.
 Prefer "type alias" to "`$typedef-name$`" in paragraph 2.
 
 ::: std
-[2]{.pnum} The attribute may be applied to the declaration of a class, [`$typedef-name$`]{.rm} [type alias]{.addu}, variable (including a structured binding declaration), structured binding, non-static data member, function, enumeration, or enumerator, or to an `$identifier$` label ([stmt.label]{.sref}).
+[2]{.pnum} The attribute may be applied to the declaration of a class, [`$typedef-name$`]{.rm} [type alias]{.addu}, variable (including a structured binding declaration), structured binding, non-static data member, function, enumeration, or enumerator, or to an `$identifier$` label ([stmt.label]).
 :::
 
 ### [module.interface]{.sref} Module interface {-}
@@ -5298,10 +5278,9 @@ Specify in paragraph 3 that it is unspecified whether spliced types are replaced
 In this determination, it is unspecified
 
 - [3.6]{.pnum} whether a reference to an `$alias-declaration$`, `typedef` declaration, `$using-declaration$`, or `$namespace-alias-definition$` is replaced by the declarations they name prior to this determination,
-- [#.#]{.pnum} whether a `$simple-template-id$` that does not denote a dependent type and whose `$template-name$` names an alias template is replaced by its denoted type prior to this determination,
-- [#.#]{.pnum} whether a `$decltype-specifier$` [or `$splice-type-specifier$`]{.addu} that does not [denote]{.rm} [designate]{.addu} a dependent type is replaced by its [denoted]{.rm} [designated]{.addu} type prior to this determination, [and]{.rm}
+- [#.#]{.pnum} [...]
 - [#.#]{.pnum} whether a non-value-dependent constant expression is replaced by the result of constant evaluation prior to this determination[.]{.rm}[, and]{.addu}
-- [[#.#]{.pnum} whether a `$splice-specifier$` or `$splice-expression$` that is not dependent is replaced by the construct that it designates prior to this determination.]{.addu}
+- [[#.#]{.pnum} whether a `$splice-expression$`, a `$splice-type-specifier$`, a `$splice-scope-specifier$`, or any `$splice-specifier$` or `$splice-specialization-specifier$` appearing otherwise in any non-dependent context, is replaced by the construct that it designates prior to this determination.]{.addu}
 
 :::
 
@@ -5318,12 +5297,11 @@ Modify paragraphs 2 through 6 to relax the phrasing used to define the points in
 
 [5]{.pnum} During the instantiation of any other template specialization, the instantiation context [comprises]{.rm} [contains]{.addu} the point of instantiation of the template.
 
+[[5+]{.pnum} During the implicit instantiation of any construct that resulted from the evaluation of an expression as a core constant expression, the instantiation context contains each point ([expr.const]) in the evaluation context ([expr.const]).]{.addu}
+
 [6]{.pnum} In any other case, the instantiation context at a point within the program [comprises]{.rm} [contains]{.addu} that point.
 
-::: addu
-[6+]{.pnum} During the implicit instantiation of any construct that resulted from the evaluation of an expression as a core constant expression, the instantiation context also contains each point ([expr.const]) in the evaluation context ([expr.const]).
-
-[6++]{.pnum} The instantiation context contains only those points specified above.
+[[6+]{.pnum} The instantiation context contains only the points specified above.]{.addu}
 :::
 
 :::
@@ -5337,7 +5315,7 @@ Modify the definition of reachability to account for injected declarations:
 
 * [#.#]{.pnum} [`$P$` is not a synthesized point and]{.addu} `$D$` appears prior to `$P$` in the same translation unit, [or]{.rm}
 * [#.#]{.pnum} [`$D$` is an injected declaration for which `$P$` is the corresponding synthesized point, or]{.addu}
-* [#.#]{.pnum} `$D$` is not discarded ([module.global.frag]{.sref}), appears in a translation unit that is reachable from `$P$`, and does not appear within a _private-module-fragment_.
+* [#.#]{.pnum} `$D$` is not discarded ([module.global.frag]), appears in a translation unit that is reachable from `$P$`, and does not appear within a `$private-module-fragment$`.
 
 ::: addu
 ::: example
@@ -5428,11 +5406,11 @@ The components of a data member description describe a data member such that
 
 - [30+.#]{.pnum} its type is specified using the type or type alias given by `$T$`,
 - [30+.#]{.pnum} it is declared with the name given by `$N$` if `$N$` does not equal ⊥ and is otherwise unnamed,
-- [30+.#]{.pnum} it is declared with the `$alignment-specifier$` ([dcl.align]{.sref}) given by `alignas($A$)` if `$A$` does not equal ⊥ and is otherwise declared without an `$alignment-specifier$`,
-- [30+.#]{.pnum} it is a bit-field ([class.bit]{.sref}) with the width given by `$W$` if `$W$` does not equal ⊥ and is otherwise not a bit-field,
-- [30+.#]{.pnum} it is declared with the attribute `[[no_unique_address]]` ([dcl.attr.nouniqueaddr]{.sref}) if `$NUA$` is `true` and is otherwise declared without that attribute.
+- [30+.#]{.pnum} it is declared with the `$alignment-specifier$` ([dcl.align]) given by `alignas($A$)` if `$A$` does not equal ⊥ and is otherwise declared without an `$alignment-specifier$`,
+- [30+.#]{.pnum} it is a bit-field ([class.bit]) with the width given by `$W$` if `$W$` does not equal ⊥ and is otherwise not a bit-field,
+- [30+.#]{.pnum} it is declared with the attribute `[[no_unique_address]]` ([dcl.attr.nouniqueaddr]) if `$NUA$` is `true` and is otherwise declared without that attribute.
 
-Data member descriptions are represented by reflections ([basic.fundamental]{.sref}) returned by `std::meta::data_member_spec` ([meta.reflection.define.aggregate]) and can be reified as data members of a class using `std::meta::define_aggregate` ([meta.reflection.define.aggregate]).
+Data member descriptions are represented by reflections ([basic.fundamental]) returned by `std::meta::data_member_spec` ([meta.reflection.define.aggregate]) and can be reified as data members of a class using `std::meta::define_aggregate` ([meta.reflection.define.aggregate]).
 :::
 
 :::
@@ -5452,7 +5430,7 @@ Replace `$static_assert-declaration$` with `$vacuous-declaration$` in paragraph 
 Introduce the term "direct base class relationship" to paragraph 2.
 
 ::: std
-[2]{.pnum} The component names of a `$class-or-decltype$` are those of its `$nested-name-specifier$`, `$type-name$`, and/or `$simple-template-id$`. A `$class-or-decltype$` shall denote a (possily cv-qualified) class type that is not an incompletely defined class ([class.mem]{.sref}); any cv-qualifiers are ignored. The class denoted by the `$class-or-decltype$` of a `$base-specifier$` is called a _direct base class_ for the class being defined[; each such `$base-specifier$` introduces a _direct base class relationship_ between the class being defined and the direct base class]{.addu}. The lookup for the component name of the `$type-name$` or `$simple-template-id$` is type-only ([basic.lookup]{.sref}). [...]
+[2]{.pnum} The component names of a `$class-or-decltype$` are those of its `$nested-name-specifier$`, `$type-name$`, and/or `$simple-template-id$`. A `$class-or-decltype$` shall denote a (possily cv-qualified) class type that is not an incompletely defined class ([class.mem]); any cv-qualifiers are ignored. The class denoted by the `$class-or-decltype$` of a `$base-specifier$` is called a _direct base class_ for the class being defined[; each such `$base-specifier$` introduces a _direct base class relationship_ between the class being defined and the direct base class]{.addu}. The lookup for the component name of the `$type-name$` or `$simple-template-id$` is type-only ([basic.lookup]). [...]
 :::
 
 ### [class.access.general]{.sref} General {-}
@@ -5475,7 +5453,7 @@ Update paragraph 5 to handle `$splice-expression$`s, and to make more clear that
 - [[#.#]{.pnum} the innermost class of which `m` is directly a member if `E` is a `$splice-expression$` or]{.addu}
 - [#.#]{.pnum} [the]{.addu} class in whose scope lookup performed a search that found [`m`]{.addu} [the member]{.rm} [otherwise]{.addu}.
 
-[This class can be explicit, e.g., when a `$qualified-id$` is used, or implicit, e.g., when a class member access operator ([expr.ref]) is used (including cases where an implicit "`this->`" was added). If both a class member access operator and a `$qualified-id$` are used to [name]{.rm} [designate]{.addu} the member (as in `p->T::m`), the class [naming]{.rm} [designating]{.addu} the member is the class denoted by the `$nested-name-specifier$` of the `$qualified-id$` (that is, `T`).]{.note3}
+[This class can be explicit, e.g., when a `$qualified-id$` is used, or implicit, e.g., when a class member access operator ([expr.ref]) is used (including cases where an implicit "`this->`" was added). If both a class member access operator and a `$qualified-id$` are used to name the member (as in `p->T::m`), the class [naming]{.rm} [designating]{.addu} the member is the class [denoted]{.rm} [designated]{.addu} by the `$nested-name-specifier$` of the `$qualified-id$` (that is, `T`).]{.note3}
 
 A member `m` is accessible at the point `$R$` when [named]{.rm} [designated]{.addu} in class `N` if
 
@@ -5500,7 +5478,7 @@ Update paragraph 6, and the note which follows, to use the term "designated clas
 Add a note explaining the expressions that form overload sets after paragraph 2.
 
 ::: std
-[2]{.pnum} When a function is named [or designated]{.addu} in a call, which function declaration is being referenced and the validity of the call are determined by comparing the types of the arguments at the point of use with the types of the parameters in the declarations in the overload set. This function selection process is called _overload resolution_ and is defined in [over.match].
+[2]{.pnum} When a function is [named]{.rm} [designated]{.addu} in a call, which function declaration is being referenced and the validity of the call are determined by comparing the types of the arguments at the point of use with the types of the parameters in the declarations in the overload set. This function selection process is called _overload resolution_ and is defined in [over.match].
 
   [[Overload sets are formed by `$id-expression$`s naming functions and function templates and by `$splice-expression$`s designating entities of the same kinds.]{.note}]{.addu}
 
@@ -5517,7 +5495,7 @@ Change the section title:
 Modify paragraph 1 to clarify that this section will also apply to splices of function templates.
 
 ::: std
-[1]{.pnum} Of interest in [over.call.func] are only those function calls in which the `$posfix-expression$` ultimately contains an `$id-expression$` [or `$splice-expression$`]{.addu} that denotes one or more functions. Such a `$postfix-expression$`, perhaps nested arbitrarily deep in parentheses, has one of the following forms:
+[1]{.pnum} Of interest in [over.call.func] are only those function calls in which the `$posfix-expression$` ultimately contains an `$id-expression$` [or `$splice-expression$`]{.addu} that [denotes]{.rm} [designates]{.addu} one or more functions. Such a `$postfix-expression$`, perhaps nested arbitrarily deep in parentheses, has one of the following forms:
 
 ```diff
   $postfix-expression$:
@@ -5535,14 +5513,14 @@ These represent two syntactic subcategories of function calls: qualified functio
 Modify paragraph 2 to account for overload resolution of `$splice-expression$`s. Massage the wording to better account for member function templates.
 
 ::: std
-[2]{.pnum} In qualified function calls, the function is [named]{.rm} [designated]{.addu} by an `$id-expression$` [or `$splice-expression$`]{.addu} preceded by an `->` or `.` operator. Since the construct `A->B` is generally equivalent to `(*A).B`, the rest of [over] assumes, without loss of generality, that all member function calls have been normalized to the form that uses an object and the `.` operator. Furthermore, [over] assumes that the `$postfix-expression$` that is the left operand of the `.` operator has type "_cv_ `T`" where `T` denotes a class.^102^ [The]{.rm} [A set of]{.addu} function declarations[, either]{.addu} found by name lookup ([class.member.lookup]) [if the dot is followed by an `$id-expression$`, or determined as specified in [expr.prim.splice] if followed by a `$splice-expression$`,]{.addu} constitute the set of candidate functions. The argument list is the `$expression-list$` in the call augmented by the addition of the left operand of the `.` operator in the normalized member function call as the implied object argument ([over.match.funcs]{.sref}).
+[2]{.pnum} In qualified function calls, the function is [named]{.rm} [designated]{.addu} by an `$id-expression$` [or `$splice-expression$`]{.addu} preceded by an `->` or `.` operator. Since the construct `A->B` is generally equivalent to `(*A).B`, the rest of [over] assumes, without loss of generality, that all member function calls have been normalized to the form that uses an object and the `.` operator. Furthermore, [over] assumes that the `$postfix-expression$` that is the left operand of the `.` operator has type "_cv_ `T`" where `T` denotes a class.^102^ [The]{.rm} [A set of]{.addu} function declarations[, either]{.addu} found by name lookup ([class.member.lookup]) [if the dot is followed by an `$id-expression$`, or determined as specified in [expr.prim.splice] if followed by a `$splice-expression$`,]{.addu} constitute the set of candidate functions. The argument list is the `$expression-list$` in the call augmented by the addition of the left operand of the `.` operator in the normalized member function call as the implied object argument ([over.match.funcs]).
 
 :::
 
 Modify paragraph 3 to account for overload resolution of `$splice-expression$`s. Massage the wording to better account for member function templates.
 
 ::: std
-[3]{.pnum} In unqualified function calls, the function is [named]{.rm} [designated]{.addu} by a `$primary-expression$` [(call it `$E$`)]{.addu}. [The]{.rm} [A set of]{.addu} function declarations[, either]{.addu} found by name lookup ([basic.lookup]) [if `$E$` is a (possibly parenthesized) `$id-expression$`, or determined as specified in [expr.prim.splice] if `$E$` is a (possibly parenthesized) `$splice-expression$`,]{.addu} constitute the set of candidate functions. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if [the `$primary-expression$`]{.rm} [`$E$`]{.addu} is [either a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]{.sref}) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
+[3]{.pnum} In unqualified function calls, the function is [named]{.rm} [designated]{.addu} by a `$primary-expression$` [(call it `$E$`)]{.addu}. [The]{.rm} [A set of]{.addu} function declarations[, either]{.addu} found by name lookup ([basic.lookup]) [if `$E$` is a (possibly parenthesized) `$id-expression$`, or determined as specified in [expr.prim.splice] if `$E$` is a (possibly parenthesized) `$splice-expression$`,]{.addu} constitute the set of candidate functions. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if [the `$primary-expression$`]{.rm} [`$E$`]{.addu} is [either a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
 
 :::
 
@@ -5551,7 +5529,7 @@ Modify paragraph 3 to account for overload resolution of `$splice-expression$`s.
 Extend paragraph 1 to work with `$splice-type-specifier$`s.
 
 ::: std
-[1]{.pnum} When resolving a placeholder for a deduced class type ([dcl.type.class.deduct]{.sref}) where the `$template-name$` [or `$splice-type-specifier$`]{.addu} [names]{.rm} [designates]{.addu} a primary class template `C`, a set of functions and function templates, called the guides of `C`, is formed comprising:
+[1]{.pnum} When resolving a placeholder for a deduced class type ([dcl.type.class.deduct]) where the `$template-name$` [or `$splice-type-specifier$`]{.addu} [names]{.rm} [designates]{.addu} a primary class template `C`, a set of functions and function templates, called the guides of `C`, is formed comprising:
 
 * [#.#]{.pnum} ...
 
@@ -5560,13 +5538,13 @@ Extend paragraph 1 to work with `$splice-type-specifier$`s.
 Extend paragraph 3 to also cover `$splice-type-specifier$`s.
 
 :::std
-[3]{.pnum} When resolving a placeholder for a deduced class type ([dcl.type.simple]{.sref}) where the `$template-name$` [or `$splice-type-specifier$`]{.addu} [names]{.rm} [designates]{.addu} an alias template `A`, the `$defining-type-id$` of `A` must be of the form
+[3]{.pnum} When resolving a placeholder for a deduced class type ([dcl.type.simple]) where the `$template-name$` [or `$splice-type-specifier$`]{.addu} [names]{.rm} [designates]{.addu} an alias template `A`, the `$defining-type-id$` of `A` must be of the form
 
 ```cpp
 typename@~_opt_~@ $nested-name-specifier$@~_opt_~@ template@~_opt_~@ $simple-template-id$
 ```
 
-as specified in [dcl.type.simple]{.sref}. The guides of `A` are the set of functions or function templates formed as follows. ...
+as specified in [dcl.type.simple]. The guides of `A` are the set of functions or function templates formed as follows. ...
 
 :::
 
@@ -5581,7 +5559,7 @@ Specify rules for overload sets denoted by `$splice-expression$`s in paragraph 2
 
 - [#.#]{.pnum} If there are `$m$` arguments in the lists, all candidate functions having exactly `$m$` parameters are viable.
 - [#.#]{.pnum} A candidate function having fewer than `$m$` parameters is viable only if it has an ellipsis in its parameter list ([dcl.fct]). For the purposes of overload resolution, any argument for which there is no corresponding parameter is considered to "match the ellipsis" ([over.ics.ellipsis]).
-- [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if [there is a declaration `$D$` considered by the overload resolution such that for each]{.addu} [all]{.rm} parameter[s]{.rm} following the `$m$@^th^@` [have default arguments]{.rm}[, a reachable declaration whose host scope is the same as that of `$D$` specifies a default argument for that parameter]{.addu} ([dcl.fct.default]). [If the candidate function is selected as the best viable function, no other host scope of a declaration considered by overload resolution shall be the host scope of a declaration that specifies a default argument for the (`$m$`+1)^_st_^ parameter; the host scope of `$D$` shall not be a block scope if the declarations considered by overload resolution were denoted by a `$splice-expression$` ([expr.prim.splice]). The default arguments used in a call to the selected function are the default arguments introduced in the host scope of `$D$`.]{.addu} For the purposes of overload resolution, the parameter list is truncated on the right, so that there are exactly `$m$` parameters.
+- [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if [there is a declaration `$D$` considered by the overload resolution such that for each parameter]{.addu} [all parameters]{.rm} following the `$m$@^th^@` [have default arguments]{.rm}[, a reachable declaration whose host scope is the same as that of `$D$` specifies a default argument for that parameter]{.addu} ([dcl.fct.default]). [If the candidate function is selected as the best viable function, no other host scope of a declaration considered by overload resolution shall be the host scope of a declaration that specifies a default argument for the (`$m$`+1)^_st_^ parameter; the host scope of `$D$` shall not be a block scope if the declarations considered by overload resolution were denoted by a `$splice-expression$` ([expr.prim.splice]). The default arguments used in the call to the selected function are the default arguments introduced in the host scope of `$D$`.]{.addu} For the purposes of overload resolution, the parameter list is truncated on the right, so that there are exactly `$m$` parameters.
 
 ::: addu
 ::: example
@@ -5693,7 +5671,7 @@ Extend and re-format paragraph 3 of [temp.names]{.sref}:
   * [#.#.#]{.pnum} that is an unqualified name for which name lookup either finds one or more functions or finds nothing, or
   * [#.#.#]{.pnum} that is a terminal name in a using-declarator ([namespace.udecl]), in a declarator-id ([dcl.meaning]), or in a type-only context other than a nested-name-specifier ([temp.res]).
 
-[If the name is an identifier, it is then interpreted as a *template-name*. The keyword template is used to indicate that a dependent qualified name ([temp.dep.type]{.sref}) denotes a template where an expression might appear.]{.note}
+[If the name is an identifier, it is then interpreted as a *template-name*. The keyword template is used to indicate that a dependent qualified name ([temp.dep.type]) denotes a template where an expression might appear.]{.note}
 
 ::: example
 ```diff
@@ -5751,20 +5729,20 @@ Extend the definition of a _valid_ `$template-id$` to also cover `$splice-specia
 ::: std
 [7]{.pnum} A `$template-id$` [or `$splice-specialization-specifier$`]{.addu} is _valid_ if
 
-* [#.#]{.pnum} there are at most as many arguments as there are parameters or a parameter is a template parameter pack ([temp.variadic]{.sref}),
+* [#.#]{.pnum} there are at most as many arguments as there are parameters or a parameter is a template parameter pack ([temp.variadic]),
 * [#.#]{.pnum} there is an argument for each non-deducible non-pack parameter that does not have a default `$template-argument$`,
-* [#.#]{.pnum} each `$template-argument$` matches the corresponding `$template-parameter$` ([temp.arg]{.sref}),
+* [#.#]{.pnum} each `$template-argument$` matches the corresponding `$template-parameter$` ([temp.arg]),
 * [#.#]{.pnum} substitution of each template argument into the following template parameters (if any) succeeds, and
 * [#.#]{.pnum} if the `$template-id$` [or `$splice-specialization-specifier$`]{.addu} is non-dependent, the associated constraints are satisfied as specified in the next paragraph.
 
-A `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} shall be valid unless it names a function template specialization ([temp.deduct]{.sref}).
+A `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} shall be valid unless it names a function template specialization ([temp.deduct]).
 
 :::
 
 Extend paragraph 8 to require constraints to also be satisfied by `$splice-specialization-specifier$`s:
 
 ::: std
-[8]{.pnum} When the `$template-name$` of a `$simple-template-id$` [or the `$splice-specifier$` of a `$splice-specialization-specifier$` designates]{.addu} [names]{.rm} a constrained non-function template or a constrained template `$template-parameter$`, and all `$template-arguments$` in the `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} are non-dependent ([temp.dep.temp]{.sref}), the associated constraints ([temp.constr.decl]{.sref}) of the constrained template shall be satisfied ([temp.constr.constr]{.sref}).
+[8]{.pnum} When the `$template-name$` of a `$simple-template-id$` [or the `$splice-specifier$` of a `$splice-specialization-specifier$` designates]{.addu} [names]{.rm} a constrained non-function template or a constrained template `$template-parameter$`, and all `$template-argument$`s in the `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} are non-dependent ([temp.dep.temp]), the associated constraints ([temp.constr.decl]) of the constrained template shall be satisfied ([temp.constr.constr]).
 
 :::
 
@@ -5820,7 +5798,7 @@ Extend _template-argument-equivalent_ in paragraph 2 to handle `std::meta::info`
 * [2.4]{.pnum} they are of enumeration type and their values are the same, or
 * [2.5]{.pnum} [...]
 
-[[Values that are TU-local to different translation units are never considered equivalent.]{.note}]{.addu}
+[[Values that are TU-local to different translation units are never considered equivalent ([basic.link]).]{.note}]{.addu}
 
 ::: example1
 ```cpp
@@ -5859,16 +5837,16 @@ A specialization of a conversion function template is referenced in the same way
 Extend paragraph 2 to enable reflection of alias template specializations.
 
 ::: std
-[2]{.pnum} [When a]{.rm} [A]{.addu} `$template-id$` [that]{.addu} refers to the specialization of an alias template[, it is equivalent to]{.rm} [is a `$typedef-name$` for a type alias whose underlying entity is]{.addu} the associated type obtained by substitution of its `$template-arguments$` for the `$template-parameters$` in the `$defining-type-id$` of the alias template.
+[2]{.pnum} [When a]{.rm} [A]{.addu} `$template-id$` [that]{.addu} refers to the specialization of an alias template[, it is equivalent to]{.rm} [is a `$typedef-name$` for a type alias whose underlying entity is]{.addu} the associated type obtained by substitution of its `$template-argument$`s for the `$template-parameter$`s in the `$defining-type-id$` of the alias template.
 
 :::
 
 ### [temp.res.general]{.sref} General {-}
 
-Extend paragraph 4 to define what it means for a `$splice-specifier$` to appear in a type-only context. Also `$using-enum-declarator$`s to the list of type-only contexts, as it allows the `typename` to be elided from a `$splice-type-specifier$` in non-dependent contexts.
+Extend paragraph 4 to define what it means for a `$splice-specifier$` to appear in a type-only context. Add `$using-enum-declarator$`s to the list of type-only contexts, as it allows the `typename` to be elided from a `$splice-type-specifier$` in non-dependent contexts.
 
 ::: std
-[4]{.pnum} A qualified or unqualified name is said to be in a `$type-only context$` if it is the terminal name of
+[4]{.pnum} A qualified or unqualified name is said to be in a _type-only context_ if it is the terminal name of
 
 * [#.#]{.pnum} a `$typename-specifier$`, `$type-requirement$`, `$nested-name-specifier$`, `$elaborated-type-specifier$`, `$class-or-decltype$`, [`$using-enum-declarator$`]{.addu} or
 * [#.#]{.pnum} [...]
@@ -5950,33 +5928,27 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 
 ### [temp.dep.constexpr]{.sref} Value-dependent expressions {-}
 
-Add at the end of [temp.dep.constexpr]{.sref}/2 (before the note):
+Add two new paragraphs to the end of [temp.dep.constexpr] to specify the value-dependence of `$reflect-expression$`s and `$splice-expression$`s:
 
 ::: std
-[2]{.pnum} An *id-expression* is value-dependent if:
+:::addu
+[7]{.pnum} A `$reflect-expression$` is value-dependent if
 
-* [2.1]{.pnum} [...]
+- [#.#]{.pnum} it is of the form `^^ $qualified-reflection-name$` and the `$qualified-reflection-name$`
+  - [#.#.#]{.pnum} is a dependent qualified name,
+  - [#.#.#]{.pnum} is a dependent `$namespace-name$`,
+  - [#.#.#]{.pnum} is the name of a template parameter, or
+  - [#.#.#]{.pnum} names a dependent member of the current instantiation ([temp.dep.type]),
+- [#.#]{.pnum} it is of the form `^^ $type-id$` and the `$type-id$` denotes a dependent type, or
+- [#.#]{.pnum} it is of the form `^^ $id-expression$` and the `$id-expression$` is value-dependent or type-dependent.
 
-Expressions of the following form are value-dependent if the *unary-expression* or *expression* is type-dependent or the *type-id* is dependent:
+[8]{.pnum} Expressions of the following form are value-dependent if the `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]):
+
+```cpp
+$splice-specifier$
+template $splice-specifier$
+template $splice-specialization-specifier$
 ```
-sizeof unary-expression
-sizeof ( type-id )
-typeid ( expression )
-typeid ( type-id )
-alignof ( type-id )
-noexcept ( expression )
-```
-
-[A `$reflect-expression$` is value-dependent if it contains a dependent `$nested-name-specifier$`, `$type-id$`, `$namespace-name$`, or `$template-name$`, if it names a dependent member of the current instantiation ([temp.dep.type]), or if it contains a value-dependent or type-dependent `$id-expression$`.]{.addu}
-:::
-
-
-Add a new paragraph after [temp.dep.constexpr]{.sref}/6:
-
-::: std
-::: addu
-
-[6+]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specialization-specifier$` is value-dependent if its `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]).
 
 :::
 :::
@@ -6043,7 +6015,7 @@ Add a new section to cover dependent namespace aliases.
 ::: addu
 **Dependent namespaces   [temp.dep.namespace]**
 
-[1]{.pnum} A namespace alias is dependent if it is introduced by a `$namespace-alias-definition$` whose `$nested-name-specifier$` or `$splice-specifier$` is dependent. A `$namespace-name$` is dependent if it names a dependent namespace alias.
+[1]{.pnum} A namespace alias is dependent if it is introduced by a `$namespace-alias-definition$` whose `$qualified-namespace-specifier$` is a dependent qualified name or whose `$splice-specifier$` is dependent. A `$namespace-name$` is dependent if it names a dependent namespace alias.
 
 ::: example
 ```cpp
@@ -6065,10 +6037,10 @@ int a = fn<^^NS>();
 
 ### [temp.expl.spec]{.sref} Explicit specialization {-}
 
-Modify paragraph 9 to allow `$splice-specialization-specifier$`s to be used like incompletely-defined classes.
+Modify paragraph 9 to apply to incompletely-defined specializations in the abstract, rather than to how they are named. This avoids the question of whether they are named by a `$simple-template-id$` or designated by a `$splice-specialization-specifier$`.
 
 ::: std
-[9]{.pnum} A `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu} that [names]{.rm} [designates]{.addu} a class template explicit specialization that has been declared but not defined can be used exactly like the names of other incompletely-defined classes ([basic.types]{.sref}).
+[9]{.pnum} A [`$simple-template-id$` that names a]{.rm} class template explicit specialization that has been declared but not defined can be used exactly like [the names of]{.rm} other incompletely-defined classes ([basic.types]).
 
 :::
 
@@ -6077,7 +6049,7 @@ Modify paragraph 9 to allow `$splice-specialization-specifier$`s to be used like
 Cover `$splice-specialization-specifier$`s in paragraph 2:
 
 ::: std
-[2]{.pnum} When an explicit template argument list is specified, if the given `$template-id$` [or `$splice-specialization-specifier$`]{.addu} is not valid ([temp.names]{.sref}), type deduction fails. Otherwise, the specified template argument values are substituted for the corresponding template parameters as specified below.
+[2]{.pnum} When an explicit template argument list is specified, if the given `$template-id$` [or `$splice-specialization-specifier$`]{.addu} is not valid ([temp.names]), type deduction fails. Otherwise, the specified template argument values are substituted for the corresponding template parameters as specified below.
 
 :::
 
@@ -6678,7 +6650,7 @@ namespace std::meta {
 
 [2]{.pnum} The behavior of any function specified in namespace `std::meta` is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
 
-[Values of type `std::meta::info` can represent implementation-specific constructs ([basic.fundamental]{.sref}).]{.note}
+[Values of type `std::meta::info` can represent implementation-specific constructs ([basic.fundamental]).]{.note}
 
 ::: note
  The behavior of many of the functions specified in namespace `std::meta` have semantics that can be affected by the completeness of class types represented by reflection values. For such functions, for any reflection `r` such that `dealias(r)` represents a specialization of a templated class with a reachable definition, the specialization is implicitly instantiated ([temp.inst]).
@@ -6815,7 +6787,7 @@ consteval bool has_identifier(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a type alias, then `!has_template_arguments(r)`.
 * [#.#]{.pnum} Otherwise, if `r` represents an enumerator, non-static data member, namespace, or namespace alias, then `true`.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `has_identifier(type_of(r))`.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); `true` if `$N$` is not ⊥. Otherwise, `false`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]); `true` if `$N$` is not ⊥. Otherwise, `false`.
 
 ```cpp
 consteval string_view identifier_of(info r);
@@ -6832,7 +6804,7 @@ consteval u8string_view u8identifier_of(info r);
 * [#.#]{.pnum} Otherwise, if `r` represents a literal operator or literal operator template, then the `$ud-suffix$` of the operator or operator template.
 * [#.#]{.pnum} Otherwise, if `r` represents an entity, then the identifier introduced by the declaration of that entity.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `identifier_of(type_of(r))` or `u8identifier_of(type_of(r))`, respectively.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}); a `string_view` or `u8string_view`, respectively, containing the identifier `$N$`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]); a `string_view` or `u8string_view`, respectively, containing the identifier `$N$`.
 
 ```cpp
 consteval string_view display_string_of(info r);
@@ -7327,16 +7299,16 @@ static_assert(template_arguments_of(T)[3] == ^^PairPtr);
 
 ::: std
 ::: addu
-[1]{.pnum} The `access_context` class is a non-aggregate type that represents a namespace, class, or function from which queries pertaining to access rules may be performed, as well as the naming class ([class.access.base]), if any.
+[1]{.pnum} The `access_context` class is a non-aggregate type that represents a namespace, class, or function from which queries pertaining to access rules may be performed, as well as the designating class ([class.access.base]), if any.
 
-[#]{.pnum} An `access_context` has an associated scope and naming class.
+[#]{.pnum} An `access_context` has an associated scope and designating class.
 
 ```cpp
 struct access_context {
    access_context() = delete;
 
    consteval info scope() const;
-   consteval info naming_class() const;
+   consteval info designating_class() const;
 
    static consteval access_context current() noexcept;
    static consteval access_context unprivileged() noexcept;
@@ -7345,14 +7317,14 @@ struct access_context {
 };
 ```
 
-[#]{.pnum} `access_context` is a structural type. Two values `ac1` and `ac2` of type `access_context` are template-argument-equivalent ([temp.type]) if `ac1.scope()` and `ac2.scope()` are template-argument-equivalent and `ac1.naming_class()` and `ac2.naming_class()` are template-argument-equivalent.
+[#]{.pnum} `access_context` is a structural type. Two values `ac1` and `ac2` of type `access_context` are template-argument-equivalent ([temp.type]) if `ac1.scope()` and `ac2.scope()` are template-argument-equivalent and `ac1.designating_class()` and `ac2.designating_class()` are template-argument-equivalent.
 
 ```cpp
 consteval info scope() const;
-consteval info naming_class() const;
+consteval info designating_class() const;
 ```
 
-[#]{.pnum} *Returns*: The `access_context`'s associated scope and naming class, respectively.
+[#]{.pnum} *Returns*: The `access_context`'s associated scope and designating class, respectively.
 
 ```cpp
 static consteval access_context current() noexcept;
@@ -7381,7 +7353,7 @@ static consteval access_context current() noexcept;
 
 [#]{.pnum} An invocation of `current` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a scope corresponding to a templated entity.
 
-[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope represents the function, class, or namespace whose corresponding function parameter scope, class scope, or namespace scope is `$ctx-scope$($S$)`, where `$S$` is the immediate scope of `$eval-point$($P$)` and `$P$` is the point at which the invocation of `current` lexically appears.
+[#]{.pnum} *Returns*: An `access_context` whose designating class is the null reflection and whose scope represents the function, class, or namespace whose corresponding function parameter scope, class scope, or namespace scope is `$ctx-scope$($S$)`, where `$S$` is the immediate scope of `$eval-point$($P$)` and `$P$` is the point at which the invocation of `current` lexically appears.
 
 
 ::: example
@@ -7431,20 +7403,20 @@ static_assert(TCls<0>{}.fn());  // OK
 static consteval access_context unprivileged() noexcept;
 ```
 
-[#]{.pnum} *Returns*: An `access_context` whose naming class is the null reflection and whose scope is the global namespace.
+[#]{.pnum} *Returns*: An `access_context` whose designating class is the null reflection and whose scope is the global namespace.
 
 ```cpp
 static consteval access_context unchecked() noexcept;
 ```
 
-[#]{.pnum} *Returns*: An `access_context` whose naming class and scope are both the null reflection.
+[#]{.pnum} *Returns*: An `access_context` whose designating class and scope are both the null reflection.
 
 ```cpp
 consteval access_context via(info cls) const;
 ```
 [#]{.pnum} *Constant When*: `cls` is either the null reflection or a reflection of a complete class type.
 
-[#]{.pnum} *Returns*: An `access_context` whose scope is `this->scope()` and whose naming class is `cls`.
+[#]{.pnum} *Returns*: An `access_context` whose scope is `this->scope()` and whose designating class is `cls`.
 
 :::
 :::
@@ -7469,7 +7441,7 @@ consteval bool is_accessible(info r, access_context ctx);
 
 [#]{.pnum} Let `$DESIGNATING-CLS$(r, ctx)` be:
 
-* [#.#]{.pnum} If `ctx.naming_class()` represents a class `$C$`, then `$C$`.
+* [#.#]{.pnum} If `ctx.designating_class()` represents a class `$C$`, then `$C$`.
 * [#.#]{.pnum} Otherwise, `$PARENT-CLS$(r)`.
 
 [#]{.pnum} *Returns*:
@@ -7992,7 +7964,7 @@ consteval info data_member_spec(info type,
   - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value; and
 - [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`.
 
-[#]{.pnum} *Returns*: A reflection of a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]{.sref}) where
+[#]{.pnum} *Returns*: A reflection of a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) where
 
 - [#.#]{.pnum} `$T$` is the type represented by `dealias(type)`,
 - [#.#]{.pnum} `$N$` is either the identifier encoded by `options.name` or ⊥ if `options.name` does not contain a value,
