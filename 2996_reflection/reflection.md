@@ -5932,17 +5932,17 @@ Add two new paragraphs to the end of [temp.dep.constexpr] to specify the value-d
 
 ::: std
 :::addu
-[6+]{.pnum} A `$reflect-expression$` is value-dependent if
+[7]{.pnum} A `$reflect-expression$` is value-dependent if
 
-- [6+.#]{.pnum} it is of the form `^^ $qualified-reflection-name$` and the `$qualified-reflection-name$`
-  - [6+.#.#]{.pnum} is a dependent qualified name,
-  - [6+.#.#]{.pnum} is a dependent `$namespace-name$`,
-  - [6+.#.#]{.pnum} is the name of a template parameter, or
-  - [6+.#.#]{.pnum} names a dependent member of the current instantiation ([temp.dep.type]),
-- [6+.#]{.pnum} is of the form `^^ $type-id$` and the `$type-id$` denotes a dependent type, or
-- [6+.#]{.pnum} is of the form `^^ $id-expression$` and the `$id-expression$` is value-dependent or type-dependent.
+- [#.#]{.pnum} it is of the form `^^ $qualified-reflection-name$` and the `$qualified-reflection-name$`
+  - [#.#.#]{.pnum} is a dependent qualified name,
+  - [#.#.#]{.pnum} is a dependent `$namespace-name$`,
+  - [#.#.#]{.pnum} is the name of a template parameter, or
+  - [#.#.#]{.pnum} names a dependent member of the current instantiation ([temp.dep.type]),
+- [#.#]{.pnum} it is of the form `^^ $type-id$` and the `$type-id$` denotes a dependent type, or
+- [#.#]{.pnum} it is of the form `^^ $id-expression$` and the `$id-expression$` is value-dependent or type-dependent.
 
-[6++]{.pnum} Expressions of the following form are value-dependent if the `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]):
+[8]{.pnum} Expressions of the following form are value-dependent if the `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]):
 
 ```cpp
 $splice-specifier$
