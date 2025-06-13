@@ -3462,7 +3462,7 @@ Modify paragraph 7 such that denoting a variable by its name finds the variable,
 Add type aliases and namespace aliases to the list of entities in paragraph 8. As drive-by fixes, remove "value", "object", "reference", and "template specialization"; replace "class member" with "non-static data member", since all other cases are subsumed by existing one. Add "template parameters" and "`$init-capture$`s", which collectively subsume "packs". Introduce a notion of an “underlying entity” in the same paragraph, and utilize it for the definition of a name “denoting” an entity. Type aliases are now entities, so also modify accordingly.
 
 ::: std
-[8]{.pnum} An _entity_ is a [value, object, reference]{.rm} [variable,]{.addu} structured binding, result binding, function, enumerator, type, [type alias]{.addu}, [class]{.rm} [non-static data]{.addu} member, bit-field, template, [template specialization,]{.rm} namespace, [namespace alias, template parameter, function parameter]{.addu}, or [`$init-capture$`]{.addu} [pack]{.rm}. [The _underlying entity_ of an entity is that entity unless otherwise specified. A name _denotes_ the underlying entity of the entity declared by each declaration that introduces the name.]{.addu} [An entity `$E$` is denoted by the name (if any) that is introduced by a declaration of `$E$` or by a `$typedef-name$` introduced by a declaration specifying `$E$`.]{.rm}
+[8]{.pnum} An _entity_ is a [value, object, reference]{.rm} [variable,]{.addu} structured binding, result binding, function, enumerator, type, [type alias]{.addu}, [class]{.rm} [non-static data]{.addu} member, bit-field, template, [template specialization,]{.rm} namespace, [namespace alias, template parameter, function parameter]{.addu}, or [`$init-capture$`]{.addu} [pack]{.rm}. [The _underlying entity_ of an entity is that entity unless otherwise specified. An entity is _canonical_ if its underlying entity is itself. A name _denotes_ the underlying entity of the entity declared by each declaration that introduces the name.]{.addu} [An entity `$E$` is denoted by the name (if any) that is introduced by a declaration of `$E$` or by a `$typedef-name$` introduced by a declaration specifying `$E$`.]{.rm}
 
 [[Type aliases and namespace aliases have underlying entities that are distinct from themselves.]{.note}]{.addu}
 
@@ -3748,7 +3748,23 @@ consteval int bad_splice(std::meta::info v) {
 
 ### [basic.link]{.sref} Program and Linkage {-}
 
-Consider `$reflect-expression$`s and `$splice-specifier$`s to naming entities and extend the definition of TU-local values and objects to include reflections. The below addition of "value or object of a TU-local type" is a drive-by fix to make sure that enumerators in a TU-local enumeration are also TU-local.
+Make the rules and conclusions drawn in paragraph 10 apply only to canonical entities. Add a note to make this situation more clear.
+
+::: std
+[10]{.pnum} If two declaration of [an]{.rm} [a canonical]{.addu} entity are attached to different modules, the program is ill-formed; no diagnostic is required if neither is reachable from the other.
+
+::: example2
+```cpp
+[...]
+```
+:::
+
+As a consequence of these rules, all declarations of [an]{.rm} [a canonical]{.addu} entity are attached to the same module; [the]{.rm} [such an]{.addu} entity is said to be _attached_ to that module.
+
+[[Declarations of entities that are not canonical, such as type aliases, can be attached to multiple distinct modules.]{.note5}]{.addu}
+:::
+
+Consider `$reflect-expression$`s and `$splice-specifier$`s to naming entities and extend the definition of TU-local values and objects to include reflections. Only make exposures ill-formed if they declare a canonical entity. The below addition of "value or object of a TU-local type" is a drive-by fix to make sure that enumerators in a TU-local enumeration are also TU-local.
 
 ::: std
 
@@ -3799,9 +3815,9 @@ or defines a constexpr variable initialized to a TU-local value (defined below).
 
 [Values that are TU-local to different translation units are never considered equivalent.]{.addu}
 
-[17]{.pnum} If a (possibly instantiated) declaration of, or a deduction guide for, a non-TU-local entity in a module interface unit (outside the `$private-module-fragment$`, if any) or module partition ([module.unit]) is an exposure, the program is ill-formed. Such a declaration in any other context is deprecated ([depr.local]).
+[17]{.pnum} If a (possibly instantiated) declaration of, or a deduction guide for, a non-TU-local [canonical]{.addu} entity in a module interface unit (outside the `$private-module-fragment$`, if any) or module partition ([module.unit]) is an exposure, the program is ill-formed. Such a declaration in any other context is deprecated ([depr.local]).
 
-[18]{.pnum} If a declaration that appears in one translation unit names a TU-local entity declared in another translation unit that is not a header unit, the program is ill-formed. A declaration instantiated for a template specialization ([temp.spec]) appears at the point of instantiation of the specialization ([temp.point]).make
+[18]{.pnum} If a declaration that appears in one translation unit names a TU-local entity declared in another translation unit that is not a header unit, the program is ill-formed. A declaration instantiated for a template specialization ([temp.spec]) appears at the point of instantiation of the specialization ([temp.point]).
 
 :::
 
@@ -4126,7 +4142,10 @@ typename [:^^TCls:]<3>::type v3 = 3;
 template [:^^TCls:]<3>::type v4 = 4;
     // OK, template binds to the splice-scope-specifier
 
-[:^^TCls:]<3>::type v5 = 5;
+typename template [:^^TCls:]<3>::type v5 = 5;
+    // OK, same as v3
+
+[:^^TCls:]<3>::type v6 = 6;
     // error: unexpected <
 ```
 
