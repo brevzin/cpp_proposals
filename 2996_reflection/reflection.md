@@ -3751,7 +3751,7 @@ consteval int bad_splice(std::meta::info v) {
 Make the rules and conclusions drawn in paragraph 10 apply only to canonical entities. Add a note to make this situation more clear.
 
 ::: std
-[10]{.pnum} If two declaration of [an]{.rm} [a canonical]{.addu} entity are attached to different modules, the program is ill-formed; no diagnostic is required if neither is reachable from the other.
+[10]{.pnum} If two declarations of [an]{.rm} [a canonical]{.addu} entity [([basic.pre])]{.addu} are attached to different modules, the program is ill-formed; no diagnostic is required if neither is reachable from the other.
 
 ::: example2
 ```cpp
@@ -3804,14 +3804,15 @@ or defines a constexpr variable initialized to a TU-local value (defined below).
 
 * [[16.0]{.pnum} it is of TU-local type,]{.addu}
 * [16.1]{.pnum} it is, or is a pointer to, a TU-local function or the object associated with a TU-local variable, [or]{.rm}
+* [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions[.]{.rm}[, or]{.addu}
 
 :::addu
-* [16.1+]{.pnum} it is a reflection that represents either
-  * [16.1+.#]{.pnum} an entity, value, or object, that is TU-local, or
-  * [16.1+.#]{.pnum} a direct base class relationship ([class.derived.general]) for which the base class or the derived class is TU-local, or
-  * [16.1+.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which `$T$` is TU-local, or
+* [16.3]{.pnum} it is a reflection value ([basic.fundamental]) that represents
+  * [16.#.#]{.pnum} an entity `$E$` for which either `$E$` or the underlying entity of `$E$` is TU-local,
+  * [16.#.#]{.pnum} a value or object that is TU-local,
+  * [16.#.#]{.pnum} a direct base class relationship ([class.derived.general]) for which the base class or the derived class is TU-local, or
+  * [16.#.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) for which either `$T$` or the underlying entity of `$T$` is TU-local.
 :::
-* [16.2]{.pnum} it is an object of class or array type and any of its subobjects or any of the objects or functions to which its non-static data members of reference type refer is TU-local and is usable in constant expressions.
 
 [Values that are TU-local to different translation units are never considered equivalent.]{.addu}
 
@@ -3847,6 +3848,12 @@ inline void h(auto x) { adl(x); }  // OK, but certain specializations are exposu
 @[`constexpr auto ctx = std::meta::access_context::current();`]{.addu}@
 @[`constexpr auto r4 = std::meta::members_of(^^N2, ctx)[0];`]{.addu}@
 @[\ \ `// error: r4 is also an exposure of N2::r2`]{.addu}@
+
+@[`namespace { struct S2 {}; }`]{.addu}@
+@[`export using Alias = S2;`]{.addu}@
+@[\ \ `// OK, Alias is not a canonical entity`]{.addu}@
+@[`constexpr auto r5 = ^^Alias;`]{.addu}@
+@[\ \ `// error: ^^Alias is a TU-local value because the underlying entity is TU-local`]{.addu}@
 ```
 
 Translation unit #2:
