@@ -611,7 +611,7 @@ namespace std::meta {
   // ...
   consteval bool is_bit_field(info r);
   consteval bool is_enumerator(info r);
-+ consteval bool is_annotation(info);
++ consteval bool is_annotation(info r);
   // ..
 
   // [meta.reflection.annotation], annotation reflection
@@ -682,7 +682,7 @@ consteval info constant_of(info r);
 [#]{.pnum} *Effects*: Equivalent to:
 
 ```diff
-+ if (is_annotation(r)) {
++ if constexpr (is_annotation(R)) {
 +   return $C$;
 + } else {
     return reflect_constant([: $R$ :]);
@@ -702,13 +702,9 @@ consteval vector<info> annotations_of(info item);
 
 [1]{.pnum} *Constant When*: `dealias(item)` represents a type, variable, function, or namespace.
 
-[#]{.pnum} *Returns*: A `vector` containing the following reflections:
+[#]{.pnum} *Returns*: A `vector` containing all of the reflections `$R$` representing each `$annotation$` in each `$attribute-specifier-seq$` appertaining to each declaration of the entity represented by `item` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of a class for which such a point is in a complete-class context.
 
-* For each declaration `$D$` of the entity represented by `item` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of a class for which such a point is in a complete-class context,
-* For each `$annotation$` `$A$` in each `$attribute-specifier-seq$` appertaining to `$D$`,
-* A reflection `$R$` representing `$A$`.
-
-For  any two reflections `@*R*~1~@` and `@*R*~2~@` returned, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` is sequenced before `@*R*~2~@` in the returned `vector`.
+For  any two reflections `@*R*~1~@` and `@*R*~2~@` returned, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@` in the returned `vector`.
 
 
 ::: example
@@ -717,7 +713,7 @@ struct Option { bool value; };
 
 [[=1]] void f();
 [[=2, =3]] void g();
-[[=4]] void g();
+void g [[=4]] ();
 
 struct C {
     [[=Option{true}]] int a;
@@ -742,9 +738,9 @@ consteval vector<info> annotations_of_with_type(info item, info type);
 [#]{.pnum} *Constant When*:
 
 - [#.#]{.pnum} `annotations_of(item)` is a constant subexpression and
-- [#.#]{.pnum} `dealias(type)` represents a complete type.
+- [#.#]{.pnum} `dealias(type)` represents a type that is complete from some point in the evaluation context.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `annotations_of(item)` such that `type_of(e) == dealias(type)`, preserving their order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `annotations_of(item)` such that `remove_const(type_of(e)) == remove_const(type)`, preserving their order.
 
 :::
 :::

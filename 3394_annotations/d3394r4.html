@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-05-30" />
+  <meta name="dcterms.date" content="2025-06-16" />
   <title>Annotations for Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-05-30</td>
+    <td>2025-06-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -639,11 +639,11 @@ Exploring<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P3394R2">[<a href="https://wg21.link/p3394r2" role="doc-biblioref">P3394R2</a>]</span>: wording, including rebasing
-off of <span class="citation" data-cites="P2996R12">[<a href="https://wg21.link/p2996r12" role="doc-biblioref">P2996R12</a>]</span>. Also removed
+<p>Since <span class="citation" data-cites="P3394R2"><a href="https://wg21.link/p3394r2" role="doc-biblioref">[P3394R2]</a></span>: wording, including rebasing
+off of <span class="citation" data-cites="P2996R12"><a href="https://wg21.link/p2996r12" role="doc-biblioref">[P2996R12]</a></span>. Also removed
 <code class="sourceCode cpp">annotate</code> to streamline the process,
 it can always be added later.</p>
-<p>Since <span class="citation" data-cites="P3394R1">[<a href="https://wg21.link/p3394r1" role="doc-biblioref">P3394R1</a>]</span>:</p>
+<p>Since <span class="citation" data-cites="P3394R1"><a href="https://wg21.link/p3394r1" role="doc-biblioref">[P3394R1]</a></span>:</p>
 <ul>
 <li>loosened the P2996 scope restrictions around injected declarations:
 allow the definition of an entity to produce injected declaration of
@@ -655,19 +655,22 @@ itself</li>
 function that returns a <code class="sourceCode cpp">vector<span class="op">&lt;</span>info<span class="op">&gt;</span></code>),
 and <code class="sourceCode cpp">annotate</code>.</li>
 </ul>
-<p>Since <span class="citation" data-cites="P3394R0">[<a href="https://wg21.link/p3394r0" role="doc-biblioref">P3394R0</a>]</span>:</p>
+<p>Since <span class="citation" data-cites="P3394R0"><a href="https://wg21.link/p3394r0" role="doc-biblioref">[P3394R0]</a></span>:</p>
 <ul>
 <li>added wording</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>Ever since writing <span class="title"><span class="citation" data-cites="P1240R0">[<a href="https://wg21.link/p1240r0" role="doc-biblioref">P1240R0</a>]</span></span>, but more so since <span class="title"><span class="citation" data-cites="P2996R0">[<a href="https://wg21.link/p2996r0" role="doc-biblioref">P2996R0</a>]</span></span>, we have been requested
-to add a capability to annotate declarations in a way that reflection
-can observe. For example, Jeremy Ong presented compelling arguments in a
+<p>Ever since writing <span class="title"><span class="citation" data-cites="P1240R0"><a href="https://wg21.link/p1240r0" role="doc-biblioref">[P1240R0] (Scalable Reflection in
+C++)</a></span></span>, but more so since <span class="title"><span class="citation" data-cites="P2996R0"><a href="https://wg21.link/p2996r0" role="doc-biblioref">[P2996R0]
+(Reflection for C++26)</a></span></span>, we have been requested to add
+a capability to annotate declarations in a way that reflection can
+observe. For example, Jeremy Ong presented compelling arguments in a
 post to the <a href="https://lists.isocpp.org/sg7/2023/10/0450.php">SG7
 reflector</a>. Corentin Jabot also noticed the need while P1240 was
-evolving and wrote <span class="title"><span class="citation" data-cites="P1887R0">[<a href="https://wg21.link/p1887r0" role="doc-biblioref">P1887R0</a>]</span></span>, which proposes syntax
-not entirely unlike what we present here.</p>
+evolving and wrote <span class="title"><span class="citation" data-cites="P1887R0"><a href="https://wg21.link/p1887r0" role="doc-biblioref">[P1887R0] (Typesafe Reflection on
+attributes)</a></span></span>, which proposes syntax not entirely unlike
+what we present here.</p>
 <p>In early versions of P2996 (and P1240 before that), a workaround was
 to encode properties in the template arguments of alias template
 specializations:</p>
@@ -1216,9 +1219,9 @@ on classes, this would be before the class is complete or after the
 class is complete. Before completeness allows the class to observe the
 annotation during instantiation. After completeness allows the
 annotation callback to observe properties of the type. In some sense,
-Herb Sutter’s <span class="title"><span class="citation" data-cites="P0707R4">[<a href="https://wg21.link/p0707r4" role="doc-biblioref">P0707R4</a>]</span></span> was adding annotations
-on classes, invoked on class completeness, that allow mutation of the
-class.</p>
+Herb Sutter’s <span class="title"><span class="citation" data-cites="P0707R4"><a href="https://wg21.link/p0707r4" role="doc-biblioref">[P0707R4] (Metaclasses: Generative
+C++)</a></span></span> was adding annotations on classes, invoked on
+class completeness, that allow mutation of the class.</p>
 <p>One concrete, simpler example. We can, with this proposal as-is,
 create a <code class="sourceCode cpp">Debug</code> annotation that a
 user can add to their type and a specialization of <code class="sourceCode cpp">std<span class="op">::</span>formatter</code> for
@@ -1256,7 +1259,8 @@ annotation to, at the point of completion of
 <code class="sourceCode cpp">Point</code>, inject an explicit
 specialization of <code class="sourceCode cpp">std<span class="op">::</span>formatter</code>.
 This would rely both on the ability for the annotation to be called back
-and language support for such injection (see <span class="title"><span class="citation" data-cites="P3294R2">[<a href="https://wg21.link/p3294r2" role="doc-biblioref">P3294R2</a>]</span></span>).</p>
+and language support for such injection (see <span class="title"><span class="citation" data-cites="P3294R2"><a href="https://wg21.link/p3294r2" role="doc-biblioref">[P3294R2] (Code
+Injection with Token Sequences)</a></span></span>).</p>
 <p>There are still open questions as to how to handle such callbacks.
 Does an annotation that gets called back merit different syntax from an
 annotation that doesn’t? Can it mutate the entity that it is attached
@@ -1271,7 +1275,7 @@ would cause <code class="sourceCode cpp">X_handler<span class="op">(...)</span><
 be invoked when an entity is first declared with an annotation of type
 <code class="sourceCode cpp">X</code>).</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
-<p>The wording is relative to <span class="citation" data-cites="P2996R10">[<a href="https://wg21.link/p2996r10" role="doc-biblioref">P2996R10</a>]</span>.</p>
+<p>The wording is relative to <span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]</a></span>.</p>
 <h2 data-number="5.1" id="language"><span class="header-section-number">5.1</span> Language<a href="#language" class="self-link"></a></h2>
 <p>Change <span>6.8.2 <a href="https://wg21.link/basic.fundamental">[basic.fundamental]</a></span>
 to add “annotation” to the list of reflection kinds:</p>
@@ -1348,7 +1352,7 @@ data member descriptions represented by
 </ul>
 </blockquote>
 </div>
-<p>Extend the grammar in <span>9.12.1 <a href="https://wg21.link/dcl.attr.grammar">[dcl.attr.grammar]</a></span>:</p>
+<p>Extend the grammar in <span>9.13.1 <a href="https://wg21.link/dcl.attr.grammar">[dcl.attr.grammar]</a></span>:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">1</a></span>
@@ -1411,7 +1415,7 @@ specified in the
 <code class="sourceCode cpp"><em>attribute-using-prefix</em></code>.</p>
 </blockquote>
 </div>
-<p>Adjust the restriction on ellipses in <span>9.12.1 <a href="https://wg21.link/dcl.attr.grammar">[dcl.attr.grammar]</a></span>/4:</p>
+<p>Adjust the restriction on ellipses in <span>9.13.1 <a href="https://wg21.link/dcl.attr.grammar">[dcl.attr.grammar]</a></span>/4:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">4</a></span>
@@ -1478,7 +1482,7 @@ synopsis:</p>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  // ...</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  consteval bool is_bit_field(info r);</span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  consteval bool is_enumerator(info r);</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool is_annotation(info);</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool is_annotation(info r);</span></span>
 <span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  // ..</span>
 <span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.annotation], annotation reflection</span>
@@ -1599,7 +1603,7 @@ is a valid
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">8</a></span>
 <em>Effects</em>: Equivalent to:</p>
 <div>
-<div class="sourceCode" id="cb32"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ if (is_annotation(r)) {</span></span>
+<div class="sourceCode" id="cb32"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ if constexpr (is_annotation(R)) {</span></span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="va">+   return <em>C</em>;</span></span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="va">+ } else {</span></span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    return reflect_constant([: <em>R</em> :]);</span>
@@ -1617,21 +1621,16 @@ is a valid
 represents a type, variable, function, or namespace.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">2</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
-containing the following reflections:</p>
-<ul>
-<li>For each declaration <code class="sourceCode cpp"><em>D</em></code>
-of the entity represented by <code class="sourceCode cpp">item</code>
-that precedes either some point in the evaluation context ([expr.const])
-or a point immediately following the
-<code class="sourceCode cpp"><em>class-specifier</em></code> of a class
-for which such a point is in a complete-class context,</li>
-<li>For each <code class="sourceCode cpp"><em>annotation</em></code>
-<code class="sourceCode cpp"><em>A</em></code> in each
+containing all of the reflections
+<code class="sourceCode cpp"><em>R</em></code> representing each
+<code class="sourceCode cpp"><em>annotation</em></code> in each
 <code class="sourceCode cpp"><em>attribute-specifier-seq</em></code>
-appertaining to <code class="sourceCode cpp"><em>D</em></code>,</li>
-<li>A reflection <code class="sourceCode cpp"><em>R</em></code>
-representing <code class="sourceCode cpp"><em>A</em></code>.</li>
-</ul>
+appertaining to each declaration of the entity represented by
+<code class="sourceCode cpp">item</code> that precedes either some point
+in the evaluation context ([expr.const]) or a point immediately
+following the
+<code class="sourceCode cpp"><em>class-specifier</em></code> of a class
+for which such a point is in a complete-class context.</p>
 <p>For any two reflections
 <code class="sourceCode cpp"><em>R</em><sub>1</sub></code> and
 <code class="sourceCode cpp"><em>R</em><sub>2</sub></code> returned, if
@@ -1639,7 +1638,7 @@ the annotation represented by
 <code class="sourceCode cpp"><em>R</em><sub>1</sub></code> precedes the
 annotation represented by
 <code class="sourceCode cpp"><em>R</em><sub>2</sub></code>, then
-<code class="sourceCode cpp"><em>R</em><sub>1</sub></code> is sequenced
+<code class="sourceCode cpp"><em>R</em><sub>1</sub></code> appears
 before <code class="sourceCode cpp"><em>R</em><sub>2</sub></code> in the
 returned <code class="sourceCode cpp">vector</code>.</p>
 <div class="example">
@@ -1648,7 +1647,7 @@ returned <code class="sourceCode cpp">vector</code>.</p>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">1</span><span class="op">]]</span> <span class="dt">void</span> f<span class="op">()</span>;</span>
 <span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">2</span>,<span class="at"> </span><span class="op">=</span><span class="dv">3</span><span class="op">]]</span> <span class="dt">void</span> g<span class="op">()</span>;</span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">4</span><span class="op">]]</span> <span class="dt">void</span> g<span class="op">()</span>;</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g <span class="op">[[=</span><span class="dv">4</span><span class="op">]]</span> <span class="op">()</span>;</span>
 <span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
 <span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[=</span><span class="at">Option</span><span class="op">{</span><span class="at">true</span><span class="op">}]]</span> <span class="dt">int</span> a;</span>
@@ -1674,12 +1673,13 @@ returned <code class="sourceCode cpp">vector</code>.</p>
 is a constant subexpression and</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(3.2)</a></span>
 <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
-represents a complete type.</li>
+represents a type that is complete from some point in the evaluation
+context.</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">4</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing each element <code class="sourceCode cpp">e</code> of <code class="sourceCode cpp">annotations_of<span class="op">(</span>item<span class="op">)</span></code>
-such that <code class="sourceCode cpp">type_of<span class="op">(</span>e<span class="op">)</span> <span class="op">==</span> dealias<span class="op">(</span>type<span class="op">)</span></code>,
+such that <code class="sourceCode cpp">remove_const<span class="op">(</span>type_of<span class="op">(</span>e<span class="op">))</span> <span class="op">==</span> remove_const<span class="op">(</span>type<span class="op">)</span></code>,
 preserving their order.</p>
 </div>
 </blockquote>
