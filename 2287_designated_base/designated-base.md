@@ -1,6 +1,6 @@
 ---
 title: "Designated-initializers for Base Classes"
-document: P2287R5
+document: D2287R6
 date: today
 audience: CWG
 author:
@@ -163,8 +163,8 @@ struct H : F, G { int h; };
 auto h1 = H{{.f=1}, {.g=2}, .h=3};      // ok
 auto h2 = H{{.f=1}, .g=2, .h=3};        // ok, not all bases have to be the same
 auto h3 = H{{.f=1}, G{2}, .h=3};        // ok, likewise
-auto h4 = H{{.f=1} {.g=2}, .g=3, .h=4}; // ill-formed: attempting to initialize the G subobject in
-                                        // different ways
+auto h4 = H{{.f=1}, {.g=2}, .g=3, .h=4}; // ill-formed: attempting to initialize the G subobject in
+                                         // different ways
 ```
 :::
 
