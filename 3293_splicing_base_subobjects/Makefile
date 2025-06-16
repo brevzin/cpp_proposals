@@ -1,2 +1,2 @@
-p3293r2.html : splicing-base-subobjects.md
+d3293r3.html : splicing-base-subobjects.md
 include ../md/mpark-wg21.mk

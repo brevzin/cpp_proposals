@@ -1,6 +1,6 @@
 ---
 title: "Splicing a base class subobject"
-document: P3293R2
+document: D3293R3
 date: today
 audience: CWG/LWG
 author:
@@ -293,7 +293,7 @@ Add to [meta.reflection.member.queries] in the appropriate spot:
 consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
 ```
 
-[9]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
+[9]{.pnum} *Constant When*: `dealias(type)` represents a class type that is complete from some point in the evaluation context.
 
 [#]{.pnum} *Returns*: A `vector` containing each element `e` of `members_of(type, ctx)` such that `is_nonstatic_data_member(e)` is `true`, preserving their order.
 
@@ -302,7 +302,7 @@ consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
 consteval vector<info> subobjects_of(info type, access_context ctx);
 ```
 
-[10+1]{.pnum} *Constant When*: `dealias(type)` represents a complete class type.
+[10+1]{.pnum} *Constant When*: `dealias(type)` represents a class type that is complete from some point in the evaluation context.
 
 [10+2]{.pnum} *Returns*: A `vector` containing each element of `bases_of(type, ctx)` followed by each element of `nonstatic_data_members_of(type, ctx)`, preserving their order.
 :::
@@ -311,7 +311,7 @@ consteval vector<info> subobjects_of(info type, access_context ctx);
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[11]{.pnum} *Constant When*: `dealias(type_enum)` represents an enumeration type and `has_complete_definition(dealias(type_enum))` is `true`.
+[11]{.pnum} *Constant When*: `dealias(type_enum)` represents an enumeration type and `is_enumerable_type(type_enum)` is `true`.
 
 [#]{.pnum} *Returns*: A `vector` containing the reflections of each enumerator of the enumeration represented by `dealias(type_enum)`, in the order in which they are declared.
 
