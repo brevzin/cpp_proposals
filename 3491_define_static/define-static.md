@@ -1,6 +1,6 @@
 ---
 title: "`define_static_{string,object,array}`"
-document: P3491R3
+document: D3491R3
 date: today
 audience: CWG, LWG
 author:
@@ -688,7 +688,7 @@ Add to [meta.syn]{.sref}:
 +   consteval bool is_string_literal(const char16_t* p);
 +   consteval bool is_string_literal(const char32_t* p);
 
-+   // [meta.define.static], promoting to runtime storage
++   // [meta.define.static], promoting to static storage
 +   template <ranges::input_range R>
 +     consteval const ranges::range_value_t<R>* define_static_string(R&& r);
 +
@@ -710,7 +710,7 @@ Add to [meta.syn]{.sref}:
     template<class T>
       consteval info reflect_function(T& fn);
 
-+   // [meta.reflection.array], promoting to runtime storage
++   // [meta.reflection.array], promoting to static storage
 +   template <ranges::input_range R>
 +   consteval info reflect_constant_string(R&& r);
 +
@@ -723,11 +723,11 @@ Add to [meta.syn]{.sref}:
 ```
 :::
 
-Add the new subclause [meta.reflection.array]:
+Add the new subclause [meta.reflection.array] "Promoting to Static Storage":
 
 ::: std
 ::: addu
-[1]{.pnum} The functions in this subclause are useful for promoting compile-time storage into runtime storage.
+[1]{.pnum} The functions in this subclause promote compile-time storage into static storage.
 
 ```cpp
 template <ranges::input_range R>
@@ -755,12 +755,14 @@ consteval info reflect_constant_array(R&& r);
 
 [#]{.pnum} *Mandates*: `$T$` is a structural type ([temp.param]), `is_constructible_v<$T$, ranges::range_reference_t<R>>` is `true`, and `is_copy_constructible_v<$T$>` is `true`.
 
-[#]{.pnum} Let `$V$` be the pack of elements of type `$T$` constructed from the elements of `r`.
+[#]{.pnum} *Constant When*: `reflect_constant(e)` is a constant subexpression for every element `e` of `r`.
+
+[#]{.pnum} Let `$V$` be the pack of elements of type `info` where the ith element is `reflect_constant(e@~i~@)`, where `e@~i~@` is the ith element of `r`.
 
 [#]{.pnum} Let `$P$` be an invented variable that would be introduced by the declaration
 
 ```cpp
-const $T$ $P$[sizeof...($V$)]{$V$...};
+const $T$ $P$[sizeof...($V$)]{[:$V$:]...};
 ```
 
 [#]{.pnum} *Returns*: A reflection of the template parameter object that is template-argument-equivalent to the object denoted by `$P$` ([temp.param]).
@@ -786,12 +788,12 @@ consteval bool is_string_literal(const char32_t* p);
 :::
 :::
 
-Add to the new subclause [meta.define.static]
+Add to the new subclause [meta.define.static], "Promoting to Static Storage"
 
 ::: std
 ::: addu
 
-[1]{.pnum} The functions in this clause are useful for promoting compile-time storage into runtime storage.
+[1]{.pnum} The functions in this clause promote compile-time storage into static storage.
 
 ```cpp
 template <ranges::input_range R>
@@ -827,9 +829,9 @@ consteval const remove_cvref_t<T>* define_static_object(T&& t);
 ```cpp
 using U = remove_cvref_t<T>;
 if constexpr (is_class_type(^^U)) {
-    return std::address_of(extract<const U&>(meta::reflect_constant(t)));
+    return addressof(extract<const U&>(meta::reflect_constant(std::forward<T>(t))));
 } else {
-    return define_static_array(span(&t, 1)).data();
+    return define_static_array(span(addressof(t), 1)).data();
 }
 ```
 

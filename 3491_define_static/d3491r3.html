@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-05-28" />
+  <meta name="dcterms.date" content="2025-06-16" />
   <title>define_static_{string,object,array}</title>
   <style>
       code{white-space: pre-wrap;}
@@ -572,11 +572,11 @@ background-color: #ffff00;
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
-    <td>P3491R3 <a href="https://wg21.link/P3491">[Latest]</a> <a href="https://wg21.link/P3491/status">[Status]</a></td>
+    <td>D3491R3 <a href="https://wg21.link/P3491">[Latest]</a> <a href="https://wg21.link/P3491/status">[Status]</a></td>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-05-28</td>
+    <td>2025-06-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1610,7 +1610,7 @@ associated with <code class="sourceCode cpp"><em>E</em></code>.<span>
 <span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval bool is_string_literal(const char16_t* p);</span></span>
 <span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval bool is_string_literal(const char32_t* p);</span></span>
 <span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="va">+   // [meta.define.static], promoting to runtime storage</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="va">+   // [meta.define.static], promoting to static storage</span></span>
 <span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="va">+   template &lt;ranges::input_range R&gt;</span></span>
 <span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="va">+     consteval const ranges::range_value_t&lt;R&gt;* define_static_string(R&amp;&amp; r);</span></span>
 <span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
@@ -1632,7 +1632,7 @@ associated with <code class="sourceCode cpp"><em>E</em></code>.<span>
 <span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a>    template&lt;class T&gt;</span>
 <span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a>      consteval info reflect_function(T&amp; fn);</span>
 <span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a><span class="va">+   // [meta.reflection.array], promoting to runtime storage</span></span>
+<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a><span class="va">+   // [meta.reflection.array], promoting to static storage</span></span>
 <span id="cb26-35"><a href="#cb26-35" aria-hidden="true" tabindex="-1"></a><span class="va">+   template &lt;ranges::input_range R&gt;</span></span>
 <span id="cb26-36"><a href="#cb26-36" aria-hidden="true" tabindex="-1"></a><span class="va">+   consteval info reflect_constant_string(R&amp;&amp; r);</span></span>
 <span id="cb26-37"><a href="#cb26-37" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
@@ -1645,13 +1645,14 @@ associated with <code class="sourceCode cpp"><em>E</em></code>.<span>
 </div>
 </blockquote>
 </div>
-<p>Add the new subclause [meta.reflection.array]:</p>
+<p>Add the new subclause [meta.reflection.array] “Promoting to Static
+Storage”:</p>
 <div class="std">
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">1</a></span>
-The functions in this subclause are useful for promoting compile-time
-storage into runtime storage.</p>
+The functions in this subclause promote compile-time storage into static
+storage.</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> info reflect_constant_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">2</a></span>
@@ -1693,19 +1694,25 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code>, and
 <code class="sourceCode cpp">is_copy_constructible_v<span class="op">&lt;</span><em>T</em><span class="op">&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">10</a></span>
-Let <code class="sourceCode cpp"><em>V</em></code> be the pack of
-elements of type <code class="sourceCode cpp"><em>T</em></code>
-constructed from the elements of
+<em>Constant When</em>: <code class="sourceCode cpp">reflect_constant<span class="op">(</span>e<span class="op">)</span></code>
+is a constant subexpression for every element
+<code class="sourceCode cpp">e</code> of
 <code class="sourceCode cpp">r</code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">11</a></span>
+Let <code class="sourceCode cpp"><em>V</em></code> be the pack of
+elements of type <code class="sourceCode cpp">info</code> where the ith
+element is <code class="sourceCode cpp">reflect_constant<span class="op">(</span>e<sub>i</sub><span class="op">)</span></code>,
+where <code class="sourceCode cpp">e<sub>i</sub></code> is the ith
+element of <code class="sourceCode cpp">r</code>.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">12</a></span>
 Let <code class="sourceCode cpp"><em>P</em></code> be an invented
 variable that would be introduced by the declaration</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <em>T</em> <em>P</em><span class="op">[</span><span class="kw">sizeof</span><span class="op">...(</span><em>V</em><span class="op">)]{</span><em>V</em><span class="op">...}</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">12</a></span>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <em>T</em> <em>P</em><span class="op">[</span><span class="kw">sizeof</span><span class="op">...(</span><em>V</em><span class="op">)]{[:</span><em>V</em><span class="op">:]...}</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">13</a></span>
 <em>Returns</em>: A reflection of the template parameter object that is
 template-argument-equivalent to the object denoted by
 <code class="sourceCode cpp"><em>P</em></code> ([temp.param]).</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">13</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">14</a></span>
 <span class="note"><span>[ <em>Note 3:</em> </span>That template
 parameter object is a potentially non-unique object
 ([intro.object])<span> — <em>end note</em> ]</span></span></p>
@@ -1721,7 +1728,7 @@ parameter object is a potentially non-unique object
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_string_literal<span class="op">(</span><span class="kw">const</span> <span class="dt">char8_t</span><span class="op">*</span> p<span class="op">)</span>;</span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_string_literal<span class="op">(</span><span class="kw">const</span> <span class="dt">char16_t</span><span class="op">*</span> p<span class="op">)</span>;</span>
 <span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> is_string_literal<span class="op">(</span><span class="kw">const</span> <span class="dt">char32_t</span><span class="op">*</span> p<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">1</a></span>
 <em>Returns</em>: If <code class="sourceCode cpp">p</code> points to a
 string literal or a subobject thereof,
 <code class="sourceCode cpp"><span class="kw">true</span></code>.
@@ -1730,36 +1737,37 @@ Otherwise,
 </div>
 </blockquote>
 </div>
-<p>Add to the new subclause [meta.define.static]</p>
+<p>Add to the new subclause [meta.define.static], “Promoting to Static
+Storage”</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">1</a></span>
-The functions in this clause are useful for promoting compile-time
-storage into runtime storage.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">1</a></span>
+The functions in this clause promote compile-time storage into static
+storage.</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;*</span> define_static_string<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">2</a></span>
 <em>Effects</em>: Equivalent to:</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> extract<span class="op">&lt;</span><span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;*&gt;(</span>meta<span class="op">::</span>reflect_constant_string<span class="op">(</span>r<span class="op">))</span>;</span></code></pre></div>
 <div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">&gt;</span></span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> span<span class="op">&lt;</span><span class="kw">const</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> define_static_array<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">3</a></span>
 <em>Effects</em>: Equivalent to:</p>
 <div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> T <span class="op">=</span> ranges<span class="op">::</span>range_value_t<span class="op">&lt;</span>R<span class="op">&gt;</span>;</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>meta<span class="op">::</span>info array <span class="op">=</span> meta<span class="op">::</span>reflect_constant_array<span class="op">(</span>r<span class="op">)</span>;</span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> span<span class="op">&lt;</span><span class="kw">const</span> T<span class="op">&gt;(</span>extract<span class="op">&lt;</span><span class="kw">const</span> T<span class="op">*&gt;(</span>array<span class="op">)</span>, extent<span class="op">(</span>type_of<span class="op">(</span>array<span class="op">)))</span>;</span></code></pre></div>
 <div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;*</span> define_static_object<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">4</a></span>
 <em>Effects</em>: Equivalent to:</p>
 <div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> U <span class="op">=</span> remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;</span>;</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>is_class_type<span class="op">(^^</span>U<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> std<span class="op">::</span>address_of<span class="op">(</span>extract<span class="op">&lt;</span><span class="kw">const</span> U<span class="op">&amp;&gt;(</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>t<span class="op">)))</span>;</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> addressof<span class="op">(</span>extract<span class="op">&lt;</span><span class="kw">const</span> U<span class="op">&amp;&gt;(</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>std<span class="op">::</span>forward<span class="op">&lt;</span>T<span class="op">&gt;(</span>t<span class="op">))))</span>;</span>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> define_static_array<span class="op">(</span>span<span class="op">(&amp;</span>t, <span class="dv">1</span><span class="op">)).</span>data<span class="op">()</span>;</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> define_static_array<span class="op">(</span>span<span class="op">(</span>addressof<span class="op">(</span>t<span class="op">)</span>, <span class="dv">1</span><span class="op">)).</span>data<span class="op">()</span>;</span>
 <span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">5</a></span>
 <span class="note"><span>[ <em>Note 4:</em> </span>For class types,
 <code class="sourceCode cpp">define_static_object</code> provides the
 address of the template parameter object ([temp.param]) that is
