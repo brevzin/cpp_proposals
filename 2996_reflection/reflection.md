@@ -3908,7 +3908,7 @@ Add new paragraphs before the last paragraph of [basic.fundamental]{.sref} as fo
 
 A reflection is said to _represent_ the corresponding construct.
 
-[A reflection of a value can be produced by library functions such as `std::meta::constant_of`, `std::meta::template_arguments_of`, and `std::meta::reflect_constant`.]{.note}
+[A reflection of a value can be produced by library functions such as `std::meta::constant_of` and `std::meta::reflect_constant`.]{.note}
 
 ::: example
 ```cpp
@@ -4301,13 +4301,13 @@ constexpr auto j = e<([:^^h:])>;  // OK
 
 * [#.#]{.pnum} Otherwise, if `$S$` is a function `$F$`, the expression denotes an overload set containing all declarations of `$F$` that precede either the expression or the point immediately following the `$class-specifier$` of the outermost class for which the expression is in a complete-class context; overload resolution is performed ([over.match], [over.over]).
 
-* [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as `$S$`, and is a bit-field if and only if `$S$` is a bit-field. [The implicit transformation ([expr.prim.id]) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
+* [#.#]{.pnum} Otherwise, if `$S$` is an object or a non-static data member, the expression is an lvalue designating `$S$`. The expression has the same type as that of `$S$`, and is a bit-field if and only if `$S$` is a bit-field. [The implicit transformation ([expr.prim.id]) whereby an `$id-expression$` denoting a non-static member becomes a class member access does not apply to a `$splice-expression$`.]{.note}
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a variable or a structured binding, `$S$` shall either have static or thread storage duration or shall inhabit a scope enclosing the expression. The expression is an lvalue referring to the object or function `$X$` associated with or referenced by `$S$`, has the same type as `$S$`, and is a bit-field if and only if `$X$` is a bit-field.
+* [#.#]{.pnum} Otherwise, if `$S$` is a variable or a structured binding, `$S$` shall either have static or thread storage duration or shall inhabit a scope enclosing the expression. The expression is an lvalue referring to the object or function `$X$` associated with or referenced by `$S$`, has the same type as that of `$S$`, and is a bit-field if and only if `$X$` is a bit-field.
 
   [The type of a `$splice-expression$` designating a variable or structured binding of reference type will be adjusted to a non-reference type ([expr.type]).]{.note}
 
-* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue that computes `$S$` and whose type is the same as `$S$`.
+* [#.#]{.pnum} Otherwise, if `$S$` is a value or an enumerator, the expression is a prvalue that computes `$S$` and whose type is the same as that of `$S$`.
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
@@ -4317,7 +4317,7 @@ constexpr auto j = e<([:^^h:])>;  // OK
 
 * [#.#]{.pnum} If `$T$` is a function template, the expression denotes an overload set containing all declarations of `$T$` that precede either the expression or the point immediately following the `$class-specifier$` of the outermost class for which the expression is in a complete-class context; overload resolution is performed ([over.match], [over.over]).
 
-* [#.#]{.pnum} Otherwise, if `$T$` is a primary variable template, let `$S$` be the specialization of `$T$` corresponding to the template argument list of the `$splice-specialization-specifier$`. The expression is an lvalue referring to the same object associated with `$S$` and has the same type as `$S$`.
+* [#.#]{.pnum} Otherwise, if `$T$` is a primary variable template, let `$S$` be the specialization of `$T$` corresponding to the template argument list of the `$splice-specialization-specifier$`. The expression is an lvalue referring to the object associated with `$S$` and has the same type as that of `$S$`.
 
 * [#.#]{.pnum} Otherwise, the expression is ill-formed.
 
@@ -5669,12 +5669,17 @@ Extend and re-format paragraph 3 of [temp.names]{.sref}:
 
 ::: std
 
-[3]{.pnum} A `<` is interpreted as the delimiter of a `$template-argument-list$` if
+[3]{.pnum} A `<` is interpreted as the delimiter of a `$template-argument-list$` if either
 
-* [[#.#]{.pnum} it follows a `$splice-specifier$` that either appears in a type-only context or is preceded by the keyword `template` or the keyword `typename`, or]{.addu}
+::: addu
+* [#.#]{.pnum} it follows a `$splice-specifier$` that either
+  * [#.#.#]{.pnum} appears in a type-only context or
+  * [#.#.#]{.pnum}is preceded by `template` or `typename`, or
+:::
+
 * [#.#]{.pnum} it follows a name that is not a `$conversion-function-id$` and
-  * [#.#.#]{.pnum} that follows the keyword `template` or a `~` after a `$nested-name-specifier$` or in a class member access expression, or
-  * [#.#.#]{.pnum} for which name lookup finds the `$injected-class-name$` of a class template or finds any declaration of a template, or
+  * [#.#.#]{.pnum} that follows the keyword template or a ~ after a nested-name-specifier or in a class member access expression, or
+  * [#.#.#]{.pnum} for which name lookup finds the injected-class-name of a class template or finds any declaration of a template, or
   * [#.#.#]{.pnum} that is an unqualified name for which name lookup either finds one or more functions or finds nothing, or
   * [#.#.#]{.pnum} that is a terminal name in a `$using-declarator$` ([namespace.udecl]), in a `$declarator-id$` ([dcl.meaning]), or in a type-only context other than a `$nested-name-specifier$` ([temp.res]).
 
