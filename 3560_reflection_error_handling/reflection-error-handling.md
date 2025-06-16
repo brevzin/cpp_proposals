@@ -410,7 +410,7 @@ constexpr const char* what() const noexcept override;
 consteval u8string_view u8what() const noexcept;
 ```
 
-[#]{.pnum} *Returns*: `$what_$`.
+[#]{.pnum} *Returns*: `$u8what_$`.
 
 ```cpp
 consteval info from() const noexcept;
