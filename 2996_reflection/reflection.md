@@ -5678,8 +5678,8 @@ Extend and re-format paragraph 3 of [temp.names]{.sref}:
 :::
 
 * [#.#]{.pnum} it follows a name that is not a `$conversion-function-id$` and
-  * [#.#.#]{.pnum} that follows the keyword template or a ~ after a nested-name-specifier or in a class member access expression, or
-  * [#.#.#]{.pnum} for which name lookup finds the injected-class-name of a class template or finds any declaration of a template, or
+  * [#.#.#]{.pnum} that follows the keyword `template` or a `~` after a `$nested-name-specifier$` or in a class member access expression, or
+  * [#.#.#]{.pnum} for which name lookup finds the `$injected-class-name$` of a class template or finds any declaration of a template, or
   * [#.#.#]{.pnum} that is an unqualified name for which name lookup either finds one or more functions or finds nothing, or
   * [#.#.#]{.pnum} that is a terminal name in a `$using-declarator$` ([namespace.udecl]), in a `$declarator-id$` ([dcl.meaning]), or in a type-only context other than a `$nested-name-specifier$` ([temp.res]).
 
