@@ -61,14 +61,18 @@ To that end, we proposed the following exception type:
 ```cpp
 namespace std::meta {
 
-class exception
+class exception : public std::exception
 {
 public:
     consteval exception(u8string_view what,
                         info from,
                         source_location where = source_location::current());
+    consteval exception(string_view what,
+                        info from,
+                        source_location where = source_location::current());
 
-    consteval u8string_view what() const;
+    constexpr char const* what() const noexcept override;
+    consteval u8string_view u8what() const noexcept;
     consteval info from() const;
     consteval source_location where() const;
 };
@@ -77,7 +81,7 @@ public:
 ```
 :::
 
-`exception::what()` is a string describing the error; `exception::from()` is a reflection of the function (or function template) from a call to which the error originated; and `exception::where()` is the source location of the call to that function.
+`exception::what()` and `exception::u8what` are strings describing the error; `exception::from()` is a reflection of the function (or function template) from a call to which the error originated; and `exception::where()` is the source location of the call to that function.
 
 For example, the following function
 
@@ -90,7 +94,7 @@ consteval auto f()
 ```
 :::
 
-will throw an exception of type `std::meta::exception` for which `what()` will return (for example) `u8"invalid reflection operand"`, `from()` will return `^^std::meta::members_of`, and `where()` will return a `std::source_location` object pointing at the call to `members_of` inside `f`.
+will throw an exception of type `std::meta::exception` for which `u8what()` will return (for example) `u8"invalid reflection operand"`, `from()` will return `^^std::meta::members_of`, and `where()` will return a `std::source_location` object pointing at the call to `members_of` inside `f`.
 
 Suppose a user wishes to write a `consteval` function that only accepts class type reflections. It would be possible to use `std::meta::exception` to signal errors as follows:
 
@@ -175,7 +179,7 @@ There is no way to do that if we take and return `string_view` from the exceptio
 
 That is why we believe that taking and returning `u8string_view` is essential in order to maintain consistency with the current design of [@P2996R12], which is the result of extensive discussions in SG16.
 
-To address the usability question, after the SG16 telecon on February 5th, 2025, we decided to provide a dual API, like the rest of [@P2996R12], and have two constructors, one taking `u8string_view` and one taking `string_view`:
+To address the usability question, after the SG16 telecon on February 5th, 2025, we had originally decided to provide a dual API, like the rest of [@P2996R12], and have two constructors, one taking `u8string_view` and one taking `string_view`:
 
 ::: std
 ```cpp
@@ -215,6 +219,8 @@ public:
 where `what()` fails to be constant if it cannot transcode. It would be nice if we had at least `$u8-to-ordinary$` and `$ordinary-to-u8$` already specified and present but, well, today is better than tomorrow.
 
 This gives us a maximally usable API — since the standard library has plenty of support for `string` formatting and that can be used here, the conversion from ordinary to UTF-8 is fine. It does still mean that attempting to call `what()` could fail, but... so be it.
+
+Following discussion of [@3637R0], we altered this approach slightly to inherit from `std::exception` — and thus `what()` now has to return `const char*` instead of `std::string`.
 
 ## Single or Multiple Types
 
@@ -311,6 +317,8 @@ public:
 }
 ```
 :::
+
+See also [@P3637R0].
 
 # Recoverable or Unrecoverable
 
