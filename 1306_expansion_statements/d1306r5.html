@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2025-06-17" />
+  <title>Expansion Statements</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.csl-block{margin-left: 1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      .sourceCode { overflow: visible; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+text-align: justify;
+}
+@media screen and (max-width: 30em) {
+body {
+margin: 1.5em;
+}
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+td > div > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #C9FBC9;
+--diff-strongins: #acf2bd;
+--diff-del: #FFC8EB;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.addu td pre { background-color: inherit; }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+div.std blockquote { color: #000000; background-color: #F1F1F1;
+border: 1px solid #D1D1D1;
+padding-left: 0.5em; padding-right: 0.5em; }
+div.std.ins blockquote {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.ins > div.example {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
+div.rm li {
+text-decoration: line-through;
+color: #000000;
+}
+div.std blockquote del, div.rm {
+text-decoration: line-through;
+color: #000000;
+background-color: var(--diff-del);
+border: none;
+}
+code del { border: 1px solid #ECB3C7; }
+span.orange {
+background-color: #ffa500;
+}
+span.yellow {
+background-color: #ffff00;
+}</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Expansion Statements</h1>
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>D1306R5 <a href="https://wg21.link/P1306">[Latest]</a> <a href="https://wg21.link/P1306/status">[Status]</a></td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2025-06-17</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      CWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Dan Katz<br>&lt;<a href="mailto:dkatz85@bloomberg.net" class="email">dkatz85@bloomberg.net</a>&gt;<br>
+      Andrew Sutton<br>&lt;<a href="mailto:andrew.sutton@beyondidentity.com" class="email">andrew.sutton@beyondidentity.com</a>&gt;<br>
+      Sam Goodrick<br>&lt;<a href="mailto:samuel.goodrick@beyondidentity.com" class="email">samuel.goodrick@beyondidentity.com</a>&gt;<br>
+      Daveed Vandevoorde<br>&lt;<a href="mailto:daveed@edg.com" class="email">daveed@edg.com</a>&gt;<br>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#revision-history" id="toc-revision-history"><span class="toc-section-number">1</span> Revision
+History<span></span></a></li>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">2</span> Introduction<span></span></a></li>
+<li><a href="#design" id="toc-design"><span class="toc-section-number">3</span> Design<span></span></a>
+<ul>
+<li><a href="#expansion-over-expression-lists" id="toc-expansion-over-expression-lists"><span class="toc-section-number">3.1</span> Expansion over Expression
+Lists<span></span></a></li>
+<li><a href="#expansion-over-ranges" id="toc-expansion-over-ranges"><span class="toc-section-number">3.2</span> Expansion over
+Ranges<span></span></a></li>
+<li><a href="#expansion-over-tuples" id="toc-expansion-over-tuples"><span class="toc-section-number">3.3</span> Expansion over
+Tuples<span></span></a></li>
+<li><a href="#prioritizing-range-over-tuple" id="toc-prioritizing-range-over-tuple"><span class="toc-section-number">3.4</span> Prioritizing Range over
+Tuple<span></span></a></li>
+<li><a href="#break-and-continue" id="toc-break-and-continue"><span class="toc-section-number">3.5</span>
+<code class="sourceCode cpp"><span class="cf">break</span></code> and
+<code class="sourceCode cpp"><span class="cf">continue</span></code><span></span></a></li>
+<li><a href="#expansion-over-types" id="toc-expansion-over-types"><span class="toc-section-number">3.6</span> Expansion over
+Types<span></span></a></li>
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">3.7</span> Implementation
+experience<span></span></a></li>
+</ul></li>
+<li><a href="#proposed-wording" id="toc-proposed-wording"><span class="toc-section-number">4</span> Proposed wording<span></span></a>
+<ul>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">4.1</span>
+Feature-test-macro<span></span></a></li>
+</ul></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
+Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>This revision: Rewrote the prose and the wording.</p>
+<p><span class="citation" data-cites="P1306R3"><a href="https://wg21.link/p1306r3" role="doc-biblioref">[P1306R3]</a></span> Expansion over a range
+requires a constant expression. Added support for break and continue
+control flow during evaluation.</p>
+<p><span class="citation" data-cites="P1306R2"><a href="https://wg21.link/p1306r2" role="doc-biblioref">[P1306R2]</a></span> Adoption of <code class="sourceCode cpp"><span class="kw">template</span> <span class="cf">for</span></code>
+syntax. Added support for init-statement, folded pack expansion into new
+expansion-init-list mechanism. Updated reflection code to match P2996.
+Minor updates to wording: updated handling of switch statements, work
+around lack of general non-transient constexpr allocation, eliminated
+need for definition of an “intervening statement”, rebased onto working
+draft, updated feature macro value, fixed typos. Addressed CWG review
+feedback</p>
+<p><span class="citation" data-cites="P1306R1"><a href="https://wg21.link/p1306r1" role="doc-biblioref">[P1306R1]</a></span> Adopted a unified syntax for
+different forms of expansion statements. Further refinement of semantics
+to ensure expansion can be supported for all traversable sequences,
+including ranges of input iterators. Added discussion about
+<code class="sourceCode cpp"><span class="cf">break</span></code> and
+<code class="sourceCode cpp"><span class="cf">continue</span></code>
+within expansions.</p>
+<p><span class="citation" data-cites="P1306R0"><a href="https://wg21.link/p1306r0" role="doc-biblioref">[P1306R0]</a></span> superceded and extended <span class="title"><span class="citation" data-cites="P0589R0"><a href="https://wg21.link/p0589r0" role="doc-biblioref">[P0589R0]
+(Tuple-based for loops)</a></span></span> to work with more
+destructurable objects (e.g., classes, parameter packs). Added a
+separate constexpr-for variant that a) makes the loop variable a
+constant expression in each repeated expansion, and b) makes it possible
+to expand constexpr ranges. The latter feature is particularly important
+for static reflection.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
+Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>This paper proposes a new kind of statement that enables the
+compile-time repetition of a statement for each element of a tuple,
+array, class, range, or brace-delimited list of expressions. Existing
+methods for iterating over a heterogeneous container inevitably leverage
+recursively instantiated templates to allow some part of the repeated
+statement to vary (e.g., by type or constant) in each instantiation.
+While such behavior can be encapsulated in a single library operation
+(e.g., Boost.Hana’s <code class="sourceCode cpp">for_each</code>) or,
+potentially in the future, using the <code class="sourceCode cpp"><span class="op">[:</span>expand<span class="op">(...):]</span></code>
+construct built on top of <span class="title"><span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10] (Reflection for C++26)</a></span></span>
+reflection facilities, there are several reasons to prefer language
+support:</p>
+<p>First, repetition is a fundamental building block of algorithms, and
+should be expressible directly without complex template instantiation
+strategies.</p>
+<p>Second, such repetition should be as inexpensive as possible.
+Recursively instantiating templates generates a large number of
+specializations, which can consume significant compilation time and
+memory resources.</p>
+<p>Third, library-based approaches rely on placing the repeated
+statements in a lambda body, which changes the semantics of something
+like a
+<code class="sourceCode cpp"><span class="cf">return</span></code>
+statement — and makes coroutines unusable.</p>
+<p>Lastly, “iteration” over destructurable classes effectively requires
+language support to implement correctly.</p>
+<p>Here are some basic usage examples:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Today</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Proposed</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div>
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_all<span class="op">(</span>std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">char</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  hana<span class="op">::</span>for_each<span class="op">(</span>xs, <span class="op">[&amp;](</span><span class="kw">auto</span> elem<span class="op">){</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, elem<span class="op">)</span>;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+<td><div>
+
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_all<span class="op">(</span>std<span class="op">::</span>tuple<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">char</span><span class="op">&gt;</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, elem<span class="op">)</span>;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+</tr>
+<tr class="even">
+<td><div>
+
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_all<span class="op">(</span>Ts<span class="op">...</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  hana<span class="op">::</span>for_each<span class="op">(</span>std<span class="op">::</span>tie<span class="op">(</span>xs<span class="op">...)</span>, <span class="op">[&amp;](</span><span class="kw">auto</span> elem<span class="op">){</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, elem<span class="op">)</span>;</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">})</span>;</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+<td><div>
+
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_all<span class="op">(</span>Ts<span class="op">...</span> xs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> <span class="op">{</span>xs<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, elem<span class="op">)</span>;</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+</tr>
+<tr class="odd">
+<td><div>
+
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_all<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">[:</span> expand<span class="op">(</span>nsdms<span class="op">(^^</span>T<span class="op">))</span> <span class="op">:]</span> <span class="op">&gt;&gt;</span> <span class="op">[&amp;]&lt;</span><span class="kw">auto</span> e<span class="op">&gt;{</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;.{}={}&quot;</span>, identifier_of<span class="op">(</span>e<span class="op">)</span>, v<span class="op">.[:</span>e<span class="op">:])</span>;</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+<td><div>
+
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_all<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> e <span class="op">:</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                define_static_array<span class="op">(</span>nsdms<span class="op">(^^</span>T<span class="op">)))</span> <span class="op">{</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;.{}={}&quot;</span>, identifier_of<span class="op">(</span>e<span class="op">)</span>, v<span class="op">.[:</span>e<span class="op">:])</span>;</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+</tr>
+</tbody>
+</table>
+<p>For the last row, <code class="sourceCode cpp">expand</code> is
+demonstrated in <span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]</a></span>, <code class="sourceCode cpp">define_static_array<span class="op">()</span></code>
+comes from <span class="title"><span class="citation" data-cites="P3491R1"><a href="https://wg21.link/p3491r1" role="doc-biblioref">[P3491R1]
+(define_static_{string,object,array})</a></span></span> (although can be
+implemented purely on top of p2996) and works around non-transient
+allocation (more on this later), and <code class="sourceCode cpp">nsdms<span class="op">(</span>type<span class="op">)</span></code>
+is just shorthand for <code class="sourceCode cpp">nonstatic_data_members_of<span class="op">(</span>type, std<span class="op">::</span>meta<span class="op">::</span>access<span class="op">::</span>unprivileged<span class="op">())</span></code>
+just to help fit.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="design"><span class="header-section-number">3</span> Design<a href="#design" class="self-link"></a></h1>
+<p>The proposed design allows iterating over:</p>
+<ul>
+<li>expression lists,</li>
+<li>anything destructurable via structured bindings (i.e. tuple-like),
+or</li>
+<li>ranges with compile-time size</li>
+</ul>
+<p>The expansion statement</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><em>init-statement</em><sub>opt</sub> <em>for-range-declaration</em> <span class="op">:</span> <em>expansion-initializer</em><span class="op">)</span> <em>statement</em></span></code></pre></div>
+</blockquote>
+</div>
+<p>will determine an <em>expansion size</em> based on the
+<code class="sourceCode cpp"><em>expansion-initializer</em></code> and
+then <em>expand</em> into:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <em>init-statement</em><sub>opt</sub></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <em>additional-expansion-declarations</em><sub>opt</sub>; <span class="co">// depends on expansion kind</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <em>for-range-declaration</em> <span class="op">=</span> <em>get-expr</em><span class="op">(</span><span class="dv">0</span><span class="op">)</span>;</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <em>statement</em></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <em>for-range-declaration</em> <span class="op">=</span> <em>get-expr</em><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <em>statement</em></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ... repeated up to ...</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        <em>for-range-declaration</em> <span class="op">=</span> <em>get-expr</em><span class="op">(</span><em>expansion-size</em> <span class="op">-</span> <span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <em>statement</em></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>The mechanism of determining the
+<code class="sourceCode cpp"><em>additional-expansion-declarations</em></code>
+(if any), the expansion size, and
+<code class="sourceCode cpp"><em>get-expr</em></code> depends on the
+<code class="sourceCode cpp"><em>expansion-initializer</em></code>.</p>
+<h2 data-number="3.1" id="expansion-over-expression-lists"><span class="header-section-number">3.1</span> Expansion over Expression
+Lists<a href="#expansion-over-expression-lists" class="self-link"></a></h2>
+<p>If <code class="sourceCode cpp"><em>expansion-initializer</em></code>
+is of the form <code class="sourceCode cpp"><span class="op">{</span> <em>expression-list</em> <span class="op">}</span></code>,
+then:</p>
+<ul>
+<li>there are no
+<code class="sourceCode cpp"><em>additional-expansion-declarations</em></code></li>
+<li>the expansion size is the number of
+<code class="sourceCode cpp"><em>expression</em></code>s in the
+<code class="sourceCode cpp"><em>expression-list</em></code> (possibly
+0), and</li>
+<li><code class="sourceCode cpp"><em>get-expr</em><span class="op">(</span>i<span class="op">)</span></code>
+is the <code class="sourceCode cpp">i</code>th
+<code class="sourceCode cpp"><em>expression</em></code> in the
+<code class="sourceCode cpp"><em>expression-list</em></code>.</li>
+</ul>
+<p>For example:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Code</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Expands Into</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div>
+
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_all<span class="op">(</span>Ts<span class="op">...</span> elems<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> <span class="op">{</span>elems<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, elem<span class="op">)</span>;</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+<td><div>
+
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_all<span class="op">(</span>Ts<span class="op">...</span> elems<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="kw">auto</span> elem <span class="op">=</span> elems<span class="op">...[</span><span class="dv">0</span><span class="op">]</span>;</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, elem<span class="op">)</span>;</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>      <span class="kw">auto</span> elem <span class="op">=</span> elems<span class="op">...[</span><span class="dv">1</span><span class="op">]</span>;</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>      std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, elem<span class="op">)</span>;</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>      <span class="kw">auto</span> elem <span class="op">=</span> elems<span class="op">...[</span><span class="dv">2</span><span class="op">]</span>;</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>      std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, elem<span class="op">)</span>;</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+</tr>
+</tbody>
+</table>
+<p>Approximately anyway. The
+<code class="sourceCode cpp"><em>expression-list</em></code> need not be
+a simple pack expansion for which pack indexing applies, that’s just for
+illustration purposes.</p>
+<p>An earlier revision of this paper did not have dedicated syntax for
+expansion over packs. The syntax for the above example was originally
+proposed as:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_all<span class="op">(</span>Ts<span class="op">...</span> elems<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> elem <span class="op">:</span> elems<span class="op">)</span> <span class="op">{</span> <span class="co">// just elems</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, elem<span class="op">)</span>;</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>This was pointed out by Richard Smith to be ambiguous <a href="https://lists.isocpp.org/ext/2019/07/10770.php">on the EWG
+reflector</a>. Consider:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fn<span class="op">(</span>Ts<span class="op">...</span> vs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">([&amp;](</span><span class="kw">auto</span> p<span class="op">){</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> v <span class="op">:</span> vs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>      <span class="co">// ...</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">}(</span>vs<span class="op">)</span>, <span class="op">...)</span>;</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Consider the call <code class="sourceCode cpp">fn<span class="op">(</span>array<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span><span class="op">}</span>, array<span class="op">{</span><span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">7</span><span class="op">}</span>, array<span class="op">{</span><span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">8</span><span class="op">})</span></code>.
+It is far from clear whether the expansion statement containing
+<code class="sourceCode cpp">vs</code> expands over:</p>
+<ul>
+<li>each of the three <code class="sourceCode cpp">array</code>
+arguments (once for each invocation of the lambda), or</li>
+<li>each of the four
+<code class="sourceCode cpp"><span class="dt">int</span></code> elements
+(of a different <code class="sourceCode cpp">array</code> for each
+invocation of the lambda).</li>
+</ul>
+<p>Initially, support for pack iteration was dropped from the proposal
+entirely, but it was added back using the
+<code class="sourceCode cpp"><em>expansion-init-list</em></code> syntax
+in <span class="citation" data-cites="P1306R2"><a href="https://wg21.link/p1306r2" role="doc-biblioref">[P1306R2]</a></span>.</p>
+<p>In addition to avoiding ambiguity, it is also broadly more useful
+than simply expanding over a pack since it allows ad hoc expressions.
+For instance, can add prefixes, suffixes, or even multiple packs: <code class="sourceCode cpp"><span class="op">{</span><span class="dv">0</span>, xs<span class="op">...</span>, <span class="dv">1</span>, ys<span class="op">...</span>, <span class="dv">2</span><span class="op">}</span></code>
+is totally fine.</p>
+<h2 data-number="3.2" id="expansion-over-ranges"><span class="header-section-number">3.2</span> Expansion over Ranges<a href="#expansion-over-ranges" class="self-link"></a></h2>
+<p>If <code class="sourceCode cpp"><em>expansion-initializer</em></code>
+is a single expression that is a range, then:</p>
+<ul>
+<li><p><code class="sourceCode cpp"><em>addition-expansion-declarations</em></code>
+is:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>constexpr<sub>opt</sub> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__range</em> <span class="op">=</span> <em>expansion-initializer</em>;</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>constexpr<sub>opt</sub> <span class="kw">auto</span> <em>__begin</em> <span class="op">=</span> <em>begin-expr</em>; <span class="co">// see [stmt.ranged]</span></span></code></pre></div>
+<p>where the
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+specifier is present when the
+<code class="sourceCode cpp"><em>for-range-declaration</em></code> is
+declared with
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>.</p></li>
+<li><p>the expansion size is <code class="sourceCode cpp"><em>end-expr</em> <span class="op">-</span> <em>__begin</em></code>.
+This expression must be a constant expression. It is possible for this
+to be the case even if
+<code class="sourceCode cpp"><em>__begin</em></code> is not
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>,
+but expansion statements over ranges in general are really only useful
+if the loop element is
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>.</p></li>
+<li><p><code class="sourceCode cpp"><em>get-expr</em><span class="op">(</span>i<span class="op">)</span></code>
+is <code class="sourceCode cpp"><span class="op">*(</span><em>__begin</em> <span class="op">+</span> i<span class="op">)</span></code>.</p></li>
+</ul>
+<p>For example:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Code</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Expands Into</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div>
+
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="dt">int</span> I <span class="op">:</span> std<span class="op">::</span>array<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">})</span> <span class="op">{</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static_assert</span><span class="op">(</span>I <span class="op">&lt;</span> <span class="dv">4</span><span class="op">)</span>;</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+<td><div>
+
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>__range</em> <span class="op">=</span> std<span class="op">::</span>array<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <em>__begin</em> <span class="op">=</span> <em>__range</em><span class="op">.</span>begin<span class="op">()</span>;</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <em>__expansion-size</em> <span class="op">=</span> <em>__range</em><span class="op">.</span>end<span class="op">()</span> <span class="op">-</span> <em>__begin</em>; <span class="co">// 3</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">constexpr</span> <span class="dt">int</span> I <span class="op">=</span> <span class="op">*(</span><em>__begin</em> <span class="op">+</span> <span class="dv">0</span><span class="op">)</span>;</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>      <span class="kw">static_assert</span><span class="op">(</span>I <span class="op">&lt;</span> <span class="dv">4</span><span class="op">)</span>;</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>      <span class="kw">constexpr</span> <span class="dt">int</span> I <span class="op">=</span> <span class="op">*(</span><em>__begin</em> <span class="op">+</span> <span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>      <span class="kw">static_assert</span><span class="op">(</span>I <span class="op">&lt;</span> <span class="dv">4</span><span class="op">)</span>;</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>      <span class="kw">constexpr</span> <span class="dt">int</span> I <span class="op">=</span> <span class="op">*(</span><em>__begin</em> <span class="op">+</span> <span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>      <span class="kw">static_assert</span><span class="op">(</span>I <span class="op">&lt;</span> <span class="dv">4</span><span class="op">)</span>;</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+</tr>
+</tbody>
+</table>
+<p>Note that the <code class="sourceCode cpp"><em>__range</em></code>
+variable is declared
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+here. As such, all the usual rules for
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variables apply. Including the restriction on non-transient
+allocation.</p>
+<p>Consider:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_members<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">:</span> nonstatic_data_members_of<span class="op">(^^</span>T<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>      std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;.{}={}&quot;</span>, identifier_of<span class="op">(</span>r<span class="op">)</span>, v<span class="op">.[:</span>r<span class="op">:])</span>;</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Examples like this feature prominently in <span class="citation" data-cites="P2996R10"><a href="https://wg21.link/p2996r10" role="doc-biblioref">[P2996R10]</a></span>. And at first glance, this
+seems fine. The compiler knows the length of the vector returned by
+<code class="sourceCode cpp">members_of<span class="op">(^^</span>T<span class="op">)</span></code>,
+and can expand the body for each element. However, the expansion in
+question more or less requires a constexpr vector, which the language is
+not yet equipped to handle.</p>
+<p>We at first attempted to carve out a narrow exception from
+[expr.const] to permit non-transient constexpr allocation in this very
+limited circumstance. Although the wording seemed reasonable, our
+implementation experience with Clang left us less than optimistic for
+this approach: The architecture of Clang’s constant evaluator really
+does make every effort to prevent dynamic allocations from surviving the
+evaluation of a constant expression (certainly necessary to produce a
+“<code class="sourceCode cpp"><span class="kw">constexpr</span> vector</code>”).
+After some wacky experiments that amounted to trying to “rip the
+constant evaluator in half” (i.e., separating the “evaluation state”,
+whereby dynamically allocated values are stored, from the rest of the
+metadata pertaining to an evaluation), we decided to fold: as of the
+<span class="citation" data-cites="P1306R3"><a href="https://wg21.link/p1306r3" role="doc-biblioref">[P1306R3]</a></span> revision, we instead propose
+restricting expansion over iterable expressions to only cover those that
+are constant expression.</p>
+<p>In other words — the desugaring described above (which is similar to
+the desugaring for the C++11 range-based
+<code class="sourceCode cpp"><span class="cf">for</span></code>
+statement) — is what you get. No special cases.</p>
+<p>Regrettably, this makes directly expanding over <code class="sourceCode cpp">members_of<span class="op">(^^</span>T<span class="op">)</span></code>
+ill-formed for C++26 – but all is not lost: By composing
+<code class="sourceCode cpp">members_of</code> with the
+<code class="sourceCode cpp">define_static_array</code> function from
+<span class="title"><span class="citation" data-cites="P3491R1"><a href="https://wg21.link/p3491r1" role="doc-biblioref">[P3491R1]
+(define_static_{string,object,array})</a></span></span> we obtain a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+<code class="sourceCode cpp">span</code> containing the same reflections
+from <code class="sourceCode cpp">members_of</code>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> print_members<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">:</span> define_static_array<span class="op">(</span>nonstatic_data_members_of<span class="op">(^^</span>T<span class="op">)))</span> <span class="op">{</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>      std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;.{}={}&quot;</span>, identifier_of<span class="op">(</span>r<span class="op">)</span>, v<span class="op">.[:</span>r<span class="op">:])</span>;</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>This works fine, since we no longer require non-transient allocation.
+We’re good to go.</p>
+<p>This yields the same expressive power, at the cost of a few extra
+characters and a bit more memory that must be persisted during
+compilation. It’s a much better workaround than others we have tried
+(e.g., the expand template), and if (when?) WG21 figures out how to
+support non-transient constexpr allocation, the original syntax should
+be able to “just work”.</p>
+<h2 data-number="3.3" id="expansion-over-tuples"><span class="header-section-number">3.3</span> Expansion over Tuples<a href="#expansion-over-tuples" class="self-link"></a></h2>
+<p>If <code class="sourceCode cpp"><em>expansion-initializer</em></code>
+is a single expression that is a range, then:</p>
+<ul>
+<li><p>the expansion size is the <em>structured binding size</em> of the
+<code class="sourceCode cpp"><em>expansion-initializer</em></code>
+(<span>9.7 <a href="https://wg21.link/dcl.struct.bind">[dcl.struct.bind]</a></span>)</p></li>
+<li><p><code class="sourceCode cpp"><em>addition-expansion-declarations</em></code>
+is:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>constexpr<sub>opt</sub> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">[</span><em>__v</em><sub>0</sub>, <em>__v</em><sub>0</sub>, <span class="op">...</span>, <em>__v</em><sub>expansion_size-1</sub><span class="op">]</span> <span class="op">=</span> <em>expansion-initializer</em>;</span></code></pre></div></li>
+<li><p><code class="sourceCode cpp"><em>get-expr</em><span class="op">(</span>i<span class="op">)</span></code>
+is <code class="sourceCode cpp"><em>__v</em><sub>i</sub></code> if
+either the referenced type is an lvalue reference or the
+<code class="sourceCode cpp"><em>expansion-initializer</em></code> is an
+lvalue. Otherwise, <code class="sourceCode cpp">std<span class="op">::</span>move<span class="op">(</span><em>__v</em><sub>i</sub><span class="op">)</span></code>.</p></li>
+</ul>
+<p>For example:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>Code</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Desugars Into</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><div>
+
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> tup <span class="op">=</span> std<span class="op">::</span>make_tuple<span class="op">(</span><span class="dv">0</span>, <span class="ch">&#39;a&#39;</span><span class="op">)</span>;</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> elem <span class="op">:</span> tup<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  elem <span class="op">+=</span> <span class="dv">1</span>;</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+<td><div>
+
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> tup <span class="op">=</span> std<span class="op">::</span>make_tuple<span class="op">(</span><span class="dv">0</span>, <span class="ch">&#39;a&#39;</span><span class="op">)</span>;</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">[</span><em>__v</em><sub>0</sub>, <em>__v</em><sub>1</sub><span class="op">]</span> <span class="op">=</span> tup;</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">&amp;</span> elem <span class="op">=</span> <em>__v</em><sub>0</sub>;</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    elem <span class="op">+=</span> <span class="dv">1</span>;</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">&amp;</span> elem <span class="op">=</span> <em>__v</em><sub>1</sub>;</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    elem <span class="op">+=</span> <span class="dv">1</span>;</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+
+</div></td>
+</tr>
+</tbody>
+</table>
+<h2 data-number="3.4" id="prioritizing-range-over-tuple"><span class="header-section-number">3.4</span> Prioritizing Range over Tuple<a href="#prioritizing-range-over-tuple" class="self-link"></a></h2>
+<p>Most types can either be used as a range or destructured, but not
+both. And even some that can be used in both contexts have equivalent
+meaning in both — C arrays and
+<code class="sourceCode cpp">std<span class="op">::</span>array</code>.</p>
+<p>However, it is possible to have types that have different meanings
+with either interpretation. That means that, for a given type, we have
+to pick one interpretation. Which should we pick?</p>
+<p>One such example is <code class="sourceCode cpp">std<span class="op">::</span>ranges<span class="op">::</span>subrange<span class="op">(</span>first, last<span class="op">)</span></code>.
+This could be:</p>
+<ul>
+<li>as a range, from <code class="sourceCode cpp"><span class="op">[</span>first, last<span class="op">)</span></code>.</li>
+<li>as a tuple, specifically the iterators
+<code class="sourceCode cpp">first</code> and
+<code class="sourceCode cpp">last</code> (i.e. always size 2).</li>
+</ul>
+<p>Another such example is a range type that just happens to have all
+public members. <code class="sourceCode cpp">std<span class="op">::</span>views<span class="op">::</span>empty<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+isn’t going to have any non-static data members at all, so it’s
+tuple-like (with size 0) and also a range (with size 0), so that one
+amusingly works out the same either way.</p>
+<p>But any other range whose members happen to be public probably wants
+to be interpreted as a range. Moreover, the structured binding rule
+doesn’t actually require <em>public</em> members, just
+<em>accessible</em> ones. So there are some types that might be only
+ranges externally but could be both ranges and tuples internally.</p>
+<p>In all of these cases, it seems like the obviously desired
+interpretation is as a range. Which is why we give priority to the range
+interpretation over the tuple interpretation.</p>
+<p>Additionally, given a type that can be interpreted both ways, it easy
+enough to force the tuple interpretation if so desired:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> into_tuple<span class="op">(</span>T <span class="kw">const</span><span class="op">&amp;</span> v<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[...</span>parts<span class="op">]</span> <span class="op">=</span> v;</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> std<span class="op">::</span>tie<span class="op">(</span>parts<span class="op">...)</span>;</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<h2 data-number="3.5" id="break-and-continue"><span class="header-section-number">3.5</span>
+<code class="sourceCode cpp"><span class="cf">break</span></code> and
+<code class="sourceCode cpp"><span class="cf">continue</span></code><a href="#break-and-continue" class="self-link"></a></h2>
+<p>Earlier revisions of the paper did not support
+<code class="sourceCode cpp"><span class="cf">break</span></code> or
+<code class="sourceCode cpp"><span class="cf">continue</span></code>
+within expansion statements. There was previously concern that users
+would expect such statement to exercise control over the code generation
+/ expansion process at translation time, rather than over the evaluation
+of the statement.</p>
+<p>Discussions with others have convinced us that this will not be an
+issue, and to give the keywords their most obvious meaning:
+<code class="sourceCode cpp"><span class="cf">break</span></code> jumps
+to just after the end of the last expansion, whereas
+<code class="sourceCode cpp"><span class="cf">continue</span></code>
+jumps to the start of the next expansion (if any).</p>
+<h2 data-number="3.6" id="expansion-over-types"><span class="header-section-number">3.6</span> Expansion over Types<a href="#expansion-over-types" class="self-link"></a></h2>
+<p>There are regular requests to support expanding over <em>types</em>
+directly, rather than expressions:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// strawman syntax</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">typename</span> T <span class="op">:</span> <span class="op">{</span>Ts<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>        do_something<span class="op">&lt;</span>T<span class="op">&gt;()</span>;</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Something like this would be difficult to support directly since you
+can’t tell that the declaration is just a type rather than an unnamed
+variable. But with Reflection coming, there’s less motivation to come up
+with a way to address this problem directly since we can just iterate in
+the value domain:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Ts<span class="op">&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> <span class="kw">auto</span> r <span class="op">:</span> <span class="op">{^^</span>Ts<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">using</span> T <span class="op">=</span> <span class="op">[:</span>r<span class="op">:]</span>;</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        do_something<span class="op">&lt;</span>T<span class="op">&gt;()</span>;</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<h2 data-number="3.7" id="implementation-experience"><span class="header-section-number">3.7</span> Implementation experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>Bloomberg’s Clang/P2996 fork (available <a href="https://godbolt.org/z/Yjv1dM4eK">on Godbolt</a>) implements all
+features proposed by this paper. Expansion statements are enabled with
+the <code class="sourceCode cpp"><span class="op">-</span>fexpansion<span class="op">-</span>statements</code>
+flag (or with <code class="sourceCode cpp"><span class="op">-</span>freflection<span class="op">-</span>latest</code>).</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposed-wording"><span class="header-section-number">4</span>
+Proposed wording<a href="#proposed-wording" class="self-link"></a></h1>
+<p>Update <span>6.4.2 <a href="https://wg21.link/basic.scope.pdecl">[basic.scope.pdecl]</a></span>/11
+to specify the locus of an expansion statement:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">11</a></span>
+The locus of a
+<code class="sourceCode cpp"><em>for-range-declaration</em></code> of a
+range-based
+<code class="sourceCode cpp"><span class="cf">for</span></code>
+statement ([stmt.range]) is immediately after the
+<code class="sourceCode cpp"><em>for-range-initializer</em></code>.
+<span class="addu">The locus of a
+<code class="sourceCode cpp"><em>for-range-declaration</em></code> of an
+expansion statement ([stmt.expand]) is immediately after the
+<code class="sourceCode cpp"><em>expansion-initializer</em></code>.</span></p>
+</blockquote>
+</div>
+<p>Update <span>6.4.3 <a href="https://wg21.link/basic.scope.block">[basic.scope.block]</a></span>/1.1
+to include expansion statements:</p>
+<div class="std">
+<blockquote>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(1.1)</a></span>
+selection<span class="addu">,</span> <span class="rm" style="color: #bf0303"><del>or</del></span> iteration<span class="addu">, or expansion</span> statement ([stmt.select], [stmt.iter]
+<span class="addu">, [stmt.expand]</span>)</li>
+</ul>
+</blockquote>
+</div>
+<p>Modify <span>6.7.7 <a href="https://wg21.link/class.temporary">[class.temporary]</a></span>/5
+to clarify that there are now six contexts:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">5</a></span>
+There are <span class="rm" style="color: #bf0303"><del>five</del></span>
+<span class="addu">six</span> contexts in which temporaries are
+destroyed at a different point than the end of the full-expression.
+[…]</p>
+</blockquote>
+</div>
+<p>Insert a new paragraph after <span>6.7.7 <a href="https://wg21.link/class.temporary">[class.temporary]</a></span>/7
+to extend the lifetime of temporaries created by expansion statements,
+and update the ordinal number used in paragraph 8:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">7</a></span>
+The fourth context is when a temporary object other than a function
+parameter object is created in the
+<code class="sourceCode cpp"><em>for-range-initializer</em></code> of a
+range-based
+<code class="sourceCode cpp"><span class="cf">for</span></code>
+statement. […]</p>
+<p><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">7+</a></span>
+The fifth context is when a temporary object other than a function
+parameter object is created in the
+<code class="sourceCode cpp"><em>expansion-initializer</em></code> of an
+iterable or destructurable expansion statement, or in a full-expression
+in the <code class="sourceCode cpp"><em>expansion-init-list</em></code>
+of an enumerated expansion statement ([stmt.expand]). If such a
+temporary object would otherwise be destroyed at the end of that
+full-expression, the object persists for the lifetime of the reference
+initialized by the expression in the expanded expansion
+statement.</span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">8</a></span>
+The <span class="rm" style="color: #bf0303"><del>fifth</del></span>
+<span class="addu">sixth</span> context is when a temporary object is
+created in a structured binding declaration ([dcl.struct.bind]). […]</p>
+</blockquote>
+</div>
+<p>Add a production for expansion statements to
+<code class="sourceCode cpp"><em>statement</em></code> to <span>8.1 <a href="https://wg21.link/stmt.pre">[stmt.pre]</a></span>:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">1</a></span>
+Except as indicated, statements are executed in sequence.</p>
+<div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>  <em>statement</em>:</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>      <em>labeled-statement</em></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>      <em>attribute-specifier-seq</em><sub><em>opt</em></sub> <em>expression-statement</em></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>      <em>attribute-specifier-seq</em><sub><em>opt</em></sub> <em>compound-statement</em></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>      <em>attribute-specifier-seq</em><sub><em>opt</em></sub> <em>selection-statement</em></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>      <em>attribute-specifier-seq</em><sub><em>opt</em></sub> <em>iteration-statement</em></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="va">+     <em>attribute-specifier-seq</em><sub><em>opt</em></sub> <em>expansion-statement</em></span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>      <em>attribute-specifier-seq</em><sub><em>opt</em></sub> <em>jump-statement</em></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>      <em>declaration-statement</em></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>      <em>attribute-specifier-seq</em><sub><em>opt</em></sub> <em>try-block</em></span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<p>Extend “substatement” to cover expansion statements in <span>8.1 <a href="https://wg21.link/stmt.pre">[stmt.pre]</a></span>/2:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">2</a></span>
+A <em>substatement</em> of a
+<code class="sourceCode cpp"><em>statement</em></code> is one of the
+following:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(2.1)</a></span>
+for a <code class="sourceCode cpp"><em>labeled-statement</em></code>,
+its <code class="sourceCode cpp"><em>statement</em></code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(2.2)</a></span>
+for a <code class="sourceCode cpp"><em>compound-statement</em></code>,
+any <code class="sourceCode cpp"><em>statement</em></code> of its
+<code class="sourceCode cpp"><em>statement-seq</em></code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(2.3)</a></span>
+for a <code class="sourceCode cpp"><em>selection-statement</em></code>,
+any of its <code class="sourceCode cpp"><em>statement</em></code>s or
+<code class="sourceCode cpp"><em>compound-statement</em></code>s (but
+not its <code class="sourceCode cpp"><em>init-statement</em></code>),
+<span class="rm" style="color: #bf0303"><del>or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(2.4)</a></span>
+for an <code class="sourceCode cpp"><em>iteration-statement</em></code>,
+its <code class="sourceCode cpp"><em>statement</em></code> (but not an
+<code class="sourceCode cpp"><em>init-statement</em></code>)<span class="rm" style="color: #bf0303"><del>.</del></span><span class="addu">, or</span></li>
+<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(2.5)</a></span>
+for an <code class="sourceCode cpp"><em>expansion-statement</em></code>,
+its <code class="sourceCode cpp"><em>statement</em></code> (but not an
+<code class="sourceCode cpp"><em>init-statement</em></code>).</span></li>
+</ul>
+</blockquote>
+</div>
+<p>Extend “enclose” to cover expansion statements in <span>8.1 <a href="https://wg21.link/stmt.pre">[stmt.pre]</a></span>/3:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">3</a></span>
+A <code class="sourceCode cpp"><em>statement</em></code>
+<code class="sourceCode cpp">S1</code> <em>encloses</em> a
+<code class="sourceCode cpp"><em>statement</em></code>
+<code class="sourceCode cpp">S2</code> if</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(3.1)</a></span>
+<code class="sourceCode cpp">S2</code> is a substatement of
+<code class="sourceCode cpp">S1</code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(3.2)</a></span>
+<code class="sourceCode cpp">S1</code> is a
+<code class="sourceCode cpp"><em>selection-statement</em></code><span class="addu">,</span> <span class="rm" style="color: #bf0303"><del>or</del></span>
+<code class="sourceCode cpp"><em>iteration-statement</em></code><span class="addu">, or
+<code class="sourceCode cpp"><em>expansion-statement</em></code></span>
+and <code class="sourceCode cpp">S2</code> is the
+<code class="sourceCode cpp"><em>init-statement</em></code> of
+<code class="sourceCode cpp">S1</code>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(3.3)</a></span>
+[…]</li>
+</ul>
+</blockquote>
+</div>
+<p>Add a new paragraph to the end of <span>8.2 <a href="https://wg21.link/stmt.label">[stmt.label]</a></span>:</p>
+<div class="std">
+<blockquote>
+<p><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">4</a></span>
+An identifier label shall not occur in an
+<code class="sourceCode cpp"><em>expansion-statement</em></code>
+([stmt.expand]).</span></p>
+</blockquote>
+</div>
+<p>Insert this section after <span>8.6 <a href="https://wg21.link/stmt.iter">[stmt.iter]</a></span> (and renumber
+accordingly).</p>
+<div class="std">
+<blockquote>
+<div class="addu">
+<p><strong>Expansion statements [stmt.expand]</strong></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">1</a></span>
+Expansion statements specify repeated instantiations ([temp.spec]) of
+their substatement.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><em>expansion-statement</em>:</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    template for ( <em>init-statement</em><sub><em>opt</em></sub> <em>for-range-declaration</em> : <em>expansion-initializer</em> ) <em>statement</em></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><em>expansion-initializer</em>:</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <em>expression</em></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <em>expansion-init-list</em></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><em>expansion-init-list</em>:</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    { <em>expression-list</em> }</span></code></pre></div>
+<p><span class="note"><span>[ <em>Note 1:</em> </span>Each
+<code class="sourceCode cpp"><em>decl-specifier</em></code> in the
+<code class="sourceCode cpp"><em>decl-specifier-seq</em></code> of a
+<code class="sourceCode cpp"><em>for-range-declaration</em></code> is
+either a <code class="sourceCode cpp"><em>type-specifier</em></code> or
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+([stmt.ranged]).<span> — <em>end note</em> ]</span></span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">2</a></span>
+The <code class="sourceCode cpp"><em>statement</em></code> of an
+<code class="sourceCode cpp"><em>expansion-statement</em></code> is a
+control-flow-limited statement ([stmt.label]).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">3</a></span>
+For the purpose of name lookup and instantiation, the
+<code class="sourceCode cpp"><em>for-range-declaration</em></code> and
+the <code class="sourceCode cpp"><em>statement</em></code> of the
+<code class="sourceCode cpp"><em>expansion-statement</em></code> are
+together considered a template definition.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">4</a></span>
+An expression is <em>iterable</em> if, when treated as a
+<code class="sourceCode cpp"><em>for-range-initializer</em></code>
+([stmt.iter.general]), the expressions
+<code class="sourceCode cpp"><em>begin-expr</em></code> and
+<code class="sourceCode cpp"><em>end-expr</em></code> can be determined
+as specified in [stmt.ranged], and, if they are of the form <code class="sourceCode cpp">begin<span class="op">(</span><em>range</em><span class="op">)</span></code>
+and <code class="sourceCode cpp">end<span class="op">(</span><em>range</em><span class="op">)</span></code>,
+then argument-dependent lookup finds at least one function or function
+template for each.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">5</a></span>
+An expansion statement is</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(5.1)</a></span>
+an <em>iterable expansion statement</em> if its
+<code class="sourceCode cpp"><em>expansion-initializer</em></code> is an
+iterable expression that does not have array type;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(5.2)</a></span>
+otherwise, a <em>destructurable expansion statement</em> if its
+<code class="sourceCode cpp"><em>expansion-initializer</em></code> is a
+non-type-dependent expression with a structured binding size
+([dcl.struct.bind]);</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(5.3)</a></span>
+otherwise, an <em>enumerated expansion statement</em> if its
+<code class="sourceCode cpp"><em>expansion-initializer</em></code> is of
+the form
+<code class="sourceCode cpp"><em>expansion-init-list</em></code>;</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(5.4)</a></span>
+otherwise, ill-formed.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">6</a></span>
+An expansion statement <code class="sourceCode cpp"><em>S</em></code>
+with an
+<code class="sourceCode cpp"><em>expansion-initializer</em></code>
+<code class="sourceCode cpp"><em>E</em></code> is <em>expanded</em>
+unless either</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(6.1)</a></span>
+<code class="sourceCode cpp"><em>E</em></code> is type-dependent,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(6.2)</a></span>
+<code class="sourceCode cpp"><em>S</em></code> is an iterable expansion
+statement and <code class="sourceCode cpp"><em>E</em></code> is
+value-dependent ([temp.dep.constexpr]) or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(6.3)</a></span>
+<code class="sourceCode cpp"><em>S</em></code> is an enumerated
+expansion statement and <code class="sourceCode cpp"><em>E</em></code>
+contains a pack.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">7</a></span>
+An expanded expansion statement
+<code class="sourceCode cpp"><em>S</em></code> is equivalent to a
+<code class="sourceCode cpp"><em>compound-statement</em></code>
+containing instantiations of the
+<code class="sourceCode cpp"><em>for-range-declaration</em></code>
+(including its implied initialization), together with the
+<code class="sourceCode cpp"><em>statement</em></code>; these
+instantiations correspond to expressions resulting from the analysis of
+the <code class="sourceCode cpp"><em>expansion-initializer</em></code>
+as follows:</p>
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(7.1)</a></span>
+If <code class="sourceCode cpp"><em>S</em></code> is an iterable
+expansion statement, there is an instantiation for each element in the
+range computed by the
+<code class="sourceCode cpp"><em>expansion-initializer</em></code>;
+<code class="sourceCode cpp"><em>S</em></code> is equivalent to:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <em>init-statement</em></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>range</em> <span class="op">=</span> <em>expansion-initializer</em> ;</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <em>begin</em> <span class="op">=</span> <em>begin-expr</em>; <span class="co">// see [stmt.ranged]</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <em>end</em> <span class="op">=</span> <em>end-expr</em>;     <span class="co">// see [stmt.ranged]</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">// i<sup>th</sup> repetition of the substatement</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <em>iter</em><sub>i</sub> <span class="op">=</span> <em>begin</em> <span class="op">+</span> i;</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    <em>for-range-declaration</em> <span class="op">=</span> <span class="op">*</span><em>iter</em><sub>i</sub>;</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>    <em>statement</em></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>for all <code class="sourceCode cpp">i</code> in the range <code class="sourceCode cpp"><span class="op">[</span><span class="dv">0</span>, <em>N</em><span class="op">)</span></code>,
+for <code class="sourceCode cpp"><em>N</em></code> such that <code class="sourceCode cpp"><em>begin</em> <span class="op">+</span> N <span class="op">==</span> <em>end</em></code>.
+The variables <code class="sourceCode cpp"><em>range</em></code>,
+<code class="sourceCode cpp"><em>begin</em></code>,
+<code class="sourceCode cpp"><em>end</em></code>, and
+<code class="sourceCode cpp"><em>iter</em><sub>i</sub></code> are
+variables defined for exposition only.</p>
+<p><span class="note"><span>[ <em>Note 2:</em> </span>The instantiation
+is ill-formed if <code class="sourceCode cpp"><em>range</em></code> is
+not a constant expression ([expr.const])<span> — <em>end
+note</em> ]</span></span></p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(7.2)</a></span>
+Otherwise, if <code class="sourceCode cpp"><em>S</em></code> is a
+destructurable expansion statement, the number of instantiations is
+equal to the structured binding size of the
+<code class="sourceCode cpp"><em>expansion-initializer</em></code>;
+<code class="sourceCode cpp"><em>S</em></code> is equivalent to:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <em>init-statement</em></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> constexpr<sub><em>opt</em></sub> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>seq</em> <span class="op">=</span> <em>expansion-initializer</em> ;</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span>  <span class="co">// i<sup>th</sup> repetition of the substatement</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    <em>for-range-declaration</em> <span class="op">=</span> <em>get-expr</em><sub><em>i</em></sub> ;</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    <em>statement</em></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>where
+<code class="sourceCode cpp"><em>get-expr</em><sub><em>i</em></sub></code>
+would be the <code class="sourceCode cpp"><em>i</em><sup>th</sup></code>
+structured binding of the declaration</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">[</span>u<sub>0</sub>, u<sub>1</sub>, <span class="op">...</span>, u<sub><em>n-1</em></sub><span class="op">]</span> <span class="op">=</span> <em>expansion-initializer</em> ; .</span></code></pre></div>
+<p>The
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code> is
+present in the declaration of
+<code class="sourceCode cpp"><em>seq</em></code> if and only if
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+appears in the
+<code class="sourceCode cpp"><em>for-range-declaration</em></code>. The
+name <code class="sourceCode cpp"><em>seq</em></code> is used for
+exposition only.</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(7.3)</a></span>
+Otherwise (<code class="sourceCode cpp"><em>S</em></code> is an
+enumerated expansion statement), there is an instantiation for each
+expression in the
+<code class="sourceCode cpp"><em>expression-list</em></code> of the
+<code class="sourceCode cpp"><em>expansion-init-list</em></code>;
+<code class="sourceCode cpp"><em>S</em></code> is equivalent to:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <em>init-statement</em></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span>  <span class="co">// i<sup>th</sup> repetition of the substatement</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    <em>for-range-declaration</em> <span class="op">=</span> <em>get-expr</em><sub><em>i</em></sub> ;</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    <em>statement</em></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>where
+<code class="sourceCode cpp"><em>get-expr</em><sub><em>i</em></sub></code>
+is the <em>i</em><sup>th</sup>
+<code class="sourceCode cpp"><em>expression</em></code> in the
+<code class="sourceCode cpp"><em>expression-list</em></code>.</p></li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">8</a></span></p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> S <span class="op">{</span> <span class="dt">int</span> i; <span class="dt">short</span> s; <span class="op">}</span>;</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">long</span> f<span class="op">(</span>S s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">long</span> result <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> x <span class="op">:</span> s<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    result <span class="op">+=</span> x;</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result;</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">(</span>S<span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">})</span> <span class="op">==</span> <span class="dv">3</span><span class="op">)</span>;</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">9</a></span></p>
+<div class="example">
+<span>[ <em>Example 2:</em> </span>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> f<span class="op">(</span><span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;...</span> Containers<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> result <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> c <span class="op">:</span> <span class="op">{</span>Containers<span class="op">...})</span> <span class="op">{</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    result <span class="op">+=</span> c<span class="op">[</span><span class="dv">0</span><span class="op">]</span>;</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result;</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> c1<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> c2<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span><span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span><span class="op">}</span>;</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">(</span>c1, c2<span class="op">)</span> <span class="op">==</span> <span class="dv">5</span><span class="op">)</span>;</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+<p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: The
+following example assumes the changes proposed by P2996R11 and P3491R2.
+]</span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">10</a></span></p>
+<div class="example">
+<span>[ <em>Example 3:</em> </span>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span> <span class="kw">consteval</span> std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="kw">auto</span> statics <span class="op">=</span> std<span class="op">::</span>define_static_array<span class="op">(</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>      std<span class="op">::</span>meta<span class="op">::</span>static_data_members_of<span class="op">(</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>          <span class="op">^^</span>T,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>          std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">()))</span>;</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info s <span class="op">:</span> statics<span class="op">)</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>identifier_of<span class="op">(</span>s<span class="op">)</span> <span class="op">==</span> <span class="st">&quot;ClsId&quot;</span><span class="op">)</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="op">[:</span>s<span class="op">:]</span>;</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> std<span class="op">::</span>nullopt;</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Cls <span class="op">{</span> <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">int</span> ClsId <span class="op">==</span> <span class="dv">14</span>; <span class="op">}</span>;</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">&lt;</span>Cls<span class="op">&gt;().</span>value<span class="op">()</span> <span class="op">==</span> <span class="dv">14</span><span class="op">)</span>;</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+</div>
+</blockquote>
+</div>
+<p>Modify <span>8.7.2 <a href="https://wg21.link/stmt.break">[stmt.break]</a></span>/1 to allow
+<code class="sourceCode cpp"><span class="cf">break</span></code> in
+expansion statements:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">1</a></span>
+A <code class="sourceCode cpp"><span class="cf">break</span></code>
+statement shall be enclosed by ([stmt.pre]) an
+<code class="sourceCode cpp"><em>iteration-statement</em></code>
+([stmt.iter])<span class="addu">, an
+<code class="sourceCode cpp"><em>expansion-statement</em></code>
+([stmt.expand]),</span> or a
+<code class="sourceCode cpp"><span class="cf">switch</span></code>
+statement ([stmt.switch]). The
+<code class="sourceCode cpp"><span class="cf">break</span></code>
+statement causes termination of the smallest such enclosing statement;
+control passes to the statement following the terminated statement, if
+any.</p>
+</blockquote>
+</div>
+<p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: We
+recommend the phrase “continuation portion” in lieu of
+“loop-continuation portion” to emphasize that an expansion statement is
+not a loop. ]</span></p>
+<p>Modify <span>8.7.3 <a href="https://wg21.link/stmt.cont">[stmt.cont]</a></span>/1 to allow
+<code class="sourceCode cpp"><span class="cf">continue</span></code> in
+expansion statements:</p>
+<div class="std">
+<blockquote>
+<span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">1</a></span>
+A <code class="sourceCode cpp"><span class="cf">continue</span></code>
+statement shall be enclosed by ([stmt.pre]) an
+<code class="sourceCode cpp"><em>iteration-statement</em></code>
+([stmt.iter]) <span class="addu">or an
+<code class="sourceCode cpp"><em>expansion-statement</em></code>
+([stmt.expand])</span>. The
+<code class="sourceCode cpp"><span class="cf">continue</span></code>
+statement causes control to pass to the <span class="rm" style="color: #bf0303"><del>loop</del></span> continuation portion of
+the smallest such enclosing statement, that is, to the end of the loop
+<span class="addu">or expansion</span>. More precisely, in each of the
+statements
+<table>
+<tr>
+<td>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span>foo<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>contin<span class="op">:</span> ;</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</td>
+<td>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>contin<span class="op">:</span> ;</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">while</span> <span class="op">(</span>foo<span class="op">)</span>;</span></code></pre></div>
+</td>
+<td>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span>;;<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>contin<span class="op">:</span> ;</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</td>
+<td>
+<div class="addu">
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> e <span class="op">:</span> foo<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>contin<span class="op">:</span> ;</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</div>
+</td>
+</tr>
+</table>
+<p>a
+<code class="sourceCode cpp"><span class="cf">continue</span></code> not
+contained in an enclosing iteration <span class="addu">or
+expansion</span> statement is equivalent to
+<code class="sourceCode cpp"><span class="cf">goto</span> contin</code>.</p>
+</blockquote>
+</div>
+<p>Update the fallthrough attribute wording in <span>9.13.5 <a href="https://wg21.link/dcl.attr.fallthrough">[dcl.attr.fallthrough]</a></span>/1
+to discuss expansion statements:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">1</a></span>
+The <code class="sourceCode cpp"><em>attribute-token</em></code>
+<code class="sourceCode cpp">fallthrough</code> may be applied to a null
+statement; such a statement is a fallthrough statement. No
+<code class="sourceCode cpp"><em>attribute-argument-clause</em></code>
+shall be present. A fallthrough statement may only appear within an
+enclosing
+<code class="sourceCode cpp"><span class="cf">switch</span></code>
+statement ([stmt.switch]). The next statement that would be executed
+after a fallthrough statement shall be a labeled statement whose label
+is a case label or default label for the same
+<code class="sourceCode cpp"><span class="cf">switch</span></code>
+statement and, if the fallthrough statement is contained in an iteration
+statement <span class="addu">or expansion statement</span>, the next
+statement shall be part of the same execution of the substatement of the
+innermost enclosing iteration statement <span class="addu">or the same
+expansion of the innermost enclosing expansion statement</span>. The
+program is ill-formed if there is no such statement.</p>
+</blockquote>
+</div>
+<p>Update <span>13.8.1 <a href="https://wg21.link/temp.res.general">[temp.res.general]</a></span>/6.1
+to permit early checking of expansion statements in dependent
+contexts.</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">6</a></span>
+The validity of a templated entity may be checked prior to any
+instantiation.</p>
+<p><span class="note3"><span>[ <em>Note 3:</em> </span>Knowing which
+names are type names allows teh syntax of every template to be checked
+in this way.<span> — <em>end note</em> ]</span></span></p>
+<p>The program is ill-formed, no diagnostic required, if</p>
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">(6.1)</a></span>
+no valid specialization, ignoring
+<code class="sourceCode cpp"><em>static_assert-declaration</em></code>s
+that fail ([dcl.pre]), can be generated for a templated entity or a
+substatement of a constexpr if statement ([stmt.if]) <span class="addu">or expansion statement</span> within a templated entity and
+the innermost enclosing template is not instantiated, or</p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">(6.2)</a></span>
+[…]</p></li>
+</ul>
+</blockquote>
+</div>
+<p>Add the following case to <span>13.8.3.3 <a href="https://wg21.link/temp.dep.expr">[temp.dep.expr]</a></span>/3 (and
+renumber accordingly):</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">3</a></span>
+An <code class="sourceCode cpp"><em>id-expression</em></code> is
+type-dependent if it is a
+<code class="sourceCode cpp"><em>template-id</em></code> that is not a
+concept-id and is dependent; or if its terminal name is</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">(3.1)</a></span>
+[…]</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">(3.10)</a></span>
+a <code class="sourceCode cpp"><em>conversion-function-id</em></code>
+that specifies a dependent type, or</li>
+<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">(3.10+)</a></span>
+a name introduced by the
+<code class="sourceCode cpp"><em>for-range-declaration</em></code>
+<code class="sourceCode cpp"><em>D</em></code> of an expansion statement
+<code class="sourceCode cpp"><em>S</em></code> if
+<code class="sourceCode cpp"><em>D</em></code> contains a placeholder
+type and either</span>
+<ul>
+<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">(3.10+.1)</a></span>
+the <code class="sourceCode cpp"><em>expansion-initializer</em></code>
+of <code class="sourceCode cpp"><em>S</em></code> is type-dependent
+or</span></li>
+<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">(3.10+.2)</a></span>
+<code class="sourceCode cpp"><em>S</em></code> is not an iterable
+expansion statement.</span></li>
+</ul></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">(3.11)</a></span>
+dependent</li>
+</ul>
+<p>or if it names […]</p>
+</blockquote>
+</div>
+<p>Add the following case to <span>13.8.3.4 <a href="https://wg21.link/temp.dep.constexpr">[temp.dep.constexpr]</a></span>/2
+(and renumber accordingly):</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">2</a></span>
+An <code class="sourceCode cpp"><em>id-expression</em></code> is
+value-dependent if</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">(2.1)</a></span>
+[…]</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">(2.3)</a></span>
+it is the name of a constant template parameter,</li>
+<li><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">(2.3+)</a></span>
+it is a name introduced by the
+<code class="sourceCode cpp"><em>for-range-declaration</em></code> of an
+expansion statement ([stmt.expand])</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">(2.4)</a></span>
+[…]</li>
+</ul>
+</blockquote>
+</div>
+<h2 data-number="4.1" id="feature-test-macro"><span class="header-section-number">4.1</span> Feature-test-macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Add to <span>15.12 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div class="addu">
+<div class="sourceCode" id="cb37"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>__cpp_expansion_statements 2025XXL</span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
+References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-P0589R0" class="csl-entry" role="doc-biblioentry">
+[P0589R0] Andrew Sutton. 2017-02-04. Tuple-based for loops. <a href="https://wg21.link/p0589r0"><div class="csl-block">https://wg21.link/p0589r0</div></a>
+</div>
+<div id="ref-P1306R0" class="csl-entry" role="doc-biblioentry">
+[P1306R0] Andrew Sutton, Sam Goodrick, Daveed Vandevoorde. 2018-10-08.
+Expansion statements. <a href="https://wg21.link/p1306r0"><div class="csl-block">https://wg21.link/p1306r0</div></a>
+</div>
+<div id="ref-P1306R1" class="csl-entry" role="doc-biblioentry">
+[P1306R1] Andrew Sutton, Sam Goodrick, Daveed Vandevoorde. 2019-01-21.
+Expansion statements. <a href="https://wg21.link/p1306r1"><div class="csl-block">https://wg21.link/p1306r1</div></a>
+</div>
+<div id="ref-P1306R2" class="csl-entry" role="doc-biblioentry">
+[P1306R2] Dan Katz, Andrew Sutton, Sam Goodrick, Daveed Vandevoorde.
+2024-05-07. Expansion statements. <a href="https://wg21.link/p1306r2"><div class="csl-block">https://wg21.link/p1306r2</div></a>
+</div>
+<div id="ref-P1306R3" class="csl-entry" role="doc-biblioentry">
+[P1306R3] Dan Katz, Andrew Sutton, Sam Goodrick, Daveed Vandevoorde.
+2024-10-14. Expansion statements. <a href="https://wg21.link/p1306r3"><div class="csl-block">https://wg21.link/p1306r3</div></a>
+</div>
+<div id="ref-P2996R10" class="csl-entry" role="doc-biblioentry">
+[P2996R10] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, Dan Katz. 2025-02-27. Reflection for
+C++26. <a href="https://wg21.link/p2996r10"><div class="csl-block">https://wg21.link/p2996r10</div></a>
+</div>
+<div id="ref-P3491R1" class="csl-entry" role="doc-biblioentry">
+[P3491R1] Barry Revzin, Wyatt Childers, Peter Dimov, Daveed Vandevoorde.
+2025-01-13. define_static_{string,object,array}. <a href="https://wg21.link/p3491r1"><div class="csl-block">https://wg21.link/p3491r1</div></a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
