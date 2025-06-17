@@ -627,7 +627,7 @@ Change the pack expansion rule in [temp.variadic]{.sref}/5.9:
 ::: std
 [5]{.pnum} [...] Pack expansions can occur in the following contexts:
 
-* [5.9]{.pnum} In an `$attribute-list$` ([dcl.attr.grammar]); the pattern is an [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu}.
+* [5.9]{.pnum} In an [`$attribute-list$`]{.rm} [`$attribute-or-annotation-list$`]{.addu} ([dcl.attr.grammar]); the pattern is an [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu}.
 :::
 
 ## Library
