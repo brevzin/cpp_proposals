@@ -17,6 +17,7 @@ tag: reflection
 Since [@P3560R1]:
 
 * fixing wording
+* rebasing on [@P2996R13]{.title}
 
 Since [@P3560R0]:
 
@@ -476,7 +477,7 @@ Replace the error handling in this subclause:
 consteval info type_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `$has-type$(r)` is `true`.
+[2]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `$has-type$(r)` is `true`.
 :::
 
 ::: std
@@ -484,7 +485,7 @@ consteval info type_of(info r);
 consteval info object_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` is a reflection representing either
+[4]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` is a reflection representing either
 
 - [#.#]{.pnum} an object with static storage duration ([basic.stc.general]), or
 - [#.#]{.pnum} a variable that either declares or refers to such an object, and if that variable is a reference `$R$` then either
@@ -494,10 +495,10 @@ consteval info object_of(info r);
 
 ::: std
 ```cpp
-consteval info value_of(info r);
+consteval info constant_of(info r);
 ```
 
-[#]{.pnum} Let `$R$` be a constant expression of type `info` such that `$R$ == r` is `true`.
+[6]{.pnum} Let `$R$` be a constant expression of type `info` such that `$R$ == r` is `true`.
 
 [#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `[: $R$ :]` is a valid `$splice-expression$` ([expr.prim.splice]).
 :::
@@ -507,16 +508,75 @@ consteval info value_of(info r);
 consteval info parent_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `has_parent(r)` is `true`.
+[43]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `has_parent(r)` is `true`.
+:::
+
+::: std
+```cpp
+consteval info dealias(info r);
+```
+
+[45]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents an entity.
 :::
 
 ::: std
 ```cpp
 consteval info template_of(info r);
+```
+
+[49]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `has_template_arguments(r)` is `true`.
+
+```cpp
 consteval vector<info> template_arguments_of(info r);
 ```
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `has_template_arguments(r)` is `true`.
+[51]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `has_template_arguments(r)` is `true`.
 :::
+
+## [meta.reflection.access.context]
+
+::: std
+```cpp
+consteval access_context via(info cls) const;
+```
+[12]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `cls` is either the null reflection or a reflection of a complete class type.
+:::
+
+## [meta.reflection.access.queries]
+
+::: std
+```cpp
+consteval bool is_accessible(info r, access_context ctx);
+```
+
+[2]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
+
+* [#.#]{.pnum} `r` does not represent a class member for which `$PARENT-CLS$(r)` is an incomplete class and
+* [#.#]{.pnum} `r` does not represent a direct base class relationship between a base class and an incomplete derived class.
+
+[...]
+
+```cpp
+consteval bool has_inaccessible_nonstatic_data_members(
+      info r,
+      access_context ctx);
+```
+
+[5]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
+
+- [#.#]{.pnum} `nonstatic_data_members_of(r, access_context::unchecked())` is a constant subexpression and
+- [#.#]{.pnum} `r` does not represent a closure type.
+
+[#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `nonstatic_data_members_of(r, access_context::unchecked())`. Otherwise, `false`.
+
+```cpp
+consteval bool has_inaccessible_bases(info r, access_context ctx);
+```
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `bases_of(r, access_context::unchecked())` is a constant subexpression.
+
+[#]{.pnum} *Returns*: `true` if `is_accessible($R$, ctx)` is `false` for any `$R$` in `bases_of(r, access_context::unchecked())`. Otherwise, `false`.
+:::
+
 
 ## [meta.reflection.member.queries]
 
@@ -527,7 +587,7 @@ Replace the error handling in this subclause:
 consteval vector<info> members_of(info r, access_context ctx);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection representing either a class type that is complete from some point in the evaluation context or a namespace.
 :::
 
 ::: std
@@ -535,7 +595,7 @@ consteval vector<info> members_of(info r, access_context ctx);
 consteval vector<info> bases_of(info type, access_context ctx);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` is a reflection representing a complete class type.
+[6]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a class type that is complete from some point in the evaluation context.
 :::
 
 ::: std
@@ -543,7 +603,7 @@ consteval vector<info> bases_of(info type, access_context ctx);
 consteval vector<info> static_data_members_of(info type, access_context ctx);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
+[8]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a class type that is complete from some point in the evaluation context.
 :::
 
 ::: std
@@ -551,7 +611,7 @@ consteval vector<info> static_data_members_of(info type, access_context ctx);
 consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a complete class type.
+[10]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a class type that is complete from some point in the evaluation context.
 :::
 
 ::: std
@@ -559,7 +619,7 @@ consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
 consteval vector<info> enumerators_of(info type_enum);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type_enum)` represents an enumeration type and `is_enumerable_type(type_enum)` is `true`.
+[12]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type_enum)` represents an enumeration type and `is_enumerable_type(type_enum)` is `true`.
 :::
 
 
@@ -572,7 +632,7 @@ Replace the error handling in this subclause:
 consteval member_offset offset_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a non-static data member, unnamed bit-field, or direct base class relationship other than a virtual base class of an abstract class.
+[2]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a non-static data member, unnamed bit-field, or direct base class relationship other than a virtual base class of an abstract class.
 :::
 
 ::: std
@@ -580,7 +640,7 @@ consteval member_offset offset_of(info r);
 consteval size_t size_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) where `$W$` is not ⊥. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
+[5]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) where `$W$` is not ⊥. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 :::
 
 ::: std
@@ -588,7 +648,7 @@ consteval size_t size_of(info r);
 consteval size_t alignment_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection representing a type, object, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
+[7]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection representing a type, object, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type, then `is_complete_type(r)` is `true`.
 :::
 
 ::: std
@@ -596,7 +656,7 @@ consteval size_t alignment_of(info r);
 consteval size_t bit_size_of(info r);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, unnamed bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
+[9]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member, unnamed bit-field, direct base class relationship, or data member description. If `dealias(r)` represents a type `$T$`, there is a point within the evaluation context from which `$T$` is not incomplete.
 :::
 
 ## [meta.reflection.extract]
@@ -609,7 +669,7 @@ template <class T>
   consteval T $extract-ref$(info r); // exposition only
 ```
 
-[#]{.pnum} [`T` is a reference type.]{.note}
+[3]{.pnum} [`T` is a reference type.]{.note}
 
 [#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
 
@@ -624,9 +684,9 @@ template <class T>
   consteval T $extract-member-or-function$(info r); // exposition only
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
+[6]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
 
-- [#.#]{.pnum} `r` represents a non-static data member with type `X`, that is not a bit-field, that is a direct member of a class `C` and `T` is `X C::*`;
+- [#.#]{.pnum} `r` represents a non-static data member with type `X`, that is not a bit-field, that is a direct member of a class `C`, `T` and `X C::*` are similar types ([conv.qual]), and `is_convertible_v<X C::*, T>` is `true`;
 - [#.#]{.pnum} `r` represents an implicit object member function with type `F` or `F noexcept` that is a direct member of a class `C` and `T` is `F C::*`; or
 - [#.#]{.pnum} `r` represents a non-member function, static member function, or explicit object member function of function type `F` or `F noexcept` and `T` is `F*`.
 :::
@@ -637,12 +697,13 @@ template <class T>
   consteval T $extract-val$(info r); // exposition only
 ```
 
-[#]{.pnum} Let `U` be the type of the value that `r` represents.
+[8]{.pnum} Let `U` be the type of the value that `r` represents.
 
 [#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
 
-  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are similar types ([conv.qual]), and `is_convertible_v<U, T>` is `true`,
-  - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same, or
+  - [#.#]{.pnum} `U` is a pointer type, `T` and `U` are either similar or both function pointer types, and `is_convertible_v<U, T>` is `true`,
+  - [#.#]{.pnum} `U` is not a pointer type and the cv-unqualified types of `T` and `U` are the same,
+  - [#.#]{.pnum} `U` is an array type, `T` is a pointer type, and the value that `r` represents is convertible to `T`, or
   - [#.#]{.pnum} `U` is a closure type, `T` is a function pointer type, and the value that `r` represents is convertible to `T`.
 :::
 
@@ -664,7 +725,7 @@ template <reflection_range R = initializer_list<info>>
 consteval info substitute(info templ, R&& arguments);
 ```
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `can_substitute(templ, arguments)` is `true`.
+[5]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `can_substitute(templ, arguments)` is `true`.
 :::
 
 ## [meta.reflection.result]
@@ -672,54 +733,49 @@ consteval info substitute(info templ, R&& arguments);
 Replace the error handling in this subclause:
 
 ::: std
-[#]{.pnum} An object `$O$` of type `$T$` is *meta-reflectable* if an lvalue expression denoting `$O$` is suitable for use as a constant template argument for a constant template parameter of type `$T$&` ([temp.arg.nontype]).
-
-[#]{.pnum} The following are defined for exposition only to aid in the specification of `reflect_value`:
-
 ```cpp
 template <typename T>
-  consteval info $reflect-value-scalar$(T expr); // exposition only
+  consteval info reflect_constant(T expr);
 ```
 
-Let `$V$` be the value computed by an lvalue-to-rvalue conversion applied to `expr`.
+[#]{.pnum} *Mandates*: `is_copy_constructible_v<T>` is `true` and `T` is a cv-unqualified structural type ([temp.param]) that is not a reference type.
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `$V$` satisfies the constraints for the result of a prvalue constant expression ([expr.const]) and, if `$V$` is a pointer to an object, then that object is meta-reflectable.
+[#]{.pnum} Let `$V$` be:
 
-[#]{.pnum} *Returns*: A reflection of a value of type `$T$` associated with the computed value `$V$`.
+* [#.#]{.pnum} if `T` is a class type, then an object that is template-argument-equivalent to the value of `expr`;
+* [#.#]{.pnum} otherwise, the value of `expr`.
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless given]{.addu} [Given]{.rm} the invented template
 
 ```cpp
-template <typename T>
-  consteval info $reflect-value-class$(T const& expr); // exposition only
+template <T P> struct TCls;
 ```
 
-[#]{.pnum} *Mandates*: `T` is copy constructible and structural ([temp.param]).
+the `$template-id$` `TCls<$V$>` would be valid.
+:::
 
-[#]{.pnum} Let `$O$` be an object copy-initialized from `expr`.
-
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
-
-* [#.#]{.pnum} `$O$` satisfies the constraints for the result of a glvalue constant expression ([expr.const]),
-* [#.#]{.pnum} every object referred to by a constituent reference of `$O$`, or pointed to by a constituent pointer value of `$O$`, is meta-reflectable.
-
-[#]{.pnum} *Returns*: A reflection of a value of type `T` associated with a template parameter object that is template-argument-equivalent to `$O$`.
-
-```cpp
-template <typename T>
-  consteval info reflect_value(const T& expr);
-```
-
-[*]{.pnum} *Effects*: [...]
-
+::: std
 ```cpp
 template <typename T>
   consteval info reflect_object(T& expr);
 ```
 
-[#]{.pnum} *Mandates*: `T` is not a function type.
+[5]{.pnum} *Mandates*: `T` is not a function type.
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `expr` designates a meta-reflectable object.
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `expr` is suitable for use as a constant template argument for a constant template parameter of type `T&` ([temp.arg.nontype]).
 
 [#]{.pnum} *Returns*: A reflection of the object designated by `expr`.
+
+```cpp
+template <typename T>
+  consteval info reflect_function(T& fn);
+```
+
+[#]{.pnum} *Mandates*: `T` is a function type.
+
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `fn` is suitable for use as a constant template argument for a constant template parameter of type `T&` ([temp.arg.nontype]).
+
+[#]{.pnum} *Returns*: A reflection of the function designated by `fn`.
 :::
 
 ## [meta.reflection.define.aggregate]
@@ -733,17 +789,19 @@ consteval info data_member_spec(info type,
 ```
 [#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless the following conditions are met:]{.addu}
 
-- [#.#]{.pnum} `dealias(type)` represents a type `cv $T$` where `$T$` is either an object type or a reference type;
+- [#.#]{.pnum} `dealias(type)` represents either an object type or a reference type;
 - [#.#]{.pnum} if `options.name` contains a value, then:
-  - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier when interpreted with UTF-8, or
-  - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier when interpreted with the ordinary literal encoding;
-- [#.#]{.pnum} otherwise, if `options.name` does not contain a value, then `options.bit_width` contains a value;
-- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`; and
+  - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier ([lex.name]) that is not a keyword ([lex.key]) when interpreted with UTF-8, or
+  - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier that is not a keyword when interpreted with the ordinary literal encoding;
+
+  [The name corresponds to the spelling of an identifier token after phase 6 of translation ([lex.phases]). Lexical constructs like `$universal-character-name$`s [lex.universal.char] are not processed and will cause evaluation to fail. For example, `R"(\u03B1)"` is an invalid identifier and is not interpreted as `"α"`.]{.note}
+- [#.#]{.pnum} if `options.name` does not contain a value, then `options.bit_width` contains a value;
 - [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
   - [#.#.#]{.pnum} `is_integral_type(type) || is_enumeration_type(type)` is `true`,
   - [#.#.#]{.pnum} `options.alignment` does not contain a value,
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
-  - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value.
+  - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value; and
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`.
 :::
 
 ## [meta.reflection.traits]
