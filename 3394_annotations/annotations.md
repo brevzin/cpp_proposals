@@ -18,7 +18,7 @@ author:
 
 # Revision History
 
-Since [@P3394R2]: wording, including rebasing off of [@P2996R12]. Also removed `annotate` to streamline the process, it can always be added later.
+Since [@P3394R2]: wording, including rebasing off of [@P2996R13]. Also removed `annotate` to streamline the process, it can always be added later.
 
 Since [@P3394R1]:
 
@@ -493,48 +493,59 @@ There are still open questions as to how to handle such callbacks. Does an annot
 
 # Wording
 
-The wording is relative to [@P2996R10].
+The wording is relative to [@P2996R13].
 
 ## Language
 
 Change [basic.fundamental]{.sref} to add "annotation" to the list of reflection kinds:
 
 ::: std
-[17 - 1]{.pnum} A value of type `std::meta::info` is called a _reflection_. There exists a unique _null reflection_; every other reflection is a representation of
+[x]{.pnum} A value of type `std::meta::info` is called a _reflection_. There exists a unique _null reflection_; every other reflection is a representation of
 
-* a value with structural type ([temp.param]),
-* an object with static storage duration,
-* a variable,
-* a structured binding,
-* a function,
-* an enumerator,
-* [an annotation ([dcl.attr.grammar]) with an _underlying constant_,]{.addu}
-* a type,
-* a `$typedef-name$`,
-* a class member,
-* a bit-field,
-* a primary class template, function template, primary variable template, alias template, or concept,
-* a namespace or namespace alias,
-* a base class specifier, or
-* a description of a declaration of a non-static data member.
+* [x.#]{.pnum} a value of scalar type ([temp.param]),
+* [x.#]{.pnum} an object with static storage duration ([basic.stc]),
+* [x.#]{.pnum} a variable ([basic.pre]),
+* [x.#]{.pnum} a structured binding ([dcl.struct.bind]),
+* [x.#]{.pnum} a function ([dcl.fct]),
+* [x.#]{.pnum} an enumerator ([dcl.enum]),
+
+::: addu
+* [x.#]{.pnum} an annotation ([dcl.attr.grammar]),
+:::
+
+* [x.#]{.pnum} a type alias ([dcl.typedef]),
+* [x.#]{.pnum} a type ([basic.types]),
+* [x.#]{.pnum} a class member ([class.mem]),
+* [x.#]{.pnum} an unnamed bit-field ([class.bit]),
+* [x.#]{.pnum} a primary class template ([temp.pre]),
+* [x.#]{.pnum} a function template ([temp.pre]),
+* [x.#]{.pnum} a primary variable template ([temp.pre]),
+* [x.#]{.pnum} an alias template ([temp.alias]),
+* [x.#]{.pnum} a concept ([temp.concept]),
+* [x.#]{.pnum} a namespace alias ([namespace.alias]),
+* [x.#]{.pnum} a namespace ([basic.namespace.general]),
+* [x.#]{.pnum} a direct base class relationship ([class.derived.general]), or
+* [x.#]{.pnum} a data member description ([class.mem.general]).
 :::
 
 Update annotation equality in [expr.eq]{.sref}/5+:
 
 ::: std
-[5+]{.pnum} If both operands are of type `std::meta::info`, comparison is defined as follows:
+[5+]{.pnum} If both operands are of type `std::meta::info`, they compare equal if both operands
 
-* [5+.1]{.pnum} If one operand is a null reflection value, then they compare equal if and only if the other operand is also a null reflection value.
-* [5+.2]{.pnum} Otherwise, if one operand represents a value, then they compare equal if and only if the other operand represents a value that is template-argument-equivalent ([temp.type]{.sref}).
+* [5+.#]{.pnum} are null reflection values,
+* [5+.#]{.pnum} represent values that are template-argument-equivalent ([temp.type]),
+* [5+.#]{.pnum} represent the same object,
+* [5+.#]{.pnum} represent the same entity,
 
 ::: addu
-* [5+.x]{.pnum} Otherwise, if one operand represents an annotation, then they compare equal if and only if the other operand represents the same annotation.
+* [5+.#]{.pnum} represent the same annotation,
 :::
 
-* [5+.3]{.pnum} Otherwise, if one operand represents an object, then they compare equal if and only if the other operand represents the same object.
-* [5+.4]{.pnum} Otherwise, if one operand represents an entity, then they compare equal if and only if the other operand represents the same entity.
-* [5+.5]{.pnum} Otherwise, if one operand represents a direct base class relationship, then they compare equal if and only if the other operand represents the same direct base class relationship.
-* [5+.6]{.pnum} Otherwise, both operands `O@~_1_~@` and `O@~_2_~@` represent data member descriptions. The operands compare equal if and only if the data member descriptions represented by `O@~_1_~@` and `O@~_2_~@` compare equal ([class.mem.general]{.sref}).
+* [5+.#]{.pnum} represent the same direct base class relationship, or
+* [5+.#]{.pnum} represent equal data member descriptions ([class.mem.general]),
+
+and they compare unequal otherwise.
 :::
 
 Extend the grammar in [dcl.attr.grammar]{.sref}:
@@ -547,7 +558,8 @@ Extend the grammar in [dcl.attr.grammar]{.sref}:
     $attribute-specifier-seq$@~opt~@ $attribute-specifier$
 
   $attribute-specifier$:
-    [ [ $attribute-using-prefix$@~opt~@ $attribute-list$ ] ]
+-   [ [ $attribute-using-prefix$@~opt~@ $attribute-list$ ] ]
++   [ [ $attribute-using-prefix$@~opt~@ $attribute-or-annotation-list$ ] ]
     $alignment-specifier$
 
   $alignment-specifier$:
@@ -579,18 +591,35 @@ Extend the grammar in [dcl.attr.grammar]{.sref}:
 +   = $constant-expression$
 ```
 
-[2]{.pnum} If an `$attribute-specifier$` contains an `$attribute-using-prefix$`, the `$attribute-list$` following that `$attribute-using-prefix$` shall not contain [either]{.addu} an `$attribute-scoped-token$` [or an `$annotation$`]{.addu} and every `$attribute-token$` in that `$attribute-list$` is treated as if its identifier were prefixed with `N​::`​, where `N` is the `$attribute-namespace$` specified in the `$attribute-using-prefix$`.
+[2]{.pnum} If an `$attribute-specifier$` contains an `$attribute-using-prefix$`, the [`$attribute-list$`]{.rm} [`$attribute-or-annotation-list$`]{.addu} following that `$attribute-using-prefix$` shall not contain [either]{.addu} an `$attribute-scoped-token$` [or an `$annotation$`.]{.addu} [and every]{.rm} [Every]{.addu} `$attribute-token$` in that [`$attribute-list$`]{.rm} [`$attribute-or-annotation-list$`]{.addu} is treated as if its identifier were prefixed with `N​::`​, where `N` is the `$attribute-namespace$` specified in the `$attribute-using-prefix$`.
 :::
 
 Adjust the restriction on ellipses in [dcl.attr.grammar]{.sref}/4:
 
 ::: std
-[4]{.pnum} In an `$attribute-list$`, an ellipsis may [appear only]{.rm} [only appear following an `$attribute$`]{.addu} if that `$attribute$`'s specification permits it. An [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu} followed by an ellipsis is a pack expansion. An `$attribute-specifier$` that contains no `$attribute$`s has no effect.
-The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [An `$annotation$` produces an annotation whose underlying constant is `std::meta::reflect_constant($constant-expression$)`.]{.addu} [...]
+[4]{.pnum} In an [`$attribute-list$`]{.rm} [`$attribute-or-annotation-list$`]{.addu}, an ellipsis may appear only [following an `$attribute$`]{.addu} if that `$attribute$`'s specification permits it. An [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu} followed by an ellipsis is a pack expansion. An `$attribute-specifier$` that contains no `$attribute$`s has no effect.
+The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [...]
+:::
 
-[5]{.pnum} Each `$attribute-specifier-seq$` is said to appertain to some entity or statement, identified by the syntactic context where it appears ([stmt.stmt], [dcl.dcl], [dcl.decl]).
-If an `$attribute-specifier-seq$` that appertains to some entity or statement contains an `$attribute$` or `$alignment-specifier$` that is not allowed to apply to that entity or statement, the program is ill-formed.
-If an `$attribute-specifier-seq$` appertains to a friend declaration ([class.friend]), that declaration shall be a definition. [Evaluating an `$annotation$` produces a reflection of an annotation whose underlying constant is `std::meta::reflect_constant($constant-expression$)`. [Reflections representing annotations can be retrieved with functions such as `std::meta::annotations_of` ([meta.reflection.annotation])]{.note}.]{.addu}
+Add a new subclause under [dcl.attr]{.sref} for "Annotations":
+
+::: std
+::: addu
+[1]{.pnum} An annotation may be applied to any declaration of a type, type alias, variable, function, namespace, enumerator, `$base-specifier$`, or non-static data member.
+
+[#]{.pnum} Each annotation has an  *underlying constant* whose value is `std::meta::reflect_constant($constant-expression$)`.
+
+[#]{.pnum} Each `$annotation$` produces a unique annotation.
+
+::: example
+```cpp
+[[=1]] void f();
+[[=2, =3, =2]] void g();
+void g [[=4, =2]] ();
+```
+`f` has one annotation and `g` has five annotations. These can be queried with metafunctions such as `std::meta::annotations_of` ([meta.reflect.annotation]).
+:::
+:::
 :::
 
 Change the pack expansion rule in [temp.variadic]{.sref}/5.9:
@@ -700,20 +729,25 @@ Add the new section [meta.reflection.annotation]:
 consteval vector<info> annotations_of(info item);
 ```
 
-[1]{.pnum} *Constant When*: `dealias(item)` represents a type, variable, function, or namespace.
+[1]{.pnum} *Constant When*: `item` represents a type, type alias, variable, function, namespace, enumerator, direct base class relationship, or non-static data member.
 
-[#]{.pnum} *Returns*: A `vector` containing all of the reflections `$R$` representing each `$annotation$` in each `$attribute-specifier-seq$` appertaining to each declaration of the entity represented by `item` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of a class for which such a point is in a complete-class context.
+[#]{.pnum} Let `$E$` be
 
-For  any two reflections `@*R*~1~@` and `@*R*~2~@` returned, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@` in the returned `vector`.
+* [#.#]{.pnum} the corresponding `$base-specifier$` if `item` represents a direct base class relationship,
+* [#.#]{.pnum} otherwise, the entity represented by `item`.
+
+[#]{.pnum} *Returns*: A `vector` containing all of the reflections `$R$` representing each annotation applying to each declaration of `$E$` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context.
+
+For  any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`.
 
 
 ::: example
 ```cpp
-struct Option { bool value; };
-
 [[=1]] void f();
 [[=2, =3]] void g();
 void g [[=4]] ();
+
+struct Option { bool value; };
 
 struct C {
     [[=Option{true}]] int a;
@@ -722,12 +756,20 @@ struct C {
 
 static_assert(annotations_of(^^f).size() == 1);
 static_assert(annotations_of(^^g).size() == 3);
-static_assert(extract<int>(annotations_of(^^g)[0]) == 2);
+static_assert([: constant_of(annotations_of(^^g)[0]) :] == 2);
 static_assert(extract<int>(annotations_of(^^g)[1]) == 3);
 static_assert(extract<int>(annotations_of(^^g)[2]) == 4);
 
 static_assert(extract<Option>(annotations_of(^^C::a)[0]).value);
 static_assert(!extract<Option>(annotations_of(^^C::b)[0]).value);
+
+template <class T>
+struct [[=42]] C { };
+
+constexpr std::meta::info a1 = annotations_of(^^C<int>)[0];
+constexpr std::meta::info a2 = annotations_of(^^C<char>)[0];
+static_assert(a1 != a2);
+static_assert(constant_of(a1) == constant_of(a2));
 ```
 :::
 
@@ -740,7 +782,7 @@ consteval vector<info> annotations_of_with_type(info item, info type);
 - [#.#]{.pnum} `annotations_of(item)` is a constant subexpression and
 - [#.#]{.pnum} `dealias(type)` represents a type that is complete from some point in the evaluation context.
 
-[#]{.pnum} *Returns*: A `vector` containing each element `e` of `annotations_of(item)` such that `remove_const(type_of(e)) == remove_const(type)`, preserving their order.
+[#]{.pnum} *Returns*: A `vector` containing each element `e` of `annotations_of(item)` where `remove_const(type_of(e)) == remove_const(type)` is `true`, preserving their order.
 
 :::
 :::
