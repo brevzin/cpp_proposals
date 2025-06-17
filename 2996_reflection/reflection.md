@@ -4463,6 +4463,7 @@ consteval void g(std::meta::info r, X<false> xv) {
   struct A { struct S {}; }
   struct B : A { using A::S; };
   constexpr std::meta::info r1 = ^^B::S; // error: A::S found through using-declarator
+
   struct C : A, virtual B { struct S {}; };
   struct D : virtual B, C {};
   D::S s; // OK, names C::S per [class.member.lookup]
@@ -5576,7 +5577,6 @@ Specify rules for overload sets denoted by `$splice-expression$`s in paragraph 2
 
 * [#.#]{.pnum} If there are `$m$` arguments in the lists, all candidate functions having exactly `$m$` parameters are viable.
 * [#.#]{.pnum} A candidate function having fewer than `$m$` parameters is viable only if it has an ellipsis in its parameter list ([dcl.fct]). For the purposes of overload resolution, any argument for which there is no corresponding parameter is considered to "match the ellipsis" ([over.ics.ellipsis]).
-* [#.#]{.pnum} A candidate function that has more than `m` parameters is viable only if [all parameters following the `$m$@^th^@` have default arguments ([dcl.fct.default])]{.rm} a set of scopes, called `$E$`, is not empty. `$E$` consists of every scope `$X$` that satisfies the following:
 * [#.#]{.pnum} A candidate function having more than `$m$` parameters is viable only if [all parameters followith the `$m$@^th^@` have default arguments ([dcl.fct.default])]{.rm} [a set of scopes, called `$E$`, is not empty. `$E$` consists of every scope `$X$` that satisfies the following:]{.addu}
   * [[#.#.#]{.pnum} There is a declaration of `C` considered by the overload resolution whose host scope is `$X$`.]{.addu}
   * [[#.#.#]{.pnum} For every `$k$@^th^@` parameter `P` where `$k$` > `$m$`, there is a reachable declaration that specifies a default argument ([dcl.fct.default]) for `P` whose host scope is `$X$`.]{.addu}
