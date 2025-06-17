@@ -1,6 +1,6 @@
 ---
 title: "Error Handling in Reflection"
-document: P3560R2
+document: D3560R2
 date: today
 audience: EWG, LEWG
 author:
@@ -220,7 +220,7 @@ where `what()` fails to be constant if it cannot transcode. It would be nice if 
 
 This gives us a maximally usable API — since the standard library has plenty of support for `string` formatting and that can be used here, the conversion from ordinary to UTF-8 is fine. It does still mean that attempting to call `what()` could fail, but... so be it.
 
-Following discussion of [@3637R0], we altered this approach slightly to inherit from `std::exception` — and thus `what()` now has to return `const char*` instead of `std::string`.
+Following discussion of [@P3637R0], we altered this approach slightly to inherit from `std::exception` — and thus `what()` now has to return `const char*` instead of `std::string`.
 
 ## Single or Multiple Types
 
