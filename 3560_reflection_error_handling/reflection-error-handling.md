@@ -1,6 +1,6 @@
 ---
 title: "Error Handling in Reflection"
-document: D3560R2
+document: P3560R2
 date: today
 audience: EWG, LEWG
 author:
@@ -377,10 +377,10 @@ public:
   consteval exception(string_view what, info from,
     source_location where = source_location::current()) noexcept;
 
-  exception(exception const&) = default;
+  exception(const exception&) = default;
   exception(exception&&) = default;
 
-  exception& operator=(exception const&) = default;
+  exception& operator=(const exception&) = default;
   exception& operator=(exception&&) = default;
 
   constexpr const char* what() const noexcept override;
@@ -390,19 +390,21 @@ public:
 };
 ```
 
-[1]{.pnum} Reflection functions throw exceptions of type `std::meta::exception` to signal an error. `std::meta::exception` is a consteval-only type.
+[1]{.pnum} Reflection functions throw exceptions of type `meta::exception` to signal an error. `meta::exception` is a consteval-only type.
 
 ```cpp
 consteval exception(u8string_view what, info from,
     source_location where = source_location::current()) noexcept;
 ```
 
-[#]{.pnum} *Effects*: Initializes `$u8what_$` with `what`, `$from_$` with `from` and `$where_$` with `where`. If `$what_$` can be represented in the ordinary literal encoding, initializes `$what_$` with `what`, transcoded from UTF-8 to the ordinary literal encoding.
+[#]{.pnum} *Effects*: Initializes `$u8what_$` with `what`, `$from_$` with `from` and `$where_$` with `where`. If `what` can be represented in the ordinary literal encoding, initializes `$what_$` with `what`, transcoded from UTF-8 to the ordinary literal encoding. Otherwise, `$what_$` is value-initialized.
 
 ```cpp
 consteval exception(string_view what, info from,
     source_location where = source_location::current()) noexcept;
 ```
+
+[#]{.pnum} *Constant When*: `what` designates a sequence of characters that can be encoded in UTF-8.
 
 [#]{.pnum} *Effects*: Initializes `$what_$` with `what`, `$u8what_$` with `what` transcoded from the ordinary literal encoding to UTF-8, `$from_$` with `from` and `$where_$` with `where`.
 
@@ -438,6 +440,8 @@ consteval source_location where() const noexcept;
 
 
 ## [meta.reflection.operators]
+
+[*Throws* actually is supposed to go after *Returns*, but in an effort to make the diff more understandable, we're not moving things around here. When adopting this paper, the reorderings will actually have to occur.]{.draftnote}
 
 Replace the error handling in this subclause:
 
@@ -556,10 +560,10 @@ consteval access_context via(info cls) const;
 consteval bool is_accessible(info r, access_context ctx);
 ```
 
-[2]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
+[2]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` if]{.addu}
 
-* [#.#]{.pnum} `r` does not represent a class member for which `$PARENT-CLS$(r)` is an incomplete class and
-* [#.#]{.pnum} `r` does not represent a direct base class relationship between a base class and an incomplete derived class.
+* [#.#]{.pnum} `r` [does not represent]{.rm} [represents]{.addu} a class member for which `$PARENT-CLS$(r)` is an incomplete class [and]{.rm} [or]{.addu}
+* [#.#]{.pnum} `r` [does not represent]{.rm} [represents]{.addu} a direct base class relationship between a base class and an incomplete derived class.
 
 [...]
 
@@ -753,13 +757,13 @@ template <typename T>
 * [#.#]{.pnum} if `T` is a class type, then an object that is template-argument-equivalent to the value of `expr`;
 * [#.#]{.pnum} otherwise, the value of `expr`.
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless given]{.addu} [Given]{.rm} the invented template
+[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless the `$template-id$` `TCls<$V$>` would be valid given]{.addu} [Given]{.rm} the invented template
 
 ```cpp
 template <T P> struct TCls;
 ```
 
-the `$template-id$` `TCls<$V$>` would be valid.
+[the `$template-id$` `TCls<$V$>` would be valid.]{.rm}
 :::
 
 ::: std
@@ -819,7 +823,7 @@ Replace the error handling for all the type traits:
 ::: std
 [1]{.pnum} Subclause [meta.reflection.traits] specifies consteval functions to query the properties of types ([meta.unary]), query the relationships between types ([meta.rel]), or transform types ([meta.trans]) at compile time. Each consteval function declared in this class has an associated class template declared elsewhere in this document.
 
-[#]{.pnum} Every function and function template declared in this clause [has the following conditions required for a call to that function or function template to be a constant subexpression ([defns.const.subexpr])]{.rm} [throws an exception of type `std::meta::exception` unless the following conditions hold:]{.addu}
+[#]{.pnum} Every function and function template declared in this clause [has the following conditions required for a call to that function or function template to be a constant subexpression ([defns.const.subexpr])]{.rm} [throws an exception of type `meta::exception` unless the following conditions are met:]{.addu}
 
 * [#.#]{.pnum} For every parameter `p` of type `info`, `is_type(p)` is `true`.
 * [#.#]{.pnum} For every parameter `r` whose type is constrained on `reflection_range`, `ranges::all_of(r, is_type)` is `true`.
