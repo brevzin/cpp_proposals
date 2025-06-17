@@ -630,6 +630,14 @@ Change the pack expansion rule in [temp.variadic]{.sref}/5.9:
 * [5.9]{.pnum} In an [`$attribute-list$`]{.rm} [`$attribute-or-annotation-list$`]{.addu} ([dcl.attr.grammar]); the pattern is an [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu}.
 :::
 
+Add to [temp.point]{.sref}:
+
+::: std
+::: addu
+[x]{.pnum} For an annotation ([dcl.attr.annotation]), its point of instantiation is the point of instantiation of the entity to which it applies.
+:::
+:::
+
 ## Library
 
 Add to the `<meta>` synopsis:
