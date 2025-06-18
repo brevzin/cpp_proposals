@@ -1,6 +1,6 @@
 ---
 title: "Emitting messages at compile time"
-document: P2758R5
+document: D2758R6
 date: today
 audience: CWG, LWG
 author:
@@ -12,7 +12,7 @@ tag: constexpr
 
 # Revision History
 
-For R5: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request.
+For [@P2758R5]: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request.
 
 For [@P2758R4]: wording. Re-targeting towards CWG and LEWG. Introduced concept of constexpr-erroneous both for proper wording and to handle an escalating issue.
 
@@ -761,6 +761,8 @@ Add a new clause after [meta.const.eval]{.sref} named "Emitting messages during 
 [1]{.pnum} The facilities in this subclause are used to emit messages during program translation.
 
 [#]{.pnum} A call to any of the functions defined in this subclause may produce a diagnostic message during constant evaluation. The text from a `string_view`, `$M$`, is formed by the sequence of `$M$.size()` code units, starting at `$M$.data()`, of the ordinary literal encoding ([lex.charset]).
+
+[#]{.pnum} It is unspecified whether, or at what point, a diagnostic message is emitted by a call to one of these functions invoked during the destructor of a `constexpr` variable.
 
 ```
 struct $tag-string$ { // exposition-only
