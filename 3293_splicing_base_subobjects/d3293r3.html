@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-06-16" />
+  <meta name="dcterms.date" content="2025-06-18" />
   <title>Splicing a base class subobject</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ subobject</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-06-16</td>
+    <td>2025-06-18</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -625,7 +625,7 @@ Elements<span></span></a></li>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>Since <span class="citation" data-cites="P3293R1"><a href="https://wg21.link/p3293r1" role="doc-biblioref">[P3293R1]</a></span>, updating wording and design
 to account for <span class="title"><span class="citation" data-cites="P3547R1"><a href="https://wg21.link/p3547r1" role="doc-biblioref">[P3547R1] (Modeling Access Control With
-Reflection)</a></span></span>. Adding corresponding
+Reflection)</a></span></span> and rebased on <span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13" role="doc-biblioref">[P2996R13]</a></span>. Adding corresponding
 <code class="sourceCode cpp">has_inaccessible_subobjects</code>.</p>
 <p>Since <span class="citation" data-cites="P3293R0"><a href="https://wg21.link/p3293r0" role="doc-biblioref">[P3293R0]</a></span>, noted that <code class="sourceCode cpp"><span class="op">&amp;[:</span>base<span class="op">:]</span></code>
 cannot work for virtual base classes. Talking about arrays. Added
@@ -842,8 +842,8 @@ type of <code class="sourceCode cpp">E1</code>.</span>
 <code class="sourceCode cpp">E2</code> shall designate <span class="addu">either</span> a member of <span class="rm" style="color: #bf0303"><del>the type of
 <span><code class="sourceCode default">E1</code></span></del></span>
 <span class="addu"><code class="sourceCode cpp">T1</code> or a direct
-base class relationship whose derived class is
-<code class="sourceCode cpp">T1</code></span>.</p>
+base class relationship (<code class="sourceCode cpp">T1</code>,
+<code class="sourceCode cpp">B</code>)</span>.</p>
 </blockquote>
 </div>
 <p>Handle base class splices in <span>7.6.1.5 <a href="https://wg21.link/expr.ref">[expr.ref]</a></span>/7-8:</p>
@@ -895,8 +895,9 @@ enumerator […]</li>
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(7.6)</a></span>
 Otherwise, if <code class="sourceCode cpp">E2</code> designates a
-direct, non-virtual base class relationship with base class
-<code class="sourceCode cpp"><em>B</em></code>, the expression
+direct, non-virtual base class relationship
+(<code class="sourceCode cpp"><em>D</em></code>,
+<code class="sourceCode cpp"><em>B</em></code>), the expression
 designates the base class subobject of type
 <code class="sourceCode cpp"><em>B</em></code> corresponding to the the
 object designated by the first expression. If
@@ -950,23 +951,28 @@ operator shall be an lvalue of some type
 If the operand is a
 <code class="sourceCode cpp"><em>qualified-id</em></code> or
 <code class="sourceCode cpp"><em>splice-expression</em></code>
-designating a non-static or variant member of some class
-<code class="sourceCode cpp">C</code>, other than an explicit object
-member function, the result has type “pointer to member of class
+designating a non-static member <code class="sourceCode cpp">m</code>,
+other than an explicit object member function,
+<code class="sourceCode cpp">m</code> shall be a direct member of some
+class <code class="sourceCode cpp">C</code> that is not an anonymous
+union. The result has type “pointer to member of class
 <code class="sourceCode cpp">C</code> of type
 <code class="sourceCode cpp">T</code>” and designates
-<code class="sourceCode cpp">C<span class="op">::</span>m</code>.</li>
+<code class="sourceCode cpp">C<span class="op">::</span>m</code>. <span class="note"><span>[ <em>Note 2:</em> </span>A
+<code class="sourceCode cpp"><em>qualified-id</em></code> that names a
+member of a namespace-scope anonymous union is considered to be a class
+member access expression ([expr.prim.id.general]) and cannot be used to
+form a pointer to member.<span> — <em>end note</em> ]</span></span></li>
 </ul>
 <div class="addu">
 <ul>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(3.1+)</a></span>
 Otherwise, if the operand is a
 <code class="sourceCode cpp"><em>splice-expression</em></code>
-designating a direct base class relationship of some class
-<code class="sourceCode cpp">C</code> with direct base class
-<code class="sourceCode cpp">T</code>, other than a virtual base class
-relationship, the result has type pointer to member of class
-<code class="sourceCode cpp">C</code> of type
+designating a non-virtual direct base class relationship
+(<code class="sourceCode cpp">C</code>,
+<code class="sourceCode cpp">T</code>), the result has type pointer to
+member of class <code class="sourceCode cpp">C</code> of type
 <code class="sourceCode cpp">T</code> and designates that base class
 subobject.</p>
 <div class="example">
@@ -1088,7 +1094,7 @@ preserving their order.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> enumerators_of<span class="op">(</span>info type_enum<span class="op">)</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">11</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type_enum<span class="op">)</span></code>
-represents an enumeration type and <code class="sourceCode cpp">has_complete_definition<span class="op">(</span>dealias<span class="op">(</span>type_enum<span class="op">))</span></code>
+represents an enumeration type and <code class="sourceCode cpp">is_enumerable_type<span class="op">(</span>type_enum<span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">12</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
@@ -1100,6 +1106,11 @@ in the order in which they are declared.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-P2996R13" class="csl-entry" role="doc-biblioentry">
+[P2996R13] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2025-06-18. Reflection
+for C++26. <a href="https://wg21.link/p2996r13"><div class="csl-block">https://wg21.link/p2996r13</div></a>
+</div>
 <div id="ref-P2996R6" class="csl-entry" role="doc-biblioentry">
 [P2996R6] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
 Faisal Vali, Daveed Vandevoorde, Dan Katz. 2024-10-10. Reflection for

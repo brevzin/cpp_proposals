@@ -18,7 +18,7 @@ tag: reflection
 
 # Revision History
 
-Since [@P3293R1], updating wording and design to account for [@P3547R1]{.title}. Adding corresponding `has_inaccessible_subobjects`.
+Since [@P3293R1], updating wording and design to account for [@P3547R1]{.title} and rebased on [@P2996R13]. Adding corresponding `has_inaccessible_subobjects`.
 
 Since [@P3293R0], noted that `&[:base:]` cannot work for virtual base classes. Talking about arrays. Added wording.
 
@@ -160,7 +160,7 @@ The wording here is a diff on top of P2996.
 Adjust the `$splice-expression$` restriction added by P2996:
 
 ::: std
-[*]{.pnum} If `E2` is a `$splice-expression$`, then [let `T1` be the type of `E1`.]{.addu} `E2` shall designate [either]{.addu} a member of [the type of `E1`]{.rm} [`T1` or a direct base class relationship whose derived class is `T1`]{.addu}.
+[*]{.pnum} If `E2` is a `$splice-expression$`, then [let `T1` be the type of `E1`.]{.addu} `E2` shall designate [either]{.addu} a member of [the type of `E1`]{.rm} [`T1` or a direct base class relationship (`T1`, `B`)]{.addu}.
 :::
 
 Handle base class splices in [expr.ref]{.sref}/7-8:
@@ -175,7 +175,7 @@ Handle base class splices in [expr.ref]{.sref}/7-8:
 * [#.#]{.pnum} Otherwise, if `E2` designates a member enumerator [...]
 
 ::: addu
-* [#.#]{.pnum} Otherwise, if `E2` designates a direct, non-virtual base class relationship with base class `$B$`, the expression designates the base class subobject of type `$B$` corresponding to the the object designated by the first expression. If `E1` is an lvalue, then `E1.E2` is an lvalue; otherwise `E1.E2` is an xvalue. The type of `E1.E2` is "`$cv$ $B$`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a base class subobject.]{.note}
+* [#.#]{.pnum} Otherwise, if `E2` designates a direct, non-virtual base class relationship (`$D$`, `$B$`), the expression designates the base class subobject of type `$B$` corresponding to the the object designated by the first expression. If `E1` is an lvalue, then `E1.E2` is an lvalue; otherwise `E1.E2` is an xvalue. The type of `E1.E2` is "`$cv$ $B$`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a base class subobject.]{.note}
 
   ::: example
   ```cpp
@@ -207,10 +207,10 @@ Handle base class pointers to members in [expr.unary.op]{.sref}:
 ::: std
 [3]{.pnum} The operand of the unary `&` operator shall be an lvalue of some type `T`.
 
-* [#.#]{.pnum} If the operand is a `$qualified-id$` or `$splice-expression$` designating a non-static or variant member of some class `C`, other than an explicit object member function, the result has type "pointer to member of class `C` of type `T`" and designates `C::m`.
+* [#.#]{.pnum} If the operand is a `$qualified-id$` or `$splice-expression$` designating a non-static member `m`, other than an explicit object member function, `m` shall be a direct member of some class `C` that is not an anonymous union. The result has type "pointer to member of class `C` of type `T`" and designates `C::m`. [A `$qualified-id$` that names a member of a namespace-scope anonymous union is considered to be a class member access expression ([expr.prim.id.general]) and cannot be used to form a pointer to member.]{.note}
 
 ::: addu
-* [3.1+]{.pnum} Otherwise, if the operand is a `$splice-expression$` designating a direct base class relationship of some class `C` with direct base class `T`, other than a virtual base class relationship, the result has type pointer to member of class `C` of type `T` and designates that base class subobject.
+* [3.1+]{.pnum} Otherwise, if the operand is a `$splice-expression$` designating a non-virtual direct base class relationship (`C`, `T`), the result has type pointer to member of class `C` of type `T` and designates that base class subobject.
 
   ::: example
   ```cpp
