@@ -6969,7 +6969,7 @@ consteval source_location source_location_of(info r);
 consteval bool $has-type$(info r); // exposition only
 ```
 
-[#]{.pnum} *Returns*: `true` if  `r` represents a value, object, variable, function that is not a constructor or destructor, enumerator, non-static data member, unnamed bit-field, direct base class relationship, or data member description. Otherwise, `false`.
+[#]{.pnum} *Returns*: `true` if  `r` represents a value, object, variable, function that is not a constructor or destructor and does not contain an undeduced placeholder type, enumerator, non-static data member, unnamed bit-field, direct base class relationship, or data member description. Otherwise, `false`.
 
 ```cpp
 consteval info type_of(info r);
