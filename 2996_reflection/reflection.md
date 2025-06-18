@@ -5812,7 +5812,7 @@ template<class T> void f(T* p) {
   T::adjust<100>();                     // error: < means less than
   T::template adjust<100>();            // OK, < starts template argument list
 
-+ static constexpr auto r = ^^T::adjust;
++ static constexpr std::meta::info r = ^^T::adjust;
 + T* p3 = [:r:]<200>();                 // error: < means less than
 + T* p4 = template [:r:]<200>();        // OK, < starts template argument list
 }
@@ -5842,8 +5842,8 @@ Add a new paragraph and example after paragraph 5 that disallows unparenthesized
 template<int> struct S { };
 
 constexpr int k = 5;
-constexpr auto r = ^^k;
-S<[:r:]> s1;      // error: unparenthesized splice expression used as template argument
+constexpr std::meta::info r = ^^k;
+S<[:r:]> s1;      // error: unparenthesized splice-expression used as template argument
 S<([:r:])> s2;    // OK
 S<[:r:] + 1> s3;  // OK
 ```
@@ -5899,20 +5899,6 @@ Clarify in paragraph 9 that default template arguments also apply to `$splice-sp
 
 ### [temp.type]{.sref} Type equivalence {-}
 
-Extend paragraph 1 to also define the "sameness" of `$splice-specialization-specifier$`s. Apply a drive-by replacement of "class" with "type" since a `$template-id$` (or `$splice-specialization-specifier$`) can designate an alias template specialization whose underlying entity is a non-class type.
-
-::: std
-[1]{.pnum} Two `$template-id$`s [or `$splice-specialization-specifier$`s]{.addu} are the same if
-
-* [#.#]{.pnum} their `$template-name$`s, `$operator-function-id$`s, [or]{.rm} `$literal-operator-id$`s[, or `$splice-specifier$`s]{.addu} [refer to]{.rm} [designate]{.addu} the same template, and
-* [#.#]{.pnum} their corresponding type `$template-argument$`s are the same type, and
-* [#.#]{.pnum} the template parameter values determined by their corresponding constant template arguments ([temp.arg.nontype]) are template-argument-equivalent (see below), and
-* [#.#]{.pnum} their corresponding template `$template-argument$`s refer to the same template.
-
-Two `$template-id$`s [or `$splice-specialization-specifier$`s]{.addu} that are the same refer to the same [class]{.rm} [type]{.addu}, function, or variable.
-
-:::
-
 Extend _template-argument-equivalent_ in paragraph 2 to handle `std::meta::info`, and add a note between that paragraph and the following example:
 
 ::: std
@@ -5921,7 +5907,7 @@ Extend _template-argument-equivalent_ in paragraph 2 to handle `std::meta::info`
 * [2.1]{.pnum} they are of integral type and their values are the same, or
 * [2.2]{.pnum} they are of floating-point type and their values are identical, or
 * [2.3]{.pnum} they are of type `std::nullptr_t`, or
-* [2.*]{.pnum} [they are of type `std::meta::info` and their values are equivalent, or]{.addu}
+* [2.*]{.pnum} [they are of type `std::meta::info` and their values compare equal ([expr.eq]), or]{.addu}
 * [2.4]{.pnum} they are of enumeration type and their values are the same, or
 * [2.5]{.pnum} [...]
 
@@ -5948,7 +5934,7 @@ Clarify in Note 1 that a specialization of a conversion function template can be
 
 ::: std
 ::: note
-A specialization of a conversion function template is referenced in the same way as a non-template conversion function that converts to the same type ([class.conv.fct]).
+A specialization of a conversion function template is [referenced]{.rm} [named]{.addu} in the same way as a non-template conversion function that converts to the same type ([class.conv.fct]).
 
 ...
 
@@ -5962,8 +5948,12 @@ A specialization of a conversion function template is referenced in the same way
 Extend paragraph 2 to enable reflection of alias template specializations.
 
 ::: std
-[2]{.pnum} [When a]{.rm} [A]{.addu} `$template-id$` [that]{.addu} refers to the specialization of an alias template[, it is equivalent to]{.rm} [is a `$typedef-name$` for a type alias whose underlying entity is]{.addu} the associated type obtained by substitution of its `$template-argument$`s for the `$template-parameter$`s in the `$defining-type-id$` of the alias template.
+[2]{.pnum} [When a]{.rm} [A]{.addu}
 
+* [#.#]{.pnum} `$template-id$` [that is not the operand of a `$reflect-expression$` or]{.addu}
+* [#.#]{.pnum} [`$splice-specialization-specifier$`]{.addu}
+
+[that designates]{.addu} [refers to]{.rm} the specialization of an alias template[, it]{.rm}  is equivalent to the associated type obtained by substitution of its `$template-argument$`s for the `$template-parameter$`s in the `$defining-type-id$` of the alias template. [Any other `$template-id$` that names a specialization of an alias template is a `$typedef-name$` for a type alias.]{.addu}
 :::
 
 ### [temp.res.general]{.sref} General {-}
@@ -7803,7 +7793,7 @@ consteval size_t alignment_of(info r);
 * [#.#]{.pnum} Otherwise, if `dealias(r)` represents a variable or object, then the alignment requirement of the variable or object.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `alignment_of(type_of(r))`.
 * [#.#]{.pnum} Otherwise, if `r` represents a non-static data member `$M$` of a class `$C$`, then the alignment of the direct member subobject corresponding to `$M$` of a complete object of type `$C$`.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]). If `$A$` is not ⊥, then the value `$A$`. Otherwise `alignment_of(^^$T$)`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]). If `$A$` is not ⊥, then the value `$A$`. Otherwise, `alignment_of(^^$T$)`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
