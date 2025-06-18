@@ -539,7 +539,7 @@ Update annotation equality in [expr.eq]{.sref}/5+:
 * [5+.#]{.pnum} represent the same entity,
 
 ::: addu
-* [5+.#]{.pnum} represent the same annotation,
+* [5+.#]{.pnum} represent the same annotation ([dcl.attr.annotation]),
 :::
 
 * [5+.#]{.pnum} represent the same direct base class relationship, or
@@ -558,8 +558,8 @@ Extend the grammar in [dcl.attr.grammar]{.sref}:
     $attribute-specifier-seq$@~opt~@ $attribute-specifier$
 
   $attribute-specifier$:
--   [ [ $attribute-using-prefix$@~opt~@ $attribute-list$ ] ]
-+   [ [ $attribute-using-prefix$@~opt~@ $attribute-or-annotation-list$ ] ]
+    [ [ $attribute-using-prefix$@~opt~@ $attribute-list$ ] ]
++   [ [ $annotation-list$ ] ]
     $alignment-specifier$
 
   $alignment-specifier$:
@@ -569,20 +569,15 @@ Extend the grammar in [dcl.attr.grammar]{.sref}:
   $attribute-using-prefix$:
     using $attribute-namespace$ :
 
-- $attribute-list$:
--   $attribute$@~opt~@
--   $attribute-list$ , $attribute$@~opt~@
--   $attribute$ ...
--   $attribute-list$ , $attribute$ ...
-+ $attribute-or-annotation-list$:
-+   $attribute-or-annotation$@~opt~@
-+   $attribute-or-annotation-list$ , $attribute-or-annotation$@~opt~@
-+   $attribute-or-annotation$ ...
-+   $attribute-or-annotation-list$ , $attribute-or-annotation$ ...
+  $attribute-list$:
+    $attribute$@~opt~@
+    $attribute-list$ , $attribute$@~opt~@
+    $attribute$ ...
+    $attribute-list$ , $attribute$ ...
 
-+ $attribute-or-annotation$:
-+   $attribute$
-+   $annotation$
++ $annotation-list$:
++   $annotation$ ...@~opt~@
++   $annotation-list$ , $annotation$ ...@~opt~@
 
   $attribute$:
     $attribute-token$ $attribute-argument-clause$@~opt~@
@@ -590,18 +585,20 @@ Extend the grammar in [dcl.attr.grammar]{.sref}:
 + $annotation$:
 +   = $constant-expression$
 ```
-
-[2]{.pnum} If an `$attribute-specifier$` contains an `$attribute-using-prefix$`, the [`$attribute-list$`]{.rm} [`$attribute-or-annotation-list$`]{.addu} following that `$attribute-using-prefix$` shall not contain [either]{.addu} an `$attribute-scoped-token$` [or an `$annotation$`.]{.addu} [and every]{.rm} [Every]{.addu} `$attribute-token$` in that [`$attribute-list$`]{.rm} [`$attribute-or-annotation-list$`]{.addu} is treated as if its identifier were prefixed with `N​::`​, where `N` is the `$attribute-namespace$` specified in the `$attribute-using-prefix$`.
 :::
 
-Adjust the restriction on ellipses in [dcl.attr.grammar]{.sref}/4:
+Clarify the restriction on no attributes in [dcl.attr.grammar]{.sref}/4:
 
 ::: std
-[4]{.pnum} In an [`$attribute-list$`]{.rm} [`$attribute-or-annotation-list$`]{.addu}, an ellipsis may appear only [following an `$attribute$`]{.addu} if that `$attribute$`'s specification permits it. An [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu} followed by an ellipsis is a pack expansion. An `$attribute-specifier$` that contains no `$attribute$`s has no effect.
+[4]{.pnum} In an `$attribute-list$`, an ellipsis may appear only following an `$attribute$` if that `$attribute$`'s specification permits it. An `$attribute$` followed by an ellipsis is a pack expansion. An `$attribute-specifier$` that contains [an `$attribute-list$` with]{.addu} no `$attribute$`s has no effect.
 The order in which the `$attribute-tokens$` appear in an `$attribute-list$` is not significant. [...]
+
+::: addu
+[*]{.pnum} [An `$annotation$` followed by an ellipsis is a pack expansion ([temp.variadic]).]{.addu}
+:::
 :::
 
-Add a new subclause under [dcl.attr]{.sref} for "Annotations":
+Add a new subclause under [dcl.attr]{.sref} called [dcl.attr.annotation] "Annotations":
 
 ::: std
 ::: addu
@@ -611,6 +608,8 @@ Add a new subclause under [dcl.attr]{.sref} for "Annotations":
 
 [#]{.pnum} Each `$annotation$` produces a unique annotation.
 
+[#]{.pnum} Substituting into an `$annotation$` is not in the immediate context.
+
 ::: example
 ```cpp
 [[=1]] void f();
@@ -618,6 +617,20 @@ Add a new subclause under [dcl.attr]{.sref} for "Annotations":
 void g [[=4, =2]] ();
 ```
 `f` has one annotation and `g` has five annotations. These can be queried with metafunctions such as `std::meta::annotations_of` ([meta.reflect.annotation]).
+:::
+
+::: example
+```cpp
+template <class T>
+[[=T::type()]] void f(T t);
+
+void f(int);
+
+void g() {
+  f(0);   // OK
+  f('0'); // error, substituting into the annotation results in an invalid expression
+}
+```
 :::
 :::
 :::
@@ -627,15 +640,7 @@ Change the pack expansion rule in [temp.variadic]{.sref}/5.9:
 ::: std
 [5]{.pnum} [...] Pack expansions can occur in the following contexts:
 
-* [5.9]{.pnum} In an [`$attribute-list$`]{.rm} [`$attribute-or-annotation-list$`]{.addu} ([dcl.attr.grammar]); the pattern is an [`$attribute$`]{.rm} [`$attribute-or-annotation$`]{.addu}.
-:::
-
-Add to [temp.point]{.sref}:
-
-::: std
-::: addu
-[x]{.pnum} For an annotation ([dcl.attr.annotation]), its point of instantiation is the point of instantiation of the entity to which it applies.
-:::
+* [5.9]{.pnum} In an `$attribute-list$` ([dcl.attr.grammar]); the pattern is an `$attribute$`. [In an `$annotation-list$`; the pattern is an `$annotation$`.]{.addu}
 :::
 
 ## Library
