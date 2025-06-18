@@ -149,19 +149,19 @@ will determine an _expansion size_ based on the `$expansion-initializer$` and th
     $additional-expansion-declarations$@~opt~@; // depends on expansion kind
 
     {
-        $for-range-declaration$ = $get-expr$(0);
+        $for-range-declaration$ = $E$(0);
         $statement$
     }
 
     {
-        $for-range-declaration$ = $get-expr$(1);
+        $for-range-declaration$ = $E$(1);
         $statement$
     }
 
     // ... repeated up to ...
 
     {
-        $for-range-declaration$ = $get-expr$($expansion-size$ - 1);
+        $for-range-declaration$ = $E$($expansion-size$ - 1);
         $statement$
     }
 
@@ -170,7 +170,7 @@ will determine an _expansion size_ based on the `$expansion-initializer$` and th
 :::
 
 
-The mechanism of determining the `$additional-expansion-declarations$` (if any), the expansion size, and `$get-expr$` depends on the `$expansion-initializer$`.
+The mechanism of determining the `$additional-expansion-declarations$` (if any), the expansion size, and `$E$` depends on the `$expansion-initializer$`.
 
 ## Expansion over Expression Lists
 
@@ -512,7 +512,7 @@ Insert a new paragraph after [class.temporary]{.sref}/7 to extend the lifetime o
 
 :::
 
-Add a production for expansion statements to `$statement$` to [stmt.pre]{.sref}:
+Add a production for expansion statements to `$statement$` to [stmt.pre]{.sref}. Also move the grammar for `$for-range-declaration$` from [stmt.iter.general] to here:
 
 ::: std
 [1]{.pnum} Except as indicated, statements are executed in sequence.
@@ -528,7 +528,26 @@ Add a production for expansion statements to `$statement$` to [stmt.pre]{.sref}:
       $attribute-specifier-seq$@~_opt_~@ $jump-statement$
       $declaration-statement$
       $attribute-specifier-seq$@~_opt_~@ $try-block$
+
+  $init-statement$:
+      $expression-statement$
+      $simple-declaration$
+      $alias-declaration$
+
+  $condition$:
+      $expression$
+      $attribute-specifier-seq@~_opt_~@ $decl-specifier-seq$ $declarator$ $brace-or-equal-initializer$
+      $structured-binding-declaration$ $initializer$
+
++ $for-range-declaration$:
++     $attribute-specifier-seq@~_opt_~@ $decl-specifier-seq$ $declarator$
++     $structured-binding-declaration$
++
++ $for-range-initializer$:
++     $expr-or-braced-init-list$
 ```
+
+[See [dcl.meaning] for the optional `$attribute-specifier-seq$` in a `$for-range-declaration$`.]{.addu}
 :::
 
 Extend "substatement" to cover expansion statements in [stmt.pre]{.sref}/2:
@@ -555,11 +574,45 @@ Extend "enclose" to cover expansion statements in [stmt.pre]{.sref}/3:
 
 :::
 
+Extend [stmt.pre]{.sref}/8 to cover `$for-range-declaration$`s:
+
+::: std
+[8]{.pnum} In the `$decl-specifier-seq$` of a `$condition$` [or of a `$for-range-declaration$`]{.addu}, including that of any `$structured-binding-declaration$` of the `$condition$`, each `$decl-specifier$` shall either be a `$type-specifier$` or `constexpr`. [The `$decl-specifier-seq$` of a `$for-range-declaration$` shall not define a class or enumeration.]{.addu}
+
+:::
+
 Add a new paragraph to the end of [stmt.label]{.sref}:
 
 ::: std
 [[4]{.pnum} An identifier label shall not occur in an `$expansion-statement$` ([stmt.expand]).]{.addu}
 
+:::
+
+Strike the productions for `$for-range-declaration$` and `$for-range-initializer$` from [stmt.iter.general], as they've been moved to [stmt.pre]:
+
+::: std
+```diff
+  $iteration-statement$:
+      while ( $condition$ ) $statement$
+      do $statement$ while ( $expression$ ) ;
+      for ( $init-statement$ $condition$@~_opt_~@ ; $expression$@~_opt_~@ ) $statement$
+      for ( $init-statement$@~_opt_~@ $for-range-declaration$ : $for-range-initializer$ ) $statement$
+
+- $for-range-declaration$:
+-     $attribute-specifier-seq$@~_opt_~@ $decl-specifier-seq$ $declarator$
+-     $structured-binding-declaration$
+-
+- $for-range-initializer$:
+-     $expr-or-braced-init-list$
+```
+
+[See [dcl.meaning] for the optional `$attribute-specifier-seq$` in a `$for-range-declaration$`.]{.rm}
+:::
+
+Strike [stmt.ranged]{.sref}/2, as it's been integrated into [stmt.pre]/8.
+
+::: std
+[[2]{.pnum} In the `$decl-specifier-seq$` of a `$for-range-declaration$`, each `$decl-specifier$` shall be either a `$type-specifier$` or `constexpr`. The `$decl-specifier-seq$` shall not define a class or enumeration.]{.rm}
 :::
 
 Insert this section after [stmt.iter]{.sref} (and renumber accordingly).
@@ -579,33 +632,48 @@ $expansion-initializer$:
     $expansion-init-list$
 
 $expansion-init-list$:
-    { $expression-list$ }
+    { $expression-list$@~_opt_~@ }
 ```
-
-[Each `$decl-specifier$` in the `$decl-specifier-seq$` of a `$for-range-declaration$` is either a `$type-specifier$` or `constexpr` ([stmt.ranged]).]{.note}
 
 [#]{.pnum} The `$statement$` of an `$expansion-statement$` is a control-flow-limited statement ([stmt.label]).
 
 [#]{.pnum} For the purpose of name lookup and instantiation, the `$for-range-declaration$` and the `$statement$` of the `$expansion-statement$` are together considered a template definition.
 
-[#]{.pnum} An expression is _iterable_ if, when treated as a `$for-range-initializer$` ([stmt.iter.general]), the expressions `$begin-expr$` and `$end-expr$` can be determined as specified in [stmt.ranged], and, if they are of the form `begin($range$)` and `end($range$)`, then argument-dependent lookup finds at least one function or function template for each.
+[#]{.pnum} For an expression `$E$`, let the expressions `$begin-expr$` and `$end-expr$` be determined as specified in [stmt.ranged]. An expression is _iterable_ if it does not have array type and either
+
+- [#.#]{.pnum} `$begin-expr$` and `$end-expr$` are of the form `$E$.begin()` and `$E$.end()` or
+- [#.#]{.pnum} argument-dependent lookup for `begin($E$)` and `end($E$)` find at least one function or function template for each.
 
 [#]{.pnum} An expansion statement is
 
-* [#.#]{.pnum} an _iterable expansion statement_ if its `$expansion-initializer$` is an iterable expression that does not have array type;
-* [#.#]{.pnum} otherwise, a _destructurable expansion statement_ if its `$expansion-initializer$` is a non-type-dependent expression with a structured binding size ([dcl.struct.bind]);
-* [#.#]{.pnum} otherwise, an _enumerated expansion statement_ if its `$expansion-initializer$` is of the form `$expansion-init-list$`;
-* [#.#]{.pnum} otherwise, ill-formed.
+* [#.#]{.pnum} an _enumerated expansion statement_ if its `$expansion-initializer$` is of the form `$expansion-init-list$`;
+* [#.#]{.pnum} an _iterable expansion statement_ if its `$expansion-initializer$` is an iterable expression;
+* [#.#]{.pnum} otherwise, it is a _destructurable expansion statement_.
 
-[#]{.pnum} An expansion statement `$S$` with an `$expansion-initializer$` `$E$` is _expanded_ unless either
+[#]{.pnum} An expansion statement `$S$` is equivalent to a `$compound-statement$` containing instantiations of the `$for-range-declaration$` (including its implied initialization), together with the `$statement$`; these instantiations correspond to expressions resulting from the analysis of the `$expansion-initializer$` as follows:
 
-- [#.#]{.pnum} `$E$` is type-dependent,
-- [#.#]{.pnum} `$S$` is an iterable expansion statement and `$E$` is value-dependent ([temp.dep.constexpr]) or
-- [#.#]{.pnum} `$S$` is an enumerated expansion statement and `$E$` contains a pack.
+- [#.#]{.pnum} If `$S$` is an enumerated expansion statement, `$S$` is equivalent to:
+  ```cpp
+  {
+    $init-statement$
+    $S$@~_0_~@
+    @...@
+    $S$@~_N-1_~@
+  }
+  ```
 
-[#]{.pnum} An expanded expansion statement `$S$` is equivalent to a `$compound-statement$` containing instantiations of the `$for-range-declaration$` (including its implied initialization), together with the `$statement$`; these instantiations correspond to expressions resulting from the analysis of the `$expansion-initializer$` as follows:
+  where `$S$@~_i_~@` is
 
-- [#.#]{.pnum} If `$S$` is an iterable expansion statement, there is an instantiation for each element in the range computed by the `$expansion-initializer$`; `$S$` is equivalent to:
+  ```cpp
+  {
+    $for-range-declaration$ = $E$@~_i_~@ ;
+    $statement$
+  }
+  ```
+
+  and `$E$@~_i_~@` is the _i_^th^ `$expression$` in the `$expression-list$`.
+
+- [#.#]{.pnum} Otherwise, if `$S$` is an iterable expansion statement, `$S$` is equivalent to:
   ```cpp
   {
     $init-statement$
@@ -613,50 +681,53 @@ $expansion-init-list$:
     static constexpr auto $begin$ = $begin-expr$; // see [stmt.ranged]
     static constexpr auto $end$ = $end-expr$;     // see [stmt.ranged]
 
-    // @i^th^@ repetition of the substatement
-    {
-      static constexpr auto @*iter*~i~@ = $begin$ + i;
-      $for-range-declaration$ = *@*iter*~i~@;
-      $statement$
-    }
+    static constexpr std::ptrdiff_t N = [] consteval {
+      std::ptrdiff_t result = 0;
+      for (auto i = $begin$; i != $end$; ++i, ++result) ;
+      return result;
+    }();
+
+    $S$@~_0_~@
+    @...@
+    $S$@~_N-1_~@
   }
   ```
 
-  for all `i` in the range `[0, $N$)`, for `$N$` such that `$begin$ + N == $end$`. The variables `$range$`, `$begin$`, `$end$`, and `@*iter*~i~@` are variables defined for exposition only.
+  where `$S$@~_i_~@` is
+
+  ```cpp
+  {
+    static constexpr auto @*iter*~i~@ = $begin$ + i;
+    $for-range-declaration$ = *@*iter*~i~@;
+    $statement$
+  }
+  ```
+
+  for all `i` in the range `[0, $N$)`. The variables `$range$`, `$begin$`, `$end$`, `$N$`, and `@*iter*~i~@` are defined for exposition only.
 
   [The instantiation is ill-formed if `$range$` is not a constant expression ([expr.const])]{.note}
 
-- [#.#]{.pnum} Otherwise, if `$S$` is a destructurable expansion statement, the number of instantiations is equal to the structured binding size of the `$expansion-initializer$`; `$S$` is equivalent to:
+- [#.#]{.pnum} Otherwise, let `$N$` be the structured binding size of the type of the `$expansion-initializer$`; `$S$` is equivalent to:
   ```cpp
   {
     $init-statement$
-    static constexpr@~_opt_~@ auto&& $seq$ = $expansion-initializer$ ;
-    {  // @i^th^@ repetition of the substatement
-      $for-range-declaration$ = $get-expr$@~_i_~@ ;
-      $statement$
-    }
+    constexpr@~_opt_~@ auto&& [u@~0~@, u@~1~@, @...@, u@~_$N$-1_~@] = $expansion-initializer$ ;
+    $S$@~_0_~@
+    @...@
+    $S$@~_N-1_~@
   }
   ```
 
-  where `$get-expr$@~_i_~@` would be the `$i$@^th^@` structured binding of the declaration
-  ```cpp
-  auto&& [u@~0~@, u@~1~@, ..., u@~_n-1_~@] = $expansion-initializer$ ; @.@
-  ```
+  where `$S$@~_i_~@` is
 
-  The `constexpr` is present in the declaration of `$seq$` if and only if `constexpr` appears in the `$for-range-declaration$`. The name `$seq$` is used for exposition only.
-
-- [#.#]{.pnum} Otherwise (`$S$` is an enumerated expansion statement), there is an instantiation for each expression in the `$expression-list$` of the `$expansion-init-list$`; `$S$` is equivalent to:
   ```cpp
   {
-    $init-statement$
-    {  // @i^th^@ repetition of the substatement
-      $for-range-declaration$ = $get-expr$@~_i_~@ ;
-      $statement$
-    }
+    $for-range-declaration$ = $u$@~_i_~@ ;
+    $statement$
   }
   ```
 
-  where `$get-expr$@~_i_~@` is the _i_^th^ `$expression$` in the `$expression-list$`.
+  The `constexpr` is present in the declaration of `$seq$` if and only if `constexpr` is one of the `$decl-specifier$`s of the `$decl-specifier-seq$` of the `$for-range-declaration$`.
 
 [#]{.pnum}
 
@@ -691,7 +762,7 @@ static_assert(f(c1, c2) == 5);
 ```
 :::
 
-[The following example assumes the changes proposed by P2996R11 and P3491R2.]{.ednote}
+[The following example assumes the changes proposed by P2996R13 and P3491R2.]{.ednote}
 
 [#]{.pnum}
 
@@ -782,10 +853,31 @@ a `continue` not contained in an enclosing iteration [or expansion]{.addu} state
 
 :::
 
+Make a drive-by fix to paragraph 6 of [dcl.struct.bind]{.sref} to handle arrays of unknown bound:
+
+::: std
+[6]{.pnum} [`E` shall not be an array type of unknown bound.]{.addu} If `E` is [an]{.rm} [any other]{.addu} array type with element `T`, the structured binding size of `E` is equal to the number of elements of `E`. Each SB~_i_~ is the name of an lvalue that refers to the element _i_ of the array and whose type is `T`; the referenced type is `T`.
+
+:::
+
 Update the fallthrough attribute wording in [dcl.attr.fallthrough]{.sref}/1 to discuss expansion statements:
 
 ::: std
 [1]{.pnum} The `$attribute-token$` `fallthrough` may be applied to a null statement; such a statement is a fallthrough statement. No `$attribute-argument-clause$` shall be present. A fallthrough statement may only appear within an enclosing `switch` statement ([stmt.switch]). The next statement that would be executed after a fallthrough statement shall be a labeled statement whose label is a case label or default label for the same `switch` statement and, if the fallthrough statement is contained in an iteration statement [or expansion statement]{.addu}, the next statement shall be part of the same execution of the substatement of the innermost enclosing iteration statement [or the same expansion of the innermost enclosing expansion statement]{.addu}. The program is ill-formed if there is no such statement.
+
+:::
+
+Update the list of templated entities:
+
+::: std
+[8]{.pnum} An entity is _templated_ if it is
+
+- [#.#]{.pnum} a template,
+- [#.#]{.pnum} an entity defined ([basic.def]) or created ([class.temporary]) in a templated entity,
+- [[#.#]{.pnum} an entity defined or created within an expansion statement ([stmt.expand]),]{.addu}
+- [#.#]{.pnum} a member of a templated entity,
+- [#.#]{.pnum} an enumerator for an enumeration that is a templated entity, or
+- [#.#]{.pnum} the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity.
 
 :::
 
@@ -802,6 +894,15 @@ The program is ill-formed, no diagnostic required, if
 
 - [#.#]{.pnum} [...]
 
+:::
+
+Define the point of instantiation for an expansion statement.
+
+::: std
+::: addu
+[*]{.pnum} For an expansion statement, the point of instantiation immediately follows the `$statement$` of the `$expansion-statement$`.
+
+:::
 :::
 
 Add the following case to [temp.dep.expr]{.sref}/3 (and renumber accordingly):
