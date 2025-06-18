@@ -2111,6 +2111,49 @@ constexpr void sort(RandomAccessIterator first, RandomAccessIterator last) {
 ```
 :::
 
+### Default arguments
+
+Reflection represents "entities", not "source constructs".
+For example, a reflection of a variable represents that variable, not the _declarations_ of that variable.
+This generally works well, and corresponds to the way most implementations operate.
+(Clang does keep track of declarations, but ultimately mostly deals in terms of the entities the produce.)
+
+However, the language specificationhas a bit of a split personality when dealing with overload resolution and especially when selecting default arguments in function calls: Default arguments are obtained from the specific _declaration(s)_ that are found when collecting the candidates for overload resolution.
+Consider the following code:
+
+::: std
+```cpp
+int f(int = 1);
+int g() {
+  int f(int = 2);
+  return f();  // Valid and calls f(2).
+}
+int r = f();  // Valid and calls f(1).
+```
+:::
+
+Such code is highly unusual, but it is valid C++ and requires tying the resolution of the call to a specific declaration (or, in more complex cases, _set_ of declarations).
+Now consider a similar example but with reflections:
+
+::: std
+```cpp
+int f(int = 1);
+constexpr auto r = ^^f;
+int g() {
+  int f(int = 2);
+  return [:r:]();  // (1) ???
+}
+int r = [:r:]();  // (2) ???
+```
+:::
+Reflection represents the _entity_ that is the _function_ described by the various _declarations_ of `f`.
+This reflection is not tied to a _particular_ declaration, but instead it represents the accumulated properties of all the declarations of `f`.
+That in turns means that it is not obvious _which_ default arguments should be selected.
+Moreover, some implementations are highly constrained as to which options are viable.
+
+We therefore propose that if a block-scope declaration has introduced a default argument for the N-th parameter of a function, then calling that function through a splice-specifier can not make use of the default argument.
+I.e., both (1) and (2) above are ill-formed.
+In other words, a default argument on a block-scope function declaration "poisons" _all_ default arguments for the corresponding parameter of the corresponding function.
 
 
 ## Metafunctions
