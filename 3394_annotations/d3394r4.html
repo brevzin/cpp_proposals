@@ -639,6 +639,9 @@ Exploring<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P3394R3"><a href="https://wg21.link/p3394r3" role="doc-biblioref">[P3394R3]</a></span>: wording. Removed ability to
+put attributes and annotations into the same
+<code class="sourceCode cpp"><em>attribute-specifier</em></code>.</p>
 <p>Since <span class="citation" data-cites="P3394R2"><a href="https://wg21.link/p3394r2" role="doc-biblioref">[P3394R2]</a></span>: wording, including rebasing
 off of <span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13" role="doc-biblioref">[P2996R13]</a></span>. Also removed
 <code class="sourceCode cpp">annotate</code> to streamline the process,
@@ -1160,19 +1163,27 @@ appear in the <em>attribute-specifier-seq</em> of a
 <span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="op">[[=</span><span class="dv">123</span><span class="op">]]</span>;            <span class="co">// Error: No applicable construct.</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>To avoid confusion, annotations are not permitted after an
-<em>attribute-using-prefix</em>. So this is an error:</p>
+<p>Earlier revisions of the paper allowed annotations and attributes to
+appear within the same
+<code class="sourceCode cpp"><em>attribute-specifier</em></code>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">[[</span><span class="kw">using</span><span class="at"> </span><span class="ex">clang</span><span class="op">:</span><span class="at"> amdgpu_waves_per_eu</span>,<span class="at"> </span><span class="op">=</span><span class="at">nick</span><span class="op">(</span><span class="st">&quot;weapon&quot;</span><span class="op">)]]</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> select_footgun<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">[[</span><span class="at">nodiscard</span>,<span class="at"> </span><span class="op">=</span><span class="dv">42</span><span class="op">]]</span> <span class="dt">int</span> f<span class="op">()</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>Instead, use:</p>
+<p>However, in Sofia, it was pointed out that for parsing purposes,
+allowing intermixing of annotations and attributes is challenging
+because it makes it harder to determine if <code class="sourceCode cpp"><span class="op">=</span> T <span class="op">&lt;</span> x, y</code>
+means that <code class="sourceCode cpp">y</code> is the a new attribute
+or part of a template argument list. Since there was no motivation to
+allow intermixing them and clear benefits to the separation, we’re
+mandating that a given
+<code class="sourceCode cpp"><em>attribute-specifier</em></code> is
+either all attributes or all annotations. This also simplifies the
+grammar and the wording. The above, if desired, can be written as:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">[[</span><span class="kw">using</span><span class="at"> </span><span class="ex">clang</span><span class="op">:</span><span class="at"> amdgpu_waves_per_eu</span><span class="op">]]</span> <span class="op">[[=</span><span class="at">nick</span><span class="op">(</span><span class="st">&quot;weapon&quot;</span><span class="op">)]]</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> select_footgun<span class="op">(</span><span class="dt">int</span><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">[[</span><span class="at">nodiscard</span><span class="op">]]</span> <span class="op">[[=</span><span class="dv">42</span><span class="op">]]</span> <span class="dt">int</span> f<span class="op">()</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <h2 data-number="4.4" id="implementation-experience"><span class="header-section-number">4.4</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
@@ -1767,6 +1778,10 @@ Annotations for Reflection. <a href="https://wg21.link/p3394r0"><div class="csl-
 <div id="ref-P3394R2" class="csl-entry" role="doc-biblioentry">
 [P3394R2] Wyatt Childers, Dan Katz, Barry Revzin, and Daveed
 Vandevoorde. 2025-03-10. Annotations for Reflection. <a href="https://wg21.link/p3394r2"><div class="csl-block">https://wg21.link/p3394r2</div></a>
+</div>
+<div id="ref-P3394R3" class="csl-entry" role="doc-biblioentry">
+[P3394R3] Daveed Vandevoorde, Wyatt Childers, Dan Katz, Barry Revzin.
+2025-05-17. Annotations for Reflection. <a href="https://wg21.link/p3394r3"><div class="csl-block">https://wg21.link/p3394r3</div></a>
 </div>
 </div>
 </div>

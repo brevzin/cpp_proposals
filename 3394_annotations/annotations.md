@@ -18,6 +18,8 @@ author:
 
 # Revision History
 
+Since [@P3394R3]: wording. Removed ability to put attributes and annotations into the same `$attribute-specifier$`.
+
 Since [@P3394R2]: wording, including rebasing off of [@P2996R13]. Also removed `annotate` to streamline the process, it can always be added later.
 
 Since [@P3394R1]:
@@ -424,18 +426,21 @@ int [[=24]] f();     // Error: Cannot appertain to int.
 [[=123]];            // Error: No applicable construct.
 ```
 
-To avoid confusion, annotations are not permitted after an *attribute-using-prefix*. So this is an error:
+Earlier revisions of the paper allowed annotations and attributes to appear within the same `$attribute-specifier$`:
 
+::: std
 ```cpp
-[[using clang: amdgpu_waves_per_eu, =nick("weapon")]]
-int select_footgun(int);
+[[nodiscard, =42]] int f();
 ```
-Instead, use:
+:::
 
+However, in Sofia, it was pointed out that for parsing purposes, allowing intermixing of annotations and attributes is challenging because it makes it harder to determine if `= T < x, y` means that `y` is the a new attribute or part of a template argument list. Since there was no motivation to allow intermixing them and clear benefits to the separation, we're mandating that a given `$attribute-specifier$` is either all attributes or all annotations. This also simplifies the grammar and the wording. The above, if desired, can be written as:
+
+::: std
 ```cpp
-[[using clang: amdgpu_waves_per_eu]] [[=nick("weapon")]]
-int select_footgun(int);
+[[nodiscard]] [[=42]] int f();
 ```
+:::
 
 ## Implementation Experience
 
