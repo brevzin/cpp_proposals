@@ -5692,16 +5692,17 @@ constexpr std::meta::info r = ^^h;
 void poison() {
   void h(int = 8);
   h();       // ok, calls h(8)
-  [:^^h:](); // error: host scope is block scope
+  [:^^h:](); // error: default argument provided by declarations from two scopes
 }
 void call_h() {
-  [:^^h:](); // error: host scope is block scope
-  [:r:]();   // error: host scope is block scope
+  [:^^h:](); // error: default argument provided by declarations from two scopes
+  [:r:]();   // error: default argument provided by declarations from two scopes
 }
 
 template <typename... Ts>
 int k(int = 3, Ts...);
-int i = k<int>();    // error: no default argument for the second parameter
+int i = k<int>();  // error: no default argument for the second parameter
+int j = k<>();     // OK
 ```
 
 :::
@@ -6037,7 +6038,7 @@ Add a new paragraph at the end of [temp.dep.expr]{.sref}:
 ::: std
 ::: addu
 
-[9]{.pnum} A `$primary-expression$` of the form `$splice-specifier$` or `template $splice-specialization-specifier$` is type-dependent if its `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]).
+[9]{.pnum} A `$splice-expression$` is type-dependent if its `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]).
 :::
 :::
 
@@ -6055,15 +6056,9 @@ Add two new paragraphs to the end of [temp.dep.constexpr] to specify the value-d
   - [#.#.#]{.pnum} is the name of a template parameter, or
   - [#.#.#]{.pnum} names a dependent member of the current instantiation ([temp.dep.type]),
 - [#.#]{.pnum} it is of the form `^^ $type-id$` and the `$type-id$` denotes a dependent type, or
-- [#.#]{.pnum} it is of the form `^^ $id-expression$` and the `$id-expression$` is value-dependent or type-dependent.
+- [#.#]{.pnum} it is of the form `^^ $id-expression$` and the `$id-expression$` is value-dependent.
 
-[8]{.pnum} Expressions of the following form are value-dependent if the `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]):
-
-```cpp
-$splice-specifier$
-template $splice-specifier$
-template $splice-specialization-specifier$
-```
+[8]{.pnum} A `$splice-expression$` is value-dependent if its `$splice-specifier$` or `$splice-specialization-specifier$` is dependent ([temp.dep.splice]).
 
 :::
 :::
@@ -6077,7 +6072,7 @@ Add a new subsection of [temp.dep]{.sref} following [temp.dep.constexpr]{.sref},
 ::: addu
 **Dependent splice specifiers   [temp.dep.splice]**
 
-[1]{.pnum} A `$splice-specifier$` is dependent if its converted `$constant-expression$` is value-dependent. A `$splice-specialization-specifier$` is dependent if its `$splice-specifier$` is dependent or if any of its arguments are dependent. A `$splice-scope-specifier$` is dependent if its `$splice-specifier$` or `$splice-specialization-specifier$` is dependent.
+[1]{.pnum} A `$splice-specifier$` is dependent if its converted `$constant-expression$` is value-dependent. A `$splice-specialization-specifier$` is dependent if its `$splice-specifier$` is dependent or if any of its template arguments are dependent. A `$splice-scope-specifier$` is dependent if its `$splice-specifier$` or `$splice-specialization-specifier$` is dependent.
 
 [#]{.pnum}
 
@@ -6085,17 +6080,17 @@ Add a new subsection of [temp.dep]{.sref} following [temp.dep.constexpr]{.sref},
 ```cpp
 template <auto T, auto NS>
 void fn() {
-  using a = [:T:]<1>;  // [:T:] and [:T:]<1> are dependent
+  using a = [:T:]<1>;  // [:T:]<1> is dependent because [:T:] is dependent
 
   static_assert([:NS:]::template TCls<1>::v == a::v);  // [:NS:] is dependent
 }
 
-namespace NS {
+namespace N {
 template <auto V> struct TCls { static constexpr int v = V; };
 }
 
 int main() {
-  fn<^^NS::TCls, ^^NS>();
+  fn<^^N::TCls, ^^N>();
 }
 ```
 
@@ -6107,7 +6102,7 @@ int main() {
 ```cpp
 template<template<class> class X>
 struct S {
-  typename [: ^^X :]<int, float> m;
+  [:^^X:]<int, float> m;
 };
 
 template<class> struct V1 {};
@@ -6130,17 +6125,17 @@ Add a new section to cover dependent namespace aliases.
 ::: addu
 **Dependent namespaces   [temp.dep.namespace]**
 
-[1]{.pnum} A namespace alias is dependent if it is introduced by a `$namespace-alias-definition$` whose `$qualified-namespace-specifier$` is a dependent qualified name or whose `$splice-specifier$` is dependent. A `$namespace-name$` is dependent if it names a dependent namespace alias.
+[1]{.pnum} A namespace alias is dependent if it is introduced by a `$namespace-alias-definition$` whose `$qualified-namespace-specifier$` (if any) is a dependent qualified name or whose `$splice-specifier$` (if any) is dependent. A `$namespace-name$` is dependent if it names a dependent namespace alias.
 
 ::: example
 ```cpp
 template <std::meta::info R> int fn() {
   namespace Alias = [:R:];  // [:R:] is dependent
-  return Alias::v;  // Alias is dependent
+  return typename Alias::T{};  // Alias is dependent
 }
 
 namespace NS {
-  int v = 1;
+  using T = int;
 }
 
 int a = fn<^^NS>();
@@ -6152,10 +6147,10 @@ int a = fn<^^NS>();
 
 ### [temp.expl.spec]{.sref} Explicit specialization {-}
 
-Modify paragraph 9 to apply to incompletely-defined specializations in the abstract, rather than to how they are named. This avoids the question of whether they are named by a `$simple-template-id$` or designated by a `$splice-specialization-specifier$`.
+Modify paragraph 9 to apply to incompletely-defined specializations in the abstract, rather than to how they are named. This avoids the question of whether they are named by a `$simple-template-id$` or designated by a `$splice-specialization-specifier$`. Make it a note.
 
 ::: std
-[9]{.pnum} A [`$simple-template-id$` that names a]{.rm} class template explicit specialization that has been declared but not defined can be used exactly like [the names of]{.rm} other incompletely-defined classes ([basic.types]).
+[9]{.pnum} [ [*Note 1*:]{.addu} A [`$simple-template-id$` that names a]{.rm} class template explicit specialization that has been declared but not defined can be used exactly like [the names of]{.rm} other incompletely-defined classes ([basic.types]). [*—end note*]{.addu} ]
 
 :::
 
@@ -6199,23 +6194,6 @@ Modify paragraph 20 to clarify that the construct enclosing a template argument 
 [20]{.pnum} If `P` has a form that contains `<i>`, and if the type of `i` differs from the type of the corresponding template parameter of the template named by the enclosing `$simple-template-id$` [or `$splice-specialization-specifier$`]{.addu}, deduction fails. If `P` has a form that contains `[i]`, and if the type of `i` is not an integral type, deduction fails.^123^ If `P` has a form that includes `noexcept(i)` and the type of `i` is not `bool`, deduction fails.
 
 :::
-
-### [cpp.cond]{.sref} Conditional inclusion {-}
-
-Extend paragraph 10 to clarify that `$splice-specifier$`s may not appear in preprocessor directives, while also applying a "drive-by fix" to disallow lambdas in the same context.
-
-::: std
-
-[10]{.pnum} Preprocessing directives of the forms
-```cpp
-     # if      $constant-expression$ $new-line$ $group$@~_opt_~@
-     # elif    $constant-expression$ $new-line$ $group$@~_opt_~@
-```
-check whether the controlling constant expression evaluates to nonzero. [The program is ill-formed if a `$splice-specifier$` or `$lambda-expression$` appears in the controlling constant expression.]{.addu}
-
-:::
-
-
 
 ## Library
 
@@ -8478,7 +8456,7 @@ Add two new Annex C entries:
 
 **Rationale**: Required for new features.
 
-**Effect on original feature**: Valid C++23 code that contains two consecutive `^` tokens may be ill-formed in this revision of C++.
+**Effect on original feature**: Valid C++23 code that contains two consecutive `^` tokens can be ill-formed in this revision of C++.
 
 ::: example
 ```cpp
@@ -8494,11 +8472,12 @@ int i = &C::operator^^C{}; // ill-formed; previously well-formed
 
 **Rationale**: Required for new features.
 
-**Effect on original feature**: Vaild C++23 code that contained an *attribute-specifier* with a using *attribute-namespace* but no attributes is ill-formed in this revision of C++.
+**Effect on original feature**: Valid C++23 code that contained an *attribute-specifier* with an *attribute-using-prefix* but no attributes and no whitespace is ill-formed in this revision of C++.
 
 ::: example
 ```cpp
-[[using CC:]] struct C; // ill-formed; previously well-formed
+struct [[using CC:]] C;   // ill-formed; previously well-formed
+struct [[using DD: ]] D;  // OK
 ```
 :::
 :::
@@ -8517,7 +8496,7 @@ Modify [diff.cpp23.library]:
 
 :::
 
-## Feature-Test Macro
+## Feature-Test Macros
 
 This is a feature with both a language and library component. Our usual practice is to provide something like `__cpp_impl_reflection` and `__cpp_lib_reflection` for this. But since the two pieces are so closely tied together, maybe it really only makes sense to provide one?
 
