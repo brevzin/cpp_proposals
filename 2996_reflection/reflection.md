@@ -5478,7 +5478,7 @@ Strike note 3; non-static data members of reference type also have associated me
 Add a new paragraph after paragraph 6 specifying the size, alignment, and offset of member subobjects of a class.
 
 ::: std
-[6+]{.pnum} [Every object of class type has a unique member subobject corresponding to each of its direct non-static data members. If any non-static data member of a class `C` is of reference type, then let `D` be an invented class that is identical to `C` except that each non-static member of `D` corresponding to a member of `C` of type "reference to `T`" instead has type "pointer to `T`". Every member subobject of a complete object of type `C` has the same size, alignment, and offset as that of the corresponding subobject of a complete object of type `D`.]{.addu}
+[6+]{.pnum} [Every object of class type has a unique member subobject corresponding to each of its direct non-static data members. If any non-static data member of a class `C` is of reference type, then let `D` be an invented class that is identical to `C` except that each non-static member of `D` corresponding to a member of `C` of type "reference to `T`" instead has type "pointer to `T`". Every member subobject of a complete object of type `C` has the same size, alignment, and offset as that of the corresponding subobject of a complete object of type `D`. The size and alignment of `C` are the same as the size and alignment of `D`.]{.addu}
 
 :::
 
@@ -5609,7 +5609,7 @@ Modify paragraph 3 to account for overload resolution of `$splice-expression$`s.
 
 ::: std
 [3]{.pnum} In unqualified function calls, the function is [named]{.rm} [designated]{.addu} by [a `$primary-expression$`]{.rm} [an `$id-expression$` or a `$splice-expression$` `$E$`]{.addu}. [The function declarations found by name lookup ([basic.lookup]) constitute the set of candidate functions]{.rm}
-[The set of candidate functions either is the set found by name lookup ([basic.lookup]) if `$E$` is an `$id-expression$` or is the set determined as specified in [expr.prim.splice] if `$E$` is a `$splice-expression$`]{.addu}. Because of the rules for name lookup, the set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if [the `$primary-expression$`]{.rm} [`$E$`]{.addu} is [either a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
+[The set of candidate functions either is the set found by name lookup ([basic.lookup]) if `$E$` is an `$id-expression$` or is the set determined as specified in [expr.prim.splice] if `$E$` is a `$splice-expression$`]{.addu}. [Because of the rules for name lookup, the]{.rm} [The]{.addu} set of candidate functions consists either entirely of non-member functions or entirely of member functions of some class `T`. In the former case or if [the `$primary-expression$`]{.rm} [`$E$`]{.addu} is [either a `$splice-expression$` or]{.addu} the address of an overload set, the argument list is the same as the `$expression-list$` in the call. Otherwise, the argument list is the `$expression-list$` in the call augmented by the addition of an implied function argument as in a qualified function call. If the current class is, or is derived from, `T`, and the keyword `this` ([expr.prim.this]) refers to it, then the implied object argument is `(*this)`. Otherwise, a contrived object of type `T` becomes the implied object argument;^103^ if overload resolution selects a non-static member function, the call is ill-formed.
 
 :::
 
@@ -5648,14 +5648,14 @@ Specify rules for overload sets denoted by `$splice-expression$`s in paragraph 2
 
 * [#.#]{.pnum} If there are `$m$` arguments in the lists, all candidate functions having exactly `$m$` parameters are viable.
 * [#.#]{.pnum} A candidate function having fewer than `$m$` parameters is viable only if it has an ellipsis in its parameter list ([dcl.fct]). For the purposes of overload resolution, any argument for which there is no corresponding parameter is considered to "match the ellipsis" ([over.ics.ellipsis]).
-* [#.#]{.pnum} A candidate function [`C`]{.addu} having more than `$m$` parameters is viable only if [all parameters followith the `$m$@^th^@` have default arguments ([dcl.fct.default])]{.rm} [a set of scopes, called `$E$`, is not empty. `$E$` consists of every scope `$X$` that satisfies the following:]{.addu}
-  * [[#.#.#]{.pnum} There is a declaration of `C` considered by the overload resolution whose host scope is `$X$`.]{.addu}
-  * [[#.#.#]{.pnum} For every `$k$@^th^@` parameter `P` where `$k$` > `$m$`, there is a reachable declaration that specifies a default argument ([dcl.fct.default]) for `P` whose host scope is `$X$`.]{.addu}
+* [#.#]{.pnum} A candidate function [`C`]{.addu} having more than `$m$` parameters is viable only if [all parameters following the `$m$@^th^@` have default arguments ([dcl.fct.default])]{.rm} [the set of scopes `$G$`, as defined below, is not empty. `$G$` consists of every scope `$X$` that satisfies all of the following:]{.addu}
+  * [[#.#.#]{.pnum} There is a declaration of `C`, whose host scope is `$X$`, considered by the overload resolution.]{.addu}
+  * [[#.#.#]{.pnum} For every `$k$@^th^@` parameter `P` where `$k$` > `$m$`, there is a reachable declaration, whose host scope is `$X$`, that specifies a default argument ([dcl.fct.default]) for `P`.]{.addu}
 
-  [If `C` is selected as the best viable function:]{.addu}
+  [If `C` is selected as the best viable function ([over.match.best]):]{.addu}
 
-  * [[#.#.#]{.pnum} `$E$` shall contain exactly one scope (call it `$S$`).]{.addu}
-  * [[#.#.#]{.pnum} If the declarations considered by the overload resolution are denoted by a `$splice-expression$`, then `$S$` shall not be a block scope.]{.addu}
+  * [[#.#.#]{.pnum} `$G$` shall contain exactly one scope (call it `$S$`).]{.addu}
+  * [[#.#.#]{.pnum} If the candidates are denoted by a `$splice-expression$`, then `$S$` shall not be a block scope.]{.addu}
   * [[#.#.#]{.pnum} The default arguments used in the call `$C$` are the default arguments specified by the reachable declarations whose host scope is `$S$`.]{.addu}
 
   For the purposes of overload resolution, the parameter list is truncated on the right, so that there are exactly `$m$` parameters.
@@ -5664,31 +5664,44 @@ Specify rules for overload sets denoted by `$splice-expression$`s in paragraph 2
 ::: example
 ```cpp
 namespace A {
-  extern "C" void f(int = 5);
+  extern "C" void f(int, int = 5);
+  extern "C" void f(int = 6, int);
 }
 namespace B {
-  extern "C" void f(int = 5);
+  extern "C" void f(int, int = 7);
 }
-
-void splice() {
-  [:^^A::f:](3);  // OK, default argument was not used for viability
-  [:^^A::f:]();   // error: default argument provided by two host scopes
-}
-
-using A::f;
-using B::f;
 
 void use() {
-  f(3);           // OK, default argument was not used for viability
-  f();            // error: found default argument twice
+  [:^^A::f:](3, 4);  // OK, default argument was not used for viability
+  [:^^A::f:](3);     // error: default argument provided by declarations from two scopes
+  [:^^A::f:]();      // OK, default arguments provided by declarations in the scope of A
+
+  using A::f;
+  using B::f;
+  f(3, 4);           // OK, default argument was not used for viability
+  f(3);              // error: default argument provided by declaration from two scopes
+  f();               // OK, default arguments provided by declarations in the scope of A
+
+  void g(int = 8);
+  g();               // OK
+  [:^^g:]();         // error: host scope is block scope
 }
 
-void g(int);
-void use2() {
-  void g(int = 7);
-  g();       // OK
-  [:^^g:](); // error: host scope is block scope
+void h(int = 7);
+constexpr std::meta::info r = ^^h;
+void poison() {
+  void h(int = 8);
+  h();       // ok, calls h(8)
+  [:^^h:](); // error: host scope is block scope
 }
+void call_h() {
+  [:^^h:](); // error: host scope is block scope
+  [:r:]();   // error: host scope is block scope
+}
+
+template <typename... Ts>
+int k(int = 3, Ts...);
+int i = k<int>();    // error: no default argument for the second parameter
 ```
 
 :::
@@ -5700,9 +5713,12 @@ void use2() {
 
 [The changes to [over.match.viable]/2.3 included in this proposal (part of the resolution to [@CWG2701]) render paragraph 4 redundant; the contents of example 9 now follow [over.match.viable]/2.]{.ednote}
 
-Delete paragraph 4 and example 9.
+Delete paragraph 4 and example 9 and replace with a note:
 
 ::: std
+::: addu
+[If the best viable function was made viable by one or more default arguments, additional requirements apply ([over.match.viable]).]{.note}
+:::
 ::: rm
 [4]{.pnum} If the best viable function resolves to a function for which multiple declarations were found, and if any two of these declarations inhabit different scopes and specify a default argument that made the function viable, the program is ill-formed.
 
@@ -7771,7 +7787,7 @@ consteval size_t size_of(info r);
 - [#.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`), or
 - [#.#]{.pnum} `dealias(r)` represents a type `$T$`,
 
-then `sizeof($T$)` if `T` is not a reference type and `sizeof(add_pointer_t<$T$>)` otherwise.  Otherwise, `size_of(type_of(r))`.
+then `sizeof($T$)` if `$T$` is not a reference type and `sizeof(add_pointer_t<$T$>)` otherwise.  Otherwise, `size_of(type_of(r))`.
 
 [It is possible that while `sizeof(char) == size_of(^^char)` that `sizeof(char&) != size_of(^^char&)`. If `b` represents a direct base class relationship (`$D$`, `$B$`) for which `$B$` is an empty class type, then `size_of(b) > 0`.]{.note}
 
@@ -7787,7 +7803,7 @@ consteval size_t alignment_of(info r);
 * [#.#]{.pnum} Otherwise, if `dealias(r)` represents a variable or object, then the alignment requirement of the variable or object.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `alignment_of(type_of(r))`.
 * [#.#]{.pnum} Otherwise, if `r` represents a non-static data member `$M$` of a class `$C$`, then the alignment of the direct member subobject corresponding to `$M$` of a complete object of type `$C$`.
-* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$TR$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]). If `$A$` is not ⊥, then the value `$A$`. Otherwise `alignof($T$)` where the corresponding subobject of `$TR$` would have type `$T$`.
+* [#.#]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]). If `$A$` is not ⊥, then the value `$A$`. Otherwise `alignment_of(^^$T$)`.
 
 ```cpp
 consteval size_t bit_size_of(info r);
