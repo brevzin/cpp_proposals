@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-06-18" />
+  <meta name="dcterms.date" content="2025-06-19" />
   <title>Splicing a base class subobject</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ subobject</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-06-18</td>
+    <td>2025-06-19</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -623,9 +623,10 @@ Elements<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P3293R2"><a href="https://wg21.link/p3293r2" role="doc-biblioref">[P3293R2]</a></span>, rebasing on <span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13" role="doc-biblioref">[P2996R13]</a></span>.</p>
 <p>Since <span class="citation" data-cites="P3293R1"><a href="https://wg21.link/p3293r1" role="doc-biblioref">[P3293R1]</a></span>, updating wording and design
 to account for <span class="title"><span class="citation" data-cites="P3547R1"><a href="https://wg21.link/p3547r1" role="doc-biblioref">[P3547R1] (Modeling Access Control With
-Reflection)</a></span></span> and rebased on <span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13" role="doc-biblioref">[P2996R13]</a></span>. Adding corresponding
+Reflection)</a></span></span> and rebased on <span class="citation" data-cites="P2996R12"><a href="https://wg21.link/p2996r12" role="doc-biblioref">[P2996R12]</a></span>. Adding corresponding
 <code class="sourceCode cpp">has_inaccessible_subobjects</code>.</p>
 <p>Since <span class="citation" data-cites="P3293R0"><a href="https://wg21.link/p3293r0" role="doc-biblioref">[P3293R0]</a></span>, noted that <code class="sourceCode cpp"><span class="op">&amp;[:</span>base<span class="op">:]</span></code>
 cannot work for virtual base classes. Talking about arrays. Added
@@ -910,7 +911,8 @@ xvalue. The type of
 “<code class="sourceCode cpp"><em>cv</em> <em>B</em></code>”. <span class="note"><span>[ <em>Note 1:</em> </span>This can only occur in an
 expression of the form <code class="sourceCode cpp">e1<span class="op">.[:</span>e2<span class="op">:]</span></code>
 where <code class="sourceCode cpp">e2</code> is a reflection designating
-a base class subobject.<span> — <em>end note</em> ]</span></span></p>
+a direct base class relationship.<span> — <em>end
+note</em> ]</span></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">{</span></span>
@@ -987,8 +989,8 @@ subobject.</p>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> D d <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> B<span class="op">::*</span>pb <span class="op">=</span> <span class="op">&amp;[:</span> std<span class="op">::</span>meta<span class="op">::</span>bases_of<span class="op">(^^</span>D, std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">())[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>d<span class="op">.*</span>pb <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> B D<span class="op">::*</span>pb <span class="op">=</span> <span class="op">&amp;[:</span> std<span class="op">::</span>meta<span class="op">::</span>bases_of<span class="op">(^^</span>D, std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">())[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>d<span class="op">.*</span>pb<span class="op">.</span>b <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(&amp;(</span>d<span class="op">.*</span>pb<span class="op">)</span> <span class="op">==</span> <span class="op">&amp;</span><span class="kw">static_cast</span><span class="op">&lt;</span>B<span class="op">&amp;&gt;(</span>d<span class="op">))</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div></li>
@@ -1106,6 +1108,11 @@ in the order in which they are declared.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-P2996R12" class="csl-entry" role="doc-biblioentry">
+[P2996R12] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2025-05-11. Reflection
+for C++26. <a href="https://wg21.link/p2996r12"><div class="csl-block">https://wg21.link/p2996r12</div></a>
+</div>
 <div id="ref-P2996R13" class="csl-entry" role="doc-biblioentry">
 [P2996R13] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
 Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2025-06-18. Reflection
@@ -1123,6 +1130,10 @@ C++26. <a href="https://wg21.link/p2996r6"><div class="csl-block">https://wg21.l
 <div id="ref-P3293R1" class="csl-entry" role="doc-biblioentry">
 [P3293R1] Barry Revzin, Peter Dimov, Dan Katz, Daveed Vandevoorde.
 2024-10-13. Splicing a base class subobject. <a href="https://wg21.link/p3293r1"><div class="csl-block">https://wg21.link/p3293r1</div></a>
+</div>
+<div id="ref-P3293R2" class="csl-entry" role="doc-biblioentry">
+[P3293R2] Barry Revzin, Peter Dimov, Dan Katz, Daveed Vandevoorde.
+2025-05-11. Splicing a base class subobject. <a href="https://wg21.link/p3293r2"><div class="csl-block">https://wg21.link/p3293r2</div></a>
 </div>
 <div id="ref-P3547R1" class="csl-entry" role="doc-biblioentry">
 [P3547R1] Dan Katz, Ville Voutilainen. 2025-02-09. Modeling Access

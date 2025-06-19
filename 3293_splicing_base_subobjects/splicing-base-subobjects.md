@@ -18,7 +18,9 @@ tag: reflection
 
 # Revision History
 
-Since [@P3293R1], updating wording and design to account for [@P3547R1]{.title} and rebased on [@P2996R13]. Adding corresponding `has_inaccessible_subobjects`.
+Since [@P3293R2], rebasing on [@P2996R13].
+
+Since [@P3293R1], updating wording and design to account for [@P3547R1]{.title} and rebased on [@P2996R12]. Adding corresponding `has_inaccessible_subobjects`.
 
 Since [@P3293R0], noted that `&[:base:]` cannot work for virtual base classes. Talking about arrays. Added wording.
 
@@ -175,7 +177,7 @@ Handle base class splices in [expr.ref]{.sref}/7-8:
 * [#.#]{.pnum} Otherwise, if `E2` designates a member enumerator [...]
 
 ::: addu
-* [#.#]{.pnum} Otherwise, if `E2` designates a direct, non-virtual base class relationship (`$D$`, `$B$`), the expression designates the base class subobject of type `$B$` corresponding to the the object designated by the first expression. If `E1` is an lvalue, then `E1.E2` is an lvalue; otherwise `E1.E2` is an xvalue. The type of `E1.E2` is "`$cv$ $B$`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a base class subobject.]{.note}
+* [#.#]{.pnum} Otherwise, if `E2` designates a direct, non-virtual base class relationship (`$D$`, `$B$`), the expression designates the base class subobject of type `$B$` corresponding to the the object designated by the first expression. If `E1` is an lvalue, then `E1.E2` is an lvalue; otherwise `E1.E2` is an xvalue. The type of `E1.E2` is "`$cv$ $B$`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a direct base class relationship.]{.note}
 
   ::: example
   ```cpp
@@ -224,8 +226,8 @@ Handle base class pointers to members in [expr.unary.op]{.sref}:
 
   constexpr D d = {1, 2};
 
-  constexpr int B::*pb = &[: std::meta::bases_of(^^D, std::meta::access_context::current())[0] :];
-  static_assert(d.*pb == 1);
+  constexpr B D::*pb = &[: std::meta::bases_of(^^D, std::meta::access_context::current())[0] :];
+  static_assert(d.*pb.b == 1);
   static_assert(&(d.*pb) == &static_cast<B&>(d));
   ```
   :::
