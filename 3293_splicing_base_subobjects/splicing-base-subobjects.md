@@ -1,6 +1,6 @@
 ---
 title: "Splicing a base class subobject"
-document: D3293R3
+document: P3293R3
 date: today
 audience: CWG/LWG
 author:
