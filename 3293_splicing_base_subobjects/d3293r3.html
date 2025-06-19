@@ -623,7 +623,8 @@ Elements<span></span></a></li>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
-<p>Since <span class="citation" data-cites="P3293R2"><a href="https://wg21.link/p3293r2" role="doc-biblioref">[P3293R2]</a></span>, rebasing on <span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13" role="doc-biblioref">[P2996R13]</a></span>.</p>
+<p>Since <span class="citation" data-cites="P3293R2"><a href="https://wg21.link/p3293r2" role="doc-biblioref">[P3293R2]</a></span>, rebasing on <span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13" role="doc-biblioref">[P2996R13]</a></span>. Dropped the ability to have
+a pointer-to-base-class subobject in the interests of time.</p>
 <p>Since <span class="citation" data-cites="P3293R1"><a href="https://wg21.link/p3293r1" role="doc-biblioref">[P3293R1]</a></span>, updating wording and design
 to account for <span class="title"><span class="citation" data-cites="P3547R1"><a href="https://wg21.link/p3547r1" role="doc-biblioref">[P3547R1] (Modeling Access Control With
 Reflection)</a></span></span> and rebased on <span class="citation" data-cites="P2996R12"><a href="https://wg21.link/p2996r12" role="doc-biblioref">[P2996R12]</a></span>. Adding corresponding
@@ -762,7 +763,9 @@ appropriate offset. Likewise, there is no way to directly get such a
 member pointer today. But that would be a useful bit of functionality to
 add. That is, unless <code class="sourceCode cpp">base</code> represents
 a reflection of a virtual base class subobject, which wouldn’t be
-representable as a pointer to member.</p>
+representable as a pointer to member. However, in the interests of time,
+we removed that functionality on the way to merging this paper in
+Sofia.</p>
 <p>The only reason <span class="citation" data-cites="P2996R6"><a href="https://wg21.link/p2996r6" role="doc-biblioref">[P2996R6]</a></span> doesn’t support splicing base
 class subobjects is the lack of equivalent language support today. This
 means that adding this support in reflection would mean that splicing
@@ -799,26 +802,14 @@ reflections (which currently does not exist) as well as being able to
 extend class member access to support arrays. Not to mention pointers to
 members? It’s a much larger change with a much smaller benefit.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>We propose two language changes:</p>
-<ol type="1">
-<li>to define <code class="sourceCode cpp">obj<span class="op">.[:</span>base<span class="op">:]</span></code>
+<p>We propose to define <code class="sourceCode cpp">obj<span class="op">.[:</span>base<span class="op">:]</span></code>
 (where <code class="sourceCode cpp">base</code> is a reflection of a
 base class of the type of <code class="sourceCode cpp">obj</code>) as
 being an access to that base class subobject, in the same way that <code class="sourceCode cpp">obj<span class="op">.[:</span>nsdm<span class="op">:]</span></code>
 (where <code class="sourceCode cpp">nsdm</code> is a reflection of a
-non-static data member) is an access to that data member.</li>
-<li>to define <code class="sourceCode cpp"><span class="op">&amp;[:</span>base<span class="op">:]</span></code>
-where <code class="sourceCode cpp">base</code> is a reflection of a base
-class <code class="sourceCode cpp">B</code> of type
-<code class="sourceCode cpp">T</code> should yield a
-<code class="sourceCode cpp">B T<span class="op">::*</span></code> with
-appropriate offset. Unless <code class="sourceCode cpp">base</code> is a
-reflection of a virtual base class, which wouldn’t really be
-representable as a pointer to member.</li>
-</ol>
-<p>We argue that these are the obvious, useful, and only possible
-meanings of these syntaxes, so we should simply support them in the
-language.</p>
+non-static data member) is an access to that data member.</p>
+<p>We argue that this is the obvious, useful, and only possible meaning
+of this syntax, so we should simply support them in the language.</p>
 <p>The only reason this isn’t initially part of <span class="citation" data-cites="P2996R6"><a href="https://wg21.link/p2996r6" role="doc-biblioref">[P2996R6]</a></span> is that while there
 <em>is</em> a way to access a data member of an object directly (just
 <code class="sourceCode cpp">obj<span class="op">.</span>mem</code>),
@@ -832,7 +823,8 @@ really possible until these language additions.</p>
 <p>The wording here is a diff on top of P2996.</p>
 <p>Adjust the
 <code class="sourceCode cpp"><em>splice-expression</em></code>
-restriction added by P2996:</p>
+restriction added by P2996 and handle base class splices in
+<span>7.6.1.5 <a href="https://wg21.link/expr.ref">[expr.ref]</a></span>/7-8:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">*</a></span>
@@ -845,12 +837,11 @@ type of <code class="sourceCode cpp">E1</code>.</span>
 <span class="addu"><code class="sourceCode cpp">T1</code> or a direct
 base class relationship (<code class="sourceCode cpp">T1</code>,
 <code class="sourceCode cpp">B</code>)</span>.</p>
-</blockquote>
-</div>
-<p>Handle base class splices in <span>7.6.1.5 <a href="https://wg21.link/expr.ref">[expr.ref]</a></span>/7-8:</p>
-<div class="std">
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">6</a></span>
+If <code class="sourceCode cpp">E2</code> designates a bit-field,
+<code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is a
+bit-field. […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">7</a></span>
 If <code class="sourceCode cpp">E2</code> designates an entity that is
 declared to have type “reference to
 <code class="sourceCode cpp">T</code>”, then
@@ -865,194 +856,121 @@ designates the object or function to which the corresponding reference
 member of <code class="sourceCode cpp">E1</code> is bound. Otherwise,
 one of the following rules applies.</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">(7.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(7.1)</a></span>
 If <code class="sourceCode cpp">E2</code> designates a static data
 member and the type of <code class="sourceCode cpp">E2</code> is
 <code class="sourceCode cpp">T</code>, then
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is an
 lvalue; […]</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(7.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(7.2)</a></span>
 Otherwise, if <code class="sourceCode cpp">E2</code> designates a
 non-static data member and the type of
 <code class="sourceCode cpp">E1</code> is “<em>cq1</em> <em>vq1</em>
 <code class="sourceCode cpp">X</code>”, and the type of
 <code class="sourceCode cpp">E2</code> is “<em>cq2 vq2</em>
 <code class="sourceCode cpp">T</code>”, the expression designates the
-corresponding member subobject of the object designated by the first
-expression. […]</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(7.3)</a></span>
+corresponding member subobject of the object designated by <span class="rm" style="color: #bf0303"><del>the first expression</del></span>
+<span class="addu"><code class="sourceCode cpp">E1</code></span>.
+[…]</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(7.3)</a></span>
 Otherwise, if <code class="sourceCode cpp">E2</code> is an overload set,
 […]</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(7.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(7.4)</a></span>
 Otherwise, if <code class="sourceCode cpp">E2</code> designates a nested
 type, the expression
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is
 ill-formed.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(7.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(7.5)</a></span>
 Otherwise, if <code class="sourceCode cpp">E2</code> designates a member
 enumerator […]</li>
 </ul>
 <div class="addu">
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(7.6)</a></span>
-Otherwise, if <code class="sourceCode cpp">E2</code> designates a
-direct, non-virtual base class relationship
-(<code class="sourceCode cpp"><em>D</em></code>,
-<code class="sourceCode cpp"><em>B</em></code>), the expression
-designates the base class subobject of type
-<code class="sourceCode cpp"><em>B</em></code> corresponding to the the
-object designated by the first expression. If
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(7.6)</a></span>
+Otherwise, if <code class="sourceCode cpp">E2</code> designates a direct
+base class relationship (<code class="sourceCode cpp"><em>D</em></code>,
+<code class="sourceCode cpp"><em>B</em></code>) and the type of
+<code class="sourceCode cpp">E1</code> is
+<code class="sourceCode cpp"><em>cv</em> T</code>, the expression
+designates the direct base class subobject of type
+<code class="sourceCode cpp"><em>B</em></code> of the object designated
+by <code class="sourceCode cpp">E1</code>. If
 <code class="sourceCode cpp">E1</code> is an lvalue, then
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is an
-lvalue; otherwise
+lvalue; otherwise,
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is an
 xvalue. The type of
 <code class="sourceCode cpp">E1<span class="op">.</span>E2</code> is
 “<code class="sourceCode cpp"><em>cv</em> <em>B</em></code>”. <span class="note"><span>[ <em>Note 1:</em> </span>This can only occur in an
-expression of the form <code class="sourceCode cpp">e1<span class="op">.[:</span>e2<span class="op">:]</span></code>
-where <code class="sourceCode cpp">e2</code> is a reflection designating
-a direct base class relationship.<span> — <em>end
-note</em> ]</span></span></p>
+expression of the form <code class="sourceCode cpp">e1<span class="op">.[:</span>e2<span class="op">:]</span></code>.<span>
+— <em>end note</em> ]</span></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">{</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> b;</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">:</span> B <span class="op">{</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> d;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">:</span> B <span class="op">{</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> get<span class="op">()</span> <span class="kw">const</span> <span class="op">{</span> <span class="cf">return</span> b; <span class="op">}</span></span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  D d <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  B<span class="op">&amp;</span> b <span class="op">=</span> d<span class="op">.[:</span> std<span class="op">::</span>meta<span class="op">::</span>bases_of<span class="op">(^^</span>D, std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">())[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  b<span class="op">.</span>b <span class="op">+=</span> <span class="dv">10</span>;</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  d<span class="op">.[:</span> <span class="op">^^</span>D<span class="op">::</span>d <span class="op">:]</span> <span class="op">+=</span> <span class="dv">1</span>;</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> d<span class="op">.</span>b <span class="op">*</span> d<span class="op">.</span>d;</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">()</span> <span class="op">==</span> <span class="dv">33</span><span class="op">)</span>;</span></code></pre></div>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">:</span> B, C <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  D d <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="op">{}}</span>;</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">// b unambiguously refers to the direct base class of type B,</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">// not the indirect base class of type B</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  B<span class="op">&amp;</span> b <span class="op">=</span> d<span class="op">.[:</span> std<span class="op">::</span>meta<span class="op">::</span>bases_of<span class="op">(^^</span>D, std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">())[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  b<span class="op">.</span>b <span class="op">+=</span> <span class="dv">10</span>;</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="dv">10</span> <span class="op">*</span> b<span class="op">.</span>b <span class="op">+</span> d<span class="op">.</span>get<span class="op">()</span>;</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>f<span class="op">()</span> <span class="op">==</span> <span class="dv">110</span><span class="op">)</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div></li>
 </ul>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(7.7)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(7.7)</a></span>
 Otherwise, the program is ill-formed.</li>
 </ul>
-</blockquote>
-</div>
-<p>Handle base class pointers to members in <span>7.6.2.2 <a href="https://wg21.link/expr.unary.op">[expr.unary.op]</a></span>:</p>
-<div class="std">
-<blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">3</a></span>
-The operand of the unary
-<code class="sourceCode cpp"><span class="op">&amp;</span></code>
-operator shall be an lvalue of some type
-<code class="sourceCode cpp">T</code>.</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(3.1)</a></span>
-If the operand is a
-<code class="sourceCode cpp"><em>qualified-id</em></code> or
-<code class="sourceCode cpp"><em>splice-expression</em></code>
-designating a non-static member <code class="sourceCode cpp">m</code>,
-other than an explicit object member function,
-<code class="sourceCode cpp">m</code> shall be a direct member of some
-class <code class="sourceCode cpp">C</code> that is not an anonymous
-union. The result has type “pointer to member of class
-<code class="sourceCode cpp">C</code> of type
-<code class="sourceCode cpp">T</code>” and designates
-<code class="sourceCode cpp">C<span class="op">::</span>m</code>. <span class="note"><span>[ <em>Note 2:</em> </span>A
-<code class="sourceCode cpp"><em>qualified-id</em></code> that names a
-member of a namespace-scope anonymous union is considered to be a class
-member access expression ([expr.prim.id.general]) and cannot be used to
-form a pointer to member.<span> — <em>end note</em> ]</span></span></li>
-</ul>
-<div class="addu">
-<ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">(3.1+)</a></span>
-Otherwise, if the operand is a
-<code class="sourceCode cpp"><em>splice-expression</em></code>
-designating a non-virtual direct base class relationship
-(<code class="sourceCode cpp">C</code>,
-<code class="sourceCode cpp">T</code>), the result has type pointer to
-member of class <code class="sourceCode cpp">C</code> of type
-<code class="sourceCode cpp">T</code> and designates that base class
-subobject.</p>
-<div class="example">
-<span>[ <em>Example 2:</em> </span>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> B <span class="op">{</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> b;</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> D <span class="op">:</span> B <span class="op">{</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> d;</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> D d <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> B D<span class="op">::*</span>pb <span class="op">=</span> <span class="op">&amp;[:</span> std<span class="op">::</span>meta<span class="op">::</span>bases_of<span class="op">(^^</span>D, std<span class="op">::</span>meta<span class="op">::</span>access_context<span class="op">::</span>current<span class="op">())[</span><span class="dv">0</span><span class="op">]</span> <span class="op">:]</span>;</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>d<span class="op">.*</span>pb<span class="op">.</span>b <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>;</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(&amp;(</span>d<span class="op">.*</span>pb<span class="op">)</span> <span class="op">==</span> <span class="op">&amp;</span><span class="kw">static_cast</span><span class="op">&lt;</span>B<span class="op">&amp;&gt;(</span>d<span class="op">))</span>;</span></code></pre></div>
-<span> — <em>end example</em> ]</span>
-</div></li>
-</ul>
-</div>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(3.2)</a></span>
-Otherwise, the result has type “pointer to
-<code class="sourceCode cpp">T</code>” and points to the designated
-object (<span>6.7.1 <a href="https://wg21.link/intro.memory">[intro.memory]</a></span>) or
-function (<span>6.8.4 <a href="https://wg21.link/basic.compound">[basic.compound]</a></span>). If
-the operand designates an explicit object member function (<span>9.3.4.6
-<a href="https://wg21.link/dcl.fct">[dcl.fct]</a></span>), the operand
-shall be a <code class="sourceCode cpp"><em>qualified-id</em></code> or
-a <code class="sourceCode cpp"><em>splice-expression</em></code>.</li>
-</ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">4</a></span>
-A pointer to member is only formed when an explicit
-<code class="sourceCode cpp"><span class="op">&amp;</span></code> is
-used and its operand is a
-<code class="sourceCode cpp"><em>qualified-id</em></code> or
-<code class="sourceCode cpp"><em>splice-expression</em></code> not
-enclosed in parentheses.</p>
 </blockquote>
 </div>
 <p>Add to meta.synop:</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  // ...</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.access.queries], member accessibility queries</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  consteval bool is_accessible(info r, access_context ctx);</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  consteval bool has_inaccessible_nonstatic_data_members(</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      info r,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>      access_context ctx);</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  consteval bool has_inaccessible_bases(info r, access_context ctx);</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool has_inaccessible_subobjects(info r, access_context ctx);</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.member.queries], reflection member queries</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; members_of(info r, access_context ctx);</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; bases_of(info type, access_context ctx);</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; static_data_members_of(info type, access_context ctx);</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; nonstatic_data_members_of(info type, access_context ctx);</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; subobjects_of(info type, access_context ctx);</span></span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; enumerators_of(info type_enum);</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  // ...</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.access.queries], member accessibility queries</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  consteval bool is_accessible(info r, access_context ctx);</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  consteval bool has_inaccessible_nonstatic_data_members(</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>      info r,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>      access_context ctx);</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  consteval bool has_inaccessible_bases(info r, access_context ctx);</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval bool has_inaccessible_subobjects(info r, access_context ctx);</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  // [meta.reflection.member.queries], reflection member queries</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; members_of(info r, access_context ctx);</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; bases_of(info type, access_context ctx);</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; static_data_members_of(info type, access_context ctx);</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; nonstatic_data_members_of(info type, access_context ctx);</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ consteval vector&lt;info&gt; subobjects_of(info type, access_context ctx);</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  consteval vector&lt;info&gt; enumerators_of(info type_enum);</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
 <p>Add to [meta.reflection.access.queries] in the appropriate spot:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_inaccessible_bases<span class="op">(</span>info r, access_context ctx<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">7</a></span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_inaccessible_bases<span class="op">(</span>info r, access_context ctx<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">7</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">bases_of<span class="op">(</span>r, ctx<span class="op">)</span></code>
 is a constant subexpression.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">8</a></span>
 <em>Returns</em>:
 <code class="sourceCode cpp"><span class="kw">true</span></code> if
 <code class="sourceCode cpp">is_accessible<span class="op">(</span><em>R</em>, ctx<span class="op">)</span></code>
@@ -1061,8 +979,8 @@ any <code class="sourceCode cpp"><em>R</em></code> in <code class="sourceCode cp
 Otherwise,
 <code class="sourceCode cpp"><span class="kw">false</span></code>.</p>
 <div class="addu">
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_inaccessible_subobjects<span class="op">(</span>info r, access_context ctx<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">9</a></span>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">bool</span> has_inaccessible_subobjects<span class="op">(</span>info r, access_context ctx<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">9</a></span>
 <em>Effects</em>: Equivalent to: <code class="sourceCode cpp"><span class="cf">return</span> has_inaccessible_bases<span class="op">(</span>r, ctx<span class="op">)</span> <span class="op">||</span> has_inaccessible_nonstatic_data_members<span class="op">(</span>r, ctx<span class="op">)</span>;</code></p>
 </div>
 </blockquote>
@@ -1070,35 +988,35 @@ Otherwise,
 <p>Add to [meta.reflection.member.queries] in the appropriate spot:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> nonstatic_data_members_of<span class="op">(</span>info type, access_context ctx<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">9</a></span>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> nonstatic_data_members_of<span class="op">(</span>info type, access_context ctx<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">9</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a class type that is complete from some point in the
 evaluation context.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">10</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">10</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing each element <code class="sourceCode cpp">e</code> of <code class="sourceCode cpp">members_of<span class="op">(</span>type, ctx<span class="op">)</span></code>
 such that <code class="sourceCode cpp">is_nonstatic_data_member<span class="op">(</span>e<span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>,
 preserving their order.</p>
 <div class="addu">
-<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>consteval vector&lt;info&gt; subobjects_of(info type, access_context ctx);</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">10+1</a></span>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>consteval vector&lt;info&gt; subobjects_of(info type, access_context ctx);</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">10+1</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type<span class="op">)</span></code>
 represents a class type that is complete from some point in the
 evaluation context.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">10+2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">10+2</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing each element of <code class="sourceCode cpp">bases_of<span class="op">(</span>type, ctx<span class="op">)</span></code>
 followed by each element of <code class="sourceCode cpp">nonstatic_data_members_of<span class="op">(</span>type, ctx<span class="op">)</span></code>,
 preserving their order.</p>
 </div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> enumerators_of<span class="op">(</span>info type_enum<span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">11</a></span>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> enumerators_of<span class="op">(</span>info type_enum<span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">11</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">dealias<span class="op">(</span>type_enum<span class="op">)</span></code>
 represents an enumeration type and <code class="sourceCode cpp">is_enumerable_type<span class="op">(</span>type_enum<span class="op">)</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">12</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">12</a></span>
 <em>Returns</em>: A <code class="sourceCode cpp">vector</code>
 containing the reflections of each enumerator of the enumeration
 represented by <code class="sourceCode cpp">dealias<span class="op">(</span>type_enum<span class="op">)</span></code>,

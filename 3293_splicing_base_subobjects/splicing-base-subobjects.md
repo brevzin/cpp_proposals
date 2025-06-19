@@ -18,7 +18,7 @@ tag: reflection
 
 # Revision History
 
-Since [@P3293R2], rebasing on [@P2996R13].
+Since [@P3293R2], rebasing on [@P2996R13]. Dropped the ability to have a pointer-to-base-class subobject in the interests of time.
 
 Since [@P3293R1], updating wording and design to account for [@P3547R1]{.title} and rebased on [@P2996R12]. Adding corresponding `has_inaccessible_subobjects`.
 
@@ -125,7 +125,7 @@ Unlike member subobjects, there is _no_ way today to access a base class subobje
 
 But what else could it mean? We argue that the obvious, useful, and only possible meaning of this syntax would be to access the appropriate base class subobject (in the same way that `obj.[:nsdm:]` — where `nsdm` represents a non-static data member — is access to that data member).
 
-Additionally, `&[:base:]` where `base` represents a base class `B` of type `T` could yield a `B T::*` with appropriate offset. Likewise, there is no way to directly get such a member pointer today. But that would be a useful bit of functionality to add. That is, unless `base` represents a reflection of a virtual base class subobject, which wouldn't be representable as a pointer to member.
+Additionally, `&[:base:]` where `base` represents a base class `B` of type `T` could yield a `B T::*` with appropriate offset. Likewise, there is no way to directly get such a member pointer today. But that would be a useful bit of functionality to add. That is, unless `base` represents a reflection of a virtual base class subobject, which wouldn't be representable as a pointer to member. However, in the interests of time, we removed that functionality on the way to merging this paper in Sofia.
 
 The only reason [@P2996R6] doesn't support splicing base class subobjects is the lack of equivalent language support today. This means that adding this support in reflection would mean that splicing can achieve something the language cannot do natively. But we don't really see that as a problem. Reflection is already allowing all sorts of things that the language cannot do natively. What's one more?
 
@@ -142,100 +142,61 @@ That is, being able to splice base class subobjects is small language extension 
 
 # Proposal
 
-We propose two language changes:
+We propose to define `obj.[:base:]` (where `base` is a reflection of a base class of the type of `obj`) as being an access to that base class subobject, in the same way that `obj.[:nsdm:]` (where `nsdm` is a reflection of a non-static data member) is an access to that data member.
 
-1. to define `obj.[:base:]` (where `base` is a reflection of a base class of the type of `obj`) as being an access to that base class subobject, in the same way that `obj.[:nsdm:]` (where `nsdm` is a reflection of a non-static data member) is an access to that data member.
-2. to define `&[:base:]` where `base` is a reflection of a base class `B` of type `T` should yield a `B T::*` with appropriate offset. Unless `base` is a reflection of a virtual base class, which wouldn't really be representable as a pointer to member.
-
-We argue that these are the obvious, useful, and only possible meanings of these syntaxes, so we should simply support them in the language.
+We argue that this is the obvious, useful, and only possible meaning of this syntax, so we should simply support them in the language.
 
 The only reason this isn't initially part of [@P2996R6] is that while there _is_ a way to access a data member of an object directly (just `obj.mem`), there is _no_ way to access a base class subobject directly outside of one of the casts described above.
 
 We then additionally propose to back `subobjects_of()` that [@P2996R6] removed. This was removed because iterating over _all_ the subobjects uniformly wasn't really possible until these language additions.
 
-
-
 ## Wording
 
 The wording here is a diff on top of P2996.
 
-Adjust the `$splice-expression$` restriction added by P2996:
+Adjust the `$splice-expression$` restriction added by P2996 and handle base class splices in [expr.ref]{.sref}/7-8:
 
 ::: std
 [*]{.pnum} If `E2` is a `$splice-expression$`, then [let `T1` be the type of `E1`.]{.addu} `E2` shall designate [either]{.addu} a member of [the type of `E1`]{.rm} [`T1` or a direct base class relationship (`T1`, `B`)]{.addu}.
-:::
 
-Handle base class splices in [expr.ref]{.sref}/7-8:
+[6]{.pnum} If `E2` designates a bit-field, `E1.E2` is a bit-field. […]
 
-::: std
 [7]{.pnum} If `E2` designates an entity that is declared to have type "reference to `T`", then `E1.E2` is an lvalue of type `T`. In that case, if `E2` designates a static data member, `E1.E2` designates the object or function to which the reference is bound, otherwise `E1.E2` designates the object or function to which the corresponding reference member of `E1` is bound. Otherwise, one of the following rules applies.
 
 * [#.#]{.pnum} If `E2` designates a static data member and the type of `E2` is `T`, then `E1.E2` is an lvalue; [...]
-* [#.#]{.pnum} Otherwise, if `E2` designates a non-static data member and the type of `E1` is "_cq1_ _vq1_ `X`", and the type of `E2` is "_cq2 vq2_ `T`", the expression designates the corresponding member subobject of the object designated by the first expression. [...]
+* [#.#]{.pnum} Otherwise, if `E2` designates a non-static data member and the type of `E1` is "_cq1_ _vq1_ `X`", and the type of `E2` is "_cq2 vq2_ `T`", the expression designates the corresponding member subobject of the object designated by [the first expression]{.rm} [`E1`]{.addu}. [...]
 * [#.#]{.pnum} Otherwise, if `E2` is an overload set, [...]
 * [#.#]{.pnum} Otherwise, if `E2` designates a nested type, the expression `E1.E2` is ill-formed.
 * [#.#]{.pnum} Otherwise, if `E2` designates a member enumerator [...]
 
 ::: addu
-* [#.#]{.pnum} Otherwise, if `E2` designates a direct, non-virtual base class relationship (`$D$`, `$B$`), the expression designates the base class subobject of type `$B$` corresponding to the the object designated by the first expression. If `E1` is an lvalue, then `E1.E2` is an lvalue; otherwise `E1.E2` is an xvalue. The type of `E1.E2` is "`$cv$ $B$`". [This can only occur in an expression of the form `e1.[:e2:]` where `e2` is a reflection designating a direct base class relationship.]{.note}
+* [#.#]{.pnum} Otherwise, if `E2` designates a direct base class relationship (`$D$`, `$B$`) and the type of `E1` is `$cv$ T`, the expression designates the direct base class subobject of type `$B$` of the object designated by `E1`. If `E1` is an lvalue, then `E1.E2` is an lvalue; otherwise, `E1.E2` is an xvalue. The type of `E1.E2` is "`$cv$ $B$`". [This can only occur in an expression of the form `e1.[:e2:]`.]{.note}
 
   ::: example
   ```cpp
   struct B {
     int b;
   };
-  struct D : B {
-    int d;
+  struct C : B {
+    int get() const { return b; }
   };
+  struct D : B, C { };
 
   constexpr int f() {
-    D d = {1, 2};
+    D d = {1, {}};
+
+    // b unambiguously refers to the direct base class of type B,
+    // not the indirect base class of type B
     B& b = d.[: std::meta::bases_of(^^D, std::meta::access_context::current())[0] :];
     b.b += 10;
-    d.[: ^^D::d :] += 1;
-    return d.b * d.d;
+    return 10 * b.b + d.get();
   }
-  static_assert(f() == 33);
+  static_assert(f() == 110);
   ```
   :::
 :::
 
 * [#.#]{.pnum} Otherwise, the program is ill-formed.
-
-:::
-
-Handle base class pointers to members in [expr.unary.op]{.sref}:
-
-::: std
-[3]{.pnum} The operand of the unary `&` operator shall be an lvalue of some type `T`.
-
-* [#.#]{.pnum} If the operand is a `$qualified-id$` or `$splice-expression$` designating a non-static member `m`, other than an explicit object member function, `m` shall be a direct member of some class `C` that is not an anonymous union. The result has type "pointer to member of class `C` of type `T`" and designates `C::m`. [A `$qualified-id$` that names a member of a namespace-scope anonymous union is considered to be a class member access expression ([expr.prim.id.general]) and cannot be used to form a pointer to member.]{.note}
-
-::: addu
-* [3.1+]{.pnum} Otherwise, if the operand is a `$splice-expression$` designating a non-virtual direct base class relationship (`C`, `T`), the result has type pointer to member of class `C` of type `T` and designates that base class subobject.
-
-  ::: example
-  ```cpp
-  struct B {
-    int b;
-  };
-
-  struct D : B {
-    int d;
-  };
-
-  constexpr D d = {1, 2};
-
-  constexpr B D::*pb = &[: std::meta::bases_of(^^D, std::meta::access_context::current())[0] :];
-  static_assert(d.*pb.b == 1);
-  static_assert(&(d.*pb) == &static_cast<B&>(d));
-  ```
-  :::
-:::
-
-* [#.#]{.pnum} Otherwise, the result has type "pointer to `T`" and points to the designated object ([intro.memory]{.sref}) or function ([basic.compound]{.sref}). If the operand designates an explicit object member function ([dcl.fct]{.sref}), the operand shall be a `$qualified-id$` or a `$splice-expression$`.
-
-[4]{.pnum} A pointer to member is only formed when an explicit `&` is used and its operand is a `$qualified-id$` or `$splice-expression$` not enclosed in parentheses.
 
 :::
 
