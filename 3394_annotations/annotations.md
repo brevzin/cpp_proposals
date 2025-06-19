@@ -1,7 +1,7 @@
 ---
 title: Annotations for Reflection
 tag: reflection
-document: D3394R4
+document: P3394R4
 date: today
 audience: CWG, LWG
 hackmd: true
