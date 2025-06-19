@@ -609,7 +609,7 @@ Add a new subclause under [dcl.attr]{.sref} called [dcl.attr.annotation] "Annota
 ::: addu
 [1]{.pnum} An annotation may be applied to any declaration of a type, type alias, variable, function, namespace, enumerator, `$base-specifier$`, or non-static data member.
 
-[#]{.pnum} Each annotation has an  *underlying constant* whose value is `std::meta::reflect_constant($constant-expression$)`.
+[#]{.pnum} Let `$E$` be the expression `std::meta::reflect_constant($constant-expression$)`. `$E$` shall be a constant expression; the result of `$E$` is the _underlying constant_ of the annotation.
 
 [#]{.pnum} Each `$annotation$` produces a unique annotation.
 
@@ -688,7 +688,7 @@ Update the meanings of `$has-type$`, `type_of` and `value_of` in [meta.reflectio
 consteval bool $has-type$(info r); // exposition only
 ```
 
-[1]{.pnum} *Returns*: `true` if  `r` represents a value, [annotation,]{.addu} object, variable, function that is not a constructor or destructor, enumerator, non-static data member, unnamed bit-field, direct base class relationship, or data member description. Otherwise, `false`.
+[1]{.pnum} *Returns*: `true` if  `r` represents a value, [annotation,]{.addu} object, variable, function whose type does not contain an undeduced placeholder type and that is not a constructor or destructor, enumerator, non-static data member, unnamed bit-field, direct base class relationship, or data member description. Otherwise, `false`.
 
 ```cpp
 consteval info type_of(info r);
@@ -756,14 +756,19 @@ consteval vector<info> annotations_of(info item);
 
 [#]{.pnum} *Returns*: A `vector` containing all of the reflections `$R$` representing each annotation applying to each declaration of `$E$` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context.
 
-For  any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`.
-
+For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`. [The order in which two annotations appear is otherwise unspecified.]{.note}
 
 ::: example
 ```cpp
 [[=1]] void f();
 [[=2, =3]] void g();
 void g [[=4]] ();
+
+static_assert(annotations_of(^^f).size() == 1);
+static_assert(annotations_of(^^g).size() == 3);
+static_assert([: constant_of(annotations_of(^^g)[0]) :] == 2);
+static_assert(extract<int>(annotations_of(^^g)[1]) == 3);
+static_assert(extract<int>(annotations_of(^^g)[2]) == 4);
 
 struct Option { bool value; };
 
@@ -772,22 +777,19 @@ struct C {
     [[=Option{false}]] int b;
 };
 
-static_assert(annotations_of(^^f).size() == 1);
-static_assert(annotations_of(^^g).size() == 3);
-static_assert([: constant_of(annotations_of(^^g)[0]) :] == 2);
-static_assert(extract<int>(annotations_of(^^g)[1]) == 3);
-static_assert(extract<int>(annotations_of(^^g)[2]) == 4);
-
 static_assert(extract<Option>(annotations_of(^^C::a)[0]).value);
 static_assert(!extract<Option>(annotations_of(^^C::b)[0]).value);
 
 template <class T>
-struct [[=42]] C { };
+struct [[=42]] D { };
 
-constexpr std::meta::info a1 = annotations_of(^^C<int>)[0];
-constexpr std::meta::info a2 = annotations_of(^^C<char>)[0];
+constexpr std::meta::info a1 = annotations_of(^^D<int>)[0];
+constexpr std::meta::info a2 = annotations_of(^^D<char>)[0];
 static_assert(a1 != a2);
 static_assert(constant_of(a1) == constant_of(a2));
+
+[[=1]] int x, y;
+static_assert(annotations_of(^^x)[0] == annotations_of(^^y)[0]);
 ```
 :::
 
