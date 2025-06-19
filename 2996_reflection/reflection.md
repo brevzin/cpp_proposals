@@ -7067,7 +7067,7 @@ consteval bool is_private(info r);
 
 [#]{.pnum} *Returns*: `true` if `r` represents either
 
-- [#.#]{.pnum} a class member, or unnamed bit-field that is public, protected, or private, respectively, or
+- [#.#]{.pnum} a class member or unnamed bit-field that is public, protected, or private, respectively, or
 - [#.#]{.pnum} a direct base class relationship (`$D$`, `$B$`) for which `$B$` is, respectively, a public, protected, or private base class of `$D$`.
 
 Otherwise, `false`.
@@ -7798,7 +7798,7 @@ consteval size_t size_of(info r);
 - [#.#]{.pnum} a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`), or
 - [#.#]{.pnum} `dealias(r)` represents a type `$T$`,
 
-then `sizeof($T$)` if `$T$` is not a reference type and `sizeof(add_pointer_t<$T$>)` otherwise.  Otherwise, `size_of(type_of(r))`.
+then `sizeof($T$)` if `$T$` is not a reference type and `size_of(add_pointer(^^$T$))` otherwise.  Otherwise, `size_of(type_of(r))`.
 
 [It is possible that while `sizeof(char) == size_of(^^char)` that `sizeof(char&) != size_of(^^char&)`. If `b` represents a direct base class relationship (`$D$`, `$B$`) for which `$B$` is an empty class type, then `size_of(b) > 0`.]{.note}
 
@@ -7810,7 +7810,7 @@ consteval size_t alignment_of(info r);
 
 [#]{.pnum} *Returns*:
 
-* [#.#]{.pnum} If `dealias(r)` represents a type `$T$`, then `alignment_of(^^add_pointer_t<$T$>)` if `$T$` is a reference type and the alignment requirement of `$T$` otherwise.
+* [#.#]{.pnum} If `dealias(r)` represents a type `$T$`, then `alignment_of(add_pointer(r))` if `$T$` is a reference type and the alignment requirement of `$T$` otherwise.
 * [#.#]{.pnum} Otherwise, if `dealias(r)` represents a variable or object, then the alignment requirement of the variable or object.
 * [#.#]{.pnum} Otherwise, if `r` represents a direct base class relationship, then `alignment_of(type_of(r))`.
 * [#.#]{.pnum} Otherwise, if `r` represents a non-static data member `$M$` of a class `$C$`, then the alignment of the direct member subobject corresponding to `$M$` of a complete object of type `$C$`.
