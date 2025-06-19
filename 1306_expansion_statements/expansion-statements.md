@@ -774,11 +774,16 @@ template <typename T> consteval std::optional<int> f() {
           ^^T,
           std::meta::access_context::current()));
   template for (constexpr std::meta::info s : statics)
-    if (std::meta::identifier_of(s) == "ClsId")
+    if constexpr (std::meta::identifier_of(s) == "ClsId")
       return [:s:];
   return std::nullopt;
 }
-struct Cls { static constexpr int ClsId == 14; };
+
+struct Cls {
+  static constexpr int ClsId = 14;
+  static constexpr int Stuff[] = {1, 2};
+};
+
 static_assert(f<Cls>().value() == 14);
 ```
 :::
