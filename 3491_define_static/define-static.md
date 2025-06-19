@@ -757,17 +757,16 @@ consteval info reflect_constant_array(R&& r);
 
 [#]{.pnum} *Constant When*: `reflect_constant(e)` is a constant subexpression for every element `e` of `r`.
 
-[#]{.pnum} Let `$V$` be the pack of values of type `info` of the same size as `r`, where the ith element is `reflect_constant(e@~i~@)`, where `e@~i~@` is the ith element of `r`.
+[#]{.pnum} Let `$V$` be the pack of values of type `info` of the same size as `r`, where the i^th^  element is `reflect_constant(e@~i~@)`, where `e@~i~@` is the i^th^ element of `r`.
 
-[#]{.pnum} Let `$P$` be an invented variable that would be introduced by the declaration
+[#]{.pnum} Let `$P$` be
 
-```cpp
-const $T$ $P$[sizeof...($V$)]{[:$V$:]...};
-```
+* [#.#]{.pnum} If `sizeof...(V) > 0`, then the template parameter object ([temp.param]) of type `const $T$[sizeof...(V)]` initialized with `{[:$V$:]...}`.
+* [#.#]{.pnum} Otherwise, the template parameter object of type `array<$T$, 0>` initialized with `{}`.
 
-[#]{.pnum} *Returns*: A reflection representing the template parameter object that is template-argument-equivalent to the object denoted by `$P$` ([temp.param]).
+[#]{.pnum} *Returns*: `^^$P$`.
 
-[#]{.pnum} [That template parameter object is a potentially non-unique object ([intro.object]).]{.note}
+[#]{.pnum} [`$P$` is a potentially non-unique object ([intro.object]).]{.note}
 :::
 :::
 
@@ -786,7 +785,7 @@ consteval bool is_string_literal(const char32_t* p);
 [1]{.pnum} *Returns*:
 
 * [#.#]{.pnum} If `p` points to an unspecified object ([expr.const]), `false`.
-* [#.#]{.pnum} Otherwise, if `p` points to a string literal or a subobject thereof, `true`.
+* [#.#]{.pnum} Otherwise, if `p` points to a subobject of a string literal object ([lex.string]), `true`.
 * [#.#]{.pnum} Otherwise, `false`.
 
 :::
@@ -820,7 +819,11 @@ consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
   ```cpp
   using T = ranges::range_value_t<R>;
   meta::info array = meta::reflect_constant_array(r);
-  return span<const T>(extract<const T*>(array), extent(type_of(array)));
+  if (is_array_type(type_of(array))) {
+    return span<const T>(extract<const T*>(array), extent(type_of(array)));
+  } else {
+    return span<const T>();
+  }
   ```
 
 ```cpp
@@ -839,7 +842,7 @@ if constexpr (is_class_type(^^U)) {
 }
 ```
 
-[#]{.pnum} [For class types, `define_static_object` provides the address of the template parameter object ([temp.param]) that is template-argument-equivalent to `t`]{.note}
+[#]{.pnum} [For class types, `define_static_object` provides the address of the template parameter object ([temp.param]) that is template-argument-equivalent to `t`.]{.note}
 :::
 :::
 
