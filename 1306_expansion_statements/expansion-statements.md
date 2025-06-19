@@ -57,7 +57,7 @@ number of specializations, which can consume significant compilation time and me
 Third, library-based approaches rely on placing the repeated statements in a lambda body, which changes the
 semantics of something like a `return` statement — and makes coroutines unusable.
 
-Lastly, "iteration" over destructurable classes effectively requires language support to implement correctly.
+Lastly, "iteration" over destructuring classes effectively requires language support to implement correctly.
 
 Here are some basic usage examples:
 
@@ -136,7 +136,7 @@ The expansion statement
 
 ::: std
 ```cpp
-template for ($init-statement$@~opt~@ $for-range-declaration$ : $expansion-initializer$) $statement$
+template for ($init-statement$@~opt~@ $for-range-declaration$ : $expansion-initializer$) $compound-statement$
 ```
 :::
 
@@ -150,19 +150,19 @@ will determine an _expansion size_ based on the `$expansion-initializer$` and th
 
     {
         $for-range-declaration$ = $E$(0);
-        $statement$
+        $compound-statement$
     }
 
     {
         $for-range-declaration$ = $E$(1);
-        $statement$
+        $compound-statement$
     }
 
     // ... repeated up to ...
 
     {
         $for-range-declaration$ = $E$($expansion-size$ - 1);
-        $statement$
+        $compound-statement$
     }
 
 }
@@ -337,7 +337,7 @@ the evaluation of a constant expression (certainly necessary to produce a "`cons
 some wacky experiments that amounted to trying to "rip the constant evaluator in half" (i.e., separating
 the "evaluation state", whereby dynamically allocated values are stored, from the rest of the metadata
 pertaining to an evaluation), we decided to fold: as of the [@P1306R3] revision, we instead propose restricting
-expansion over iterable expressions to only cover those that are constant expression.
+expansion over expansion-iterable expressions to only cover those that are constant expression.
 
 In other words — the desugaring described above (which is similar to the desugaring for the C++11 range-based `for` statement) — is what you get. No special cases.
 
@@ -495,18 +495,18 @@ Update [basic.scope.block]{.sref}/1.1 to include expansion statements:
 
 :::
 
-Modify [class.temporary]{.sref}/5 to clarify that there are now six contexts:
+Modify [class.temporary]{.sref}/5 to stop counting contexts:
 
 ::: std
-[5]{.pnum} There are [five]{.rm} [six]{.addu} contexts in which temporaries are destroyed at a different point than the end of the full-expression. [...]
+[5]{.pnum} There are [five]{.rm} [several]{.addu} contexts in which temporaries are destroyed at a different point than the end of the full-expression. [...]
 :::
 
 Insert a new paragraph after [class.temporary]{.sref}/7 to extend the lifetime of temporaries created by expansion statements, and update the ordinal number used in paragraph 8:
 
 ::: std
-[7]{.pnum} The fourth context is when a temporary object other than a function parameter object is created in the `$for-range-initializer$` of a range-based `for` statement. [...]
+[7]{.pnum} The fourth context is when a temporary object is created in the `$for-range-initializer$` of [either]{.addu} a range-based for statement [or an enumerating expansion statement]{.addu}. If such a temporary object would otherwise be destroyed at the end of the `$for-range-initializer$` `$full-expression$`, the object persists for the lifetime of the reference initialized by the `$for-range-initializer$`.
 
-[[7+]{.pnum} The fifth context is when a temporary object other than a function parameter object is created in the `$expansion-initializer$` of an iterable or destructurable expansion statement, or in a full-expression in the `$expansion-init-list$` of an enumerated expansion statement ([stmt.expand]). If such a temporary object would otherwise be destroyed at the end of that full-expression, the object persists for the lifetime of the reference initialized by the expression in the expanded expansion statement.]{.addu}
+[[7+]{.pnum} The fifth context is when a temporary object is created in the `$expansion-initializer$` of an iterating or destructuring expansion statement, or in a full-expression in the `$expansion-init-list$` of an enumerating expansion statement ([stmt.expand]). If such a temporary object would otherwise be destroyed at the end of that `$expansion-initializer$` or full-expression, the object persists for the lifetime of the reference initialized by the `$expansion-initializer$`, if any.]{.addu}
 
 [8]{.pnum} The [fifth]{.rm} [sixth]{.addu} context is when a temporary object is created in a structured binding declaration ([dcl.struct.bind]). [...]
 
@@ -540,7 +540,7 @@ Add a production for expansion statements to `$statement$` to [stmt.pre]{.sref}.
       $structured-binding-declaration$ $initializer$
 
 + $for-range-declaration$:
-+     $attribute-specifier-seq@~_opt_~@ $decl-specifier-seq$ $declarator$
++     $attribute-specifier-seq$@~_opt_~@ $decl-specifier-seq$ $declarator$
 +     $structured-binding-declaration$
 +
 + $for-range-initializer$:
@@ -559,7 +559,7 @@ Extend "substatement" to cover expansion statements in [stmt.pre]{.sref}/2:
 - [#.#]{.pnum} for a `$compound-statement$`, any `$statement$` of its `$statement-seq$`,
 - [#.#]{.pnum} for a `$selection-statement$`, any of its `$statement$`s or `$compound-statement$`s (but not its `$init-statement$`), [or]{.rm}
 - [#.#]{.pnum} for an `$iteration-statement$`, its `$statement$` (but not an `$init-statement$`)[.]{.rm}[, or]{.addu}
-- [[#.#]{.pnum} for an `$expansion-statement$`, its `$statement$` (but not an `$init-statement$`).]{.addu}
+- [[#.#]{.pnum} for an `$expansion-statement$`, its `$compound-statement$` (but not an `$init-statement$`).]{.addu}
 
 :::
 
@@ -569,7 +569,7 @@ Extend "enclose" to cover expansion statements in [stmt.pre]{.sref}/3:
 [3]{.pnum} A `$statement$` `S1` _encloses_ a `$statement$` `S2` if
 
 - [#.#]{.pnum} `S2` is a substatement of `S1`,
-- [#.#]{.pnum} `S1` is a `$selection-statement$`[,]{.addu} [or]{.rm} `$iteration-statement$`[, or `$expansion-statement$`]{.addu} and `S2` is the `$init-statement$` of `S1`,
+- [#.#]{.pnum} `S1` is a `$selection-statement$`[,]{.addu} [or]{.rm} `$iteration-statement$`[, or `$expansion-statement$`,]{.addu} and `S2` is the `$init-statement$` of `S1`,
 - [#.#]{.pnum} [...]
 
 :::
@@ -584,7 +584,7 @@ Extend [stmt.pre]{.sref}/8 to cover `$for-range-declaration$`s:
 Add a new paragraph to the end of [stmt.label]{.sref}:
 
 ::: std
-[[4]{.pnum} An identifier label shall not occur in an `$expansion-statement$` ([stmt.expand]).]{.addu}
+[[4]{.pnum} An identifier label shall not be enclosed by an `$expansion-statement$` ([stmt.expand]).]{.addu}
 
 :::
 
@@ -625,7 +625,7 @@ Insert this section after [stmt.iter]{.sref} (and renumber accordingly).
 
 ```
 $expansion-statement$:
-    template for ( $init-statement$@~_opt_~@ $for-range-declaration$ : $expansion-initializer$ ) $statement$
+    template for ( $init-statement$@~_opt_~@ $for-range-declaration$ : $expansion-initializer$ ) $compound-statement$
 
 $expansion-initializer$:
     $expression$
@@ -635,24 +635,24 @@ $expansion-init-list$:
     { $expression-list$@~_opt_~@ }
 ```
 
-[#]{.pnum} The `$statement$` of an `$expansion-statement$` is a control-flow-limited statement ([stmt.label]).
+[#]{.pnum} The `$compound-statement$` of an `$expansion-statement$` is a control-flow-limited statement ([stmt.label]).
 
-[#]{.pnum} For the purpose of name lookup and instantiation, the `$for-range-declaration$` and the `$statement$` of the `$expansion-statement$` are together considered a template definition.
+[#]{.pnum} For the purpose of name lookup and instantiation, the `$for-range-declaration$` and the `$compound-statement$` of the `$expansion-statement$` are together considered a template definition.
 
-[#]{.pnum} For an expression `$E$`, let the expressions `$begin-expr$` and `$end-expr$` be determined as specified in [stmt.ranged]. An expression is _iterable_ if it does not have array type and either
+[#]{.pnum} For an expression `$E$`, let the expressions `$begin-expr$` and `$end-expr$` be determined as specified in [stmt.ranged]. An expression is _expansion-iterable_ if it does not have array type and either
 
 - [#.#]{.pnum} `$begin-expr$` and `$end-expr$` are of the form `$E$.begin()` and `$E$.end()` or
-- [#.#]{.pnum} argument-dependent lookup for `begin($E$)` and `end($E$)` find at least one function or function template for each.
+- [#.#]{.pnum} argument-dependent lookups for `begin($E$)` and for `end($E$)` each find at least one function or function template.
 
 [#]{.pnum} An expansion statement is
 
-* [#.#]{.pnum} an _enumerated expansion statement_ if its `$expansion-initializer$` is of the form `$expansion-init-list$`;
-* [#.#]{.pnum} an _iterable expansion statement_ if its `$expansion-initializer$` is an iterable expression;
-* [#.#]{.pnum} otherwise, it is a _destructurable expansion statement_.
+* [#.#]{.pnum} an _enumerating expansion statement_ if its `$expansion-initializer$` is of the form `$expansion-init-list$`;
+* [#.#]{.pnum} otherwise, an _iterating expansion statement_ if its `$expansion-initializer$` is an expansion-iterable expression;
+* [#.#]{.pnum} otherwise, a _destructuring expansion statement_.
 
-[#]{.pnum} An expansion statement `$S$` is equivalent to a `$compound-statement$` containing instantiations of the `$for-range-declaration$` (including its implied initialization), together with the `$statement$`; these instantiations correspond to expressions resulting from the analysis of the `$expansion-initializer$` as follows:
+[#]{.pnum} An expansion statement `$S$` is equivalent to a `$compound-statement$` containing instantiations of the `$for-range-declaration$` (including its implied initialization), together with the `$compound-statement$` of `$S$`, as follows:
 
-- [#.#]{.pnum} If `$S$` is an enumerated expansion statement, `$S$` is equivalent to:
+- [#.#]{.pnum} If `$S$` is an enumerating expansion statement, `$S$` is equivalent to:
   ```cpp
   {
     $init-statement$
@@ -662,18 +662,18 @@ $expansion-init-list$:
   }
   ```
 
-  where `$S$@~_i_~@` is
+  where `$N$` is the number of elements in the `$expression-list$`, `$S$@~_i_~@` is
 
   ```cpp
   {
     $for-range-declaration$ = $E$@~_i_~@ ;
-    $statement$
+    $compound-statement$
   }
   ```
 
-  and `$E$@~_i_~@` is the _i_^th^ `$expression$` in the `$expression-list$`.
+  and `$E$@~_i_~@` is the _i_^th^ element of the `$expression-list$`.
 
-- [#.#]{.pnum} Otherwise, if `$S$` is an iterable expansion statement, `$S$` is equivalent to:
+- [#.#]{.pnum} Otherwise, if `$S$` is an iterating expansion statement, `$S$` is equivalent to:
   ```cpp
   {
     $init-statement$
@@ -681,33 +681,37 @@ $expansion-init-list$:
     static constexpr auto $begin$ = $begin-expr$; // see [stmt.ranged]
     static constexpr auto $end$ = $end-expr$;     // see [stmt.ranged]
 
-    static constexpr std::ptrdiff_t N = [] consteval {
-      std::ptrdiff_t result = 0;
-      for (auto i = $begin$; i != $end$; ++i, ++result) ;
-      return result;
-    }();
-
     $S$@~_0_~@
     @...@
-    $S$@~_N-1_~@
+    $S$@~_$N$-1_~@
   }
   ```
 
-  where `$S$@~_i_~@` is
+  where `$N$` is the result of evaluating the expression
+
+  ```cpp
+  [] consteval {
+    std::ptrdiff_t result = 0;
+    for (auto i = $begin$; i != $end$; ++i, ++result) ;
+    return result;  // distance from begin to end
+  }()
+  ```
+
+  and `$S$@~_i_~@` is
 
   ```cpp
   {
-    static constexpr auto @*iter*~i~@ = $begin$ + i;
-    $for-range-declaration$ = *@*iter*~i~@;
-    $statement$
+    static constexpr auto @*iter*@ = $begin$ + i;
+    $for-range-declaration$ = *@*iter*@;
+    $compound-statement$
   }
   ```
 
-  for all `i` in the range `[0, $N$)`. The variables `$range$`, `$begin$`, `$end$`, `$N$`, and `@*iter*~i~@` are defined for exposition only.
+  The variables `$range$`, `$begin$`, `$end$`, and `@*iter*@` are defined for exposition only.
 
   [The instantiation is ill-formed if `$range$` is not a constant expression ([expr.const])]{.note}
 
-- [#.#]{.pnum} Otherwise, let `$N$` be the structured binding size of the type of the `$expansion-initializer$`; `$S$` is equivalent to:
+- [#.#]{.pnum} Otherwise, `$S$` is a destructuring expansion statement and `$S$` is equivalent to:
   ```cpp
   {
     $init-statement$
@@ -718,32 +722,16 @@ $expansion-init-list$:
   }
   ```
 
-  where `$S$@~_i_~@` is
+  where `$N$` is the structured binding size of the type of the `$expansion-initializer$` and `$S$@~_i_~@` is
 
   ```cpp
   {
     $for-range-declaration$ = $u$@~_i_~@ ;
-    $statement$
+    $compound-statement$
   }
   ```
 
-  The `constexpr` is present in the declaration of `$seq$` if and only if `constexpr` is one of the `$decl-specifier$`s of the `$decl-specifier-seq$` of the `$for-range-declaration$`.
-
-[#]{.pnum}
-
-::: example
-```cpp
-struct S { int i; short s; };
-consteval long f(S s) {
-  long result = 0;
-  template for (auto x : s) {
-    result += x;
-  }
-  return result;
-}
-static_assert(f(S{1, 2}) == 3);
-```
-:::
+  The keyword `constexpr` is present in the declaration of `u@~0~@, u@~1~@, @...@, u@~_$N$-1_~@` if and only if `constexpr` is one of the `$decl-specifier$`s of the `$decl-specifier-seq$` of the `$for-range-declaration$`.
 
 [#]{.pnum}
 
@@ -751,7 +739,7 @@ static_assert(f(S{1, 2}) == 3);
 ```cpp
 consteval int f(auto const&... Containers) {
   int result = 0;
-  template for (auto const& c : {Containers...}) {
+  template for (auto const& c : {Containers...}) {  // OK, enumerating expansion statement
     result += c[0];
   }
   return result;
@@ -762,29 +750,35 @@ static_assert(f(c1, c2) == 5);
 ```
 :::
 
-[The following example assumes the changes proposed by P2996R13 and P3491R2.]{.ednote}
+[#]{.pnum}
+
+::: example
+```cpp
+consteval int f() {
+  constexpr std::array<int, 3> arr {1, 2, 3};
+  int result = 0;
+  template for (constexpr int s : arr) {  // OK, iterating expansion statement
+    result += sizeof(char[s]);
+  }
+  return result;
+}
+static_assert(f() == 6);
+```
+:::
 
 [#]{.pnum}
 
 ::: example
 ```cpp
-template <typename T> consteval std::optional<int> f() {
-  constexpr auto statics = std::define_static_array(
-      std::meta::static_data_members_of(
-          ^^T,
-          std::meta::access_context::current()));
-  template for (constexpr std::meta::info s : statics)
-    if constexpr (std::meta::identifier_of(s) == "ClsId")
-      return [:s:];
-  return std::nullopt;
+struct S { int i; short s; };
+consteval long f(S s) {
+  long result = 0;
+  template for (auto x : s) {  // OK, destructuring expansion statement
+    result += sizeof(x);
+  }
+  return result;
 }
-
-struct Cls {
-  static constexpr int ClsId = 14;
-  static constexpr int Stuff[] = {1, 2};
-};
-
-static_assert(f<Cls>().value() == 14);
+static_assert(f(S{}) == sizeof(int) + sizeof(short));
 ```
 :::
 
@@ -804,7 +798,9 @@ Modify [stmt.cont]{.sref}/1 to allow `continue` in expansion statements:
 
 ::: std
 
-[1]{.pnum} A `continue` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]) [or an `$expansion-statement$` ([stmt.expand])]{.addu}. The `continue` statement causes control to pass to the [loop]{.rm} continuation portion of the smallest such enclosing statement, that is, to the end of the loop [or expansion]{.addu}. More precisely, in each of the statements
+[1]{.pnum} A `continue` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]) [or an `$expansion-statement$` ([stmt.expand])]{.addu}. [If the nearest enclosing such statement is an `$iteration-statement$`, the]{.addu} [The]{.rm} `continue` statement causes control to pass to the [loop continuation portion of the smallest such enclosing statement, that is, to the end of the loop. More precisely, in each of the statements]{.rm} [end of the `$statement$` or `$compound-statement$` of the nearest enclosing `$iteration-statement$`.]{.addu} [Otherwise, control passes to the end of the `$compound-statement$` of the current `$S$@~_i_~@` ([stmt.expand]).]{.addu}
+
+::: rm
 <table><tr>
 
 <td>
@@ -840,21 +836,10 @@ contin: ;
 ```
 </td>
 
-<td>
-::: addu
-```cpp
-template for (auto e : foo) {
-  {
-    // ...
-  }
-contin: ;
-}
-```
-:::
-</td>
-
 </tr></table>
-a `continue` not contained in an enclosing iteration [or expansion]{.addu} statement is equivalent to  `goto contin`.
+:::
+
+[a `continue` not contained in an enclosing iteration statement is equivalent to  `goto contin`.]{.rm}
 
 :::
 
@@ -865,21 +850,14 @@ Make a drive-by fix to paragraph 6 of [dcl.struct.bind]{.sref} to handle arrays 
 
 :::
 
-Update the fallthrough attribute wording in [dcl.attr.fallthrough]{.sref}/1 to discuss expansion statements:
-
-::: std
-[1]{.pnum} The `$attribute-token$` `fallthrough` may be applied to a null statement; such a statement is a fallthrough statement. No `$attribute-argument-clause$` shall be present. A fallthrough statement may only appear within an enclosing `switch` statement ([stmt.switch]). The next statement that would be executed after a fallthrough statement shall be a labeled statement whose label is a case label or default label for the same `switch` statement and, if the fallthrough statement is contained in an iteration statement [or expansion statement]{.addu}, the next statement shall be part of the same execution of the substatement of the innermost enclosing iteration statement [or the same expansion of the innermost enclosing expansion statement]{.addu}. The program is ill-formed if there is no such statement.
-
-:::
-
-Update the list of templated entities:
+Update the list of templated entities in [temp.pre]/8:
 
 ::: std
 [8]{.pnum} An entity is _templated_ if it is
 
 - [#.#]{.pnum} a template,
-- [#.#]{.pnum} an entity defined ([basic.def]) or created ([class.temporary]) in a templated entity,
-- [[#.#]{.pnum} an entity defined or created within an expansion statement ([stmt.expand]),]{.addu}
+- [[#.#]{.pnum} an entity defined [([basic.def])]{.addu} or created [([class.temporary])]{.addu} within the `$for-range-declaration$` or the `$expansion-statement$` of an expansion statement ([stmt.expand]),]{.addu}
+- [#.#]{.pnum} an entity defined [([basic.def])]{.rm} or created [([class.temporary])]{.rm} in a templated entity,
 - [#.#]{.pnum} a member of a templated entity,
 - [#.#]{.pnum} an enumerator for an enumeration that is a templated entity, or
 - [#.#]{.pnum} the closure type of a lambda-expression ([expr.prim.lambda.closure]) appearing in the declaration of a templated entity.
@@ -905,7 +883,7 @@ Define the point of instantiation for an expansion statement.
 
 ::: std
 ::: addu
-[*]{.pnum} For an expansion statement, the point of instantiation immediately follows the `$statement$` of the `$expansion-statement$`.
+[*]{.pnum} For an expansion statement, the point of instantiation immediately follows the `$compound-statement$` of the `$expansion-statement$`.
 
 :::
 :::
@@ -919,7 +897,7 @@ Add the following case to [temp.dep.expr]{.sref}/3 (and renumber accordingly):
 - [#.10]{.pnum}  a `$conversion-function-id$` that specifies a dependent type, or
 - [[#.10+]{.pnum} a name introduced by the `$for-range-declaration$` `$D$` of an expansion statement `$S$` if `$D$` contains a placeholder type and either]{.addu}
   - [[#.10+.#]{.pnum} the `$expansion-initializer$` of `$S$` is type-dependent or]{.addu}
-  - [[#.10+.#]{.pnum} `$S$` is not an iterable expansion statement.]{.addu}
+  - [[#.10+.#]{.pnum} `$S$` is not an iterating expansion statement.]{.addu}
 - [#.11]{.pnum} dependent
 
 or if it names [...]
