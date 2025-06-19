@@ -661,7 +661,7 @@ Change [intro.object]{.sref} to add the results of `reflect_constant_array` and 
 
 * [9.1]{.pnum} a string literal object ([lex.string]),
 * [9.2]{.pnum} the backing array of an initializer list ([dcl.init.ref]),
-* [9.3]{.pnum} [the object declared by a call to `std::meta::reflect_constant_array` or `std::meta::reflect_constant_string`]{.addu}, or
+* [9.3]{.pnum} [the object introduced by a call to `std::meta::reflect_constant_array` or `std::meta::reflect_constant_string` ([meta.reflection.array])]{.addu}, or
 * [9.4]{.pnum} a subobject thereof.
 :::
 
@@ -673,7 +673,7 @@ Update the wording in [@CWG2765] to account for these as well, in [basic.compoun
 
 No change to [expr.eq]{.sref} is necessary, [@CWG2765] takes care of it.
 
-Add to [meta.syn]{.sref}:
+Add to [meta.reflection.synop]{.sref}:
 
 ::: std
 ```diff
@@ -692,8 +692,8 @@ Add to [meta.syn]{.sref}:
 +   template <ranges::input_range R>
 +     consteval const ranges::range_value_t<R>* define_static_string(R&& r);
 +
-+    template <ranges::input_range R>
-+      consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
++   template <ranges::input_range R>
++     consteval span<const ranges::range_value_t<R>> define_static_array(R&& r);
 +
 +   template <class T>
 +     consteval const remove_cvref_t<T>* define_static_object(T&& r);
@@ -712,10 +712,10 @@ Add to [meta.syn]{.sref}:
 
 +   // [meta.reflection.array], promoting to static storage
 +   template <ranges::input_range R>
-+   consteval info reflect_constant_string(R&& r);
++     consteval info reflect_constant_string(R&& r);
 +
-+  template <ranges::input_range R>
-+    consteval info reflect_constant_array(R&& r);
++   template <ranges::input_range R>
++     consteval info reflect_constant_array(R&& r);
 
     // ...
 + }
@@ -738,13 +738,13 @@ consteval info reflect_constant_string(R&& r);
 
 [#]{.pnum} *Mandates*: `$CharT$` is one of `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`.
 
-[#]{.pnum} Let `$V$` be the pack of elements of type `$CharT$` in `r`. If `r` is a string literal, then `$V$` does not include the trailing null terminator of `r`.
+[#]{.pnum} Let `$V$` be the pack of values of type `$CharT$` whose elements are the corresponding elements of `r`, except that if `r` refers to a string literal object, then `$V$` does not include the trailing null terminator of `r`.
 
 [#]{.pnum} Let `$P$` be the template parameter object ([temp.param]) of type `const $CharT$[sizeof...(V)+1]` initialized with `{V..., $CharT$()}`.
 
 [#]{.pnum} *Returns*: `^^$P$`.
 
-[#]{.pnum} [`$P$` is a potentially non-unique object ([intro.object])]{.note}
+[#]{.pnum} [`$P$` is a potentially non-unique object ([intro.object]).]{.note}
 
 ```cpp
 template <ranges::input_range R>
@@ -757,7 +757,7 @@ consteval info reflect_constant_array(R&& r);
 
 [#]{.pnum} *Constant When*: `reflect_constant(e)` is a constant subexpression for every element `e` of `r`.
 
-[#]{.pnum} Let `$V$` be the pack of elements of type `info` where the ith element is `reflect_constant(e@~i~@)`, where `e@~i~@` is the ith element of `r`.
+[#]{.pnum} Let `$V$` be the pack of values of type `info` of the same size as `r`, where the ith element is `reflect_constant(e@~i~@)`, where `e@~i~@` is the ith element of `r`.
 
 [#]{.pnum} Let `$P$` be an invented variable that would be introduced by the declaration
 
@@ -765,9 +765,9 @@ consteval info reflect_constant_array(R&& r);
 const $T$ $P$[sizeof...($V$)]{[:$V$:]...};
 ```
 
-[#]{.pnum} *Returns*: A reflection of the template parameter object that is template-argument-equivalent to the object denoted by `$P$` ([temp.param]).
+[#]{.pnum} *Returns*: A reflection representing the template parameter object that is template-argument-equivalent to the object denoted by `$P$` ([temp.param]).
 
-[#]{.pnum} [That template parameter object is a potentially non-unique object ([intro.object])]{.note}
+[#]{.pnum} [That template parameter object is a potentially non-unique object ([intro.object]).]{.note}
 :::
 :::
 
@@ -783,7 +783,11 @@ consteval bool is_string_literal(const char16_t* p);
 consteval bool is_string_literal(const char32_t* p);
 ```
 
-[1]{.pnum} *Returns*: If `p` points to a string literal or a subobject thereof, `true`. Otherwise, `false`.
+[1]{.pnum} *Returns*:
+
+* [#.#]{.pnum} If `p` points to an unspecified object ([expr.const]), `false`.
+* [#.#]{.pnum} Otherwise, if `p` points to a string literal or a subobject thereof, `true`.
+* [#.#]{.pnum} Otherwise, `false`.
 
 :::
 :::
