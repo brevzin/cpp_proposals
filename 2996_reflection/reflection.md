@@ -7482,7 +7482,9 @@ static consteval access_context current() noexcept;
 * [#.#]{.pnum} Otherwise, if a potentially-evaluated subexpression of a default argument ([dcl.fct.default]) appears at `$P$`, `$eval-point$($Q$)`, where `$Q$` is the point at which the invocation of the function ([expr.call]) using that default argument appears.
 * [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a function parameter scope introduced by a declaration `$D$`, and `$P$` appears either before the locus of `$D$` or within the trailing `$requires-clause$` of `$D$`, a point whose immediate scope is the innermost scope enclosing the locus of `$D$` that is not a template parameter scope.
 * [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a function parameter scope introduced by a `$lambda-expression$` `$L$` whose `$lambda-introducer$` appears at point `$Q$`, and `$P$` appears either within the `$trailing-return-type$` or the trailing `$requires-clause$` of `$L$`, `$eval-point$($Q$)`.
-* [#.#]{.pnum} Otherwise, if the immediate scope of `$P$` is a block scope and the innermost function parameter scope enclosing `$P$` is introduced by a `$consteval-block-declaration$` ([dcl.pre]), a point whose immediate scope is the scope inhabited by the outermost `$consteval-block-declaration$` that contains `$P$`.
+* [#.#]{.pnum} Otherwise, if the innermost non-block scope enclosing `$P$` is the function parameter scope introduced by a `$consteval-block-declaration$` ([dcl.pre]), a point whose immediate scope is that inhabited by the outermost `$consteval-block-declaration$` `$D$` containing `$P$` such that each scope (if any) that intervenes between `$P$` and the function parameter scope introduced by `$D$` is either
+  * [#.#.#]{.pnum} a block scope or
+  * [#.#.#]{.pnum} a function parameter scope or lambda scope introduced by a `$consteval-block-declaration$`.
 * [#.#]{.pnum} Otherwise, `$P$`.
 
 [#]{.pnum} Given a scope `$S$`, let `$ctx-scope$($S$)` be the following scope:
