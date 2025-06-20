@@ -1,6 +1,6 @@
 ---
 title: "`define_static_{string,object,array}`"
-document: D3491R3
+document: P3491R3
 date: today
 audience: CWG, LWG
 author:
