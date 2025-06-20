@@ -506,7 +506,7 @@ Insert a new paragraph after [class.temporary]{.sref}/7 to extend the lifetime o
 ::: std
 [7]{.pnum} The fourth context is when a temporary object is created in the `$for-range-initializer$` of [either]{.addu} a range-based for statement [or an enumerating expansion statement]{.addu}. If such a temporary object would otherwise be destroyed at the end of the `$for-range-initializer$` `$full-expression$`, the object persists for the lifetime of the reference initialized by the `$for-range-initializer$`.
 
-[[7+]{.pnum} The fifth context is when a temporary object is created in the `$expansion-initializer$` of an iterating or destructuring expansion statement, or in a full-expression in the `$expansion-init-list$` of an enumerating expansion statement ([stmt.expand]). If such a temporary object would otherwise be destroyed at the end of that `$expansion-initializer$` or full-expression, the object persists for the lifetime of the reference initialized by the `$expansion-initializer$`, if any.]{.addu}
+[[7+]{.pnum} The fifth context is when a temporary object is created in the `$expansion-initializer$` of an iterating or destructuring expansion statement ([stmt.expand]). If such a temporary object would otherwise be destroyed at the end of that `$expansion-initializer$`, the object persists for the lifetime of the reference initialized by the `$expansion-initializer$`, if any.]{.addu}
 
 [8]{.pnum} The [fifth]{.rm} [sixth]{.addu} context is when a temporary object is created in a structured binding declaration ([dcl.struct.bind]). [...]
 
@@ -788,7 +788,7 @@ static_assert(f(S{}) == sizeof(int) + sizeof(short));
 Modify [stmt.break]{.sref}/1 to allow `break` in expansion statements:
 
 ::: std
-[1]{.pnum} A `break` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter])[, an `$expansion-statement$` ([stmt.expand]),]{.addu} or a `switch` statement ([stmt.switch]). The `break` statement causes termination of the smallest such enclosing statement; control passes to the statement following the terminated statement, if any.
+[1]{.pnum} A `break` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter])[, an `$expansion-statement$` ([stmt.expand]),]{.addu} or a `switch` statement ([stmt.switch]). The `break` statement causes termination of the [smallest]{.rm} [innermost]{.addu} such enclosing statement; control passes to the statement following the terminated statement, if any.
 
 :::
 
@@ -798,7 +798,7 @@ Modify [stmt.cont]{.sref}/1 to allow `continue` in expansion statements:
 
 ::: std
 
-[1]{.pnum} A `continue` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]) [or an `$expansion-statement$` ([stmt.expand])]{.addu}. [If the nearest enclosing such statement is an `$iteration-statement$`, the]{.addu} [The]{.rm} `continue` statement causes control to pass to the [loop continuation portion of the smallest such enclosing statement, that is, to the end of the loop. More precisely, in each of the statements]{.rm} [end of the `$statement$` or `$compound-statement$` of the nearest enclosing `$iteration-statement$`.]{.addu} [Otherwise, control passes to the end of the `$compound-statement$` of the current `$S$@~_i_~@` ([stmt.expand]).]{.addu}
+[1]{.pnum} A `continue` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` [([stmt.iter])]{.rm} [or an `$expansion-statement$`]{.addu}. [If the innermost enclosing such statement `$X$` is an `$iteration-statement$` ([stmt.iter]), the]{.addu} [The]{.rm} `continue` statement causes control to pass to the [loop continuation portion of the smallest such enclosing statement, that is, to the end of the loop. More precisely, in each of the statements]{.rm} [end of the `$statement$` or `$compound-statement$` of `$X$`.]{.addu} [Otherwise, control passes to the end of the `$compound-statement$` of the current `$S$@~_i_~@` ([stmt.expand]).]{.addu}
 
 ::: rm
 <table><tr>
