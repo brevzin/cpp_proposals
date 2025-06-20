@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-06-19" />
+  <meta name="dcterms.date" content="2025-06-20" />
   <title>Expansion Statements</title>
   <style>
       code{white-space: pre-wrap;}
@@ -576,7 +576,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-06-19</td>
+    <td>2025-06-20</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1293,13 +1293,10 @@ persists for the lifetime of the reference initialized by the
 <p><span class="addu"><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">7+</a></span>
 The fifth context is when a temporary object is created in the
 <code class="sourceCode cpp"><em>expansion-initializer</em></code> of an
-iterating or destructuring expansion statement, or in a full-expression
-in the <code class="sourceCode cpp"><em>expansion-init-list</em></code>
-of an enumerating expansion statement ([stmt.expand]). If such a
-temporary object would otherwise be destroyed at the end of that
-<code class="sourceCode cpp"><em>expansion-initializer</em></code> or
-full-expression, the object persists for the lifetime of the reference
-initialized by the
+iterating or destructuring expansion statement ([stmt.expand]). If such
+a temporary object would otherwise be destroyed at the end of that
+<code class="sourceCode cpp"><em>expansion-initializer</em></code>, the
+object persists for the lifetime of the reference initialized by the
 <code class="sourceCode cpp"><em>expansion-initializer</em></code>, if
 any.</span></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">8</a></span>
@@ -1709,9 +1706,8 @@ statement shall be enclosed by ([stmt.pre]) an
 <code class="sourceCode cpp"><span class="cf">switch</span></code>
 statement ([stmt.switch]). The
 <code class="sourceCode cpp"><span class="cf">break</span></code>
-statement causes termination of the smallest such enclosing statement;
-control passes to the statement following the terminated statement, if
-any.</p>
+statement causes termination of the <span class="rm" style="color: #bf0303"><del>smallest</del></span> <span class="addu">innermost</span> such enclosing statement; control passes
+to the statement following the terminated statement, if any.</p>
 </blockquote>
 </div>
 <p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: We
@@ -1726,22 +1722,19 @@ expansion statements:</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">1</a></span>
 A <code class="sourceCode cpp"><span class="cf">continue</span></code>
 statement shall be enclosed by ([stmt.pre]) an
+<code class="sourceCode cpp"><em>iteration-statement</em></code> <span class="rm" style="color: #bf0303"><del>([stmt.iter])</del></span> <span class="addu">or an
+<code class="sourceCode cpp"><em>expansion-statement</em></code></span>.
+<span class="addu">If the innermost enclosing such statement
+<code class="sourceCode cpp"><em>X</em></code> is an
 <code class="sourceCode cpp"><em>iteration-statement</em></code>
-([stmt.iter]) <span class="addu">or an
-<code class="sourceCode cpp"><em>expansion-statement</em></code>
-([stmt.expand])</span>. <span class="addu">If the nearest enclosing such
-statement is an
-<code class="sourceCode cpp"><em>iteration-statement</em></code>,
-the</span> <span class="rm" style="color: #bf0303"><del>The</del></span>
+([stmt.iter]), the</span> <span class="rm" style="color: #bf0303"><del>The</del></span>
 <code class="sourceCode cpp"><span class="cf">continue</span></code>
 statement causes control to pass to the <span class="rm" style="color: #bf0303"><del>loop continuation portion of the smallest
 such enclosing statement, that is, to the end of the loop. More
 precisely, in each of the statements</del></span> <span class="addu">end
 of the <code class="sourceCode cpp"><em>statement</em></code> or
-<code class="sourceCode cpp"><em>compound-statement</em></code> of the
-nearest enclosing
-<code class="sourceCode cpp"><em>iteration-statement</em></code>.</span>
-<span class="addu">Otherwise, control passes to the end of the
+<code class="sourceCode cpp"><em>compound-statement</em></code> of
+<code class="sourceCode cpp"><em>X</em></code>.</span> <span class="addu">Otherwise, control passes to the end of the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of the
 current
 <code class="sourceCode cpp"><em>S</em><sub><em>i</em></sub></code>
