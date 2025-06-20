@@ -1,6 +1,6 @@
 ---
 title: "Expansion Statements"
-document: D1306R5
+document: P1306R5
 date: today
 audience: CWG
 author:
@@ -19,7 +19,7 @@ toc: true
 
 # Revision History
 
-This revision: Rewrote the prose and the wording.
+[@P1306R4] and R5: Rewrote the prose and the wording.
 
 [@P1306R3] Expansion over a range requires a constant expression. Added support for break and continue
 control flow during evaluation.
@@ -504,9 +504,9 @@ Modify [class.temporary]{.sref}/5 to stop counting contexts:
 Insert a new paragraph after [class.temporary]{.sref}/7 to extend the lifetime of temporaries created by expansion statements, and update the ordinal number used in paragraph 8:
 
 ::: std
-[7]{.pnum} The fourth context is when a temporary object is created in the `$for-range-initializer$` of [either]{.addu} a range-based for statement [or an enumerating expansion statement]{.addu}. If such a temporary object would otherwise be destroyed at the end of the `$for-range-initializer$` `$full-expression$`, the object persists for the lifetime of the reference initialized by the `$for-range-initializer$`.
+[7]{.pnum} The fourth context is when a temporary object is created in the `$for-range-initializer$` of [either]{.addu} a range-based for statement [or an enumerating expansion statement ([stmt.expand])]{.addu}. If such a temporary object would otherwise be destroyed at the end of the `$for-range-initializer$` `$full-expression$`, the object persists for the lifetime of the reference initialized by the `$for-range-initializer$`.
 
-[[7+]{.pnum} The fifth context is when a temporary object is created in the `$expansion-initializer$` of an iterating or destructuring expansion statement ([stmt.expand]). If such a temporary object would otherwise be destroyed at the end of that `$expansion-initializer$`, the object persists for the lifetime of the reference initialized by the `$expansion-initializer$`, if any.]{.addu}
+[[7+]{.pnum} The fifth context is when a temporary object is created in the `$expansion-initializer$` of an iterating or destructuring expansion statement. If such a temporary object would otherwise be destroyed at the end of that `$expansion-initializer$`, the object persists for the lifetime of the reference initialized by the `$expansion-initializer$`, if any.]{.addu}
 
 [8]{.pnum} The [fifth]{.rm} [sixth]{.addu} context is when a temporary object is created in a structured binding declaration ([dcl.struct.bind]). [...]
 
@@ -621,7 +621,7 @@ Insert this section after [stmt.iter]{.sref} (and renumber accordingly).
 ::: addu
 **Expansion statements   [stmt.expand]**
 
-[1]{.pnum} Expansion statements specify repeated instantiations ([temp.spec]) of their substatement.
+[1]{.pnum} Expansion statements specify repeated instantiations ([temp.decls.general]) of their substatement.
 
 ```
 $expansion-statement$:
@@ -636,8 +636,6 @@ $expansion-init-list$:
 ```
 
 [#]{.pnum} The `$compound-statement$` of an `$expansion-statement$` is a control-flow-limited statement ([stmt.label]).
-
-[#]{.pnum} For the purpose of name lookup and instantiation, the `$for-range-declaration$` and the `$compound-statement$` of the `$expansion-statement$` are together considered a template definition.
 
 [#]{.pnum} For an expression `$E$`, let the expressions `$begin-expr$` and `$end-expr$` be determined as specified in [stmt.ranged]. An expression is _expansion-iterable_ if it does not have array type and either
 
@@ -850,13 +848,13 @@ Make a drive-by fix to paragraph 6 of [dcl.struct.bind]{.sref} to handle arrays 
 
 :::
 
-Update the list of templated entities in [temp.pre]/8:
+Update the list of templated entities in [temp.pre]{.sref}/8:
 
 ::: std
 [8]{.pnum} An entity is _templated_ if it is
 
 - [#.#]{.pnum} a template,
-- [[#.#]{.pnum} an entity defined [([basic.def])]{.addu} or created [([class.temporary])]{.addu} within the `$for-range-declaration$` or the `$expansion-statement$` of an expansion statement ([stmt.expand]),]{.addu}
+- [[#.#]{.pnum} an entity defined [([basic.def])]{.addu} or created [([class.temporary])]{.addu} within the `$compound-statement$` of an expansion statement ([stmt.expand]),]{.addu}
 - [#.#]{.pnum} an entity defined [([basic.def])]{.rm} or created [([class.temporary])]{.rm} in a templated entity,
 - [#.#]{.pnum} a member of a templated entity,
 - [#.#]{.pnum} an enumerator for an enumeration that is a templated entity, or
@@ -864,28 +862,29 @@ Update the list of templated entities in [temp.pre]/8:
 
 :::
 
+Add to [temp.decls.general]{.sref}/3:
+
+::: std
+[3]{.pnum} [...] For the purpose of instantiation, the substatements of a constexpr if statement are considered definitions. [For the purpose of name lookup and instantiation, the `$compound-statement$` of the `$expansion-statement$` is considered a template definition.]{.addu}
+:::
+
 Update [temp.res.general]{.sref}/6.1 to permit early checking of expansion statements in dependent contexts.
 
 ::: std
 [6]{.pnum} The validity of a templated entity may be checked prior to any instantiation.
 
-[Knowing which names are type names allows teh syntax of every template to be checked in this way.]{.note3}
+[Knowing which names are type names allows the syntax of every template to be checked in this way.]{.note3}
 
 The program is ill-formed, no diagnostic required, if
 
-- [#.#]{.pnum} no valid specialization, ignoring `$static_assert-declaration$`s that fail ([dcl.pre]), can be generated for a templated entity or a substatement of a constexpr if statement ([stmt.if]) [or expansion statement]{.addu} within a templated entity and the innermost enclosing template is not instantiated, or
+- [#.#]{.pnum} no valid specialization, ignoring `$static_assert-declaration$`s that fail ([dcl.pre]), can be generated for a templated entity or a substatement of a constexpr if statement ([stmt.if]) within a templated entity and the innermost enclosing template is not instantiated, or
 
-- [#.#]{.pnum} [...]
-
-:::
-
-Define the point of instantiation for an expansion statement.
-
-::: std
 ::: addu
-[*]{.pnum} For an expansion statement, the point of instantiation immediately follows the `$compound-statement$` of the `$expansion-statement$`.
-
+- [#.x]{.pnum} no valid specialization, ignoring `$static_assert-declaration$`s that fail, can be generated for the `$compound-statement$` of an expansion statement and there is no instantiation of it, or
 :::
+
+- [#.2]{.pnum} [...]
+
 :::
 
 Add the following case to [temp.dep.expr]{.sref}/3 (and renumber accordingly):
@@ -894,10 +893,10 @@ Add the following case to [temp.dep.expr]{.sref}/3 (and renumber accordingly):
 [3]{.pnum} An `$id-expression$` is type-dependent if it is a `$template-id$` that is not a concept-id and is dependent; or if its terminal name is
 
 - [#.#]{.pnum} [...]
-- [#.10]{.pnum}  a `$conversion-function-id$` that specifies a dependent type, or
-- [[#.10+]{.pnum} a name introduced by the `$for-range-declaration$` `$D$` of an expansion statement `$S$` if `$D$` contains a placeholder type and either]{.addu}
+- [#.10]{.pnum}  a `$conversion-function-id$` that specifies a dependent type, [or]{.rm}
+- [[#.10+]{.pnum} a name `$N$` introduced by the `$for-range-declaration$` `$D$` of an expansion statement `$S$` if the type specified for `$N$` contains a placeholder type and either]{.addu}
   - [[#.10+.#]{.pnum} the `$expansion-initializer$` of `$S$` is type-dependent or]{.addu}
-  - [[#.10+.#]{.pnum} `$S$` is not an iterating expansion statement.]{.addu}
+  - [[#.10+.#]{.pnum} `$S$` is not an iterating expansion statement, or]{.addu}
 - [#.11]{.pnum} dependent
 
 or if it names [...]
@@ -910,10 +909,18 @@ Add the following case to [temp.dep.constexpr]{.sref}/2 (and renumber accordingl
 
 - [#.#]{.pnum} [...]
 - [#.3]{.pnum} it is the name of a constant template parameter,
-- [[#.3+]{.pnum} it is a name introduced by the `$for-range-declaration$` of an expansion statement ([stmt.expand])]{.addu}
+- [[#.3+]{.pnum} it is a name introduced by the `$for-range-declaration$` of an expansion statement ([stmt.expand]),]{.addu}
 - [#.4]{.pnum} [...]
-
 :::
+
+Define the point of instantiation for an expansion statement in a new paragraph at the end of [temp.point]{.sref}:
+
+::: std
+::: addu
+[8]{.pnum} For the `$compound-statement$` of an expansion statement ([stmt.expand]), the point of instantiation is the point of instantiation of its enclosing templated entity, if any. Otherwise, it immediately follows the namespace-scope declaration or definition that contains the expansion statement.
+:::
+:::
+
 
 ## Feature-test-macro
 
