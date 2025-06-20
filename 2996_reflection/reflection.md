@@ -3119,7 +3119,7 @@ If `r` is a reflection for an enumerator constant of type `E`, `extract<E>(r)` e
 
 If `r` is a reflection for a non-bit-field non-reference non-static member of type `M` in a class `C`, `extract<M C::*>(r)` is the pointer-to-member value for that non-static member.
 
-For other reflection values `r`, `extrace<T>(r)` is ill-formed.
+For other reflection values `r`, `extract<T>(r)` is ill-formed.
 
 The function template `extract` may feel similar to splicers, but unlike splicers it does not require its operand to be a constant-expression itself.
 Also unlike splicers, it requires knowledge of the type associated with the entity represented by its operand.
@@ -4015,7 +4015,7 @@ Add a new paragraph to the end of [intro.execution] specifying a stronger sequen
 
 ::: std
 ::: addu
-[15+]{.pnum} During the evaluation of an expression as a core constant expression ([expr.const]), evaluations of operands of individual operators and of subexpressions of individual expresssions that are otherwise either unsequenced or indeterminately sequenced are evaluated in lexical order.
+[15+]{.pnum} During the evaluation of an expression as a core constant expression ([expr.const]), evaluations of operands of individual operators and of subexpressions of individual expressions that are otherwise either unsequenced or indeterminately sequenced are evaluated in lexical order.
 :::
 
 :::
