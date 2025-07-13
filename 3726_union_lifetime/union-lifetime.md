@@ -1,7 +1,7 @@
 ---
 title: "Adjustments to Union Lifetime Rules"
 document: P3726R0
-date: today
+date: 2025-06-03
 audience: CWG
 author:
     - name: Barry Revzin
@@ -377,6 +377,6 @@ And bump the feature-test macro added by [@P3074R7]:
 :::
 
 
-# Acknowledgmenets
+# Acknowledgments
 
 Thank you to Richard Smith for bringing the issue to our attention and for all the helpful suggestions.
