@@ -203,7 +203,7 @@ Extend what an annotation can represent in [dcl.attr.annotation]:
 [1]{.pnum} An annotation may be applied to any declaration of a type, type alias, variable, function, [function parameter,]{.addu} namespace, enumerator, `$base-specifier$`, or non-static data member.
 :::
 
-The synopsis change for [meta.type.synop] is:
+The synopsis change for [meta.syn] is:
 
 ::: std
 ```diff
@@ -580,7 +580,7 @@ namespace std::meta {
 ```
 :::
 
-Add to the front matter in [meta.reflection.synop]:
+Add to the front matter in 21.4.1, [meta.syn]:
 
 ::: std
 [1]{.pnum} Unless otherwise specified, each function, and each specialization of any function template, specified in this header is a designated addressable function ([namespace.std]).
@@ -593,7 +593,7 @@ Add to the front matter in [meta.reflection.synop]:
 :::
 
 
-Add to [meta.reflection.queries]:
+Add to 21.4.6, [meta.reflection.queries]:
 
 ::: std
 ```cpp
@@ -622,7 +622,7 @@ consteval bool is_consteval(info r);
 consteval vector<info> parameters_of(info r);
 ```
 
-[53]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a function or a function type.
+[55]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a function or a function type.
 
 [...]
 
@@ -630,7 +630,7 @@ consteval vector<info> parameters_of(info r);
 consteval info variable_of(info r);
 ```
 
-[55]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
+[57]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
 
 * [#.#]{.pnum} `r` represents a parameter of a function `F` and
 * [#.#]{.pnum}  there is a point `P` in the evaluation context for which the innermost non-block scope enclosing `P` is the function parameter scope ([basic.scope.param]) associated with `F`.
@@ -641,10 +641,10 @@ consteval info variable_of(info r);
 consteval info return_type_of(info r);
 ```
 
-[57]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless either]{.addu} [Either]{.rm} `r` represents a function and `$has-type$(r)` is `true` or `r` represents a function type.
+[59]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless either]{.addu} [Either]{.rm} `r` represents a function and `$has-type$(r)` is `true` or `r` represents a function type.
 :::
 
-Add the new clause [meta.reflection.scope] before [meta.reflection.access.context]. The wording for `$current-scope$` is lifted wholesale from `access_context::current`:
+Add the new clause [meta.reflection.scope] before 21.4.7, [meta.reflection.access.context]. The wording for `$current-scope$` is lifted wholesale from `access_context::current`:
 
 ::: std
 ::: addu
@@ -714,7 +714,7 @@ consteval info current_namespace();
 :::
 :::
 
-Adjust down the now-moved wording from [meta.reflection.access.context]:
+Adjust down the now-moved wording from 21.4.7, [meta.reflection.access.context]:
 
 ::: std
 ```cpp
@@ -751,17 +751,17 @@ static consteval access_context current() noexcept;
 [#]{.pnum} *Returns*: An `access_context` whose designating class is the null reflection and whose scope [represents the function, class, or namespace whose corresponding function parameter scope, class scope, or namespace scope is `$ctx-scope$($S$)`, where `$S$` is the immediate scope of `$eval-point$($P$)` and]{.rm} [is `$CURRENT-SCOPE$($P$)` where]{.addu} `$P$` is the point at which the invocation of `current` lexically appears.
 :::
 
-Fix error-handling in `subobjects_of` in [meta.reflection.access.queries]:
+Fix error-handling in `subobjects_of` in [meta.reflection.member.queries]:
 
 ::: std
 ```
 consteval vector<info> subobjects_of(info type, access_context ctx);
 ```
 
-[11]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a class type that is complete from some point in the evaluation context.
+[12]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a class type that is complete from some point in the evaluation context.
 :::
 
-Fix error-handling in `reflect_constant_array` in [meta.reflection.array]:
+Fix error-handling in `reflect_constant_array` in 21.4.14, [meta.reflection.array]:
 
 ::: std
 ```cpp
@@ -776,7 +776,7 @@ consteval info reflect_constant_array(R&& r);
 [#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `reflect_constant(e)` is a constant subexpression for every element `e` of `r`.
 :::
 
-Change the `data_member_spec` API in [meta.reflection.define.aggregate]:
+Change the `data_member_spec` API in 21.4.15, [meta.reflection.define.aggregate]:
 
 ::: std
 ```diff
@@ -863,7 +863,7 @@ consteval void fn() {
 [#]{.pnum} [The returned reflection value is primarily useful in conjunction with `define_aggregate`; it can also be queried by certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`).]{.note}
 :::
 
-Add the various tuple traits in [meta.reflection.traits]:
+Add the various tuple traits in 21.4.16, [meta.reflection.traits]:
 
 ::: std
 ```cpp
@@ -888,7 +888,7 @@ consteval info apply_result(info fn, info tuple);
 :::
 :::
 
-Change [meta.reflection.annotation]:
+Change 21.4.17, [meta.reflection.annotation]:
 
 ::: std
 ```cpp
