@@ -494,6 +494,16 @@ Change [expr.const]{.sref}
 
 [...]
 
+[8]{.pnum} A variable is _potentially-constant_ if it is constexpr [, consteval,]{.addu} or it has reference or non-volatile const-qualified integral or enumeration type.
+
+[9]{.pnum} A constant-initialized potentially-constant variable `$V$` is usable in constant expressions at a point `$P$` if `$V$`'s initializing declaration `$D$` is reachable from `$P$` and
+
+* [9.1]{.pnum} `$V$` is constexpr [or consteval]{.addu},
+* [#.#]{.pnum} `$V$` is not initialized to a TU-local value, or
+* [#.#]{.pnum} `$P$` is in the same translation unit as `$D$`.
+
+[...]
+
 ::: addu
 [w]{.pnum} An *immediate value* is a value that satisfies any of the following:
 
@@ -508,7 +518,7 @@ Change [expr.const]{.sref}
 [y]{.pnum} An *immediate variable* is
 
 * [y.1]{.pnum} a variable declared with the `consteval` specifier, or
-* [y.2]{.pnum} a variable that results from the instantiation of a templated entity declared with the `constexpr` specifier whose initialization results in an immediate value.
+* [y.2]{.pnum} a variable that results from the instantiation of a templated entity declared with the `constexpr` specifier whose initialization is an immediate constant expression that is not a constant expression (see below).
 
 [z]{.pnum} An *immediate constant expression* is either a glvalue core constant expression that refers to an object or a function, or a prvalue core constant expression whose value satisfies the following constraints:
 
@@ -592,6 +602,33 @@ Such an object shall have literal type and shall be initialized.
 A `constexpr` [or `consteval`]{.addu} variable shall be constant-initializable ([expr.const]).
 A `constexpr` [or `consteval`]{.addu} variable that is an object, as well as any temporary to which a constexpr reference is bound, shall have constant destruction.
 
+:::
+
+Change [temp.arg.nontype]{.sref} to refer back to [expr.const]:
+
+::: std
+[1]{.pnum} A template argument `$E$` for a constant template parameter with declared type `$T$` shall be such that the invented declaration
+```cpp
+T x = E ;
+```
+satisfies the semantic constraints for the definition of a constexpr variable with static storage duration ([dcl.constexpr]).
+If T contains a placeholder type ([dcl.spec.auto]) or a placeholder for a deduced class type ([dcl.type.class.deduct]), the type of the parameter is deduced from the above declaration.
+[Note 1: E is a template-argument or (for a default template argument) an initializer-clause.
+— end note]
+If the parameter type thus deduced is not permitted for a constant template parameter ([temp.param]), the program is ill-formed.
+
+[2]{.pnum} The value of a constant template parameter P of (possibly deduced) type T is determined from its template argument A as follows.
+If T is not a class type and A is not a braced-init-list, A shall be a converted constant expression ([expr.const]) of type T; the value of P is A (as converted).
+
+[3]{.pnum} Otherwise, a temporary variable
+```cpp
+constexpr T v = A;
+```
+is introduced. The lifetime of v ends immediately after initializing it and any template parameter object (see below). For each such variable, the id-expression v is termed a candidate initializer.
+
+::: addu
+[*]{.pnum} [This temporary variable may be an immediate variable if the initialization is an immediate constant expression that is not a constant expression ([expr.const])]{.note}
+:::
 :::
 
 ## Feature-test Macro

@@ -1517,71 +1517,93 @@ namespace scope that follows the initializing declaration of
 <code class="sourceCode cpp">v</code>.</li>
 </ul>
 <p>[…]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">8</a></span>
+A variable is <em>potentially-constant</em> if it is constexpr <span class="addu">, consteval,</span> or it has reference or non-volatile
+const-qualified integral or enumeration type.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">9</a></span>
+A constant-initialized potentially-constant variable
+<code class="sourceCode cpp"><em>V</em></code> is usable in constant
+expressions at a point <code class="sourceCode cpp"><em>P</em></code> if
+<code class="sourceCode cpp"><em>V</em></code>’s initializing
+declaration <code class="sourceCode cpp"><em>D</em></code> is reachable
+from <code class="sourceCode cpp"><em>P</em></code> and</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(9.1)</a></span>
+<code class="sourceCode cpp"><em>V</em></code> is constexpr <span class="addu">or consteval</span>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(9.2)</a></span>
+<code class="sourceCode cpp"><em>V</em></code> is not initialized to a
+TU-local value, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(9.3)</a></span>
+<code class="sourceCode cpp"><em>P</em></code> is in the same
+translation unit as <code class="sourceCode cpp"><em>D</em></code>.</li>
+</ul>
+<p>[…]</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">w</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">w</a></span>
 An <em>immediate value</em> is a value that satisfies any of the
 following:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(w.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(w.1)</a></span>
 it is a reflection,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(w.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(w.2)</a></span>
 it is an immediate function,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(w.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(w.1)</a></span>
 any constituent reference refers to an immediate function or an
 immediate object,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(w.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(w.2)</a></span>
 any constituent pointer points to an immediate function or an immediate
 object, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(w.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(w.3)</a></span>
 any constituent value of pointer-to-member type designates an immediate
 function.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">x</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">x</a></span>
 An <em>immediate object</em> is an object that was either initialized by
 an immediate value or declared by an immediate variable.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">y</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">y</a></span>
 An <em>immediate variable</em> is</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(y.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(y.1)</a></span>
 a variable declared with the
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 specifier, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(y.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(y.2)</a></span>
 a variable that results from the instantiation of a templated entity
 declared with the
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
-specifier whose initialization results in an immediate value.</li>
+specifier whose initialization is an immediate constant expression that
+is not a constant expression (see below).</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">z</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">z</a></span>
 An <em>immediate constant expression</em> is either a glvalue core
 constant expression that refers to an object or a function, or a prvalue
 core constant expression whose value satisfies the following
 constraints:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(z.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(z.1)</a></span>
 each constituent reference refers to an object or a function,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(z.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(z.2)</a></span>
 no constituent value of scalar type is an indeterminate or erroneous
 value ([basic.indet]), and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(z.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(z.3)</a></span>
 no constituent value of pointer type has an invalid pointer value
 ([basic.compound]).</li>
 </ul>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">22</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">22</a></span>
 A <em>constant expression</em> is either</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(22.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(22.1)</a></span>
 a glvalue <span class="addu">immediate</span> <span class="rm" style="color: #bf0303"><del>core</del></span> constant expression
 <code class="sourceCode cpp"><em>E</em></code> <span class="rm" style="color: #bf0303"><del>for which</del></span> <span class="addu">that refers to a non-immediate object or non-immediate
 function, or</span></p>
 <div class="rm" style="color: #bf0303">
 
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(22.1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(22.1.1)</a></span>
 <code class="sourceCode default"><em>E</em></code> refers to a
 non-immediate function,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(22.1.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(22.1.2)</a></span>
 <code class="sourceCode default"><em>E</em></code> designates an object
 <code class="sourceCode default"><em>o</em></code>, and if the complete
 object of <code class="sourceCode default"><em>o</em></code> is of
@@ -1603,41 +1625,41 @@ consteval-only type then so is
 </div>
 
 </div></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(22.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(22.2)</a></span>
 a prvalue <span class="rm" style="color: #bf0303"><del>core</del></span>
 <span class="addu">immediate</span> constant expression whose result
 value object ([basic.lval]) <span class="rm" style="color: #bf0303"><del>satisfies the following
 constraints</del></span> <span class="addu">does not have immediate
 value.</span></p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(22.2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(22.2.1)</a></span>
 <span class="rm" style="color: #bf0303"><del>each constituent reference
 refers to an object or a non-immediate function,</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(22.2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(22.2.2)</a></span>
 <span class="rm" style="color: #bf0303"><del>no constituent value of
 scalar type is an indeterminate or erroneous value
 ([basic.indet]),</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(22.2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">(22.2.3)</a></span>
 <span class="rm" style="color: #bf0303"><del>no constituent value of
 pointer type is a pointer to an immediate function or an invalid pointer
 value ([basic.compound]), and</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(22.2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">(22.2.4)</a></span>
 <span class="rm" style="color: #bf0303"><del>no constituent value of
 pointer-to-member type designates an immediate
 function.</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(22.2.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">(22.2.5)</a></span>
 <span class="rm" style="color: #bf0303"><del>unless the value is of
 consteval-only type,</del></span>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(22.2.5.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">(22.2.5.1)</a></span>
 <span class="rm" style="color: #bf0303"><del>no constituent value of
 pointer-to-member type points to a direct member of a consteval-only
 class type</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(22.2.5.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">(22.2.5.2)</a></span>
 <span class="rm" style="color: #bf0303"><del>no constituent value of
 pointer type points to or past an object whose complete object is of
 consteval-only type, and</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">(22.2.5.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">(22.2.5.3)</a></span>
 <span class="rm" style="color: #bf0303"><del>no constituent reference
 refers to an object whose complete object is of consteval-only
 type.</del></span></li>
@@ -1645,17 +1667,17 @@ type.</del></span></li>
 </ul></li>
 </ul>
 <p>[…]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">24</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">24</a></span>
 An expression or conversion is in an <em>immediate function context</em>
 if it is potentially evaluated and either:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">(24.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">(24.1)</a></span>
 its innermost enclosing non-block scope is a function parameter scope of
 an immediate function,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">(24.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">(24.2)</a></span>
 it is a subexpression of a manifestly constant-evaluated expression or
 conversion, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">(24.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">(24.3)</a></span>
 its enclosing statement is enclosed ([stmt.pre]) by the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 consteval if statement ([stmt.if]).</li>
@@ -1665,37 +1687,37 @@ consteval if statement ([stmt.if]).</li>
 explicit or implicit invocation of an immediate function
 and</del></span> is not in an immediate function context <span class="addu">and either</span></p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">(24.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">(24.4)</a></span>
 <span class="addu">it is a potentially-evaluated explicit or implicit
 invocation of an immediate function or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">(24.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">(24.5)</a></span>
 <span class="addu">it is an lvalue-to-rvalue conversion applied to an
 immediate variable.</span></li>
 </ul>
 <p>An aggregate initialization is an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">evaluation</span> if it evaluates a default member
 initializer that has a subexpression that is an immediate-escalating
 expression.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">25</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">25</a></span>
 A potentially-evaluated expression or conversion is
 <em>immediate-escalating</em> if it is neither initially in an immediate
 function context nor a subexpression of an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">evaluation</span>, and</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">(25.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">(25.1)</a></span>
 it is an <code class="sourceCode cpp"><em>id-expression</em></code> or
 <code class="sourceCode cpp"><em>splice-expression</em></code> that
 designates an immediate function <span class="addu">or immediate
 variable</span>,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">(25.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">(25.2)</a></span>
 it is an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">evaluation</span> that is not a constant expression,
 or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">(25.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">(25.3)</a></span>
 <span class="rm" style="color: #bf0303"><del>it is of consteval-only
 type ([basic.types.general])</del></span> <span class="addu">it has an
 immediate value</span>.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">26</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">26</a></span>
 An <em>immediate-escalating</em> function is […]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">27</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">27</a></span>
 An <em>immediate function</em> is […]</p>
 </blockquote>
 </div>
@@ -1705,7 +1727,7 @@ account for
 variables:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_61" id="pnum_61">1</a></span>
 The
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 <span class="addu">and
@@ -1728,7 +1750,7 @@ template has a
 specifier, then all its declarations shall contain the same
 specifier.</p>
 <p>[…]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">6</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_62" id="pnum_62">6</a></span>
 A <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 <span class="addu">or
 <code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
@@ -1746,13 +1768,52 @@ variable that is an object, as well as any temporary to which a
 constexpr reference is bound, shall have constant destruction.</p>
 </blockquote>
 </div>
+<p>Change <span>13.4.3 <a href="https://wg21.link/temp.arg.nontype">[temp.arg.nontype]</a></span>
+to refer back to [expr.const]:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_63" id="pnum_63">1</a></span>
+A template argument <code class="sourceCode cpp"><em>E</em></code> for a
+constant template parameter with declared type
+<code class="sourceCode cpp"><em>T</em></code> shall be such that the
+invented declaration</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>T x <span class="op">=</span> E ;</span></code></pre></div>
+<p>satisfies the semantic constraints for the definition of a constexpr
+variable with static storage duration ([dcl.constexpr]). If T contains a
+placeholder type ([dcl.spec.auto]) or a placeholder for a deduced class
+type ([dcl.type.class.deduct]), the type of the parameter is deduced
+from the above declaration. [Note 1: E is a template-argument or (for a
+default template argument) an initializer-clause. — end note] If the
+parameter type thus deduced is not permitted for a constant template
+parameter ([temp.param]), the program is ill-formed.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_64" id="pnum_64">2</a></span>
+The value of a constant template parameter P of (possibly deduced) type
+T is determined from its template argument A as follows. If T is not a
+class type and A is not a braced-init-list, A shall be a converted
+constant expression ([expr.const]) of type T; the value of P is A (as
+converted).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">3</a></span>
+Otherwise, a temporary variable</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> T v <span class="op">=</span> A;</span></code></pre></div>
+<p>is introduced. The lifetime of v ends immediately after initializing
+it and any template parameter object (see below). For each such
+variable, the id-expression v is termed a candidate initializer.</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_66" id="pnum_66">*</a></span>
+<span class="note"><span>[ <em>Note 3:</em> </span>This temporary
+variable may be an immediate variable if the initialization is an
+immediate constant expression that is not a constant expression
+([expr.const])<span> — <em>end note</em> ]</span></span></p>
+</div>
+</blockquote>
+</div>
 <h2 data-number="8.2" id="feature-test-macro"><span class="header-section-number">8.2</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Bump <code class="sourceCode cpp">__cpp_consteval</code> in
 <span>15.12 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="9" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">9</span>
