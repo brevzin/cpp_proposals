@@ -1660,8 +1660,8 @@ its enclosing statement is enclosed ([stmt.pre]) by the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 consteval if statement ([stmt.if]).</li>
 </ul>
-<p>An <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">expression</span> is an <em>immediate invocation</em> if it
-<span class="rm" style="color: #bf0303"><del>is a potentially-evaluated
+<p>An <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">expression</span> is an <span class="rm" style="color: #bf0303"><del><em>immediate invocation</em></del></span>
+<span class="addu"><em>immediate evaluation</em></span> if it <span class="rm" style="color: #bf0303"><del>is a potentially-evaluated
 explicit or implicit invocation of an immediate function
 and</del></span> is not in an immediate function context <span class="addu">and either</span></p>
 <ul>
@@ -1672,19 +1672,22 @@ invocation of an immediate function or</span></li>
 <span class="addu">it is an lvalue-to-rvalue conversion applied to an
 immediate variable.</span></li>
 </ul>
-<p>An aggregate initialization is an immediate invocation if it
-evaluates a default member initializer that has a subexpression that is
-an immediate-escalating expression.</p>
+<p>An aggregate initialization is an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">evaluation</span> if it evaluates a default member
+initializer that has a subexpression that is an immediate-escalating
+expression.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">25</a></span>
-An expression or conversion is <em>immediate-escalating</em> if it is
-not initially in an immediate function context and it is either</p>
+A potentially-evaluated expression or conversion is
+<em>immediate-escalating</em> if it is neither initially in an immediate
+function context nor a subexpression of an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">evaluation</span>, and</p>
 <ul>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">(25.1)</a></span>
-a potentially-evaluated <em>id-expression</em> that denotes an immediate
-function <span class="addu">or immediate variable</span> that is not a
-subexpression of an immediate invocation, or</li>
+it is an <code class="sourceCode cpp"><em>id-expression</em></code> or
+<code class="sourceCode cpp"><em>splice-expression</em></code> that
+designates an immediate function <span class="addu">or immediate
+variable</span>,</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">(25.2)</a></span>
-an immediate invocation that is not a constant expression, or</li>
+it is an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">evaluation</span> that is not a constant expression,
+or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">(25.3)</a></span>
 <span class="rm" style="color: #bf0303"><del>it is of consteval-only
 type ([basic.types.general])</del></span> <span class="addu">it has an

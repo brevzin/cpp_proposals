@@ -560,17 +560,17 @@ Change [expr.const]{.sref}
 * [#.#]{.pnum} it is a subexpression of a manifestly constant-evaluated expression or conversion, or
 * [#.#]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the `$compound-statement$` of a consteval if statement ([stmt.if]).
 
-An [invocation]{.rm} [expression]{.addu} is an _immediate invocation_ if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
+An [invocation]{.rm} [expression]{.addu} is an [_immediate invocation_]{.rm} [_immediate evaluation_]{.addu} if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
 
 * [#.#]{.pnum} [it is a potentially-evaluated explicit or implicit invocation of an immediate function or]{.addu}
 * [#.#]{.pnum} [it is an lvalue-to-rvalue conversion applied to an immediate variable.]{.addu}
 
-An aggregate initialization is an immediate invocation if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
+An aggregate initialization is an immediate [invocation]{.rm} [evaluation]{.addu} if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
 
-[25]{.pnum} An expression or conversion is *immediate-escalating* if it is not initially in an immediate function context and it is either
+[25]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate [invocation]{.rm} [evaluation]{.addu}, and
 
-* [#.1]{.pnum} a potentially-evaluated *id-expression* that denotes an immediate function [or immediate variable]{.addu} that is not a subexpression of an immediate invocation, or
-* [#.2]{.pnum} an immediate invocation that is not a constant expression, or
+* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [or immediate variable]{.addu},
+* [#.2]{.pnum} it is an immediate [invocation]{.rm} [evaluation]{.addu} that is not a constant expression, or
 * [#.3]{.pnum} [it is of consteval-only type ([basic.types.general])]{.rm} [it has an immediate value]{.addu}.
 
 [26]{.pnum} An *immediate-escalating* function is [...]
