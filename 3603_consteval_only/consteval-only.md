@@ -1,6 +1,6 @@
 ---
 title: "Consteval-only Values and Consteval Variables"
-document: P3603R0
+document: P3603R1
 date: today
 audience: EWG
 author:
@@ -15,6 +15,10 @@ tag: constexpr
 # Abstract
 
 This paper formalizes the concept of _consteval-only value_ and uses it to introduce consteval variables — variables that can only exist at compile time and are never code-gen. Consteval variables can then be used to solve some concrete problems we have today — like variant visitation.
+
+# Revision History
+
+Since [@P3603R0]: added implementation experience and `not_fn` example.
 
 # Introduction
 
@@ -34,7 +38,7 @@ We cannot "persist" a pointer to immediate function like this — `add` is a val
 
 It's not just that you cannot create a `constexpr` variable whose value is `add`, you also cannot use it as a template argument, cannot have it as a member of a struct that's used in either way, etc.
 
-Similarly, we cannot *really* persist reflections [@P2996R10]{.title}:
+Similarly, we cannot *really* persist reflections [@P2996R13]{.title}:
 
 ::: std
 ```cpp
@@ -90,9 +94,10 @@ As mentioned earlier, we already have an implicit notion of consteval-only value
 ::: std
 An expression has a _consteval-only value_ if:
 
-* any constituent part of it either points to or refers to a consteval variable,
-* any constituent part of it either points to or refers to an immediate function, or
-* any constituent part of it has consteval-only type.
+* it is a reflection,
+* it is a consteval variable,
+* it is an immediate function, or
+* any constituent part of it either points to or refers to a consteval-only value.
 :::
 
 For instance, an `$id-expression$` naming an immediate function is a consteval-only value (like `add`), `^^int` is a consteval-only value, `members_of(^^something)` is a consteval-only value, `p2` in the above example is a consteval-only value (doubly so — both because it is a `consteval` variable and because it is a pointer to immediate function), etc.
@@ -220,6 +225,46 @@ constexpr auto visit(F&& f, V0 const& v0, V1 const& v1) -> R {
 
 Put differently — as a `constexpr` variable, `fptrs` was not allowed to be initialized with pointers to immediate functions. But as a `consteval` variable, it can be — since we escalate all invocations of those pointers! Everything just... works, and requires no code changes on the part of the library implementation.
 
+# Motivating Example: Immediate Functions
+
+Today, we have this behavior:
+
+::: std
+```cpp
+consteval auto always_false() -> bool { return false; }
+
+static_assert(std::not_fn(always_false)());   // OK
+static_assert(std::not_fn<always_false>()()); // ill-formed
+```
+:::
+
+The first `static_assert` itself wasn't always valid, that was corrected by [@P2564R3]. But the second `static_assert` is still invalid — perhaps surprisingly so since everything here is evaluated during constant evaluation too.
+
+The issue here is not that `std::not_fn<always_false>()()` evaluates to `false` for some weird reason. Rather, `std::not_fn<always_false>()` itself is ill-formed. Because evaluating that expression involves initializing a constant template parameter with `alway_false`, and that's currently disallowed due to the fact that `always_false` is an immediate function.
+
+This is similar to the failure mode in the [variant example](#motivating-example-variant-visitation), it just that there the `constexpr` variable was explicit (the variable `fptrs`) and here it is implicit (the constant template parameter of `std::not_fn`). And, like the variant example, we are trying to constant-evaluate a call using immediate functions — but it's rejected anyway.
+
+The solution here is similar: if we escalate the template parameter in `std::not_fn<always_false>` to be a `consteval` variable instead of a `constexpr` one, the above code would just work. And, because we do the escalation, we can still catch all the misuses. For instance:
+
+::: std
+```cpp
+consteval auto positive(int i) -> bool { return i > 0; }
+
+void test(int i) {
+    // currently: ill-formed, proposed ok
+    constexpr auto f = std::not_fn<positive>();
+
+    // this would be ok: the call operator is consteval
+    static_assert(f(-5));
+
+    // this is, importantly, an error
+    // otherwise would lead to calling positive at runtime
+    bool b = f(i);
+
+```
+:::
+
+
 # Other Design Questions
 
 There are a few other design questions to discuss.
@@ -264,6 +309,13 @@ consteval int const b = 0; // ok
 ```
 :::
 
+That is, the two choices are:
+
+1. `consteval`, like `constexpr`, means implicit `const`. `consteval mutable` is currently disallowed, may eventually be allowed.
+2. `consteval`, unlike `constexpr`, means `mutable`. `consteval const` would be mandated.
+
+Choosing (2) now doesn't close the door to choosing (1) later, just like you can declare variables `constexpr const` today, it's just redundant. I have a slight preference for (1) and it is what I implemented.
+
 ## Rules around `constexpr` Variables
 
 Let's quickly consider:
@@ -287,11 +339,40 @@ The status quo is that `a` is ill-formed (as already mentioned) and `c` is propo
 * **`c` is ill-formed**. This might be a little surprising to propose, but it actually has merit. If you want a variable that only exists at compile time, declare it `consteval`. Just because we _can_ come up with a set of rules that allows `c` (by way of having consteval-only type) but not `a` doesn't mean that we should. Rejecting `c` can also provide a clear error message that it should be `consteval` instead and makes for a simpler set of rules.
 * **`a` is well-formed**. We can achieve this by having consteval variable escalation apply for all variables, not just templated ones. But when we were discussing [@P2564R3], we didn't do escalation for regular functions then — if you have a function that must be `consteval`, we decided that you should explicitly mark it as such. The same principle should apply here — if `a` has to be `consteval` (and it does), then it should be explicitly labeled as such.
 
-We think the right answer is that only the `consteval` declarations above should be valid. The only way to keep `c` valid would require consteval-only types, but...
+We think the right answer is that only the `consteval` declarations above should be valid. Consider this table:
+
+|specifier|usable at run-time|usable at compile-time
+|-|:-:|:-:|
+|(none)|🟢|🔴|
+|`constexpr`|🟢|🟢|
+|`consteval`|🔴|🟢|
+
+Or, in Euler diagram form:
+
+<center>![](image.png)</center>
+
+This is a very clear way to separate the kinds of specifiers. `consteval` means compile-time-only. `constexpr` means runtime or compile-time. No specifier means runtime-only.
+
+However, that's not the status quo. A more accurate table right now would look more like this:
+
+|specifier|usable at run-time|usable at compile-time
+|-|:-:|:-:|
+|(none)|🟢|🔴|
+|`constexpr`|🟡|🟢|
+|`consteval`|🔴|🟡|
+
+That is:
+
+* A `constexpr` variable is usable at run-time, except when it's not (when it is a reflection).
+* A `consteval` function is usable at compile-time, except when it's not (as we've seen earlier, when the way in which it is used requires initializing a `constexpr` variable).
+
+Changing `c` to ill-formed (why we insist on trying to do this for C++26) allows us to have a clean model. `constexpr` means usable at runtime or compile-time and `consteval` means usable at compile-time. The additional rules we can derive on top of `consteval` variables allow us to more consistently use compile-time only values at compile-time also.
+
+The way that today we keep `c` valid would require consteval-only types, but...
 
 ## Do we still need consteval-only types?
 
-[@P2996R10] introduces the notion of consteval-only type — basically any type that has a `std::meta::info` in it somewhere — to ensure that reflections exist only at compile time. This paper provides an alternative approach to solve the same problem: extend consteval-only to include values of type `std::meta::info`.
+[@P2996R13] introduces the notion of consteval-only type — basically any type that has a `std::meta::info` in it somewhere — to ensure that reflections exist only at compile time. This paper provides an alternative approach to solve the same problem: extend consteval-only to include values of type `std::meta::info`.
 
 This broadly accomplishes the same thing (and would necessitate having `c` be ill-formed in the above example), there are a few cases where the suggested rules would differ though. For example:
 
@@ -310,7 +391,25 @@ auto c = C{.p=nullptr};
 ```
 :::
 
-On the whole, it's definitely important to ensure that reflections do not persist to runtime and do not lead to codegen. These cases don't _actually_ have reflections in them though. So perhaps we don't need them the concept of consteval-only type after all.
+On the whole, it's definitely important to ensure that reflections do not persist to runtime and do not lead to codegen. These cases don't _actually_ have reflections in them though. So perhaps we don't need them the concept of consteval-only type after all. The only other use-case we have is the libc++ sort problem, and it's not even clear that detecting consteval-only types properly solves it.
+
+Basically, consteval-only types was an invention we needed in order to ensure that reflections don't persist to runtime. But consteval-only _values_ allows us to do that even better. It also simplifies some other edge-case wording that we have in the standard already. For instance, this example from [expr.const]{.sref}:
+
+::: std
+```cpp
+struct Base { };
+struct Derived : Base { std::meta::info r; };
+
+consteval const Base& fn(const Derived& derived) { return derived; }
+
+constexpr Derived obj{.r=^^::};     // OK
+constexpr const Derived& d = obj;   // OK
+constexpr const Base& b = fn(obj);  // error: not a constant expression because Derived
+                                    // is a consteval-only type but Base is not.
+```
+:::
+
+We need to reject `b`, despite `Base` not being a consteval-only type, and we need dedicated wording here. But with consteval variables and consteval-only values, rejecting this is very straightforward: `fn(obj)` refers to a consteval variable, so `b` cannot be `constexpr`, that's it. It's not a special case that needs dedicated handling. Which is quite nice!
 
 [@P3421R0]{.title} is another paper in this space that also seems like what it is really trying to do is come up with a way to produce consteval-only values. Perhaps a consteval destructor would be a way to signal that.
 
@@ -344,18 +443,42 @@ desugars into declaring the underlying range `consteval`, which seems like a fai
 
 Consteval-only allocation can always be adopted later, it is not strictly essential to this proposal, and we're already late.
 
+# Implementation Experience
+
+I implemented this proposal on top of Dan Katz's p2996 fork of clang, [here](https://github.com/brevzin/llvm-project/tree/consteval-variable). Specifically, I implemented:
+
+* variables can be declared `consteval`. This makes them implicitly `const` (see [mutability](#mutability)).
+* `consteval` variables can be initialized with `consteval`-only values (like reflections and immediate functions). `constexpr` variables _cannot_ (see [rules](#rules-around-constexpr-variables).
+* templated `constexpr` variables and template parameters whose initializer has consteval-only value become `consteval` variables.
+
+Both the [variant](#motivating-example-variant-visitation) and [`not_fn`](#motivating-example-immediate-functions) examples compile as-is with no code changes.
 
 # Proposal
 
 This paper proposes:
 
 1. introducing the notion of consteval-only value,
-2. introducing consteval variables,
-3. allowing certain constexpr variables (those with consteval-only value) to escalate to consteval variables.
+2. removing the notion of consteval-only type,
+3. introducing consteval variables (which are implicitly `const`),
+4. allowing certain constexpr variables (those with consteval-only value) to escalate to consteval variables.
 
-Currently, the only kind of consteval-only value is a pointer (or reference) to immediate function. This paper directly also adds consteval variables. With the adoption of [@P2996R10], consteval-only values will extend to include values of type `std::meta::info` (and thus variables of that type will escalate to `consteval`). We won't need consteval-only types.
+Currently, the only kinds of consteval-only value is a pointer (or reference) to immediate function and consteval-only types (i.e. reflections). This paper directly also adds consteval variables.
 
 ## Wording
+
+[We should endeavor to change all of our "immediate" terms to just be "consteval" terms. Consteval function, consteval invocation, etc. But for now, we're sticking with "immediate"]{.ednote}.
+
+Remove consteval-only type from [basic.types.general]{.sref}/12:
+
+::: std
+::: rm
+[12]{.pnum} A type is _consteval-only_ if it is either `std::meta::info` or a type compounded from a consteval-only type ([basic.compound]). Every object of consteval-only type shall be
+
+  - [#.#]{.pnum} the object associated with a constexpr variable or a subobject thereof,
+  - [#.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
+  - [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a core constant expression.
+:::
+:::
 
 Change [expr.const]{.sref}
 
@@ -374,11 +497,11 @@ Change [expr.const]{.sref}
 ::: addu
 [w]{.pnum} An *immediate value* is a value that satisfies any of the following:
 
+* [w.1]{.pnum} it is a reflection,
+* [w.2]{.pnum} it is an immediate function,
 * [w.1]{.pnum} any constituent reference refers to an immediate function or an immediate object,
 * [w.2]{.pnum} any constituent pointer points to an immediate function or an immediate object, or
 * [w.3]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
-
-[With the adoption of P2996, this would have to be extended to also account for any references to, pointers to, or values of type `std::meta::info`.]{.draftnote}
 
 [x]{.pnum} An *immediate object* is an object that was either initialized by an immediate value or declared by an immediate variable.
 
@@ -396,22 +519,59 @@ Change [expr.const]{.sref}
 
 [22]{.pnum} A *constant expression* is either
 
-* [22.1]{.pnum} a glvalue [immediate]{.addu} [core]{.rm} constant expression that refers to [an]{.rm} [a non-immediate]{.addu} object or non-immediate function, or
-* [22.2]{.pnum} a prvalue [core]{.rm} [immediate]{.addu} constant expression [whose value satisfies the following constraints]{.rm} [that does not have an immediate value.]{.addu}
+* [22.1]{.pnum} a glvalue [immediate]{.addu} [core]{.rm} constant expression `$E$` [for which]{.rm} [that refers to a non-immediate object or non-immediate function, or]{.addu}
 
-::: rm
-* [22.1]{.pnum} each constituent reference refers to an object or a non-immediate function,
-* [22.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]),
-* [22.3]{.pnum} no constituent value of pointer type is a pointer to an immediate function or an invalid pointer value ([basic.compound]), and
-* [22.4]{.pnum} no constituent value of pointer-to-member type designates an immediate function.
-:::
+  ::: rm
+    * [22.1.1]{.pnum} `$E$` refers to a non-immediate function,
+    * [22.1.2]{.pnum} `$E$` designates an object `$o$`, and if the complete object of `$o$` is of consteval-only type then so is `$E$`,
+
+  ::: example
+  ```cpp
+  struct Base { };
+  struct Derived : Base { std::meta::info r; };
+
+  consteval const Base& fn(const Derived& derived) { return derived; }
+
+  constexpr Derived obj{.r=^^::}; // OK
+  constexpr const Derived& d = obj; // OK
+  constexpr const Base& b = fn(obj); // error: not a constant expression
+    // because Derived is a consteval-only type but Base is not.
+  ```
+
+  :::
+  :::
+
+* [22.2]{.pnum} a prvalue [core]{.rm} [immediate]{.addu} constant expression whose result value object ([basic.lval]) [satisfies the following constraints]{.rm} [does not have immediate value.]{.addu}
+
+    * [22.2.1]{.pnum} [each constituent reference refers to an object or a non-immediate function,]{.rm}
+    * [22.2.2]{.pnum} [no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]),]{.rm}
+    * [22.2.3]{.pnum} [no constituent value of pointer type is a pointer to an immediate function or an invalid pointer value ([basic.compound]), and]{.rm}
+    * [22.2.4]{.pnum} [no constituent value of pointer-to-member type designates an immediate function.]{.rm}
+    * [22.2.5]{.pnum} [unless the value is of consteval-only type,]{.rm}
+        - [#.#.#.#]{.pnum} [no constituent value of pointer-to-member type points to a direct member of a consteval-only class type]{.rm}
+        - [#.#.#.#]{.pnum} [no constituent value of pointer type points to or past an object whose complete object is of consteval-only type, and]{.rm}
+        - [#.#.#.#]{.pnum} [no constituent reference refers to an object whose complete object is of consteval-only type.]{.rm}
 
 [...]
 
+[24]{.pnum} An expression or conversion is in an _immediate function context_ if it is potentially evaluated and either:
+
+* [#.#]{.pnum} its innermost enclosing non-block scope is a function parameter scope of an immediate function,
+* [#.#]{.pnum} it is a subexpression of a manifestly constant-evaluated expression or conversion, or
+* [#.#]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the `$compound-statement$` of a consteval if statement ([stmt.if]).
+
+An [invocation]{.rm} [expression]{.addu} is an _immediate invocation_ if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
+
+* [#.#]{.pnum} [it is a potentially-evaluated explicit or implicit invocation of an immediate function or]{.addu}
+* [#.#]{.pnum} [it is an lvalue-to-rvalue conversion applied to an immediate variable.]{.addu}
+
+An aggregate initialization is an immediate invocation if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
+
 [25]{.pnum} An expression or conversion is *immediate-escalating* if it is not initially in an immediate function context and it is either
 
-* [#.1]{.pnum} a potentially-evaluated [*id-expression* that denotes an immediate function]{.rm} [expression that has immediate value]{.addu} that is not a subexpression of an immediate invocation, or
-* [#.2]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
+* [#.1]{.pnum} a potentially-evaluated *id-expression* that denotes an immediate function [or immediate variable]{.addu} that is not a subexpression of an immediate invocation, or
+* [#.2]{.pnum} an immediate invocation that is not a constant expression, or
+* [#.3]{.pnum} [it is of consteval-only type ([basic.types.general])]{.rm} [it has an immediate value]{.addu}.
 
 [26]{.pnum} An *immediate-escalating* function is [...]
 
