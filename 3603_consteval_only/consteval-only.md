@@ -362,9 +362,11 @@ That is:
 * A `constexpr` variable is usable at run-time, except when it's not (when it has consteval-only type. That is: it is a reflection).
 * A `consteval` function is usable at compile-time, except when it's not (as we've seen earlier, when the way in which it is used requires initializing a `constexpr` variable).
 
-Changing `c` to ill-formed (why we insist on trying to do this for C++26) allows us to have a clean model. `constexpr` means usable at runtime or compile-time and `consteval` means usable at compile-time. The additional rules we can derive on top of `consteval` variables allow us to more consistently use compile-time only values at compile-time also.
+The second bullet could be done later, but the first bullet requires rejecting `constexpr auto c = ^^int;` in favor of requiring the user to have to write `consteval`. That would be a large (albeit very mechanical) breaking change if we did it later. Doing so would allow us to have the clean model in the earlier table: `constexpr` means usable at runtime or compile-time and `consteval` means usable at compile-time only.
 
-The way that today we keep `c` valid would require consteval-only types, but...
+The additional rules we can derive on top of `consteval` variables allow us to more consistently use compile-time only values at compile-time also.
+
+This strikes us as a very valuable place to be in that's superior to the status quo, so we should definitely do it.
 
 ## Do we still need consteval-only types?
 

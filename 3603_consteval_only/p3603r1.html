@@ -1286,17 +1286,23 @@ earlier, when the way in which it is used requires initializing a
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 variable).</li>
 </ul>
-<p>Changing <code class="sourceCode cpp">c</code> to ill-formed (why we
-insist on trying to do this for C++26) allows us to have a clean model.
+<p>The second bullet could be done later, but the first bullet requires
+rejecting <code class="sourceCode cpp"><span class="kw">constexpr</span> <span class="kw">auto</span> c <span class="op">=</span> <span class="op">^^</span><span class="dt">int</span>;</code>
+in favor of requiring the user to have to write
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>.
+That would be a large (albeit very mechanical) breaking change if we did
+it later. Doing so would allow us to have the clean model in the earlier
+table:
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 means usable at runtime or compile-time and
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
-means usable at compile-time. The additional rules we can derive on top
-of <code class="sourceCode cpp"><span class="kw">consteval</span></code>
+means usable at compile-time only.</p>
+<p>The additional rules we can derive on top of
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
 variables allow us to more consistently use compile-time only values at
 compile-time also.</p>
-<p>The way that today we keep <code class="sourceCode cpp">c</code>
-valid would require consteval-only types, but…</p>
+<p>This strikes us as a very valuable place to be in that’s superior to
+the status quo, so we should definitely do it.</p>
 <h2 data-number="6.3" id="do-we-still-need-consteval-only-types"><span class="header-section-number">6.3</span> Do we still need consteval-only
 types?<a href="#do-we-still-need-consteval-only-types" class="self-link"></a></h2>
 <p><span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13" role="doc-biblioref">[P2996R13]</a></span> introduces the notion of
