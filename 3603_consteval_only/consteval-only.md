@@ -443,7 +443,7 @@ Consteval-only allocation can always be adopted later, it is not strictly essent
 
 # Implementation Experience
 
-I implemented this proposal on top of Dan Katz's p2996 fork of clang, [here](https://github.com/brevzin/llvm-project/tree/consteval-variable). Specifically, I implemented:
+I implemented this proposal on top of Dan Katz's p2996 fork of clang, [here](https://github.com/brevzin/llvm-project/tree/consteval-variable-2). Specifically, I implemented:
 
 * variables can be declared `consteval`. This makes them implicitly `const` (see [mutability](#mutability)).
 * `consteval` variables can be initialized with `consteval`-only values (like reflections and immediate functions). `constexpr` variables _cannot_ (see [rules](#rules-around-constexpr-variables).
