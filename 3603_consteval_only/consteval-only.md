@@ -347,10 +347,6 @@ We think the right answer is that only the `consteval` declarations above should
 |`constexpr`|🟢|🟢|
 |`consteval`|🔴|🟢|
 
-Or, in Euler diagram form:
-
-<center>![](image.png)</center>
-
 This is a very clear way to separate the kinds of specifiers. `consteval` means compile-time-only. `constexpr` means runtime or compile-time. No specifier means runtime-only.
 
 However, that's not the status quo. A more accurate table right now would look more like this:
@@ -363,7 +359,7 @@ However, that's not the status quo. A more accurate table right now would look m
 
 That is:
 
-* A `constexpr` variable is usable at run-time, except when it's not (when it is a reflection).
+* A `constexpr` variable is usable at run-time, except when it's not (when it has consteval-only type. That is: it is a reflection).
 * A `consteval` function is usable at compile-time, except when it's not (as we've seen earlier, when the way in which it is used requires initializing a `constexpr` variable).
 
 Changing `c` to ill-formed (why we insist on trying to do this for C++26) allows us to have a clean model. `constexpr` means usable at runtime or compile-time and `consteval` means usable at compile-time. The additional rules we can derive on top of `consteval` variables allow us to more consistently use compile-time only values at compile-time also.
@@ -514,10 +510,11 @@ Change [expr.const]{.sref}
 [w]{.pnum} An *immediate value* is a value that satisfies any of the following:
 
 * [w.1]{.pnum} it is a reflection,
-* [w.2]{.pnum} it is an immediate function,
-* [w.1]{.pnum} any constituent reference refers to an immediate function or an immediate object,
-* [w.2]{.pnum} any constituent pointer points to an immediate function or an immediate object, or
-* [w.3]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
+* [w.#]{.pnum} it is an immediate function,
+* [w.#]{.pnum} any constituent reference refers to an immediate function or an immediate object,
+* [w.#]{.pnum} any constituent pointer points to an immediate function or an immediate object,
+* [w.#]{.pnum} any constituent value is a reflection, or
+* [w.#]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
 
 [x]{.pnum} An *immediate object* is an object that was either initialized by an immediate value or declared by an immediate variable.
 
