@@ -492,9 +492,15 @@ Change [expr.const]{.sref}
 * [6.2]{.pnum} immediately after the initializing declaration of `v`, the object or reference `x` declared by `v` is constexpr-representable, and
 * [6.3]{.pnum} if `x` has static or thread storage duration, `x` is constexpr-representable at the nearest point whose immediate scope is a namespace scope that follows the initializing declaration of `v`.
 
-[...]
+[7]{.pnum} A constant-initializable variable is _constant-initialized_ if either it has an initializer or its type is const-default-constructible  ([dcl.init.general]).
 
-[8]{.pnum} A variable is _potentially-constant_ if it is constexpr [, consteval,]{.addu} or it has reference or non-volatile const-qualified integral or enumeration type.
+[8]{.pnum} A variable is _potentially-constant_ if
+
+* [8.1]{.pnum} it is constexpr [,]{.addu}
+* [8.2]{.pnum} [it is consteval,]{.addu} or
+* [8.3]{.pnum} it has reference or non-volatile const-qualified integral or enumeration type.
+
+[The above is now made a bulleted list, with the addition of the third condition.]{.draftnote}
 
 [9]{.pnum} A constant-initialized potentially-constant variable `$V$` is usable in constant expressions at a point `$P$` if `$V$`'s initializing declaration `$D$` is reachable from `$P$` and
 
