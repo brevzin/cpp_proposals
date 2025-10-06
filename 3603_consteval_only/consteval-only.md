@@ -18,7 +18,7 @@ This paper formalizes the concept of _consteval-only value_ and uses it to intro
 
 # Revision History
 
-Since [@P3603R0]: added implementation experience and `not_fn` example.
+Since [@P3603R0]: added [implementation experience](#implementation-experience) and `not_fn` example, extended prose, updated wording now that reflection has been adopted.
 
 # Introduction
 
