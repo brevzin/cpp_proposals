@@ -535,11 +535,11 @@ Change [expr.const]{.sref}
 
 * [w.1]{.pnum} it has consteval-only type,
 * [w.#]{.pnum} it is an immediate function,
-* [w.#]{.pnum} any constituent reference refers to an immediate function or an immediate object,
-* [w.#]{.pnum} any constituent pointer points to an immediate function or an immediate object,
+* [w.#]{.pnum} any constituent reference refers to an immediate entity,
+* [w.#]{.pnum} any constituent pointer points to an immediate entity,
 * [w.#]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
 
-[x]{.pnum} An *immediate object* is an object or subobject that was either initialized by an immediate value or declared by an immediate variable.
+[x]{.pnum} An *immediate object* is an object or subobject that was either initialized by an immediate value or declared by an immediate variable. An *immediate entity* is an immediate function or an immediate object.
 
 [y]{.pnum} An *immediate variable* is
 
@@ -555,7 +555,7 @@ Change [expr.const]{.sref}
 
 [22]{.pnum} A *constant expression* is either
 
-* [22.1]{.pnum} a glvalue [immediate]{.addu} [core]{.rm} constant expression `$E$` [for which]{.rm} [that does not designate an immediate object or immediate function, or]{.addu}
+* [22.1]{.pnum} a glvalue [immediate]{.addu} [core]{.rm} constant expression `$E$` [for which]{.rm} [that does not designate an immediate entity, or]{.addu}
 
   ::: rm
     * [22.1.1]{.pnum} `$E$` refers to a non-immediate function,
