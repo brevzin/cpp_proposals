@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2025-11-01" />
+  <title>Consteval-only Values and Consteval Variables</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+      div.csl-block{margin-left: 1.5em;}
+      ul.task-list{list-style: none;}
+      pre > code.sourceCode { white-space: pre; position: relative; }
+      pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+      pre > code.sourceCode > span:empty { height: 1.2em; }
+      .sourceCode { overflow: visible; }
+      code.sourceCode > span { color: inherit; text-decoration: inherit; }
+      div.sourceCode { margin: 1em 0; }
+      pre.sourceCode { margin: 0; }
+      @media screen {
+      div.sourceCode { overflow: auto; }
+      }
+      @media print {
+      pre > code.sourceCode { white-space: pre-wrap; }
+      pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+      }
+      pre.numberSource code
+        { counter-reset: source-line 0; }
+      pre.numberSource code > span
+        { position: relative; left: -4em; counter-increment: source-line; }
+      pre.numberSource code > span > a:first-child::before
+        { content: counter(source-line);
+          position: relative; left: -1em; text-align: right; vertical-align: baseline;
+          border: none; display: inline-block;
+          -webkit-touch-callout: none; -webkit-user-select: none;
+          -khtml-user-select: none; -moz-user-select: none;
+          -ms-user-select: none; user-select: none;
+          padding: 0 4px; width: 4em;
+          color: #aaaaaa;
+        }
+      pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+      div.sourceCode
+        {  background-color: #f6f8fa; }
+      @media screen {
+      pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+      }
+      code span { } /* Normal */
+      code span.al { color: #ff0000; } /* Alert */
+      code span.an { } /* Annotation */
+      code span.at { } /* Attribute */
+      code span.bn { color: #9f6807; } /* BaseN */
+      code span.bu { color: #9f6807; } /* BuiltIn */
+      code span.cf { color: #00607c; } /* ControlFlow */
+      code span.ch { color: #9f6807; } /* Char */
+      code span.cn { } /* Constant */
+      code span.co { color: #008000; font-style: italic; } /* Comment */
+      code span.cv { color: #008000; font-style: italic; } /* CommentVar */
+      code span.do { color: #008000; } /* Documentation */
+      code span.dt { color: #00607c; } /* DataType */
+      code span.dv { color: #9f6807; } /* DecVal */
+      code span.er { color: #ff0000; font-weight: bold; } /* Error */
+      code span.ex { } /* Extension */
+      code span.fl { color: #9f6807; } /* Float */
+      code span.fu { } /* Function */
+      code span.im { } /* Import */
+      code span.in { color: #008000; } /* Information */
+      code span.kw { color: #00607c; } /* Keyword */
+      code span.op { color: #af1915; } /* Operator */
+      code span.ot { } /* Other */
+      code span.pp { color: #6f4e37; } /* Preprocessor */
+      code span.re { } /* RegionMarker */
+      code span.sc { color: #9f6807; } /* SpecialChar */
+      code span.ss { color: #9f6807; } /* SpecialString */
+      code span.st { color: #9f6807; } /* String */
+      code span.va { } /* Variable */
+      code span.vs { color: #9f6807; } /* VerbatimString */
+      code span.wa { color: #008000; font-weight: bold; } /* Warning */
+      code.diff {color: #898887}
+      code.diff span.va {color: #006e28}
+      code.diff span.st {color: #bf0303}
+  </style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+text-align: justify;
+}
+@media screen and (max-width: 30em) {
+body {
+margin: 1.5em;
+}
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: #C9FBC9; }
+:target .codeblock { background-color: #C9FBC9; }
+:target ul { background-color: #C9FBC9; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+
+code.sourceCode > span { display: inline; }
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+code span.co { font-family: monospace; }
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+td > div > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #C9FBC9;
+--diff-strongins: #acf2bd;
+--diff-del: #FFC8EB;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.addu td pre { background-color: inherit; }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+div.std blockquote { color: #000000; background-color: #F1F1F1;
+border: 1px solid #D1D1D1;
+padding-left: 0.5em; padding-right: 0.5em; }
+div.std.ins blockquote {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.ins > div.example {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
+div.rm li {
+text-decoration: line-through;
+color: #bf0303;
+}
+div.std blockquote del, div.rm {
+text-decoration: line-through;
+color: #bf0303;
+background-color: var(--diff-del);
+border: none;
+}
+code del { border: 1px solid #ECB3C7; }
+span.orange {
+background-color: #ffa500;
+}
+span.yellow {
+background-color: #ffff00;
+}</style>
+  <link href="data:image/x-icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Consteval-only Values and
+Consteval Variables</h1>
+<table style="border:none;float:right">
+  <tr>
+    <td>Document #:</td>
+    <td>P3603R2 <a href="https://wg21.link/P3603">[Latest]</a> <a href="https://wg21.link/P3603/status">[Status]</a></td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2025-11-01</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+      Peter Dimov<br>&lt;<a href="mailto:pdimov@gmail.com" class="email">pdimov@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#abstract" id="toc-abstract"><span class="toc-section-number">1</span> Abstract<span></span></a></li>
+<li><a href="#revision-history" id="toc-revision-history"><span class="toc-section-number">2</span> Revision
+History<span></span></a></li>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">3</span> Introduction<span></span></a>
+<ul>
+<li><a href="#consteval-variables" id="toc-consteval-variables"><span class="toc-section-number">3.1</span> Consteval
+Variables<span></span></a></li>
+<li><a href="#consteval-only-values" id="toc-consteval-only-values"><span class="toc-section-number">3.2</span> Consteval-Only
+Values<span></span></a></li>
+<li><a href="#interaction-with-other-papers" id="toc-interaction-with-other-papers"><span class="toc-section-number">3.3</span> Interaction with Other
+Papers<span></span></a></li>
+</ul></li>
+<li><a href="#motivating-example-variant-visitation" id="toc-motivating-example-variant-visitation"><span class="toc-section-number">4</span> Motivating Example: Variant
+Visitation<span></span></a>
+<ul>
+<li><a href="#consteval-variable-escalation" id="toc-consteval-variable-escalation"><span class="toc-section-number">4.1</span> Consteval Variable
+Escalation<span></span></a></li>
+</ul></li>
+<li><a href="#motivating-example-immediate-functions" id="toc-motivating-example-immediate-functions"><span class="toc-section-number">5</span> Motivating Example: Immediate
+Functions<span></span></a></li>
+<li><a href="#other-design-questions" id="toc-other-design-questions"><span class="toc-section-number">6</span> Other Design
+Questions<span></span></a>
+<ul>
+<li><a href="#mutability" id="toc-mutability"><span class="toc-section-number">6.1</span> Mutability<span></span></a></li>
+<li><a href="#rules-around-constexpr-variables" id="toc-rules-around-constexpr-variables"><span class="toc-section-number">6.2</span> Rules around
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+Variables<span></span></a></li>
+<li><a href="#do-we-still-need-consteval-only-types" id="toc-do-we-still-need-consteval-only-types"><span class="toc-section-number">6.3</span> Do we still need consteval-only
+types?<span></span></a></li>
+<li><a href="#consteval-only-allocation" id="toc-consteval-only-allocation"><span class="toc-section-number">6.4</span> Consteval-only
+Allocation<span></span></a></li>
+</ul></li>
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">7</span> Implementation
+Experience<span></span></a></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">8</span> Proposal<span></span></a>
+<ul>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">8.1</span> Wording<span></span></a></li>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">8.2</span> Feature-test
+Macro<span></span></a></li>
+</ul></li>
+<li><a href="#acknowledgments" id="toc-acknowledgments"><span class="toc-section-number">9</span>
+Acknowledgments<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">10</span> References<span></span></a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="abstract"><span class="header-section-number">1</span> Abstract<a href="#abstract" class="self-link"></a></h1>
+<p>This paper formalizes the concept of <em>consteval-only value</em>
+and uses it to introduce consteval variables — variables that can only
+exist at compile time and are never code-gen. Consteval variables can
+then be used to solve some concrete problems we have today — like
+variant visitation.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">2</span>
+Revision History<a href="#revision-history" class="self-link"></a></h1>
+<p>Since <span class="citation" data-cites="P3603R1"><a href="https://wg21.link/p3603r1" role="doc-biblioref">[P3603R1]</a></span>: Keeping <a href="#do-we-still-need-consteval-only-types">consteval-only types</a>
+around.</p>
+<p>Since <span class="citation" data-cites="P3603R0"><a href="https://wg21.link/p3603r0" role="doc-biblioref">[P3603R0]</a></span>: added <a href="#implementation-experience">implementation experience</a> and
+<code class="sourceCode cpp">not_fn</code> example, extended prose,
+updated wording now that reflection has been adopted.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">3</span>
+Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>C++ today already has an <em>informal</em> notion of a value that is
+only allowed to exist during compile time. Currently, this is
+ill-formed:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> add<span class="op">(</span><span class="dt">int</span> x, <span class="dt">int</span> y<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">+</span> y;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> ptr <span class="op">=</span> add; <span class="co">// error</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>We cannot “persist” a pointer to immediate function like this —
+<code class="sourceCode cpp">add</code> is a value that is only allowed
+to exist at compile time. This is because we cannot invoke
+<code class="sourceCode cpp">ptr</code> at runtime, and if we allowed
+this, <code class="sourceCode cpp">ptr</code> would just be a regular
+old <code class="sourceCode cpp"><span class="dt">int</span><span class="op">(*)(</span><span class="dt">int</span>, <span class="dt">int</span><span class="op">)</span></code>.
+The original addition of
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+functions — <span class="title"><span class="citation" data-cites="P1073R3"><a href="https://wg21.link/p1073r3" role="doc-biblioref">[P1073R3] (Immediate functions)</a></span></span> —
+already had this rule.</p>
+<p>It’s not just that you cannot create a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variable whose value is <code class="sourceCode cpp">add</code>, you
+also cannot use it as a template argument, cannot have it as a member of
+a struct that’s used in either way, etc.</p>
+<p>Similarly, we cannot <em>really</em> persist reflections <span class="title"><span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13" role="doc-biblioref">[P2996R13]
+(Reflection for C++26)</a></span></span>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> refl <span class="op">=</span> <span class="op">^^</span><span class="dt">int</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>We cannot allow you to do anything with
+<code class="sourceCode cpp">refl</code> at runtime in the same way we
+cannot do anything with <code class="sourceCode cpp">ptr</code> at
+runtime. But we enforce these requirements very differently:</p>
+<ul>
+<li>we disallow <code class="sourceCode cpp">ptr</code> through what
+used to be the “permitted result” rule</li>
+<li>we allow <code class="sourceCode cpp">refl</code> but ensure that
+all expressions involving <code class="sourceCode cpp">refl</code> are
+constant, by way of consteval-only types and immediate escalation from
+<span class="title"><span class="citation" data-cites="P2564R3"><a href="https://wg21.link/p2564r3" role="doc-biblioref">[P2564R3]
+(consteval needs to propagate up)</a></span></span>.</li>
+</ul>
+<p>The status quo from the Reflection design is that we can handle these
+differently because we can differentiate based on type.
+<code class="sourceCode cpp">ptr</code> is just a function pointer,
+<code class="sourceCode cpp">refl</code> is a <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+— we can ensure that expressions involving the latter are constant, but
+we can’t tell from a given function pointer whether we need that
+machinery or not.</p>
+<p>What if we did things a little bit differently?</p>
+<h2 data-number="3.1" id="consteval-variables"><span class="header-section-number">3.1</span> Consteval Variables<a href="#consteval-variables" class="self-link"></a></h2>
+<p>We currently have
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+functions (which can only exist at compile time) but we do not have
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables. What if we did?</p>
+<p>We would have to say that a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable could only exist at compile time, which means all uses of it
+must be constant. We already have these kinds of rules in the language,
+so it is straightforward to extend them to cover this case as well. That
+is, we would expect:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> add<span class="op">(</span><span class="dt">int</span> x, <span class="dt">int</span> y<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">+</span> y;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// error: as before, cannot persist a pointer to immediate function</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> p1 <span class="op">=</span> add;</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">// OK, p2 is a consteval variable. it does not exist at runtime</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> p2 <span class="op">=</span> add;</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc, <span class="dt">char</span><span class="op">**)</span> <span class="op">{</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// error: p2 is a consteval variable, so expressions using it must be</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// constant — and this is not.</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> p2<span class="op">(</span>argc, <span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>This is already pretty nice. We could never initialize something like
+<code class="sourceCode cpp">p2</code> today (including as part of a
+struct, etc.), and this would allow us to.</p>
+<p>Another important benefit of
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables is that they are <em>guaranteed</em> to not occupy space at
+runtime. You just don’t hit issues <a href="https://www.reddit.com/r/cpp/comments/1i36ahd/is_this_an_msvc_bug_or_am_i_doing_something_wrong/">like
+this</a>.
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variables, even if never accessed at runtime, may occupy space anyway.
+It’s just QoI. But in the same way that
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+functions <em>cannot</em> lead to codegen,
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables <em>cannot</em> either. That’s a pretty nice benefit.</p>
+<p>But how do we distinguish between what is allowed for
+<code class="sourceCode cpp">p1</code> and what is allowed for
+<code class="sourceCode cpp">p2</code>? We simply need to introduce…</p>
+<h2 data-number="3.2" id="consteval-only-values"><span class="header-section-number">3.2</span> Consteval-Only Values<a href="#consteval-only-values" class="self-link"></a></h2>
+<p>As mentioned earlier, we already have an implicit notion of
+consteval-only value in the language with how we treat immediate
+functions today. Let’s make that more explicit, and also account for the
+consteval variables we’re introducing. This isn’t quite Core-precise
+wording, but it should convey the idea we need:</p>
+<div class="std">
+<blockquote>
+<p>An expression has a <em>consteval-only value</em> if:</p>
+<ul>
+<li>it is a reflection,</li>
+<li>it is a consteval variable,</li>
+<li>it is an immediate function, or</li>
+<li>any constituent part of it either points to or refers to a
+consteval-only value.</li>
+</ul>
+</blockquote>
+</div>
+<p>For instance, an
+<code class="sourceCode cpp"><em>id-expression</em></code> naming an
+immediate function is a consteval-only value (like
+<code class="sourceCode cpp">add</code>), <code class="sourceCode cpp"><span class="op">^^</span><span class="dt">int</span></code>
+is a consteval-only value, <code class="sourceCode cpp">members_of<span class="op">(^^</span>something<span class="op">)</span></code>
+is a consteval-only value, <code class="sourceCode cpp">p2</code> in the
+above example is a consteval-only value (doubly so — both because it is
+a <code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable and because it is a pointer to immediate function), etc.</p>
+<p>Our rules around immediate-escalating expressions already presuppose
+the existence of a consteval-only value, this term just allows us to be
+more explicit about it:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">25</a></span>
+An expression or conversion is <em>immediate-escalating</em> if it is
+not initially in an immediate function context and <span class="rm" style="color: #bf0303"><del>it is</del></span> either</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">(25.1)</a></span>
+<span class="rm" style="color: #bf0303"><del>a potentially-evaluated
+<em>id-expression</em> that denotes an immediate function
+that</del></span> <span class="addu">it has consteval-only value and
+it</span> is not a subexpression of an immediate invocation, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">(25.2)</a></span>
+<span class="addu">it is</span> an immediate invocation that is not a
+constant expression and is not a subexpression of an immediate
+invocation.</li>
+</ul>
+</blockquote>
+</div>
+<p>This isn’t just a way to clean up the specification a little. It also
+has some other interesting potential…</p>
+<h2 data-number="3.3" id="interaction-with-other-papers"><span class="header-section-number">3.3</span> Interaction with Other Papers<a href="#interaction-with-other-papers" class="self-link"></a></h2>
+<p>In <span class="title"><span class="citation" data-cites="P3496R0"><a href="https://wg21.link/p3496r0" role="doc-biblioref">[P3496R0]
+(Immediate-Escalating Expressions)</a></span></span>, we try to express
+that certain sub-expressions have to escalate. It achieves this by
+<em>also</em> introducing the notion of a consteval-only value — and
+saying that expressions that contain a consteval-only value have to
+escalate. While the goal of that paper is to have an expression (rather
+than a function) stop escalation, it needs to talk about this problem in
+the same way — so the addition of this terminology is clearly inherently
+useful for language evolution.</p>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="motivating-example-variant-visitation"><span class="header-section-number">4</span> Motivating Example: Variant
+Visitation<a href="#motivating-example-variant-visitation" class="self-link"></a></h1>
+<p>Jiang An submitted a very interesting bug report to <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118434">libstdc++</a>
+(and <a href="https://github.com/llvm/llvm-project/issues/118560">libc++</a>) in
+January 2025, which is also now <span class="citation" data-cites="LWG4197"><a href="https://wg21.link/lwg4197" role="doc-biblioref">[LWG4197]</a></span>. It dealt with visiting a
+<code class="sourceCode cpp">std<span class="op">::</span>variant</code>
+with a consteval lambda.</p>
+<p>Here is a short reproduction of it, with a greatly reduced
+<code class="sourceCode cpp">variant</code> implementation that gets us
+to the point:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;array&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Variant <span class="op">{</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        T t;</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        U u;</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> index;</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> Variant<span class="op">(</span>T t<span class="op">)</span> <span class="op">:</span> t<span class="op">(</span>t<span class="op">)</span>, index<span class="op">(</span><span class="dv">0</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> Variant<span class="op">(</span>U u<span class="op">)</span> <span class="op">:</span> u<span class="op">(</span>u<span class="op">)</span>, index<span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> I<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>I <span class="op">&lt;</span> <span class="dv">2</span><span class="op">)</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>I <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> t;</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>I <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="cf">return</span> u;</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> F, <span class="kw">class</span> V0, <span class="kw">class</span> V1<span class="op">&gt;</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> binary_vtable_impl <span class="op">{</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> I, <span class="dt">int</span> J<span class="op">&gt;</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> visit<span class="op">(</span>F<span class="op">&amp;&amp;</span> f, V0 <span class="kw">const</span><span class="op">&amp;</span> v0, V1 <span class="kw">const</span><span class="op">&amp;</span> v1<span class="op">)</span> <span class="op">-&gt;</span> R <span class="op">{</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> f<span class="op">(</span>v0<span class="op">.</span><span class="kw">template</span> get<span class="op">&lt;</span>I<span class="op">&gt;()</span>, v1<span class="op">.</span><span class="kw">template</span> get<span class="op">&lt;</span>J<span class="op">&gt;())</span>;</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> get_array<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> std<span class="op">::</span>array<span class="op">{</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>array<span class="op">{</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">0</span>, <span class="dv">0</span><span class="op">&gt;</span>,</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">0</span>, <span class="dv">1</span><span class="op">&gt;</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span>,</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>array<span class="op">{</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">1</span>, <span class="dv">0</span><span class="op">&gt;</span>,</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">1</span>, <span class="dv">1</span><span class="op">&gt;</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> std<span class="op">::</span>array fptrs <span class="op">=</span> get_array<span class="op">()</span>;</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> F, <span class="kw">class</span> V0, <span class="kw">class</span> V1<span class="op">&gt;</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> visit<span class="op">(</span>F<span class="op">&amp;&amp;</span> f, V0 <span class="kw">const</span><span class="op">&amp;</span> v0, V1 <span class="kw">const</span><span class="op">&amp;</span> v1<span class="op">)</span> <span class="op">-&gt;</span> R <span class="op">{</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> Impl <span class="op">=</span> binary_vtable_impl<span class="op">&lt;</span>R, F, V0, V1<span class="op">&gt;</span>;</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Impl<span class="op">::</span>fptrs<span class="op">[</span>v0<span class="op">.</span>index<span class="op">][</span>v1<span class="op">.</span>index<span class="op">]((</span>F<span class="op">&amp;&amp;)</span>f, v0, v1<span class="op">)</span>;</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> func<span class="op">(</span><span class="kw">const</span> Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;&amp;</span> v1, <span class="kw">const</span> Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;&amp;</span> v2<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> visit<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;([](</span><span class="kw">auto</span> x, <span class="kw">auto</span> y<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">+</span> y; <span class="op">}</span>, v1, v2<span class="op">)</span>;</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>func<span class="op">(</span>Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;{</span><span class="dv">42</span><span class="op">}</span>, Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;{</span><span class="dv">1729</span><span class="op">})</span> <span class="op">==</span> <span class="dv">1771</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Here, the lambda <code class="sourceCode cpp"><span class="op">[](</span><span class="kw">auto</span> x, <span class="kw">auto</span> y<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">+</span> y; <span class="op">}</span></code>
+is
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>.
+It is invoked in multiple instantiations of <code class="sourceCode cpp">binary_vtable_impl<span class="op">&lt;...&gt;::</span>visit<span class="op">&lt;...&gt;</span></code>,
+which causes those
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+functions to escalate into
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+functions, due to <span class="citation" data-cites="P2564R3"><a href="https://wg21.link/p2564r3" role="doc-biblioref">[P2564R3]</a></span> (otherwise the invocation
+would already be ill-formed).
+<code class="sourceCode cpp">get_array<span class="op">()</span></code>
+is returning a two-dimensional array of 4 function pointers into
+different instantiations of those functions, which are all
+<code class="sourceCode cpp"><span class="kw">consteval</span></code> —
+and that array is stored as the <code class="sourceCode cpp"><span class="kw">static</span> <span class="kw">constexpr</span></code>
+data member <code class="sourceCode cpp">fptrs</code>.</p>
+<p>That is ill-formed.</p>
+<p>Initialization of a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variable (like <code class="sourceCode cpp">binary_vtable_impl<span class="op">&lt;...&gt;::</span>fptrs</code>
+in this case) must be a constant expression, which must satisfy (from <a href="https://wg21.link/expr.const">[expr.const]</a>/22, and note that
+this wording has changed a lot recently):</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">22</a></span>
+A <em>constant expression</em> is either a glvalue core constant
+expression that refers to an object or a non-immediate function, or a
+prvalue core constant expression whose value satisfies the following
+constraints:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">(22.1)</a></span>
+each constituent reference refers to an object or a non-immediate
+function,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">(22.2)</a></span>
+no constituent value of scalar type is an indeterminate value
+([basic.indet]),</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">(22.3)</a></span>
+no constituent value of pointer type is a pointer to an immediate
+function or an invalid pointer value ([basic.compound]), and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">(22.4)</a></span>
+no constituent value of pointer-to-member type designates an immediate
+function.</li>
+</ul>
+</blockquote>
+</div>
+<p>This code breaks that rule. We have pointers that point to immediate
+functions, hence we do not have a constant expression, hence we do not
+have a validly initialized
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variable.</p>
+<p>What do we do now?</p>
+<h2 data-number="4.1" id="consteval-variable-escalation"><span class="header-section-number">4.1</span> Consteval Variable Escalation<a href="#consteval-variable-escalation" class="self-link"></a></h2>
+<p>Importantly, <code class="sourceCode cpp">fptrs</code> is a <code class="sourceCode cpp"><span class="kw">static</span> <span class="kw">constexpr</span></code>
+variable that is a templated entity, and its initializer —
+<code class="sourceCode cpp">get_array<span class="op">()</span></code>
+— has consteval-only value. Today, we reject this initialization for the
+same reason that we rejected the initialization of
+<code class="sourceCode cpp">ptr</code> earlier: if that initialization
+were allowed to succeed, we have regular function pointers, and nothing
+prevents me from invoking them at runtime. Which would defeat the
+purpose of the
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier.</p>
+<p>However.</p>
+<p>What if, instead of rejecting the example, the fact that the
+initializer were a consteval-only value instead led to the escalation of
+<code class="sourceCode cpp">fptrs</code> to be
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable instead of a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+one? This follows the principle set out in <span class="citation" data-cites="P2564R3"><a href="https://wg21.link/p2564r3" role="doc-biblioref">[P2564R3]</a></span> — there, we had a
+specialization of a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+function template that would otherwise be ill-formed, so we make it
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>.</p>
+<p>We could do the same here! <code class="sourceCode cpp">fptrs</code>
+is a <code class="sourceCode cpp"><span class="kw">static</span> <span class="kw">constexpr</span></code>
+variable in a class template that is initialized to a consteval-only
+value, so let’s escalate it to be a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable instead of a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+one. If we do that, then we have to examine its usage within
+<code class="sourceCode cpp">visit</code>, copied here again for
+convenience:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> F, <span class="kw">class</span> V0, <span class="kw">class</span> V1<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> visit<span class="op">(</span>F<span class="op">&amp;&amp;</span> f, V0 <span class="kw">const</span><span class="op">&amp;</span> v0, V1 <span class="kw">const</span><span class="op">&amp;</span> v1<span class="op">)</span> <span class="op">-&gt;</span> R <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> Impl <span class="op">=</span> binary_vtable_impl<span class="op">&lt;</span>R, F, V0, V1<span class="op">&gt;</span>;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Impl<span class="op">::</span>fptrs<span class="op">[</span>v0<span class="op">.</span>index<span class="op">][</span>v1<span class="op">.</span>index<span class="op">]((</span>F<span class="op">&amp;&amp;)</span>f, v0, v1<span class="op">)</span>;</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p><code class="sourceCode cpp">fptrs</code> being a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable means that the invocation there has to be immediate-escalating.
+This causes the specialization of
+<code class="sourceCode cpp">visit</code> to become a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+function following the same rules as in <span class="citation" data-cites="P2564R3"><a href="https://wg21.link/p2564r3" role="doc-biblioref">[P2564R3]</a></span>. At which point, everything
+just works.</p>
+<p>Put differently — as a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variable, <code class="sourceCode cpp">fptrs</code> was not allowed to
+be initialized with pointers to immediate functions. But as a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable, it can be — since we escalate all invocations of those
+pointers! Everything just… works, and requires no code changes on the
+part of the library implementation.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="motivating-example-immediate-functions"><span class="header-section-number">5</span> Motivating Example: Immediate
+Functions<a href="#motivating-example-immediate-functions" class="self-link"></a></h1>
+<p>Today, we have this behavior:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> always_false<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">false</span>; <span class="op">}</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>not_fn<span class="op">(</span>always_false<span class="op">)())</span>;   <span class="co">// OK</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>not_fn<span class="op">&lt;</span>always_false<span class="op">&gt;()())</span>; <span class="co">// ill-formed</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>The first <code class="sourceCode cpp"><span class="kw">static_assert</span></code>
+itself wasn’t always valid, that was corrected by <span class="citation" data-cites="P2564R3"><a href="https://wg21.link/p2564r3" role="doc-biblioref">[P2564R3]</a></span>. But the second <code class="sourceCode cpp"><span class="kw">static_assert</span></code> is
+still invalid — perhaps surprisingly so since everything here is
+evaluated during constant evaluation too.</p>
+<p>The issue here is not that <code class="sourceCode cpp">std<span class="op">::</span>not_fn<span class="op">&lt;</span>always_false<span class="op">&gt;()()</span></code>
+evaluates to
+<code class="sourceCode cpp"><span class="kw">false</span></code> for
+some weird reason. Rather, <code class="sourceCode cpp">std<span class="op">::</span>not_fn<span class="op">&lt;</span>always_false<span class="op">&gt;()</span></code>
+itself is ill-formed. Because evaluating that expression involves
+initializing a constant template parameter with
+<code class="sourceCode cpp">alway_false</code>, and that’s currently
+disallowed due to the fact that
+<code class="sourceCode cpp">always_false</code> is an immediate
+function.</p>
+<p>This is similar to the failure mode in the <a href="#motivating-example-variant-visitation">variant example</a>, it
+just that there the
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variable was explicit (the variable
+<code class="sourceCode cpp">fptrs</code>) and here it is implicit (the
+constant template parameter of
+<code class="sourceCode cpp">std<span class="op">::</span>not_fn</code>).
+And, like the variant example, we are trying to constant-evaluate a call
+using immediate functions — but it’s rejected anyway.</p>
+<p>The solution here is similar: if we escalate the template parameter
+in <code class="sourceCode cpp">std<span class="op">::</span>not_fn<span class="op">&lt;</span>always_false<span class="op">&gt;</span></code>
+to be a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable instead of a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+one, the above code would just work. And, because we do the escalation,
+we can still catch all the misuses. For instance:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> positive<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span> <span class="cf">return</span> i <span class="op">&gt;</span> <span class="dv">0</span>; <span class="op">}</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> test<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// currently: ill-formed, proposed ok</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> f <span class="op">=</span> std<span class="op">::</span>not_fn<span class="op">&lt;</span>positive<span class="op">&gt;()</span>;</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// this would be ok: the call operator is consteval</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static_assert</span><span class="op">(</span>f<span class="op">(-</span><span class="dv">5</span><span class="op">))</span>;</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// this is, importantly, an error</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// otherwise would lead to calling positive at runtime</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> b <span class="op">=</span> f<span class="op">(</span>i<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="other-design-questions"><span class="header-section-number">6</span>
+Other Design Questions<a href="#other-design-questions" class="self-link"></a></h1>
+<p>There are a few other design questions to discuss.</p>
+<h2 data-number="6.1" id="mutability"><span class="header-section-number">6.1</span> Mutability<a href="#mutability" class="self-link"></a></h2>
+<p>One question we have to address is, given:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> v <span class="op">=</span> <span class="dv">0</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>What is <code class="sourceCode cpp"><span class="kw">decltype</span><span class="op">(</span>v<span class="op">)</span></code>?
+In Daveed’s original proposal in <span class="title"><span class="citation" data-cites="P0596R1"><a href="https://wg21.link/p0596r1" role="doc-biblioref">[P0596R1]
+(Side-effects in constant evaluation: Output and consteval
+variables)</a></span></span>, <code class="sourceCode cpp">v</code> was
+an <code class="sourceCode cpp"><span class="dt">int</span></code> that
+was actually possible to mutate during constant evaluation time. Having
+compile-time mutable variables would be quite useful to solve some
+problems, although it is not without its share of complexity
+— specifically when such mutation is allowed to happen.</p>
+<p>While I do think it would be quite valuable to have compile-time
+mutable variables, I am not pursuing those in this paper for three
+reasons:</p>
+<ol type="1">
+<li>They are complicated,</li>
+<li>I think inherently having a variable declared
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+that is mutable is just confusing from a keyword standpoint. It’s one
+thing to have
+<code class="sourceCode cpp"><span class="kw">constinit</span></code> —
+which at least is simply
+<code class="sourceCode cpp"><span class="kw">const</span></code>ant
+<code class="sourceCode cpp">init</code>ialized. But
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+seems a bit strong, and</li>
+<li>Given that
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variables can escalate to
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+ones, it is important that they don’t change types.
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code> is
+<code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span></code>,
+so <code class="sourceCode cpp"><span class="kw">consteval</span></code>
+should be too.</li>
+</ol>
+<p>We can always add consteval mutable variables in the future by
+allowing the declaration:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">mutable</span> <span class="dt">int</span> v <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>v <span class="op">==</span> <span class="dv">0</span><span class="op">)</span>; <span class="co">// ok</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">++</span>v;                 <span class="co">// ok, mutable</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>v <span class="op">==</span> <span class="dv">1</span><span class="op">)</span>; <span class="co">// ok, observed mutation</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Alternatively, because of the potential future of consteval mutable
+variables, we could enforce that variables declared
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+must also be declared
+<code class="sourceCode cpp"><span class="kw">const</span></code>. That
+restriction can be relaxed later. Note that this rule would only be for
+variables <em>declared</em>
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>,
+not those which escalate:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> a <span class="op">=</span> <span class="dv">0</span>; <span class="co">// ill-formed</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> <span class="kw">const</span> b <span class="op">=</span> <span class="dv">0</span>; <span class="co">// ok</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>That is, the two choices are:</p>
+<ol type="1">
+<li><code class="sourceCode cpp"><span class="kw">consteval</span></code>,
+like
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>,
+means implicit
+<code class="sourceCode cpp"><span class="kw">const</span></code>. <code class="sourceCode cpp"><span class="kw">consteval</span> <span class="kw">mutable</span></code>
+is currently disallowed, may eventually be allowed.</li>
+<li><code class="sourceCode cpp"><span class="kw">consteval</span></code>,
+unlike
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>,
+means
+<code class="sourceCode cpp"><span class="kw">mutable</span></code>.
+<code class="sourceCode cpp"><span class="kw">consteval</span> <span class="kw">const</span></code>
+would be mandated.</li>
+</ol>
+<p>Choosing (2) now doesn’t close the door to choosing (1) later, just
+like you can declare variables <code class="sourceCode cpp"><span class="kw">constexpr</span> <span class="kw">const</span></code>
+today, it’s just redundant. I have a slight preference for (1) and it is
+what I implemented.</p>
+<h2 data-number="6.2" id="rules-around-constexpr-variables"><span class="header-section-number">6.2</span> Rules around
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+Variables<a href="#rules-around-constexpr-variables" class="self-link"></a></h2>
+<p>Let’s quickly consider:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> add<span class="op">(</span><span class="dt">int</span> x, <span class="dt">int</span> y<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">+</span> y;</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> a <span class="op">=</span> add;</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> b <span class="op">=</span> add;</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> c <span class="op">=</span> <span class="op">^^</span><span class="dt">int</span>;</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> d <span class="op">=</span> <span class="op">^^</span><span class="dt">int</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>The status quo is that <code class="sourceCode cpp">a</code> is
+ill-formed (as already mentioned) and
+<code class="sourceCode cpp">c</code> is proposed okay.
+<code class="sourceCode cpp">b</code> and
+<code class="sourceCode cpp">d</code> are obviously okay. Is that the
+right set of rules? There are other alternatives:</p>
+<ul>
+<li><strong><code class="sourceCode cpp">c</code> is
+ill-formed</strong>. This might be a little surprising to propose, but
+it actually has merit. If you want a variable that only exists at
+compile time, declare it
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>.
+Just because we <em>can</em> come up with a set of rules that allows
+<code class="sourceCode cpp">c</code> (by way of having consteval-only
+type) but not <code class="sourceCode cpp">a</code> doesn’t mean that we
+should. Rejecting <code class="sourceCode cpp">c</code> can also provide
+a clear error message that it should be
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+instead and makes for a simpler set of rules.</li>
+<li><strong><code class="sourceCode cpp">a</code> is
+well-formed</strong>. We can achieve this by having consteval variable
+escalation apply for all variables, not just templated ones. But when we
+were discussing <span class="citation" data-cites="P2564R3"><a href="https://wg21.link/p2564r3" role="doc-biblioref">[P2564R3]</a></span>, we didn’t do escalation for
+regular functions then — if you have a function that must be
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>,
+we decided that you should explicitly mark it as such. The same
+principle should apply here — if <code class="sourceCode cpp">a</code>
+has to be
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+(and it does), then it should be explicitly labeled as such.</li>
+</ul>
+<p>We think the right answer is that only the
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+declarations above should be valid. Consider this table:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>specifier</strong>
+</div></th>
+<th style="text-align: center;"><div style="text-align:center">
+<strong>usable at run-time</strong>
+</div></th>
+<th style="text-align: center;"><div style="text-align:center">
+<strong>usable at compile-time</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>(none)</td>
+<td style="text-align: center;">🟢</td>
+<td style="text-align: center;">🔴</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="kw">constexpr</span></code></td>
+<td style="text-align: center;">🟢</td>
+<td style="text-align: center;">🟢</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="kw">consteval</span></code></td>
+<td style="text-align: center;">🔴</td>
+<td style="text-align: center;">🟢</td>
+</tr>
+</tbody>
+</table>
+<p>This is a very clear way to separate the kinds of specifiers.
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+means compile-time-only.
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+means runtime or compile-time. No specifier means runtime-only.</p>
+<p>However, that’s not the status quo. A more accurate table right now
+would look more like this:</p>
+<table>
+<thead>
+<tr class="header">
+<th><div style="text-align:center">
+<strong>specifier</strong>
+</div></th>
+<th style="text-align: center;"><div style="text-align:center">
+<strong>usable at run-time</strong>
+</div></th>
+<th style="text-align: center;"><div style="text-align:center">
+<strong>usable at compile-time</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>(none)</td>
+<td style="text-align: center;">🟢</td>
+<td style="text-align: center;">🔴</td>
+</tr>
+<tr class="even">
+<td><code class="sourceCode cpp"><span class="kw">constexpr</span></code></td>
+<td style="text-align: center;">🟡</td>
+<td style="text-align: center;">🟢</td>
+</tr>
+<tr class="odd">
+<td><code class="sourceCode cpp"><span class="kw">consteval</span></code></td>
+<td style="text-align: center;">🔴</td>
+<td style="text-align: center;">🟡</td>
+</tr>
+</tbody>
+</table>
+<p>That is:</p>
+<ul>
+<li>A
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variable is usable at run-time, except when it’s not (when it has
+consteval-only type. That is: it is a reflection).</li>
+<li>A
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+function is usable at compile-time, except when it’s not (as we’ve seen
+earlier, when the way in which it is used requires initializing a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variable).</li>
+</ul>
+<p>The second bullet could be done later, but the first bullet requires
+rejecting <code class="sourceCode cpp"><span class="kw">constexpr</span> <span class="kw">auto</span> c <span class="op">=</span> <span class="op">^^</span><span class="dt">int</span>;</code>
+in favor of requiring the user to have to write
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>.
+That would be a large (albeit very mechanical) breaking change if we did
+it later. Doing so would allow us to have the clean model in the earlier
+table:
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+means usable at runtime or compile-time and
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+means usable at compile-time only.</p>
+<p>The additional rules we can derive on top of
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables allow us to more consistently use compile-time only values at
+compile-time also.</p>
+<p>This strikes us as a very valuable place to be in that’s superior to
+the status quo, so we should definitely do it.</p>
+<h2 data-number="6.3" id="do-we-still-need-consteval-only-types"><span class="header-section-number">6.3</span> Do we still need consteval-only
+types?<a href="#do-we-still-need-consteval-only-types" class="self-link"></a></h2>
+<p><span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13" role="doc-biblioref">[P2996R13]</a></span> introduces the notion of
+consteval-only type — basically any type that has a <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+in it somewhere — to ensure that reflections exist only at compile time.
+This paper provides an alternative approach to solve the same problem:
+extend consteval-only to include values of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>.</p>
+<p>This broadly accomplishes the same thing (and would necessitate
+having <code class="sourceCode cpp">c</code> be ill-formed in the above
+example), there are a few cases where the suggested rules would differ
+though. For example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">// variant&lt;info, int&gt; is a &quot;consteval-only type&quot;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">// but v does not have &quot;consteval-only value&quot;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>variant<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info, <span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="dv">42</span>;</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> p;</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co">// C is a &quot;consteval-only type&quot;</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co">// but c does not have &quot;consteval-only value&quot;</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> C<span class="op">{.</span>p<span class="op">=</span><span class="kw">nullptr</span><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>On the whole, it’s definitely important to ensure that reflections do
+not persist to runtime and do not lead to codegen. These cases don’t
+<em>actually</em> have reflections in them though. So perhaps we don’t
+need them the concept of consteval-only type after all. The only other
+use-case we have is the libc++ sort problem, and it’s not even clear
+that detecting consteval-only types properly solves it.</p>
+<p>Basically, consteval-only types was an invention we needed in order
+to ensure that reflections don’t persist to runtime. But could
+consteval-only <em>values</em> allows us to do that even better? They do
+simplify some other edge-case wording that we have in the standard
+already. For instance, this example from <a href="https://wg21.link/expr.const">[expr.const]</a>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Base <span class="op">{</span> <span class="op">}</span>;</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Derived <span class="op">:</span> Base <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>info r; <span class="op">}</span>;</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">const</span> Base<span class="op">&amp;</span> fn<span class="op">(</span><span class="kw">const</span> Derived<span class="op">&amp;</span> derived<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> derived; <span class="op">}</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> Derived obj<span class="op">{.</span>r<span class="op">=^^::}</span>;     <span class="co">// OK</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">const</span> Derived<span class="op">&amp;</span> d <span class="op">=</span> obj;   <span class="co">// OK</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">const</span> Base<span class="op">&amp;</span> b <span class="op">=</span> fn<span class="op">(</span>obj<span class="op">)</span>;  <span class="co">// error: not a constant expression because Derived</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>                                    <span class="co">// is a consteval-only type but Base is not.</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>We need to reject <code class="sourceCode cpp">b</code>, despite
+<code class="sourceCode cpp">Base</code> not being a consteval-only
+type, and we need dedicated wording here. But with consteval variables
+and consteval-only values, rejecting this is very straightforward: <code class="sourceCode cpp">fn<span class="op">(</span>obj<span class="op">)</span></code>
+refers to a consteval variable, so <code class="sourceCode cpp">b</code>
+cannot be
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>,
+that’s it. It’s not a special case that needs dedicated handling. Which
+is quite nice!</p>
+<p>However, consteval-only values are an insufficient mechanism to
+reject all the things we need to reject. Consider this very simple piece
+of code:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* not constexpr */</span> <span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>meta<span class="op">::</span>info r;</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Nothing here is constant-evaluated, so we’re not even at the point
+where we can talk about consteval-only values. We want to reject this
+code too. Granted, this code is meaningless — at the moment you produce
+a reflection, now we have a consteval-only value, and we have a hook in
+which to enforce that this stays at compile-time. But we think for now
+we should just keep the rejection anyway.</p>
+<p>Specifically, this rule in <a href="https://wg21.link/basic.types.general">[basic.types.general]</a>/12:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">12</a></span>
+Every object of consteval-only type shall be</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(12.1)</a></span>
+the object associated with a constexpr variable or a subobject
+thereof,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(12.2)</a></span>
+a template parameter object ([temp.param]) or a subobject thereof,
+or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(12.3)</a></span>
+an object whose lifetime begins and ends during the evaluation of a core
+constant expression.</li>
+</ul>
+</blockquote>
+</div>
+<h2 data-number="6.4" id="consteval-only-allocation"><span class="header-section-number">6.4</span> Consteval-only Allocation<a href="#consteval-only-allocation" class="self-link"></a></h2>
+<p>Consider:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span><span class="op">*</span> p <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">4</span><span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>The issue we’re trying to solve with non-transient allocation (<span class="title"><span class="citation" data-cites="P1974R0"><a href="https://wg21.link/p1974r0" role="doc-biblioref">[P1974R0]
+(Non-transient constexpr allocation using propconst)</a></span></span>,
+<span class="title"><span class="citation" data-cites="P2670R1"><a href="https://wg21.link/p2670r1" role="doc-biblioref">[P2670R1]
+(Non-transient constexpr allocation)</a></span></span>, and <span class="title"><span class="citation" data-cites="P3554R0"><a href="https://wg21.link/p3554r0" role="doc-biblioref">[P3554R0]
+(Non-transient allocation with
+<code class="sourceCode cpp">std<span class="op">::</span>vector</code>
+and <code class="sourceCode cpp">std<span class="op">::</span>basic_string</code>)</a></span></span>)
+relies upon dealing with persistence. How do we persist the constant
+allocation into runtime in a way that is reliably coherent.</p>
+<p>But <span class="title"><span class="citation" data-cites="P3032R2"><a href="https://wg21.link/p3032r2" role="doc-biblioref">[P3032R2] (Less transient constexpr
+allocation)</a></span></span> already recognized that there are
+situations in which a constexpr variable will <em>not</em> persist into
+runtime, so such allocations <em>could</em> be allowed. The rule
+suggested in that paper was
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variables in immediate function contexts. But
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables allow for a much clearer, more general approach to the
+problem: an allocation in an initializer of a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable could simply leak — even <code class="sourceCode cpp">p</code>
+could be allowed. We would have to adopt the rule suggested in P3032 —
+that any mutation through the allocation after initialization is
+disallowed (which we can enforce since the variables live entirely at
+compile time).</p>
+<p>The
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier also makes clear that these variables would exist only at
+compile time, and thus there is no jarring code movement difference that
+the P3032 rule led to — where you can move a declaration from one
+context to another and that changes its validity.</p>
+<p>Note that this also would help address a usability issue with <span class="title"><span class="citation" data-cites="P1306R3"><a href="https://wg21.link/p1306r3" role="doc-biblioref">[P1306R3]
+(Expansion statements)</a></span></span>, where we could say that:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">consteval</span> info r <span class="op">:</span> members_of<span class="op">(</span>type<span class="op">))</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>desugars into declaring the underlying range
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>,
+which seems like a fairly tidy way to resolve that the allocation
+issue.</p>
+<p>Consteval-only allocation can always be adopted later, it is not
+strictly essential to this proposal, and we’re already late.</p>
+<h1 data-number="7" style="border-bottom:1px solid #cccccc" id="implementation-experience"><span class="header-section-number">7</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h1>
+<p>I implemented this proposal on top of Dan Katz’s p2996 fork of clang,
+<a href="https://github.com/brevzin/llvm-project/tree/consteval-variable-2">here</a>.
+Specifically, I implemented:</p>
+<ul>
+<li>variables can be declared
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>.
+This makes them implicitly
+<code class="sourceCode cpp"><span class="kw">const</span></code> (see
+<a href="#mutability">mutability</a>).</li>
+<li><code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables can be initialized with
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>-only
+values (like reflections and immediate functions).
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variables <em>cannot</em> (see <a href="#rules-around-constexpr-variables">rules</a>.</li>
+<li>templated
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+variables and template parameters whose initializer has consteval-only
+value become
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables.</li>
+</ul>
+<p>Both the <a href="#motivating-example-variant-visitation">variant</a>
+and <a href="#motivating-example-immediate-functions"><code class="sourceCode cpp">not_fn</code></a>
+examples compile as-is with no code changes.</p>
+<h1 data-number="8" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">8</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>This paper proposes:</p>
+<ol type="1">
+<li>introducing the notion of consteval-only value,</li>
+<li>introducing consteval variables (which are implicitly
+<code class="sourceCode cpp"><span class="kw">const</span></code>),</li>
+<li>allowing certain constexpr variables (those with consteval-only
+value) to escalate to consteval variables.</li>
+</ol>
+<p>Currently, the only kinds of consteval-only value is a pointer (or
+reference) to immediate function and consteval-only types
+(i.e. reflections). This paper directly also adds pointers and
+references to consteval variables.</p>
+<p>Note that <em>reading</em> a consteval variable isn’t necessarily
+itself consteval-only, only if the resulting value is. But taking a
+reference to a consteval variable is always consteval-only:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> zero <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">/* not constexpr */</span> <span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> i <span class="op">=</span> zero;        <span class="co">// ok</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span> r <span class="op">=</span> zero; <span class="co">// error</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h2 data-number="8.1" id="wording"><span class="header-section-number">8.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p><span class="ednote" style="color: #0000ff">[ Editor&#39;s note: We
+should endeavor to change all of our “immediate” terms to just be
+“consteval” terms. Consteval function, consteval invocation, etc. But
+for now, we’re sticking with “immediate” ]</span>.</p>
+<p>Change <a href="https://wg21.link/expr.const">[expr.const]</a></p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">6</a></span>
+A variable <code class="sourceCode cpp">v</code> is
+<em>constant-initializable</em> if</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">(6.1)</a></span>
+the full-expression of its initialization is <span class="rm" style="color: #bf0303"><del>a</del></span> <span class="addu">an
+immediate</span> constant expression when interpreted as a
+<em>constant-expression</em> <span class="addu">and is a constant
+expression if <code class="sourceCode cpp">v</code> is not an immediate
+variable</span>, <span class="note2"><span>[ <em>Note 2:</em>
+</span>Within this evaluation, <code class="sourceCode cpp">std​<span class="op">::</span>​is_constant_evaluated<span class="op">()</span></code>
+([meta.const.eval]) returns
+<code class="sourceCode cpp"><span class="kw">true</span></code>.<span>
+— <em>end note</em> ]</span></span> and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(6.2)</a></span>
+immediately after the initializing declaration of
+<code class="sourceCode cpp">v</code>, the object or reference
+<code class="sourceCode cpp">x</code> declared by
+<code class="sourceCode cpp">v</code> is constexpr-representable,
+and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(6.3)</a></span>
+if <code class="sourceCode cpp">x</code> has static or thread storage
+duration, <code class="sourceCode cpp">x</code> is
+constexpr-representable at the nearest point whose immediate scope is a
+namespace scope that follows the initializing declaration of
+<code class="sourceCode cpp">v</code>.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">7</a></span>
+A constant-initializable variable is <em>constant-initialized</em> if
+either it has an initializer or its type is const-default-constructible
+([dcl.init.general]).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">8</a></span>
+A variable is <em>potentially-constant</em> if</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(8.1)</a></span>
+it is constexpr <span class="addu">,</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(8.2)</a></span>
+<span class="addu">it is consteval,</span> or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(8.3)</a></span>
+it has reference or non-volatile const-qualified integral or enumeration
+type.</li>
+</ul>
+<p><span class="draftnote" style="color: #01796F">[ Drafting note: The
+above is now made a bulleted list, with the addition of the third
+condition. ]</span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">9</a></span>
+A constant-initialized potentially-constant variable
+<code class="sourceCode cpp"><em>V</em></code> is usable in constant
+expressions at a point <code class="sourceCode cpp"><em>P</em></code> if
+<code class="sourceCode cpp"><em>V</em></code>’s initializing
+declaration <code class="sourceCode cpp"><em>D</em></code> is reachable
+from <code class="sourceCode cpp"><em>P</em></code> and</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(9.1)</a></span>
+<code class="sourceCode cpp"><em>V</em></code> is constexpr <span class="addu">or consteval</span>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(9.2)</a></span>
+<code class="sourceCode cpp"><em>V</em></code> is not initialized to a
+TU-local value, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(9.3)</a></span>
+<code class="sourceCode cpp"><em>P</em></code> is in the same
+translation unit as <code class="sourceCode cpp"><em>D</em></code>.</li>
+</ul>
+<p>[…]</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">w</a></span>
+An <em>immediate value</em> is a value that satisfies any of the
+following:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(w.1)</a></span>
+it has consteval-only type,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(w.2)</a></span>
+it is an immediate function,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(w.3)</a></span>
+any constituent reference refers to an immediate function or an
+immediate object,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(w.4)</a></span>
+any constituent pointer points to an immediate function or an immediate
+object,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(w.5)</a></span>
+any constituent value of pointer-to-member type designates an immediate
+function.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">x</a></span>
+An <em>immediate object</em> is an object or subobject that was either
+initialized by an immediate value or declared by an immediate
+variable.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">y</a></span>
+An <em>immediate variable</em> is</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(y.1)</a></span>
+a variable declared with the
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(y.2)</a></span>
+a variable that results from the instantiation of a templated entity
+declared with the
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+specifier whose initialization is an immediate constant expression that
+is not a constant expression (see below).</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">z</a></span>
+An <em>immediate constant expression</em> is either a glvalue core
+constant expression that refers to an object or a function, or a prvalue
+core constant expression whose value satisfies the following
+constraints:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(z.1)</a></span>
+each constituent reference refers to an object or a function,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(z.2)</a></span>
+no constituent value of scalar type is an indeterminate or erroneous
+value ([basic.indet]), and</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(z.3)</a></span>
+no constituent value of pointer type has an invalid pointer value
+([basic.compound]).</li>
+</ul>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">22</a></span>
+A <em>constant expression</em> is either</p>
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(22.1)</a></span>
+a glvalue <span class="addu">immediate</span> <span class="rm" style="color: #bf0303"><del>core</del></span> constant expression
+<code class="sourceCode cpp"><em>E</em></code> <span class="rm" style="color: #bf0303"><del>for which</del></span> <span class="addu">that does not designate an immediate object or immediate
+function, or</span></p>
+<div class="rm" style="color: #bf0303">
+
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(22.1.1)</a></span>
+<code class="sourceCode default"><em>E</em></code> refers to a
+non-immediate function,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">(22.1.2)</a></span>
+<code class="sourceCode default"><em>E</em></code> designates an object
+<code class="sourceCode default"><em>o</em></code>, and if the complete
+object of <code class="sourceCode default"><em>o</em></code> is of
+consteval-only type then so is
+<code class="sourceCode default"><em>E</em></code>,</li>
+</ul>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb18"><pre class="sourceCode default cpp"><code class="sourceCode default"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>struct Base { };</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>struct Derived : Base { std::meta::info r; };</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>consteval const Base&amp; fn(const Derived&amp; derived) { return derived; }</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>constexpr Derived obj{.r=^^::}; // OK</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>constexpr const Derived&amp; d = obj; // OK</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>constexpr const Base&amp; b = fn(obj); // error: not a constant expression</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  // because Derived is a consteval-only type but Base is not.</span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
+
+</div></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">(22.2)</a></span>
+a prvalue <span class="rm" style="color: #bf0303"><del>core</del></span>
+<span class="addu">immediate</span> constant expression whose result
+value object ([basic.lval]) <span class="rm" style="color: #bf0303"><del>satisfies the following
+constraints</del></span> <span class="addu">does not have immediate
+value.</span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">(22.2.1)</a></span>
+<span class="rm" style="color: #bf0303"><del>each constituent reference
+refers to an object or a non-immediate function,</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">(22.2.2)</a></span>
+<span class="rm" style="color: #bf0303"><del>no constituent value of
+scalar type is an indeterminate or erroneous value
+([basic.indet]),</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">(22.2.3)</a></span>
+<span class="rm" style="color: #bf0303"><del>no constituent value of
+pointer type is a pointer to an immediate function or an invalid pointer
+value ([basic.compound]), and</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">(22.2.4)</a></span>
+<span class="rm" style="color: #bf0303"><del>no constituent value of
+pointer-to-member type designates an immediate
+function.</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">(22.2.5)</a></span>
+<span class="rm" style="color: #bf0303"><del>unless the value is of
+consteval-only type,</del></span>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">(22.2.5.1)</a></span>
+<span class="rm" style="color: #bf0303"><del>no constituent value of
+pointer-to-member type points to a direct member of a consteval-only
+class type</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">(22.2.5.2)</a></span>
+<span class="rm" style="color: #bf0303"><del>no constituent value of
+pointer type points to or past an object whose complete object is of
+consteval-only type, and</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">(22.2.5.3)</a></span>
+<span class="rm" style="color: #bf0303"><del>no constituent reference
+refers to an object whose complete object is of consteval-only
+type.</del></span></li>
+</ul></li>
+</ul></li>
+</ul>
+<p>[…]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">24</a></span>
+An expression or conversion is in an <em>immediate function context</em>
+if it is potentially evaluated and either:</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">(24.1)</a></span>
+its innermost enclosing non-block scope is a function parameter scope of
+an immediate function,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">(24.2)</a></span>
+it is a subexpression of a manifestly constant-evaluated expression or
+conversion, or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">(24.3)</a></span>
+its enclosing statement is enclosed ([stmt.pre]) by the
+<code class="sourceCode cpp"><em>compound-statement</em></code> of a
+consteval if statement ([stmt.if]).</li>
+</ul>
+<p>An <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">expression</span> is an <span class="rm" style="color: #bf0303"><del><em>immediate invocation</em></del></span>
+<span class="addu"><em>immediate expression</em></span> if it <span class="rm" style="color: #bf0303"><del>is a potentially-evaluated
+explicit or implicit invocation of an immediate function
+and</del></span> is not in an immediate function context <span class="addu">and either</span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">(24.4)</a></span>
+<span class="addu">it is a potentially-evaluated explicit or implicit
+invocation of an immediate function or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">(24.5)</a></span>
+<span class="addu">it is an lvalue-to-rvalue conversion applied to an
+immediate variable.</span></li>
+</ul>
+<p>An aggregate initialization is an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">expression</span> if it evaluates a default member
+initializer that has a subexpression that is an immediate-escalating
+expression.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">25</a></span>
+A potentially-evaluated expression or conversion is
+<em>immediate-escalating</em> if it is neither initially in an immediate
+function context nor a subexpression of an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">expression</span>, and</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">(25.1)</a></span>
+it is an <code class="sourceCode cpp"><em>id-expression</em></code> or
+<code class="sourceCode cpp"><em>splice-expression</em></code> that
+designates an immediate function <span class="addu">or immediate
+variable</span>,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_61" id="pnum_61">(25.2)</a></span>
+it is an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">expression</span> that is not a constant expression,
+or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_62" id="pnum_62">(25.3)</a></span>
+<span class="rm" style="color: #bf0303"><del>it is of consteval-only
+type ([basic.types.general])</del></span> <span class="addu">it has an
+immediate value</span>.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_63" id="pnum_63">26</a></span>
+An <em>immediate-escalating</em> function is […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_64" id="pnum_64">27</a></span>
+An <em>immediate function</em> is […]</p>
+</blockquote>
+</div>
+<p>Change <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a>
+to account for
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">1</a></span>
+The
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+<span class="addu">and
+<code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
+specifier<span class="addu">s</span> shall be applied only to the
+definition of a variable or variable template, a structured binding
+declaration, or the declaration of a function or function template.
+<span class="rm" style="color: #bf0303"><del>The
+<span><code class="sourceCode default">consteval</code></span> specifier
+shall be applied only to the declaration of a function or function
+template.</del></span> A function or static data member declared with
+the
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code> or
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier on its first declaration is implicitly an inline function or
+variable ([dcl.inline]). If any declaration of a function or function
+template has a
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code> or
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier, then all its declarations shall contain the same
+specifier.</p>
+<p>[…]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_66" id="pnum_66">6</a></span>
+A <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+<span class="addu">or
+<code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
+specifier used in an object declaration declares the object as
+<code class="sourceCode cpp"><span class="kw">const</span></code>. Such
+an object shall have literal type and shall be initialized. A
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+<span class="addu">or
+<code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
+variable shall be constant-initializable ([expr.const]). A
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+<span class="addu">or
+<code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
+variable that is an object, as well as any temporary to which a
+constexpr reference is bound, shall have constant destruction.</p>
+</blockquote>
+</div>
+<p>Change <a href="https://wg21.link/temp.arg.nontype">[temp.arg.nontype]</a> to
+refer back to [expr.const]:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_67" id="pnum_67">1</a></span>
+A template argument <code class="sourceCode cpp"><em>E</em></code> for a
+constant template parameter with declared type
+<code class="sourceCode cpp"><em>T</em></code> shall be such that the
+invented declaration</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>T x <span class="op">=</span> E ;</span></code></pre></div>
+<p>satisfies the semantic constraints for the definition of a constexpr
+variable with static storage duration ([dcl.constexpr]). If T contains a
+placeholder type ([dcl.spec.auto]) or a placeholder for a deduced class
+type ([dcl.type.class.deduct]), the type of the parameter is deduced
+from the above declaration. [Note 1: E is a template-argument or (for a
+default template argument) an initializer-clause. — end note] If the
+parameter type thus deduced is not permitted for a constant template
+parameter ([temp.param]), the program is ill-formed.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_68" id="pnum_68">2</a></span>
+The value of a constant template parameter P of (possibly deduced) type
+T is determined from its template argument A as follows. If T is not a
+class type and A is not a braced-init-list, A shall be a converted
+constant expression ([expr.const]) of type T; the value of P is A (as
+converted).</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_69" id="pnum_69">3</a></span>
+Otherwise, a temporary variable</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> T v <span class="op">=</span> A;</span></code></pre></div>
+<p>is introduced. The lifetime of v ends immediately after initializing
+it and any template parameter object (see below). For each such
+variable, the id-expression v is termed a candidate initializer.</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">*</a></span>
+<span class="note"><span>[ <em>Note 3:</em> </span>This temporary
+variable may be an immediate variable if the initialization is an
+immediate constant expression that is not a constant expression
+([expr.const])<span> — <em>end note</em> ]</span></span></p>
+</div>
+</blockquote>
+</div>
+<h2 data-number="8.2" id="feature-test-macro"><span class="header-section-number">8.2</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<p>Bump <code class="sourceCode cpp">__cpp_consteval</code> in <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a>:</p>
+<blockquote>
+<div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
+</div>
+</blockquote>
+<h1 data-number="9" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">9</span>
+Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
+<p>An earlier draft revision of the paper proposed something much
+narrower — simply allowing pointers to immediate functions to persist,
+if those exists as part of <code class="sourceCode cpp"><span class="kw">static</span> <span class="kw">constexpr</span></code>
+variables in immediate functions. Richard Smith suggested that we
+generalize this further. That suggestion led us to the much better
+design that this paper now proposes. Thank you, Richard.</p>
+<h1 data-number="10" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">10</span>
+References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-LWG4197" class="csl-entry" role="doc-biblioentry">
+[LWG4197] Jiang An. 2025-01-26. Complexity of
+<code class="sourceCode cpp">std<span class="op">::</span>visit</code>
+with immediate functions. <a href="https://wg21.link/lwg4197"><div class="csl-block">https://wg21.link/lwg4197</div></a>
+</div>
+<div id="ref-P0596R1" class="csl-entry" role="doc-biblioentry">
+[P0596R1] Daveed Vandevoorde. 2019-10-08. Side-effects in constant
+evaluation: Output and consteval variables. <a href="https://wg21.link/p0596r1"><div class="csl-block">https://wg21.link/p0596r1</div></a>
+</div>
+<div id="ref-P1073R3" class="csl-entry" role="doc-biblioentry">
+[P1073R3] Richard Smith, Andrew Sutton, Daveed Vandevoorde. 2018-11-06.
+Immediate functions. <a href="https://wg21.link/p1073r3"><div class="csl-block">https://wg21.link/p1073r3</div></a>
+</div>
+<div id="ref-P1306R3" class="csl-entry" role="doc-biblioentry">
+[P1306R3] Dan Katz, Andrew Sutton, Sam Goodrick, Daveed Vandevoorde.
+2024-10-14. Expansion statements. <a href="https://wg21.link/p1306r3"><div class="csl-block">https://wg21.link/p1306r3</div></a>
+</div>
+<div id="ref-P1974R0" class="csl-entry" role="doc-biblioentry">
+[P1974R0] Jeff Snyder, Louis Dionne, Daveed Vandevoorde. 2020-05-15.
+Non-transient constexpr allocation using propconst. <a href="https://wg21.link/p1974r0"><div class="csl-block">https://wg21.link/p1974r0</div></a>
+</div>
+<div id="ref-P2564R3" class="csl-entry" role="doc-biblioentry">
+[P2564R3] Barry Revzin. 2022-11-11. consteval needs to propagate up. <a href="https://wg21.link/p2564r3"><div class="csl-block">https://wg21.link/p2564r3</div></a>
+</div>
+<div id="ref-P2670R1" class="csl-entry" role="doc-biblioentry">
+[P2670R1] Barry Revzin. 2023-02-03. Non-transient constexpr allocation.
+<a href="https://wg21.link/p2670r1"><div class="csl-block">https://wg21.link/p2670r1</div></a>
+</div>
+<div id="ref-P2996R13" class="csl-entry" role="doc-biblioentry">
+[P2996R13] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2025-06-18. Reflection
+for C++26. <a href="https://wg21.link/p2996r13"><div class="csl-block">https://wg21.link/p2996r13</div></a>
+</div>
+<div id="ref-P3032R2" class="csl-entry" role="doc-biblioentry">
+[P3032R2] Barry Revzin. 2024-04-16. Less transient constexpr allocation.
+<a href="https://wg21.link/p3032r2"><div class="csl-block">https://wg21.link/p3032r2</div></a>
+</div>
+<div id="ref-P3496R0" class="csl-entry" role="doc-biblioentry">
+[P3496R0] Barry Revzin. 2025-01-06. Immediate-Escalating Expressions. <a href="https://wg21.link/p3496r0"><div class="csl-block">https://wg21.link/p3496r0</div></a>
+</div>
+<div id="ref-P3554R0" class="csl-entry" role="doc-biblioentry">
+[P3554R0] Peter Dimov and Barry Revzin. 2025-01-05. Non-transient
+allocation with
+<code class="sourceCode cpp">std<span class="op">::</span>vector</code>
+and <code class="sourceCode cpp">std<span class="op">::</span>basic_string</code>.
+<a href="https://wg21.link/p3554r0"><div class="csl-block">https://wg21.link/p3554r0</div></a>
+</div>
+<div id="ref-P3603R0" class="csl-entry" role="doc-biblioentry">
+[P3603R0] Barry Revzin. 2025-03-13. Consteval-only Values and Consteval
+Variables. <a href="https://wg21.link/p3603r0"><div class="csl-block">https://wg21.link/p3603r0</div></a>
+</div>
+<div id="ref-P3603R1" class="csl-entry" role="doc-biblioentry">
+[P3603R1] Barry Revzin, Peter Dimov. 2025-10-06. Consteval-only Values
+and Consteval Variables. <a href="https://wg21.link/p3603r1"><div class="csl-block">https://wg21.link/p3603r1</div></a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

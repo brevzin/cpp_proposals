@@ -1,6 +1,6 @@
 ---
 title: "Consteval-only Values and Consteval Variables"
-document: P3603R1
+document: P3603R2
 date: today
 audience: EWG
 author:
@@ -17,6 +17,8 @@ tag: constexpr
 This paper formalizes the concept of _consteval-only value_ and uses it to introduce consteval variables — variables that can only exist at compile time and are never code-gen. Consteval variables can then be used to solve some concrete problems we have today — like variant visitation.
 
 # Revision History
+
+Since [@P3603R1]: Keeping [consteval-only types](#do-we-still-need-consteval-only-types) around.
 
 Since [@P3603R0]: added [implementation experience](#implementation-experience) and `not_fn` example, extended prose, updated wording now that reflection has been adopted.
 
@@ -391,7 +393,7 @@ auto c = C{.p=nullptr};
 
 On the whole, it's definitely important to ensure that reflections do not persist to runtime and do not lead to codegen. These cases don't _actually_ have reflections in them though. So perhaps we don't need them the concept of consteval-only type after all. The only other use-case we have is the libc++ sort problem, and it's not even clear that detecting consteval-only types properly solves it.
 
-Basically, consteval-only types was an invention we needed in order to ensure that reflections don't persist to runtime. But consteval-only _values_ allows us to do that even better. It also simplifies some other edge-case wording that we have in the standard already. For instance, this example from [expr.const]{.sref}:
+Basically, consteval-only types was an invention we needed in order to ensure that reflections don't persist to runtime. But could consteval-only _values_ allows us to do that even better? They do simplify some other edge-case wording that we have in the standard already. For instance, this example from [expr.const]{.sref}:
 
 ::: std
 ```cpp
@@ -409,7 +411,29 @@ constexpr const Base& b = fn(obj);  // error: not a constant expression because 
 
 We need to reject `b`, despite `Base` not being a consteval-only type, and we need dedicated wording here. But with consteval variables and consteval-only values, rejecting this is very straightforward: `fn(obj)` refers to a consteval variable, so `b` cannot be `constexpr`, that's it. It's not a special case that needs dedicated handling. Which is quite nice!
 
-[@P3421R0]{.title} is another paper in this space that also seems like what it is really trying to do is come up with a way to produce consteval-only values. Perhaps a consteval destructor would be a way to signal that.
+However, consteval-only values are an insufficient mechanism to reject all the things we need to reject. Consider this very simple piece of code:
+
+::: std
+```cpp
+/* not constexpr */ auto f() -> void {
+    std::meta::info r;
+}
+```
+:::
+
+Nothing here is constant-evaluated, so we're not even at the point where we can talk about consteval-only values. We want to reject this code too. Granted, this code is meaningless — at the moment you produce a reflection, now we have a consteval-only value, and we have a hook in which to enforce that this stays at compile-time. But we think for now we should just keep the rejection anyway.
+
+Specifically, this rule in [basic.types.general]{.sref}/12:
+
+::: std
+[12]{.pnum} Every object of consteval-only type shall be
+
+* [#.#]{.pnum} the object associated with a constexpr variable or a subobject thereof,
+* [#.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
+* [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a core constant expression.
+:::
+
+
 
 ## Consteval-only Allocation
 
@@ -456,27 +480,25 @@ Both the [variant](#motivating-example-variant-visitation) and [`not_fn`](#motiv
 This paper proposes:
 
 1. introducing the notion of consteval-only value,
-2. removing the notion of consteval-only type,
-3. introducing consteval variables (which are implicitly `const`),
-4. allowing certain constexpr variables (those with consteval-only value) to escalate to consteval variables.
+2. introducing consteval variables (which are implicitly `const`),
+3. allowing certain constexpr variables (those with consteval-only value) to escalate to consteval variables.
 
-Currently, the only kinds of consteval-only value is a pointer (or reference) to immediate function and consteval-only types (i.e. reflections). This paper directly also adds consteval variables.
+Currently, the only kinds of consteval-only value is a pointer (or reference) to immediate function and consteval-only types (i.e. reflections). This paper directly also adds pointers and references to consteval variables.
+
+Note that _reading_ a consteval variable isn't necessarily itself consteval-only, only if the resulting value is. But taking a reference to a consteval variable is always consteval-only:
+
+```cpp
+consteval int zero = 0;
+
+/* not constexpr */ auto f() -> void {
+    int i = zero;        // ok
+    int const& r = zero; // error
+}
+```
 
 ## Wording
 
 [We should endeavor to change all of our "immediate" terms to just be "consteval" terms. Consteval function, consteval invocation, etc. But for now, we're sticking with "immediate"]{.ednote}.
-
-Remove consteval-only type from [basic.types.general]{.sref}/12:
-
-::: std
-::: rm
-[12]{.pnum} A type is _consteval-only_ if it is either `std::meta::info` or a type compounded from a consteval-only type ([basic.compound]). Every object of consteval-only type shall be
-
-  - [#.#]{.pnum} the object associated with a constexpr variable or a subobject thereof,
-  - [#.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
-  - [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a core constant expression.
-:::
-:::
 
 Change [expr.const]{.sref}
 
@@ -511,14 +533,13 @@ Change [expr.const]{.sref}
 ::: addu
 [w]{.pnum} An *immediate value* is a value that satisfies any of the following:
 
-* [w.1]{.pnum} it is a reflection,
+* [w.1]{.pnum} it has consteval-only type,
 * [w.#]{.pnum} it is an immediate function,
 * [w.#]{.pnum} any constituent reference refers to an immediate function or an immediate object,
 * [w.#]{.pnum} any constituent pointer points to an immediate function or an immediate object,
-* [w.#]{.pnum} any constituent value is a reflection, or
 * [w.#]{.pnum} any constituent value of pointer-to-member type designates an immediate function.
 
-[x]{.pnum} An *immediate object* is an object that was either initialized by an immediate value or declared by an immediate variable.
+[x]{.pnum} An *immediate object* is an object or subobject that was either initialized by an immediate value or declared by an immediate variable.
 
 [y]{.pnum} An *immediate variable* is
 
@@ -534,7 +555,7 @@ Change [expr.const]{.sref}
 
 [22]{.pnum} A *constant expression* is either
 
-* [22.1]{.pnum} a glvalue [immediate]{.addu} [core]{.rm} constant expression `$E$` [for which]{.rm} [that refers to a non-immediate object or non-immediate function, or]{.addu}
+* [22.1]{.pnum} a glvalue [immediate]{.addu} [core]{.rm} constant expression `$E$` [for which]{.rm} [that does not designate an immediate object or immediate function, or]{.addu}
 
   ::: rm
     * [22.1.1]{.pnum} `$E$` refers to a non-immediate function,
@@ -575,17 +596,17 @@ Change [expr.const]{.sref}
 * [#.#]{.pnum} it is a subexpression of a manifestly constant-evaluated expression or conversion, or
 * [#.#]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the `$compound-statement$` of a consteval if statement ([stmt.if]).
 
-An [invocation]{.rm} [expression]{.addu} is an [_immediate invocation_]{.rm} [_immediate evaluation_]{.addu} if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
+An [invocation]{.rm} [expression]{.addu} is an [_immediate invocation_]{.rm} [_immediate expression_]{.addu} if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
 
 * [#.#]{.pnum} [it is a potentially-evaluated explicit or implicit invocation of an immediate function or]{.addu}
 * [#.#]{.pnum} [it is an lvalue-to-rvalue conversion applied to an immediate variable.]{.addu}
 
-An aggregate initialization is an immediate [invocation]{.rm} [evaluation]{.addu} if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
+An aggregate initialization is an immediate [invocation]{.rm} [expression]{.addu} if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
 
-[25]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate [invocation]{.rm} [evaluation]{.addu}, and
+[25]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate [invocation]{.rm} [expression]{.addu}, and
 
 * [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [or immediate variable]{.addu},
-* [#.2]{.pnum} it is an immediate [invocation]{.rm} [evaluation]{.addu} that is not a constant expression, or
+* [#.2]{.pnum} it is an immediate [invocation]{.rm} [expression]{.addu} that is not a constant expression, or
 * [#.3]{.pnum} [it is of consteval-only type ([basic.types.general])]{.rm} [it has an immediate value]{.addu}.
 
 [26]{.pnum} An *immediate-escalating* function is [...]
@@ -626,6 +647,7 @@ If the parameter type thus deduced is not permitted for a constant template para
 If T is not a class type and A is not a braced-init-list, A shall be a converted constant expression ([expr.const]) of type T; the value of P is A (as converted).
 
 [3]{.pnum} Otherwise, a temporary variable
+
 ```cpp
 constexpr T v = A;
 ```
