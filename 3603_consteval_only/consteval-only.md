@@ -487,6 +487,7 @@ Currently, the only kinds of consteval-only value is a pointer (or reference) to
 
 Note that _reading_ a consteval variable isn't necessarily itself consteval-only, only if the resulting value is. But taking a reference to a consteval variable is always consteval-only:
 
+::: std
 ```cpp
 consteval int zero = 0;
 
@@ -495,6 +496,7 @@ consteval int zero = 0;
     int const& r = zero; // error
 }
 ```
+:::
 
 ## Wording
 
