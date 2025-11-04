@@ -1,6 +1,6 @@
 ---
 title: "`constexpr std::format`"
-document: P3391R1
+document: P3391R2
 date: today
 audience: LEWG
 author:
@@ -11,6 +11,8 @@ tag: constexpr
 ---
 
 # Revision History
+
+Since [@P3391R1], adding `constexpr` to the integral overloads of `std::to_string`, which I forgot about earlier.
 
 Since [@P3391R0], also noted that using the `L` locale specifier prevents constexpr formatting, and a feature-test macro.
 
@@ -126,6 +128,62 @@ Make `std::format` `constexpr`, with the understanding that we will not (yet) be
 ## Wording
 
 [I'm introducing the term "constexpr-enabled" to describe the standard library formatters that have a `constexpr` `format` function. This will include most types, but not the floating-point or chrono types mentioned earlier. As such, there are no changes to [time.format]{.sref} here. Also, most of the wording is simply adding `constexpr` to a lot of places — only the synopses are shown in the diff below.]{.draftnote}.
+
+Add `constexpr` to the integral overloads of `to_string` in [string.syn]{.sref}:
+
+::: std
+```diff
+namespace std {
+  // [string.conversions], numeric conversions
+  int stoi(const string& str, size_t* idx = nullptr, int base = 10);
+  long stol(const string& str, size_t* idx = nullptr, int base = 10);
+  unsigned long stoul(const string& str, size_t* idx = nullptr, int base = 10);
+  long long stoll(const string& str, size_t* idx = nullptr, int base = 10);
+  unsigned long long stoull(const string& str, size_t* idx = nullptr, int base = 10);
+  float stof(const string& str, size_t* idx = nullptr);
+  double stod(const string& str, size_t* idx = nullptr);
+  long double stold(const string& str, size_t* idx = nullptr);
+- string to_string(int val);
+- string to_string(unsigned val);
+- string to_string(long val);
+- string to_string(unsigned long val);
+- string to_string(long long val);
+- string to_string(unsigned long long val);
++ constexpr string to_string(int val);
++ constexpr string to_string(unsigned val);
++ constexpr string to_string(long val);
++ constexpr string to_string(unsigned long val);
++ constexpr string to_string(long long val);
++ constexpr string to_string(unsigned long long val);
+  string to_string(float val);
+  string to_string(double val);
+  string to_string(long double val);
+}
+```
+:::
+
+And the same in [string.conversions]{.sref}:
+
+::: std
+```diff
+- string to_string(int val);
+- string to_string(unsigned val);
+- string to_string(long val);
+- string to_string(unsigned long val);
+- string to_string(long long val);
+- string to_string(unsigned long long val);
++ constexpr string to_string(int val);
++ constexpr string to_string(unsigned val);
++ constexpr string to_string(long val);
++ constexpr string to_string(unsigned long val);
++ constexpr string to_string(long long val);
++ constexpr string to_string(unsigned long long val);
+string to_string(float val);
+string to_string(double val);
+string to_string(long double val);
+```
+[7]{.pnum} *Returns*: `format("{}", val)`.
+:::
 
 Add `constexpr` to a lot of places in [format.syn]{.sref}:
 
