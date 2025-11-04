@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-11-03" />
+  <meta name="dcterms.date" content="2025-11-04" />
   <title>Consteval-only Values and Consteval Variables</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ Consteval Variables</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-11-03</td>
+    <td>2025-11-04</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -914,8 +914,9 @@ data member <code class="sourceCode cpp">fptrs</code>.</p>
 <p>Initialization of a
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 variable (like <code class="sourceCode cpp">binary_vtable_impl<span class="op">&lt;...&gt;::</span>fptrs</code>
-in this case) must be a constant expression, which must satisfy (from <a href="https://wg21.link/expr.const">[expr.const]</a>/22, and note that
-this wording has changed a lot recently):</p>
+in this case) must be a constant expression, which must satisfy (from
+<span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/22, and note
+that this wording has changed a lot recently):</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">22</a></span>
@@ -1340,7 +1341,7 @@ that detecting consteval-only types properly solves it.</p>
 to ensure that reflections don’t persist to runtime. But could
 consteval-only <em>values</em> allows us to do that even better? They do
 simplify some other edge-case wording that we have in the standard
-already. For instance, this example from <a href="https://wg21.link/expr.const">[expr.const]</a>:</p>
+already. For instance, this example from <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Base <span class="op">{</span> <span class="op">}</span>;</span>
@@ -1379,7 +1380,7 @@ code too. Granted, this code is meaningless — at the moment you produce
 a reflection, now we have a consteval-only value, and we have a hook in
 which to enforce that this stays at compile-time. But we think for now
 we should just keep the rejection anyway.</p>
-<p>Specifically, this rule in <a href="https://wg21.link/basic.types.general">[basic.types.general]</a>/12:</p>
+<p>Specifically, this rule in <span>6.9.1 <a href="https://wg21.link/basic.types.general">[basic.types.general]</a></span>/12:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">12</a></span>
@@ -1507,7 +1508,7 @@ reference to a consteval variable is always consteval-only:</p>
 should endeavor to change all of our “immediate” terms to just be
 “consteval” terms. Consteval function, consteval invocation, etc. But
 for now, we’re sticking with “immediate” ]</span>.</p>
-<p>Change <a href="https://wg21.link/expr.const">[expr.const]</a></p>
+<p>Change <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span></p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">6</a></span>
@@ -1755,8 +1756,8 @@ An <em>immediate-escalating</em> function is […]</p>
 An <em>immediate function</em> is […]</p>
 </blockquote>
 </div>
-<p>Change <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a>
-to account for
+<p>Change <span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span> to
+account for
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 variables:</p>
 <div class="std">
@@ -1802,8 +1803,8 @@ variable that is an object, as well as any temporary to which a
 constexpr reference is bound, shall have constant destruction.</p>
 </blockquote>
 </div>
-<p>Change <a href="https://wg21.link/temp.arg.nontype">[temp.arg.nontype]</a> to
-refer back to [expr.const]:</p>
+<p>Change <span>13.4.3 <a href="https://wg21.link/temp.arg.nontype">[temp.arg.nontype]</a></span>
+to refer back to [expr.const]:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_67" id="pnum_67">1</a></span>
@@ -1842,7 +1843,8 @@ immediate constant expression that is not a constant expression
 </blockquote>
 </div>
 <h2 data-number="8.2" id="feature-test-macro"><span class="header-section-number">8.2</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
-<p>Bump <code class="sourceCode cpp">__cpp_consteval</code> in <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a>:</p>
+<p>Bump <code class="sourceCode cpp">__cpp_consteval</code> in
+<span>15.12 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
 <div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
