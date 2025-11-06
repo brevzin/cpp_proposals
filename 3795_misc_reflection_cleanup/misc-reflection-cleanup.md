@@ -10,6 +10,10 @@ toc: true
 tag: reflection
 ---
 
+# Revision History
+
+Since [@P3795R0], fixing missing wording in `annotations_of`.
+
 # Introduction
 
 At the Sofia meeting, [@P2996R13]{.title}, [@P3394R4]{.title}, [@P3293R3]{.title}, [@P3491R3]{.title}, [@P3096R12]{.title}, and [@P3560R2]{.title} were all adopted. Because these were all (somewhat) independent papers that were adopted at the same time, there were a few inconsistencies that were introduced. Some gaps in coverage. Some inconsistent APIs. This papers just seeks to correct a bunch of those little issues.
@@ -895,7 +899,7 @@ Change 21.4.17, [meta.reflection.annotation]:
 consteval vector<info> annotations_of(info item);
 ```
 
-[1]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `item` represents a type, type alias, variable, function, namespace, enumerator, direct base class relationship, or non-static data member.
+[1]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `item` represents a type, type alias, variable, function, [function parameter,]{.addu}, namespace, enumerator, direct base class relationship, or non-static data member.
 
 [...]
 
