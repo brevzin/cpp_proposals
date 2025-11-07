@@ -12,7 +12,7 @@ tag: constexpr
 
 # Revision History
 
-Since [@P3391R1], adding `constexpr` to the integral overloads of `std::to_string`, which I forgot about earlier.
+Since [@P3391R1], adding `constexpr` to the integral overloads of `std::to_string` and `std::to_wstring`, which I forgot about earlier. Plus some other wording improvements.
 
 Since [@P3391R0], also noted that using the `L` locale specifier prevents constexpr formatting, and a feature-test macro.
 
@@ -158,6 +158,30 @@ namespace std {
   string to_string(float val);
   string to_string(double val);
   string to_string(long double val);
+
+  int stoi(const wstring& str, size_t* idx = nullptr, int base = 10);
+  long stol(const wstring& str, size_t* idx = nullptr, int base = 10);
+  unsigned long stoul(const wstring& str, size_t* idx = nullptr, int base = 10);
+  long long stoll(const wstring& str, size_t* idx = nullptr, int base = 10);
+  unsigned long long stoull(const wstring& str, size_t* idx = nullptr, int base = 10);
+  float stof(const wstring& str, size_t* idx = nullptr);
+  double stod(const wstring& str, size_t* idx = nullptr);
+  long double stold(const wstring& str, size_t* idx = nullptr);
+- wstring to_wstring(int val);
+- wstring to_wstring(unsigned val);
+- wstring to_wstring(long val);
+- wstring to_wstring(unsigned long val);
+- wstring to_wstring(long long val);
+- wstring to_wstring(unsigned long long val);
++ constexpr wstring to_wstring(int val);
++ constexpr wstring to_wstring(unsigned val);
++ constexpr wstring to_wstring(long val);
++ constexpr wstring to_wstring(unsigned long val);
++ constexpr wstring to_wstring(long long val);
++ constexpr wstring to_wstring(unsigned long long val);
+  wstring to_wstring(float val);
+  wstring to_wstring(double val);
+  wstring to_wstring(long double val);
 }
 ```
 :::
@@ -178,11 +202,33 @@ And the same in [string.conversions]{.sref}:
 + constexpr string to_string(unsigned long val);
 + constexpr string to_string(long long val);
 + constexpr string to_string(unsigned long long val);
-string to_string(float val);
-string to_string(double val);
-string to_string(long double val);
+  string to_string(float val);
+  string to_string(double val);
+  string to_string(long double val);
 ```
 [7]{.pnum} *Returns*: `format("{}", val)`.
+
+[...]
+
+```diff
+- wstring to_wstring(int val);
+- wstring to_wstring(unsigned val);
+- wstring to_wstring(long val);
+- wstring to_wstring(unsigned long val);
+- wstring to_wstring(long long val);
+- wstring to_wstring(unsigned long long val);
++ constexpr wstring to_wstring(int val);
++ constexpr wstring to_wstring(unsigned val);
++ constexpr wstring to_wstring(long val);
++ constexpr wstring to_wstring(unsigned long val);
++ constexpr wstring to_wstring(long long val);
++ constexpr wstring to_wstring(unsigned long long val);
+  wstring to_wstring(float val);
+  wstring to_wstring(double val);
+  wstring to_wstring(long double val);
+```
+
+[14]{.pnum} *Returns*: `format(L"{}", val)`.
 :::
 
 Add `constexpr` to a lot of places in [format.syn]{.sref}:
@@ -408,6 +454,17 @@ namespace std {
   };
 }
 ```
+:::
+
+Add to [format.functions]{.sref}:
+
+::: std
+::: addu
+[0]{.pnum} A call to any of the functions defined in this subclause is a constant subexpression only if each of the used `formatter` specializations is a constexpr-enabled specialization ([format.formatter.spec]).
+:::
+
+[1]{.pnum} In the description of the functions, operator + is used for some of the iterator categories for which it does not have to be defined.
+In these cases the semantics of a + n are the same as in [algorithms.requirements].
 :::
 
 Add to [format.formatter.spec]{.sref}:
@@ -749,8 +806,6 @@ And the tuple formatter in [format.tuple]{.sref}:
   }
 ```
 :::
-
-Lastly, `format_error` for now will remain untouched — pending a combination of [@P3068R1] and [@P3295R0], since `runtime_error` will also have to be marked.
 
 Mark the `vector<bool>::reference` formatter `constexpr` in [vector.bool.fmt]{.sref}:
 
