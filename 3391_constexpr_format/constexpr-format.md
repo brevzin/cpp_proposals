@@ -2,7 +2,7 @@
 title: "`constexpr std::format`"
 document: P3391R2
 date: today
-audience: LEWG
+audience: LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -432,7 +432,7 @@ Change [format.string.std]{.sref}/17:
 
 ::: std
 [17]{.pnum} When the `L` option is used, the form used for the conversion is called the *locale-specific* form.
-The `L` option is only valid for arithmetic types, and its effect depends upon the type. [A call to `format` on a given `formatter` specialization is not a core constant expression if the locale-specific form is specified.]{.addu}
+The `L` option is only valid for arithmetic types, and its effect depends upon the type. [A call to `format` on a given `formatter` specialization is not a constant subexpression if the locale-specific form is specified.]{.addu}
 :::
 
 Mark the `$runtime-format-string$` constructor `constexpr` in [format.fmt.string]{.sref}:
@@ -491,10 +491,19 @@ Each header that declares the template `formatter` provides the following enable
   template<class traits>
     struct formatter<basic_string_view<charT, traits>, charT>;
   ```
-* [2.3]{.pnum} For each `charT`, for each cv-unqualified arithmetic type `ArithmeticT` other than `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`, a specialization [that is constexpr-enabled unless `ArithmeticT` is a floating-point type]{.addu}
-  ```cpp
-  template<> struct formatter<ArithmeticT, charT>;
+* [2.3]{.pnum} For each `charT`, for each [cv-unqualified]{.rm} [`IntegerT` that is either a signed or unsigned integer type or `bool`,]{.addu} [arithmetic type `ArithmeticT` other than `char`, `wchar_t`, `char8_t`, `char16_t`, or `char32_t`]{.rm}, a [constexpr-enabled]{.addu} specialization
+  ```diff
+  - template<> struct formatter<ArithmeticT, charT>;
+  + template<> struct formatter<IntegerT, charT>;
   ```
+
+::: addu
+* [2.x]{.pnum} For each `charT`, for each `FloatingT` that is a cv-unqualified floating point type, a specialization
+  ```cpp
+  template<> struct formatter<FloatingT, charT>;
+  ```
+:::
+
 * [2.4]{.pnum} For each `charT`, the [constexpr-enabled]{.addu} pointer type specialization[s]{.rm}
   ```cpp
   template<> struct formatter<nullptr_t, charT>;

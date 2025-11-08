@@ -585,7 +585,7 @@ background-color: #ffff00;
   <tr>
     <td style="vertical-align:top">Audience:</td>
     <td>
-      LEWG<br>
+      LWG<br>
     </td>
   </tr>
   <tr>
@@ -1118,7 +1118,7 @@ used for the conversion is called the <em>locale-specific</em> form. The
 <code class="sourceCode cpp">L</code> option is only valid for
 arithmetic types, and its effect depends upon the type. <span class="addu">A call to <code class="sourceCode cpp">format</code> on a
 given <code class="sourceCode cpp">formatter</code> specialization is
-not a core constant expression if the locale-specific form is
+not a constant subexpression if the locale-specific form is
 specified.</span></p>
 </blockquote>
 </div>
@@ -1206,26 +1206,40 @@ specializations</p>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> traits<span class="op">&gt;</span></span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">struct</span> formatter<span class="op">&lt;</span>basic_string_view<span class="op">&lt;</span>charT, traits<span class="op">&gt;</span>, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">(2.3)</a></span>
+For each <code class="sourceCode cpp">charT</code>, for each <span class="rm" style="color: #bf0303"><del>cv-unqualified</del></span> <span class="addu"><code class="sourceCode cpp">IntegerT</code> that is either
+a signed or unsigned integer type or
+<code class="sourceCode cpp"><span class="dt">bool</span></code>,</span>
+<span class="rm" style="color: #bf0303"><del>arithmetic type
+<span><code class="sourceCode default">ArithmeticT</code></span> other
+than <span><code class="sourceCode default">char</code></span>,
+<span><code class="sourceCode default">wchar_t</code></span>,
+<span><code class="sourceCode default">char8_t</code></span>,
+<span><code class="sourceCode default">char16_t</code></span>, or
+<span><code class="sourceCode default">char32_t</code></span></del></span>,
+a <span class="addu">constexpr-enabled</span> specialization</p>
+<div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;&gt; struct formatter&lt;ArithmeticT, charT&gt;;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;&gt; struct formatter&lt;IntegerT, charT&gt;;</span></span></code></pre></div>
+</div></li>
+</ul>
+<div class="addu">
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(2.x)</a></span>
 For each <code class="sourceCode cpp">charT</code>, for each
-cv-unqualified arithmetic type
-<code class="sourceCode cpp">ArithmeticT</code> other than
-<code class="sourceCode cpp"><span class="dt">char</span></code>,
-<code class="sourceCode cpp"><span class="dt">wchar_t</span></code>,
-<code class="sourceCode cpp"><span class="dt">char8_t</span></code>,
-<code class="sourceCode cpp"><span class="dt">char16_t</span></code>, or
-<code class="sourceCode cpp"><span class="dt">char32_t</span></code>, a
-specialization <span class="addu">that is constexpr-enabled unless
-<code class="sourceCode cpp">ArithmeticT</code> is a floating-point
-type</span></p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>ArithmeticT, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">(2.4)</a></span>
+<code class="sourceCode cpp">FloatingT</code> that is a cv-unqualified
+floating point type, a specialization</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>FloatingT, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
+</ul>
+</div>
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(2.4)</a></span>
 For each <code class="sourceCode cpp">charT</code>, the <span class="addu">constexpr-enabled</span> pointer type specialization<span class="rm" style="color: #bf0303"><del>s</del></span></p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>nullptr_t, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">(2.5)</a></span>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span>nullptr_t, charT<span class="op">&gt;</span>;</span></code></pre></div></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">(2.5)</a></span>
 <span class="addu">For each <code class="sourceCode cpp">charT</code>,
 the pointer type specializations</span></p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> <span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">struct</span> formatter<span class="op">&lt;</span><span class="kw">const</span> <span class="dt">void</span><span class="op">*</span>, charT<span class="op">&gt;</span>;</span></code></pre></div>
 <p>The parse member functions of these formatters interpret the format
 specification as a
 <code class="sourceCode cpp"><em>std-format-spec</em></code> as
@@ -1243,30 +1257,30 @@ and repeated in the specification of these functions):</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class Out, class charT&gt;</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    class basic_format_context {</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>      basic_format_args&lt;basic_format_context&gt; args_;      // exposition only</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>      Out out_;                                           // exposition only</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>      basic_format_context(const basic_format_context&amp;) = delete;</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>      basic_format_context&amp; operator=(const basic_format_context&amp;) = delete;</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>      using iterator = Out;</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>      using char_type = charT;</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class T&gt; using formatter_type = formatter&lt;T, charT&gt;;</span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="st">-     basic_format_arg&lt;basic_format_context&gt; arg(size_t id) const noexcept;</span></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr basic_format_arg&lt;basic_format_context&gt; arg(size_t id) const noexcept;</span></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>      std::locale locale();</span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="st">-     iterator out();</span></span>
-<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="st">-     void advance_to(iterator it);</span></span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr iterator out();</span></span>
-<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr void advance_to(iterator it);</span></span>
-<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class Out, class charT&gt;</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    class basic_format_context {</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>      basic_format_args&lt;basic_format_context&gt; args_;      // exposition only</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>      Out out_;                                           // exposition only</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>      basic_format_context(const basic_format_context&amp;) = delete;</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>      basic_format_context&amp; operator=(const basic_format_context&amp;) = delete;</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>      using iterator = Out;</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>      using char_type = charT;</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class T&gt; using formatter_type = formatter&lt;T, charT&gt;;</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="st">-     basic_format_arg&lt;basic_format_context&gt; arg(size_t id) const noexcept;</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr basic_format_arg&lt;basic_format_context&gt; arg(size_t id) const noexcept;</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>      std::locale locale();</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="st">-     iterator out();</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="st">-     void advance_to(iterator it);</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr iterator out();</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr void advance_to(iterator it);</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1277,34 +1291,34 @@ and repeated in its specification:</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class T, class charT = char&gt;</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>      requires same_as&lt;remove_cvref_t&lt;T&gt;, T&gt; &amp;&amp; formattable&lt;T, charT&gt;</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    class range_formatter {</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>      formatter&lt;T, charT&gt; <em>underlying_</em>;                                          // exposition only</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>separator_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;, &quot;);      // exposition only</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>opening-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;[&quot;); // exposition only</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>closing-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;]&quot;); // exposition only</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>      constexpr void set_separator(basic_string_view&lt;charT&gt; sep) noexcept;</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>      constexpr void set_brackets(basic_string_view&lt;charT&gt; opening,</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>                                  basic_string_view&lt;charT&gt; closing) noexcept;</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>      constexpr formatter&lt;T, charT&gt;&amp; underlying() noexcept { return underlying_; }</span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>      constexpr const formatter&lt;T, charT&gt;&amp; underlying() const noexcept { return underlying_; }</span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>      template&lt;ranges::input_range R, class FormatContext&gt;</span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>          requires formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt; &amp;&amp;</span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>                   same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>          format(R&amp;&amp; r, FormatContext&amp; ctx) const;</span>
-<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class T, class charT = char&gt;</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>      requires same_as&lt;remove_cvref_t&lt;T&gt;, T&gt; &amp;&amp; formattable&lt;T, charT&gt;</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    class range_formatter {</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>      formatter&lt;T, charT&gt; <em>underlying_</em>;                                          // exposition only</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>separator_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;, &quot;);      // exposition only</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>opening-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;[&quot;); // exposition only</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>closing-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;]&quot;); // exposition only</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>      constexpr void set_separator(basic_string_view&lt;charT&gt; sep) noexcept;</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>      constexpr void set_brackets(basic_string_view&lt;charT&gt; opening,</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>                                  basic_string_view&lt;charT&gt; closing) noexcept;</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>      constexpr formatter&lt;T, charT&gt;&amp; underlying() noexcept { return underlying_; }</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>      constexpr const formatter&lt;T, charT&gt;&amp; underlying() const noexcept { return underlying_; }</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>      template&lt;ranges::input_range R, class FormatContext&gt;</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>          requires formattable&lt;ranges::range_reference_t&lt;R&gt;, charT&gt; &amp;&amp;</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>                   same_as&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;R&gt;&gt;, T&gt;</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>          format(R&amp;&amp; r, FormatContext&amp; ctx) const;</span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1314,29 +1328,29 @@ and repeated in its specification:</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    template&lt;ranges::input_range R, class charT&gt;</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    struct <em>range-default-formatter</em>&lt;range_format::sequence, R, charT&gt; {    // exposition only</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-r</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                    // exposition only</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>      range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-r</em>&gt;&gt;,</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>                      charT&gt; <em>underlying_</em>;                                 // exposition only</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>      constexpr void set_separator(basic_string_view&lt;charT&gt; sep) noexcept;</span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>      constexpr void set_brackets(basic_string_view&lt;charT&gt; opening,</span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>                                  basic_string_view&lt;charT&gt; closing) noexcept;</span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
-<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
-<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
-<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
-<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
-<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>          format(<em>maybe-const-r</em>&amp; elems, FormatContext&amp; ctx) const;</span>
-<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    template&lt;ranges::input_range R, class charT&gt;</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    struct <em>range-default-formatter</em>&lt;range_format::sequence, R, charT&gt; {    // exposition only</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-r</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                    // exposition only</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>      range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-r</em>&gt;&gt;,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>                      charT&gt; <em>underlying_</em>;                                 // exposition only</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>      constexpr void set_separator(basic_string_view&lt;charT&gt; sep) noexcept;</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>      constexpr void set_brackets(basic_string_view&lt;charT&gt; opening,</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>                                  basic_string_view&lt;charT&gt; closing) noexcept;</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>          format(<em>maybe-const-r</em>&amp; elems, FormatContext&amp; ctx) const;</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1346,28 +1360,28 @@ maps in <span>28.5.7.4 <a href="https://wg21.link/format.range.fmtmap">[format.r
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    template&lt;ranges::input_range R, class charT&gt;</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    struct <em>range-default-formatter</em>&lt;range_format::map, R, charT&gt; {</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-map</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                  // exposition only</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>      using <em>element-type</em> =                                                // exposition only</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-map</em>&gt;&gt;;</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>      range_formatter&lt;<em>element-type</em>, charT&gt; <em>underlying_</em>;                   // exposition only</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>      constexpr range-default-formatter();</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>          format(<em>maybe-const-map</em>&amp; r, FormatContext&amp; ctx) const;</span>
-<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    template&lt;ranges::input_range R, class charT&gt;</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    struct <em>range-default-formatter</em>&lt;range_format::map, R, charT&gt; {</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-map</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                  // exposition only</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>      using <em>element-type</em> =                                                // exposition only</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>        remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-map</em>&gt;&gt;;</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>      range_formatter&lt;<em>element-type</em>, charT&gt; <em>underlying_</em>;                   // exposition only</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>      constexpr range-default-formatter();</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>          format(<em>maybe-const-map</em>&amp; r, FormatContext&amp; ctx) const;</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1377,27 +1391,27 @@ sets in <span>28.5.7.5 <a href="https://wg21.link/format.range.fmtset">[format.r
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    template&lt;ranges::input_range R, class charT&gt;</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    struct <em>range-default-formatter</em>&lt;range_format::set, R, charT&gt; {</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-set</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                  // exposition only</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>      range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-set</em>&gt;&gt;,</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>                      charT&gt; <em>underlying_</em>;                                 // exposition only</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>      constexpr <em>range-default-formatter</em>();</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
-<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
-<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
-<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>          format(<em>maybe-const-set</em>&amp; r, FormatContext&amp; ctx) const;</span>
-<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    template&lt;ranges::input_range R, class charT&gt;</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    struct <em>range-default-formatter</em>&lt;range_format::set, R, charT&gt; {</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-set</em> = <em>fmt-maybe-const</em>&lt;R, charT&gt;;                  // exposition only</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>      range_formatter&lt;remove_cvref_t&lt;ranges::range_reference_t&lt;<em>maybe-const-set</em>&gt;&gt;,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>                      charT&gt; <em>underlying_</em>;                                 // exposition only</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>      constexpr <em>range-default-formatter</em>();</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>          format(<em>maybe-const-set</em>&amp; r, FormatContext&amp; ctx) const;</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1407,24 +1421,24 @@ strings in <span>28.5.7.6 <a href="https://wg21.link/format.range.fmtstr">[forma
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    template&lt;range_format K, ranges::input_range R, class charT&gt;</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>      requires (K == range_format::string || K == range_format::debug_string)</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    struct <em>range-default-formatter</em>&lt;K, R, charT&gt; {</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    private:</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>      formatter&lt;basic_string&lt;charT&gt;, charT&gt; <em>underlying_</em>;                  // exposition only</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
-<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>          format(see below&amp; str, FormatContext&amp; ctx) const;</span>
-<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    template&lt;range_format K, ranges::input_range R, class charT&gt;</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>      requires (K == range_format::string || K == range_format::debug_string)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    struct <em>range-default-formatter</em>&lt;K, R, charT&gt; {</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    private:</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>      formatter&lt;basic_string&lt;charT&gt;, charT&gt; <em>underlying_</em>;                  // exposition only</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>          format(see below&amp; str, FormatContext&amp; ctx) const;</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1435,39 +1449,39 @@ too, in <span>28.5.8.1 <a href="https://wg21.link/format.arg">[format.arg]</a></
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb21"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class Context&gt;</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    class basic_format_arg {</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>      class handle;</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    private:</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>      using char_type = typename Context::char_type;                              // exposition only</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>      variant&lt;monostate, bool, char_type,</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>              int, unsigned int, long long int, unsigned long long int,</span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>              float, double, long double,</span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>              const char_type*, basic_string_view&lt;char_type&gt;,</span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>              const void*, handle&gt; value;                                         // exposition only</span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="st">-     template&lt;class T&gt; explicit basic_format_arg(T&amp; v) noexcept;                 // exposition only</span></span>
-<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a><span class="va">+     template&lt;class T&gt; constexpr explicit basic_format_arg(T&amp; v) noexcept;       // exposition only</span></span>
-<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a><span class="st">-     basic_format_arg() noexcept;</span></span>
-<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr basic_format_arg() noexcept;</span></span>
-<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a><span class="st">-     explicit operator bool() const noexcept;</span></span>
-<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr explicit operator bool() const noexcept;</span></span>
-<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>      template&lt;class Visitor&gt;</span>
-<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a><span class="st">-       decltype(auto) visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
-<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr decltype(auto) visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
-<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>      template&lt;class R, class Visitor&gt;</span>
-<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a><span class="st">-       R visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
-<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr R visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
-<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class Context&gt;</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    class basic_format_arg {</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>      class handle;</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    private:</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>      using char_type = typename Context::char_type;                              // exposition only</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>      variant&lt;monostate, bool, char_type,</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>              int, unsigned int, long long int, unsigned long long int,</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>              float, double, long double,</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>              const char_type*, basic_string_view&lt;char_type&gt;,</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>              const void*, handle&gt; value;                                         // exposition only</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a><span class="st">-     template&lt;class T&gt; explicit basic_format_arg(T&amp; v) noexcept;                 // exposition only</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="va">+     template&lt;class T&gt; constexpr explicit basic_format_arg(T&amp; v) noexcept;       // exposition only</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="st">-     basic_format_arg() noexcept;</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr basic_format_arg() noexcept;</span></span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a><span class="st">-     explicit operator bool() const noexcept;</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr explicit operator bool() const noexcept;</span></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>      template&lt;class Visitor&gt;</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a><span class="st">-       decltype(auto) visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr decltype(auto) visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>      template&lt;class R, class Visitor&gt;</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a><span class="st">-       R visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr R visit(this basic_format_arg arg, Visitor&amp;&amp; vis);</span></span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1475,23 +1489,23 @@ too, in <span>28.5.8.1 <a href="https://wg21.link/format.arg">[format.arg]</a></
 <span>28.5.8.1 <a href="https://wg21.link/format.arg">[format.arg]</a></span>/10:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">10</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">10</a></span>
 The class handle allows formatting an object of a user-defined type.</p>
 <div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class Context&gt;</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    class basic_format_arg&lt;Context&gt;::handle {</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>      const void* ptr_;                                           // exposition only</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>      void (*format_)(basic_format_parse_context&lt;char_type&gt;&amp;,</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>                      Context&amp;, const void*);                     // exposition only</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="st">-     template&lt;class T&gt; explicit handle(T&amp; val) noexcept;         // exposition only</span></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="va">+     template&lt;class T&gt; constexpr explicit handle(T&amp; val) noexcept; // exposition only</span></span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>      friend class basic_format_arg&lt;Context&gt;;                     // exposition only</span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="st">-     void format(basic_format_parse_context&lt;char_type&gt;&amp;, Context&amp; ctx) const;</span></span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr void format(basic_format_parse_context&lt;char_type&gt;&amp;, Context&amp; ctx) const;</span></span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class Context&gt;</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    class basic_format_arg&lt;Context&gt;::handle {</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>      const void* ptr_;                                           // exposition only</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>      void (*format_)(basic_format_parse_context&lt;char_type&gt;&amp;,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>                      Context&amp;, const void*);                     // exposition only</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="st">-     template&lt;class T&gt; explicit handle(T&amp; val) noexcept;         // exposition only</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="va">+     template&lt;class T&gt; constexpr explicit handle(T&amp; val) noexcept; // exposition only</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>      friend class basic_format_arg&lt;Context&gt;;                     // exposition only</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="st">-     void format(basic_format_parse_context&lt;char_type&gt;&amp;, Context&amp; ctx) const;</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr void format(basic_format_parse_context&lt;char_type&gt;&amp;, Context&amp; ctx) const;</span></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1500,24 +1514,24 @@ The class handle allows formatting an object of a user-defined type.</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb23"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class Context&gt;</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    class basic_format_args {</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>      size_t size_;                               // exposition only</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>      const basic_format_arg&lt;Context&gt;* data_;     // exposition only</span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>      template&lt;class... Args&gt;</span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="st">-       basic_format_args(const <em>format-arg-store</em>&lt;Context, Args...&gt;&amp; store) noexcept;</span></span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr basic_format_args(const <em>format-arg-store</em>&lt;Context, Args...&gt;&amp; store) noexcept;</span></span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="st">-     basic_format_arg&lt;Context&gt; get(size_t i) const noexcept;</span></span>
-<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr basic_format_arg&lt;Context&gt; get(size_t i) const noexcept;</span></span>
-<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    template&lt;class Context, class... Args&gt;</span>
-<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>      basic_format_args(<em>format-arg-store</em>&lt;Context, Args...&gt;) -&gt; basic_format_args&lt;Context&gt;;</span>
-<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class Context&gt;</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    class basic_format_args {</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>      size_t size_;                               // exposition only</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>      const basic_format_arg&lt;Context&gt;* data_;     // exposition only</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>      template&lt;class... Args&gt;</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="st">-       basic_format_args(const <em>format-arg-store</em>&lt;Context, Args...&gt;&amp; store) noexcept;</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr basic_format_args(const <em>format-arg-store</em>&lt;Context, Args...&gt;&amp; store) noexcept;</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="st">-     basic_format_arg&lt;Context&gt; get(size_t i) const noexcept;</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr basic_format_arg&lt;Context&gt; get(size_t i) const noexcept;</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    template&lt;class Context, class... Args&gt;</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>      basic_format_args(<em>format-arg-store</em>&lt;Context, Args...&gt;) -&gt; basic_format_args&lt;Context&gt;;</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1525,34 +1539,34 @@ The class handle allows formatting an object of a user-defined type.</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class charT, formattable&lt;charT&gt;... Ts&gt;</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    struct formatter&lt;<em>pair-or-tuple</em>&lt;Ts...&gt;, charT&gt; {</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>      tuple&lt;formatter&lt;remove_cvref_t&lt;Ts&gt;, charT&gt;...&gt; <em>underlying_</em>;               // exposition only</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>separator_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;, &quot;);      // exposition only</span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>opening-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;(&quot;); // exposition only</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>closing-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;)&quot;); // exposition only</span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>      constexpr void set_separator(basic_string_view&lt;charT&gt; sep) noexcept;</span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>      constexpr void set_brackets(basic_string_view&lt;charT&gt; opening,</span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>                                  basic_string_view&lt;charT&gt; closing) noexcept;</span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
-<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>          format(see below&amp; elems, FormatContext&amp; ctx) const;</span>
-<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>    template&lt;class... Ts&gt;</span>
-<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>      inline constexpr bool enable_nonlocking_formatter_optimization&lt;<em>pair-or-tuple</em>&lt;Ts...&gt;&gt; =</span>
-<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>        (enable_nonlocking_formatter_optimization&lt;Ts&gt; &amp;&amp; ...);</span>
-<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class charT, formattable&lt;charT&gt;... Ts&gt;</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    struct formatter&lt;<em>pair-or-tuple</em>&lt;Ts...&gt;, charT&gt; {</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>      tuple&lt;formatter&lt;remove_cvref_t&lt;Ts&gt;, charT&gt;...&gt; <em>underlying_</em>;               // exposition only</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>separator_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;, &quot;);      // exposition only</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>opening-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;(&quot;); // exposition only</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>      basic_string_view&lt;charT&gt; <em>closing-bracket_</em> = <em>STATICALLY-WIDEN</em>&lt;charT&gt;(&quot;)&quot;); // exposition only</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>      constexpr void set_separator(basic_string_view&lt;charT&gt; sep) noexcept;</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>      constexpr void set_brackets(basic_string_view&lt;charT&gt; opening,</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>                                  basic_string_view&lt;charT&gt; closing) noexcept;</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>          format(see below&amp; elems, FormatContext&amp; ctx) const;</span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>    template&lt;class... Ts&gt;</span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>      inline constexpr bool enable_nonlocking_formatter_optimization&lt;<em>pair-or-tuple</em>&lt;Ts...&gt;&gt; =</span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>        (enable_nonlocking_formatter_optimization&lt;Ts&gt; &amp;&amp; ...);</span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1563,31 +1577,31 @@ formatter
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb25"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class T, class charT&gt;</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>      requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    struct formatter&lt;T, charT&gt; {</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    private:</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>      formatter&lt;bool, charT&gt; <em>underlying_</em>;       // exposition only</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>          format(const T&amp; ref, FormatContext&amp; ctx) const;</span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class T, class charT&gt;</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>      requires <em>is-vector-bool-reference</em>&lt;T&gt;</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    struct formatter&lt;T, charT&gt; {</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    private:</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>      formatter&lt;bool, charT&gt; <em>underlying_</em>;       // exposition only</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>          format(const T&amp; ref, FormatContext&amp; ctx) const;</span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
 <p>And the container adaptors in <span>23.6.13 <a href="https://wg21.link/container.adaptors.format">[container.adaptors.format]</a></span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">1</a></span>
 For each of <code class="sourceCode cpp">queue</code>,
 <code class="sourceCode cpp">priority_queue</code>, and
 <code class="sourceCode cpp">stack</code>, the library provides the
@@ -1596,28 +1610,28 @@ following <span class="addu">constexpr-enabled</span>
 <code class="sourceCode cpp"><em>adaptor-type</em></code> is the name of
 the template:</p>
 <div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class charT, class T, formattable&lt;charT&gt; Container, class... U&gt;</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    struct formatter&lt;<em>adaptor-type</em>&lt;T, Container, U...&gt;, charT&gt; {</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-container</em> =                                             // exposition only</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>        <em>fmt-maybe-const</em>&lt;Container, charT&gt;;</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-adaptor</em> =                                               // exposition only</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>        <em>maybe-const</em>&lt;is_const_v&lt;<em>maybe-const-container</em>&gt;,                          // see [ranges.syn]</span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>                    <em>adaptor-type</em>&lt;T, Container, U...&gt;&gt;;</span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>      formatter&lt;ranges::ref_view&lt;<em>maybe-const-container</em>&gt;, charT&gt; <em>underlying_</em>;    // exposition only</span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>    public:</span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
-<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
-<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
-<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>          format(maybe-const-adaptor&amp; r, FormatContext&amp; ctx) const;</span>
-<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>    };</span>
-<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>  namespace std {</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    template&lt;class charT, class T, formattable&lt;charT&gt; Container, class... U&gt;</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    struct formatter&lt;<em>adaptor-type</em>&lt;T, Container, U...&gt;, charT&gt; {</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    private:</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-container</em> =                                             // exposition only</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>        <em>fmt-maybe-const</em>&lt;Container, charT&gt;;</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>      using <em>maybe-const-adaptor</em> =                                               // exposition only</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>        <em>maybe-const</em>&lt;is_const_v&lt;<em>maybe-const-container</em>&gt;,                          // see [ranges.syn]</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>                    <em>adaptor-type</em>&lt;T, Container, U...&gt;&gt;;</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>      formatter&lt;ranges::ref_view&lt;<em>maybe-const-container</em>&gt;, charT&gt; <em>underlying_</em>;    // exposition only</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>    public:</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>      template&lt;class ParseContext&gt;</span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>        constexpr typename ParseContext::iterator</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>          parse(ParseContext&amp; ctx);</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>      template&lt;class FormatContext&gt;</span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a><span class="st">-       typename FormatContext::iterator</span></span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a><span class="va">+       constexpr typename FormatContext::iterator</span></span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>          format(maybe-const-adaptor&amp; r, FormatContext&amp; ctx) const;</span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1628,7 +1642,7 @@ the template:</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define __cpp_lib_constexpr_format </span><span class="dv">2025</span><span class="er">XXL</span><span class="pp"> </span><span class="co">// also in &lt;format&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define __cpp_lib_constexpr_format </span><span class="dv">2025</span><span class="er">XXL</span><span class="pp"> </span><span class="co">// also in &lt;format&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
