@@ -1,7 +1,7 @@
 ---
 title: "Adjustments to Union Lifetime Rules"
-document: P3726R0
-date: 2025-06-03
+document: P3726R1
+date: today
 audience: CWG
 author:
     - name: Barry Revzin
@@ -11,6 +11,16 @@ author:
 toc: true
 tag: constexpr
 ---
+
+# Revision History
+
+[@P3726R0] proposed several things:
+
+1. Reverting the P3074 rule implicitly starting lifetime of the first alternative in a union
+2. Having placement-new on an aggregate element implicitly start the lifetime of the aggregate
+3. extending the constituent value rule to allow array elements of a union that are not within their lifetime.
+
+Following [Core review in Kona](https://wiki.edg.com/bin/view/Wg21kona2025/CoreWorkingGroup#P3726), this revision keeps (1), changes (2) to instead use the solution proposed in [@P3074R0]{.title}, and while Core wanted to significantly extend the rule in (3), we choose to keep it as-is and instead extend our reasoning for this being the correct rule.
 
 # Introduction
 
@@ -101,7 +111,11 @@ A "normal" implementation would have `union { int storage[4]; }`, of which the f
 
 We're hoping to fix both of those issues in this paper, with two fairly independent fixes.
 
-# Proposal 1: Fixing When Implicit Lifetime Starts
+# Proposal
+
+This proposal comes in two parts.
+
+## Fixing When Implicit Lifetime Starts
 
 [@P3074R7] added this wording to [class.default.ctor]{.sref}:
 
@@ -111,7 +125,14 @@ We're hoping to fix both of those issues in this paper, with two fairly independ
 
 That wording needs to be reverted. The default constructor will no longer start lifetimes implicitly.
 
-Instead, we allow placement new on an aggregate element to start the lifetime of the aggregate. That is, given the above implementation:
+The previous version of this paper [@P3726R0] proposed allowing placement new on an aggregate element to start the lifetime of the aggregate. It turns out that the wording to allow this was wholly incomplete, as it didn't account for:
+
+* casts to `void*`
+* calls to `std::addressof`
+
+As a production implementation wouldn't write `new (&storage[n]) T`, it'd write `::new ((void*)std::addressof(storage[n]) T`. Having to pattern match on syntax makes this wording approach increasingly complicated, if not outright weird given the call to a standard library function in there. It also makes for a confusing design since you would get into situations where `::new (E) T;` is valid but `auto ptr = E; ::new (ptr) T;` is not.
+
+Instead, we go back to what [@P3074R0]{.title} proposed: a dedicated standard library function start the lifetime of an implicit-lifetime time. That is, our `FixedVector` implementation would look like this:
 
 ::: std
 ```cpp
@@ -120,144 +141,27 @@ struct FixedVector {
     union { T storage[N]; };
     size_t size = 0;
 
-    constexpr FixedVector() = default;
-
-    constexpr ~FixedVector() {
-        std::destroy(storage, storage + size);
+    constexpr FixedVector() {
+        // explicitly starts the lifetime of the T[N]
+        // does not invoke any constructors
+        // no array element starts its lifetime yet
+        // this becomes the active member of the union
+        std::start_lifetime(storage);
     }
 
     constexpr auto push_back(T const& v) -> void {
+        // Now, this is always okay because storage is within its lifetime
         ::new (storage + size) T(v);
         ++size;
     }
 };
-
-constexpr auto silly_test() -> size_t {
-    FixedVector<std::string, 3> v;
-    v.push_back("some sufficiently longer string");
-    return v.size;
-}
-
-static_assert(silly_test() == 1);
 ```
 :::
 
-This will work for the following reason:
-
-|[@P3074R7]|This Paper
-|-|-|
-|Default constructor starts lifetime of array (but not any elements)|Default constructor does not start any lifetime|
-|The array is already within lifetime and is the active member|The act of placement-new onto the array starts the lifetime of the array and makes it the active member|
-|Placement new is well-defined|Placement new is well-defined|
-
-We get to a well-defined state through a different route, but we still get to a well-defined state with reasonable code. Importantly, we don't change the behavior of existing code (as in Richard's example) since no lifetimes are implicitly created, and here we're allowing a placement new that is invalid today to instead also start lifetimes.
-
-## Template-Argument-Equivalence
-
-One of the consequences of the above proposal is what happens when we compare objects that should be equivalent but got there with different paths:
-
-::: std
-```cpp
-// see next section for making this work, but assume it does for now
-constexpr auto v1 = FixedVector<int, 4>();
-
-constexpr auto v2 = []{
-  auto v = FixedVector<int, 4>();
-  v.push_back(1);
-  v.pop_back();
-  return v;
-}();
-```
-:::
-
-I didn't show `pop_back()` in the above implementation, but let's say it just does  `storage[--size].~T()`. What can we say about `v1` and `v2`? Well, they're both empty vectors, so they compare equal. However, they're in different states:
-
-* `v1`'s anonymous union has no active member, because we never started any lifetimes.
-* `v2`'s anonymous union does have an active member `storage`, with no elements within lifetime.
-
-Those wouldn't compare template-argument-equivalent, so `X<v1>` and `X<v2>` would be different types (for suitable template `X`). This isn't a very serious concern right now, since `FixedVector` isn't a structural type and that will remain true in C++26. But nevertheless, there is an easy way to ensure equivalence: by adding a new member to the union:
-
-::: std
-```cpp
-template <typename T, size_t N>
-struct FixedVector {
-    struct Empty { };
-    union {
-      Empty empty = {};
-      T storage[N];
-    };
-    size_t size = 0;
-
-    constexpr FixedVector() = default;
-
-    constexpr ~FixedVector() {
-        std::destroy(storage, storage + size);
-    }
-
-    constexpr auto push_back(T const& v) -> void {
-        ::new (storage + size) T(v);
-        ++size;
-    }
-
-    constexpr auto pop_back() -> void {
-        storage[--size].~T();
-        if (size == 0) {
-            empty = Empty();
-        }
-    }
-};
-```
-:::
-
-Now, `v1` and `v2` are in the same state: the active member of the union is `empty`.
-
-## Wording
-
-Revert the change in [class.default.ctor]/4:
-
-::: std
-[4]{.pnum} [If a default constructor of a union-like class `X` is trivial, then for each union `U` that is either `X` or an anonymous union member of `X`, if the first variant member, if any, of `U` has implicit-lifetime type ([basic.types.general]), the default constructor of `X` begins the lifetime of that member if it is not the active member of its union. [It is already the active member if `U` was value-initialized.]{.note}]{.rm} [An]{.addu} [Otherwise, an]{.rm} implicitly-defined ([dcl.fct.def.default]) default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no ctor-initializer ([class.base.init]) and an empty compound-statement.
-
-:::
-
-Change [class.union.general]{.sref}/5:
-
-::: std
-[5]{.pnum} When [either]{.addu}
-
-* [5.a]{.pnum} the left operand of an assignment operator involves a member access expression ([expr.ref]) that nominates a union member [or]{.addu}
-* [5.b]{.pnum} [the placement argument to a `$new-expression$` ([expr.new]) that is a non-allocating form ([new.delete.placement]) involves such a member access expression,]{.addu}
-
-it may begin the lifetime of that union member, as described below.
-
-For an expression `E`, define the set `$S$(E)` of subexpressions of `E` as follows:
-
-* [5.1]{.pnum} If `E` is of the form `A.B`, `$S$(E)` contains the elements of `$S$(A)`, and also contains `A.B` if `B` names a union member of a non-class, non-array type, or of a class type with a trivial default constructor that is not deleted, or an array of such types.
-* [5.2]{.pnum} If `E` is of the form `A[B]` and is interpreted as a built-in array subscripting operator, `$S$(E)` is `$S$(A)` if `A` is of array type, `$S$(B)` if `B` is of array type, and empty otherwise.
-* [5.3]{.pnum} Otherwise, `$S$(E)` is empty.
-
-In an assignment expression of the form `E1 = E2` that uses either the built-in assignment operator ([expr.assign]) or a trivial assignment operator ([class.copy.assign]), for each element `X` of `$S$(E1)` and each anonymous union member `X` ([class.union.anon]) that is a member of a union and has such an element as an immediate subobject (recursively), if modification of `X` would have undefined behavior under [basic.life], an object of the type of `X` is implicitly created in the nominated storage; no initialization is performed and the beginning of its lifetime is sequenced after the value computation of the left and right operands and before the assignment.
-
-::: addu
-For an expression `E`, define the set `$P$(E)` of subexpressions of `E` as follows:
-
-* [5.4]{.pnum} If `E` is of the form `&A[B]`, `E` is interpreted as a built-in address operator, and `A[B]` is interpreted as a built-in array subscripting operator, then `$P$(E)` is `A` if `A` is of array type, `B` if `B` is of array type, and empty otherwise.
-* [5.#]{.pnum} If `E` has pointer type and is either
-    * [5.#.#]{.pnum} of the form `A + B` and is interpreted as a built-in addition operator or
-    * [5.#.#]{.pnum} of the form `A - B` and is interpreted as a built-in subtraction operator,
-
-    then `$P$(E)` is `A` if `A` is of array type, `B` if `B` is of array type, and the union of `$P$(A)` and `$P$(B)` otherwise.
-* [5.#]{.pnum} Otherwise, `$P$(E)` is empty.
-
-In a `$new-expression$` with a `$new-placement$` of the form `(E)` that uses a non-allocating form ([new.delete.placement]), for each element `X` of `$P$(E)` that names a union member and each anonymous union member `X` that is a member of a union and has such an element as an immediate subobject (recursively), if `X` is not within its lifetime, the lifetime of an object of the type of `X` is started in the nominated storage; no subobjects are created and the beginning of its lifetime is sequenced immediately before the value computation of `E`.
-:::
-
-[This ends the lifetime of the previously-active member of the union, if any ([basic.life]).]{.note}
-
-:::
+Note that the previous revision of this paper had to consider the problem of template-argument equivalences because a default-constructed `FixedVector` would not yet have started `storage`'s lifetime, so two empty vectors could be in different states. But that is no longer an issue here since `storage`'s lifetime is always started on construction. This makes it so that all empty `FixedVector`s are equivalent: they both have an in-lifetime `storage` member with 0 active elements.
 
 
-# Proposal 2: Fixing Which Values are Constituent Values
+## Fixing Which Values are Constituent Values
 
 The current rule for constituent values is, from [expr.const]{.sref}/2:
 
@@ -286,7 +190,56 @@ return new (ptr) T[n]{short};
 
 I don't think we strictly need to solve that problem right now, but at least we can put in the groundwork for supporting it in the future.
 
-Until then, we're proposing something like this change to [expr.const]{.sref}:
+Until then, we're specifically proposing to the extend the constituent values rule, which currently reads like this:
+
+::: std
+[2]{.pnum} The *constituent values* of an object `$o$` are
+
+* [2.1]{.pnum} if `$o$` has scalar type, the value of `$o$`;
+* [2.2]{.pnum} otherwise, the constituent values of any direct subobjects of `$o$` other than inactive union members.
+:::
+
+To instead read more like this:
+
+::: std
+[2]{.pnum}
+The *constituent references* of an object `$o$` are
+
+* [2.3]{.pnum} any direct members of `$o$` that have reference type, and
+* [2.4]{.pnum} the constituent references of any direct subobjects of `$o$` other than inactive union  [members]{.rm} [subobjects (see below)]{.addu}.
+
+::: addu
+An *inactive union subobject* is either:
+
+* [2.5]{.pnum} an inactive union member or
+* [2.6]{.pnum} an element `$E$` of an array member of a union where `$E$` is not within its lifetime.
+:::
+:::
+
+We _specifically_ want to extend this _only_ to array members of unions. This is the fix necessary to ensure that this:
+
+::: std
+```cpp
+constexpr std::inplace_vector<int, 4> v = {1, 2};
+```
+:::
+
+is a valid constexpr variable if the implementation uses a `union { int storage[4]; }` to hold the data, because we would only consider the first two elements of `storage` as constituent values — the fact that the last two elements are uninitialized no longer counts against us when we consider whether `v` is a valid result of a constant expression.
+
+Core in Kona had expressed a view that this should be extended first to any aggregate (not just arrays) but also extended even further than that to allow for any aggregate _outside_ of unions. We see no motivation for this expansion, and since it extends the cases where we have an incomplete `constexpr` variable, we'd like to see motivation for the expansion first. Additionally, what we are proposed here is consistent with the language we have today: we already have a notion of incomplete arrays. `std::allocator<T>::allocate` already has [similar behavior](https://eel.is/c++draft/default.allocator#allocator.members-5):
+
+::: std
+[5]{.pnum} *Remarks*: The storage for the array is obtained by calling ​`::​operator new` ([new.delete]), but it is unspecified when or how often this function is called.
+This function starts the lifetime of the array object, but not that of any of the array elements.
+:::
+
+Allowing incomplete arrays within a union is pretty analogous to allowing incomplete arrays that are heap-allocated, and is indeed how `std::vector` works during constant evaluation. When we do eventually get non-transient `constexpr` allocation, it will also be how `constexpr std::vector`s work.
+
+Put differently, supporting the array case is necessary, useful, consistent, and already needs to be supported — but supporting wider cases doesn't meet this bar for us.
+
+# Wording
+
+Change to [expr.const]{.sref}:
 
 ::: std
 [2]{.pnum} The *constituent values* of an object `$o$` are
@@ -303,7 +256,7 @@ The *constituent references* of an object `$o$` are
 An *inactive union subobject* is either:
 
 * [2.5]{.pnum} an inactive union member or
-* [2.6]{.pnum} an element `$A$` of an array member of a union where `$A$` is not within its lifetime.
+* [2.6]{.pnum} an element `$E$` of an array member of a union where `$E$` is not within its lifetime.
 
 ::: example
 ```cpp
@@ -345,7 +298,14 @@ constexpr A v4 = []{
 :::
 :::
 
-And extend the template-argument-equivalent rules to understand this, in [temp.type]{.sref}:
+Revert the change in [class.default.ctor]{.sref}/4:
+
+::: std
+[4]{.pnum} [If a default constructor of a union-like class `X` is trivial, then for each union `U` that is either `X` or an anonymous union member of `X`, if the first variant member, if any, of `U` has implicit-lifetime type ([basic.types.general]), the default constructor of `X` begins the lifetime of that member if it is not the active member of its union. [It is already the active member if `U` was value-initialized.]{.note}]{.rm} [An]{.addu} [Otherwise, an]{.rm} implicitly-defined ([dcl.fct.def.default]) default constructor performs the set of initializations of the class that would be performed by a user-written default constructor for that class with no ctor-initializer ([class.base.init]) and an empty compound-statement.
+
+:::
+
+Extend the template-argument-equivalent rules to understand incomplete arrays, in [temp.type]{.sref}:
 
 ::: std
 [2]{.pnum} Two values are *template-argument-equivalent* if they are of the same type and
@@ -355,24 +315,61 @@ And extend the template-argument-equivalent rules to understand this, in [temp.t
 * [2.9]{.pnum} [...]
 :::
 
-That fix ensures that:
+Add to [memory.syn]{.sref}:
 
 ::: std
-```cpp
-constexpr std::inplace_vector<int, 4> v = {1, 2};
+```diff
+namespace std {
+  // ...
+  // [obj.lifetime], explicit lifetime management
++ template<class T>
++   constexpr void start_lifetime(T& r) noexcept;                                   // freestanding
+  template<class T>
+    T* start_lifetime_as(void* p) noexcept;                                         // freestanding
+  template<class T>
+    const T* start_lifetime_as(const void* p) noexcept;                             // freestanding
+  template<class T>
+    volatile T* start_lifetime_as(volatile void* p) noexcept;                       // freestanding
+  template<class T>
+    const volatile T* start_lifetime_as(const volatile void* p) noexcept;           // freestanding
+  template<class T>
+    T* start_lifetime_as_array(void* p, size_t n) noexcept;                         // freestanding
+  template<class T>
+    const T* start_lifetime_as_array(const void* p, size_t n) noexcept;             // freestanding
+  template<class T>
+    volatile T* start_lifetime_as_array(volatile void* p, size_t n) noexcept;       // freestanding
+  template<class T>
+    const volatile T* start_lifetime_as_array(const volatile void* p,               // freestanding
+                                          size_t n) noexcept;
+}
 ```
 :::
 
-is a valid constexpr variable if the implementation uses a `union { int storage[4]; }` to hold the data, because we would only consider the first two elements of `storage` as constituent values — the fact that the last two elements are uninitialized no longer counts against us when we consider whether `v` is a valid result of a constant expression.
+With corresponding wording in [obj.lifetime]{.sref}:
 
-# Feature-Test Macro
+::: std
+::: addu
+```cpp
+template<class T>
+  constexpr void start_lifetime(T& r) noexcept;
+```
+
+[1]{.pnum} *Mandates*: `T` is a complete type and an implicit-lifetime type.
+
+[#]{.pnum} *Preconditions*: `r` refers to a variant member of a union.
+
+[#]{.pnum} *Effects*: Begins the lifetime ([basic.life]) of the non-static data member denoted by `r`. It is now the active member of its union. This ends the lifetime of the previously-active member of the union, if any. [No initialization is performed.]{.note}
+:::
+:::
+
+## Feature-Test Macro
 
 And bump the feature-test macro added by [@P3074R7]:
 
 ::: std
 ```diff
 - __cpp_trivial_union 202502L
-+ __cpp_trivial_union 2025XXL
++ __cpp_trivial_union 2026XXL
 ```
 :::
 
