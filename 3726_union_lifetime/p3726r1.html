@@ -1063,17 +1063,18 @@ is not within its lifetime.</li>
 <span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v2<span class="op">{.</span>i<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// ok, the constituent values are {v2.i}</span></span>
 <span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v3 <span class="op">=</span> <span class="op">[]{</span></span>
 <span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    A a;</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// ok, the constituent values are {v3.arr[1], v3.arr[2]}</span></span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v4 <span class="op">=</span> <span class="op">[]{</span></span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    A a;</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x1<span class="op">.</span>i <span class="op">=</span> <span class="dv">1</span>;</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x2<span class="op">.</span>j <span class="op">=</span> <span class="dv">2</span>;</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// error: the constituent values include v4.y.x1.j and v4.y.x2.i</span></span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="co">//                   // which have erroneous value</span></span></code></pre></div>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>start_lifetime<span class="op">(</span>a<span class="op">.</span>arr<span class="op">)</span>; <span class="co">// ok, arr is now the active element of the union</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// ok, the constituent values are {v3.arr[1], v3.arr[2]}</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v4 <span class="op">=</span> <span class="op">[]{</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    A a;</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x1<span class="op">.</span>i <span class="op">=</span> <span class="dv">1</span>;</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x2<span class="op">.</span>j <span class="op">=</span> <span class="dv">2</span>;</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// error: the constituent values include v4.y.x1.j and v4.y.x2.i</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="co">//                   // which have erroneous value</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>

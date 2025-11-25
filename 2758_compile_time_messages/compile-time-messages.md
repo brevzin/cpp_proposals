@@ -782,11 +782,7 @@ template<class T> consteval $tag-string$(const T& s);
 
 [#]{.pnum} *Effects*: Direct-non-list-initializes `$str$` with `s`.
 
-[If [@P2996R9] is adopted, choose the Constant When wording. Otherwise, the Remarks.]{.draftnote}
-
-[#]{.pnum} *Constant When*: Every character in `$str$` is either a `$nondigit$`, a `$digit$`, or a `-`.
-
-[#]{.pnum} *Remarks*: A call to this function is not a core constant expression unless every character in `$str$` is either a `$nondigit$`, a `$digit$`, or a `-`.
+[#]{.pnum} *Constant When*: Every character in `$str$` is either a `$nondigit$`, a `$digit$`, a `-` (U+002D HYPHEN-MINUS), or a `=` (U+003D EQUALS SIGN).
 
 
 ```

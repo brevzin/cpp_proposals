@@ -282,6 +282,7 @@ constexpr A v1;       // ok, no constituent values
 constexpr A v2{.i=1}; // ok, the constituent values are {v2.i}
 constexpr A v3 = []{
     A a;
+    std::start_lifetime(a.arr); // ok, arr is now the active element of the union
     new (&a.arr[1]) int(1);
     new (&a.arr[2]) int(2);
     return a;

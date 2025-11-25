@@ -12,7 +12,7 @@ tag: reflection
 
 # Revision History
 
-Since [@P3795R0], fixing missing wording in `annotations_of`.
+Since [@P3795R0], fixing missing wording in `annotations_of` and `data_member_spec` (including annotations), rebasing the wording. No longer pursuing the `is_inline`, `is_constexpr`, `is_consteval` functions, those have been removed from this paper.
 
 # Introduction
 
@@ -24,15 +24,7 @@ This isn't really one proposal, per se, as much as it is a number of very small 
 
 ## Missing Predicates
 
-[@P2996R13] introduces a lot of unary predicates to help identify what a reflection represents. But there are a few simple ones that are missing:
-
-* `is_inline(r)` — for identifying inline namespaces, and variables and functions declares inline (implicitly or explicitly)
-* `is_constexpr(r)` - for identifying functions and variables declared `constexpr`
-* `is_consteval(r)` - for identifying functions (and maybe eventually variables) declared `consteval`
-
-These are all pretty simple predicates.
-
-Notably, I'm suggesting `is_consteval` and not `is_immediate_function`. That's because you always know, even from inside of a function, whether or not it is _declared_ `consteval`. But some constexpr functions can escalate — so what answer do you give from inside of a function that you're asking about? Moreover, we don't even have a good way of erroring in that context, since by making such a check either non-constant (or throw), we might cause the function to escalate, which may change its behavior. It's a complicated question, that needs to be carefully considered, whereas these three predicates are simple.
+[@P3795R0] proposed adding the predicates `is_inline(r)`, `is_constexpr(r)`, and `is_consteval(r)`. After LEWG discussion in Kona, with questions about what `is_constexpr(r)` actually means and whether it applies to implicitly `constexpr` functions as well as implicitly-declared ones, this proposal is simply no longer pursuing those.
 
 ## Scope Identification
 
@@ -256,9 +248,6 @@ namespace std::meta {
   consteval bool is_user_declared(info r);
   consteval bool is_explicit(info r);
   consteval bool is_noexcept(info r);
-+ consteval bool is_inline(info r);
-+ consteval bool is_constexpr(info r);
-+ consteval bool is_consteval(info r);
 
   consteval bool is_bit_field(info r);
   consteval bool is_enumerator(info r);
@@ -594,58 +583,6 @@ Add to the front matter in 21.4.1, [meta.syn]:
 :::
 
 [2]{.pnum} The behavior of any function specified in namespace `std::meta` is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
-:::
-
-
-Add to 21.4.6, [meta.reflection.queries]:
-
-::: std
-```cpp
-consteval bool is_noexcept(info r);
-```
-
-[16]{.pnum} *Returns*: `true` if `r` represents a `noexcept` function type or a function with a non-throwing exception specification ([except.spec]). Otherwise, `false`. [If `r` represents a function template that is declared `noexcept`, `is_noexcept(r)` is still `false` because in general such queries for templates cannot be answered.]{.note}
-
-::: addu
-```cpp
-consteval bool is_inline(info r);
-```
-
-[#]{.pnum} *Returns*: `true` if `r` represents an inline namespace ([namespace.def]), variable or variable template declared `inline` (implicitly or explicitly), or function or function template declared declared `inline` (implicitly or explicitly). Otherwise, `false`.
-
-```cpp
-consteval bool is_constexpr(info r);
-consteval bool is_consteval(info r);
-```
-[#]{.pnum} *Returns*: `true` if `r` represents a variable, variable template, function, or function template declared `constexpr` or `consteval`, respectively. Otherwise, `false`.
-:::
-
-[...]
-
-```cpp
-consteval vector<info> parameters_of(info r);
-```
-
-[55]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `r` represents a function or a function type.
-
-[...]
-
-```cpp
-consteval info variable_of(info r);
-```
-
-[57]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
-
-* [#.#]{.pnum} `r` represents a parameter of a function `F` and
-* [#.#]{.pnum}  there is a point `P` in the evaluation context for which the innermost non-block scope enclosing `P` is the function parameter scope ([basic.scope.param]) associated with `F`.
-
-[...]
-
-```cpp
-consteval info return_type_of(info r);
-```
-
-[59]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless either]{.addu} [Either]{.rm} `r` represents a function and `$has-type$(r)` is `true` or `r` represents a function type.
 :::
 
 Add the new clause [meta.reflection.scope] before 21.4.7, [meta.reflection.access.context]. The wording for `$current-scope$` is lifted wholesale from `access_context::current`:

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-06-18" />
+  <meta name="dcterms.date" content="2025-11-07" />
   <title>Emitting messages at compile time</title>
   <style>
       code{white-space: pre-wrap;}
@@ -544,11 +544,11 @@ border: 1px solid #B3EBB3;
 div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
 div.rm li {
 text-decoration: line-through;
-color: #000000;
+color: #bf0303;
 }
 div.std blockquote del, div.rm {
 text-decoration: line-through;
-color: #000000;
+color: #bf0303;
 background-color: var(--diff-del);
 border: none;
 }
@@ -577,7 +577,7 @@ time</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-06-18</td>
+    <td>2025-11-07</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1660,7 +1660,7 @@ and then another separate paper will add <code class="sourceCode cpp">std<span c
 and <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error</code>
 (the nicer names, with the more user-friendly semantics).</p>
 <p>Alter how static initialization works to ensure there’s no fallback
-to runtime initialization in some cases, in <span>6.9.3.2 <a href="https://wg21.link/basic.start.static">[basic.start.static]</a></span>:</p>
+to runtime initialization in some cases, in <span>6.10.3.2 <a href="https://wg21.link/basic.start.static">[basic.start.static]</a></span>:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">2</a></span>
@@ -1783,7 +1783,7 @@ immediate-escalating function.</p>
 </div>
 </blockquote>
 </div>
-<p>Add a new clause after <span>21.3.11 <a href="https://wg21.link/meta.const.eval">[meta.const.eval]</a></span>
+<p>Add a new clause after <span>21.3.12 <a href="https://wg21.link/meta.const.eval">[meta.const.eval]</a></span>
 named “Emitting messages during program translation”:</p>
 <div class="std">
 <blockquote>
@@ -1820,43 +1820,36 @@ models <code class="sourceCode cpp">convertible_to<span class="op">&lt;</span>st
 <em>Effects</em>: Direct-non-list-initializes
 <code class="sourceCode cpp"><em>str</em></code> with
 <code class="sourceCode cpp">s</code>.</p>
-<p><span class="draftnote" style="color: #01796F">[ Drafting note: If
-<span class="citation" data-cites="P2996R9"><a href="https://wg21.link/p2996r9" role="doc-biblioref">[P2996R9]</a></span> is adopted, choose the
-Constant When wording. Otherwise, the Remarks. ]</span></p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">6</a></span>
 <em>Constant When</em>: Every character in
 <code class="sourceCode cpp"><em>str</em></code> is either a
 <code class="sourceCode cpp"><em>nondigit</em></code>, a
-<code class="sourceCode cpp"><em>digit</em></code>, or a
-<code class="sourceCode cpp"><span class="op">-</span></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">7</a></span>
-<em>Remarks</em>: A call to this function is not a core constant
-expression unless every character in
-<code class="sourceCode cpp"><em>str</em></code> is either a
-<code class="sourceCode cpp"><em>nondigit</em></code>, a
-<code class="sourceCode cpp"><em>digit</em></code>, or a
-<code class="sourceCode cpp"><span class="op">-</span></code>.</p>
+<code class="sourceCode cpp"><em>digit</em></code>, a
+<code class="sourceCode cpp"><span class="op">-</span></code> (U+002D
+HYPHEN-MINUS), or a
+<code class="sourceCode cpp"><span class="op">=</span></code> (U+003D
+EQUALS SIGN).</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(string_view msg) noexcept;</span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(u8string_view msg) noexcept;</span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
 <span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">7</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
 issued. Otherwise, no effect.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">8</a></span>
 <em>Recommended practice</em>: The resulting diagnostic message should
 include the text of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>,
 if provided, and <code class="sourceCode cpp">msg</code>.</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">10</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">9</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
 issued. It is implemention-defined whether a manifestly
 constant-evaluated call to
 <code class="sourceCode cpp">constexpr_warning_str</code> is
 constexpr-erroneous ([expr.const]). Otherwise, no effect.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">11</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">10</a></span>
 <em>Recommended practice</em>: Implementations should issue a warning
 and provide a mechanism allowing users to either opt in or opt out of
 such warnings based on the value of
@@ -1866,11 +1859,11 @@ The resulting diagnostic message should include the text of
 and <code class="sourceCode cpp">msg</code>.</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">12</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">11</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
 issued and evaluation of such a call is constexpr-erroneous
 ([expr.const]). Otherwise, no effect.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">13</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">12</a></span>
 <em>Recommended practice</em>: The resulting diagnostic message should
 include the text of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>
