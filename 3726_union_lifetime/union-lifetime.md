@@ -370,7 +370,7 @@ template<class T>
 
 [1]{.pnum} *Mandates*: `T` is a complete type and an implicit-lifetime ([basic.type]) aggregate ([dcl.init.aggr]) type.
 
-[#]{.pnum} *Effects*: If the object referenced by `r` is already within its lifetime ([basic.life]), no effect. Otherwise, begins the lifetime of the object referenced by `r`. [No initialization is performed and no subobject has its lifetime started. If `r` denotes a member of a union `$U$`, it is the active member of `$U$` ([class.union]).]{.note}
+[#]{.pnum} *Effects*: If the object referenced by `r` is already within its lifetime ([basic.life]), no effects. Otherwise, begins the lifetime of the object referenced by `r`. [No initialization is performed and no subobject has its lifetime started. If `r` denotes a member of a union `$U$`, it is the active member of `$U$` ([class.union]).]{.note}
 :::
 :::
 
