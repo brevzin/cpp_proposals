@@ -233,7 +233,7 @@ Core in Kona had expressed a view that this should be extended first to any aggr
 This function starts the lifetime of the array object, but not that of any of the array elements.
 :::
 
-Allowing incomplete arrays within a union is pretty analogous to allowing incomplete arrays that are heap-allocated, and is indeed how `std::vector` works during constant evaluation. When we do eventually get non-transient `constexpr` allocation, it will also be how `constexpr std::vector`s work.
+Allowing incomplete arrays within a union is pretty analogous to allowing incomplete arrays that are heap-allocated, and is indeed how `std::vector` works during constant evaluation. When we do eventually get non-transient `constexpr` allocation, it will also be how `constexpr std::vector`s work. For both types, copying and destruction is handled manually — there are no problems caused by a normal destructor attempting to destroy partial objects.
 
 Put differently, supporting the array case is necessary, useful, consistent, and already needs to be supported — but supporting wider cases doesn't meet this bar for us.
 
@@ -355,11 +355,9 @@ template<class T>
   constexpr void start_lifetime(T& r) noexcept;
 ```
 
-[1]{.pnum} *Mandates*: `T` is a complete type and an implicit-lifetime aggregate type.
+[1]{.pnum} *Mandates*: `T` is a complete type and an implicit-lifetime ([basic.type]) aggregate ([dcl.init.aggr]) type.
 
-[#]{.pnum} *Preconditions*: `r` refers to a variant member of a union.
-
-[#]{.pnum} *Effects*: Begins the lifetime ([basic.life]) of the non-static data member denoted by `r`. It is now the active member of its union. This ends the lifetime of the previously-active member of the union, if any. [No initialization is performed.]{.note}
+[#]{.pnum} *Effects*: If the object referenced by `r` is already within its lifetime, none. Otherwise, begins the lifetime ([basic.life]) of the object referenced by `r`. If `r` denotes a member of a union, it is now the active member of its union and this ends the lifetime of the previously-active member of the union, if any. [No initialization is performed and no subobject has its lifetime started.]{.note}
 :::
 :::
 

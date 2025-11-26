@@ -998,7 +998,9 @@ works during constant evaluation. When we do eventually get
 non-transient
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 allocation, it will also be how <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>vector</code>s
-work.</p>
+work. For both types, copying and destruction is handled manually —
+there are no problems caused by a normal destructor attempting to
+destroy partial objects.</p>
 <p>Put differently, supporting the array case is necessary, useful,
 consistent, and already needs to be supported — but supporting wider
 cases doesn’t meet this bar for us.</p>
@@ -1164,16 +1166,18 @@ lifetime</span>, or</li>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> start_lifetime<span class="op">(</span>T<span class="op">&amp;</span> r<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">1</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">T</code> is a complete
-type and an implicit-lifetime aggregate type.</p>
+type and an implicit-lifetime ([basic.type]) aggregate ([dcl.init.aggr])
+type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">2</a></span>
-<em>Preconditions</em>: <code class="sourceCode cpp">r</code> refers to
-a variant member of a union.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">3</a></span>
-<em>Effects</em>: Begins the lifetime ([basic.life]) of the non-static
-data member denoted by <code class="sourceCode cpp">r</code>. It is now
-the active member of its union. This ends the lifetime of the
+<em>Effects</em>: If the object referenced by
+<code class="sourceCode cpp">r</code> is already within its lifetime,
+none. Otherwise, begins the lifetime ([basic.life]) of the object
+referenced by <code class="sourceCode cpp">r</code>. If
+<code class="sourceCode cpp">r</code> denotes a member of a union, it is
+now the active member of its union and this ends the lifetime of the
 previously-active member of the union, if any. <span class="note"><span>[ <em>Note 2:</em> </span>No initialization is
-performed.<span> — <em>end note</em> ]</span></span></p>
+performed and no subobject has its lifetime started.<span> — <em>end
+note</em> ]</span></span></p>
 </div>
 </blockquote>
 </div>
