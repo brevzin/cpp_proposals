@@ -248,7 +248,7 @@ This function starts the lifetime of the array object, but not that of any of th
 
 Allowing incomplete arrays within a union is pretty analogous to allowing incomplete arrays that are heap-allocated, and is indeed how `std::vector` works during constant evaluation. When we do eventually get non-transient `constexpr` allocation, it will also be how `constexpr std::vector`s work. For both types, copying and destruction is handled manually — there are no problems caused by a normal destructor attempting to destroy partial objects.
 
-Put differently, supporting the array case is necessary, useful, consistent, and already needs to be supported — but supporting wider cases doesn't meet this bar for us.
+Put differently, supporting the array case is necessary, useful, consistent, and already needs to be supported — but supporting wider cases doesn't meet this bar for us. Especially this late into the process for C++26. This restriction can always be relaxed in C++29, if sufficient motivation is presented.
 
 # Wording
 
