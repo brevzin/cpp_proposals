@@ -355,7 +355,7 @@ template<class T>
   constexpr void start_lifetime(T& r) noexcept;
 ```
 
-[1]{.pnum} *Mandates*: `T` is a complete type and an implicit-lifetime type.
+[1]{.pnum} *Mandates*: `T` is a complete type and an implicit-lifetime aggregate type.
 
 [#]{.pnum} *Preconditions*: `r` refers to a variant member of a union.
 
