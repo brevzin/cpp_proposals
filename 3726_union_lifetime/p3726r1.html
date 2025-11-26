@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2025-11-25" />
+  <meta name="dcterms.date" content="2025-11-26" />
   <title>Adjustments to Union Lifetime Rules</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ Lifetime Rules</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2025-11-25</td>
+    <td>2025-11-26</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -859,6 +859,38 @@ is always started on construction. This makes it so that all empty
 <code class="sourceCode cpp">FixedVector</code>s are equivalent: they
 both have an in-lifetime <code class="sourceCode cpp">storage</code>
 member with 0 active elements.</p>
+<p>We propose the signature:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> start_lifetime<span class="op">(</span>T<span class="op">&amp;</span> r<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Where <code class="sourceCode cpp">T</code> is restricted to be an
+implicit-lifetime aggregate. We need
+<code class="sourceCode cpp">T</code> to be implicit-lifetime for all
+lifetime starting reasons, but we also want a narrower restriction that
+<code class="sourceCode cpp">T</code> is specifically an aggregate type
+because we’re really not invoking any constructors here. Also, this is
+notably distinct from <code class="sourceCode cpp">std<span class="op">::</span>start_lifetime_as<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+since that function also recursively begins the lifetime of all
+implicit-lifetime subobjects, and in this context we need that to not
+happen. This function will only start the lifetime of the top-level
+object. Perhaps this function could eventually be extended to also allow
+implicit-lifetime non-aggregates, but for now we think we should start
+narrow.</p>
+<p>Additionally, this function takes a
+<code class="sourceCode cpp">T<span class="op">&amp;</span></code>
+rather than
+<code class="sourceCode cpp">T<span class="op">*</span></code>. The
+other <code class="sourceCode cpp">start_lifetime</code> functions take
+a <code class="sourceCode cpp"><span class="dt">void</span><span class="op">*</span></code>
+— because that is how they are expected to be used. <code class="sourceCode cpp">std<span class="op">::</span>start_lifetime_as<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+brings forth a
+<code class="sourceCode cpp">T<span class="op">*</span></code> out of a
+buffer. But this function needs to be run during constant evaluation,
+where you already have an object at hand, just not one within its
+lifetime. So taking a reference is more suitable for this problem.</p>
 <h2 data-number="3.2" id="fixing-which-values-are-constituent-values"><span class="header-section-number">3.2</span> Fixing Which Values are
 Constituent Values<a href="#fixing-which-values-are-constituent-values" class="self-link"></a></h2>
 <p>The current rule for constituent values is, from <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/2:</p>
@@ -899,13 +931,13 @@ array with holes. Richard on the reflector had suggested a strawperson
 syntax:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">// short array initializer:</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">// initializes arr[0] and arr[1],</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">// does not start lifetime of rest</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> arr<span class="op">[</span><span class="dv">42</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span>a, b, <span class="dt">short</span><span class="op">}</span>;</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">// in std::allocator&lt;T&gt;::allocate:</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="kw">new</span> <span class="op">(</span>ptr<span class="op">)</span> T<span class="op">[</span>n<span class="op">]{</span><span class="dt">short</span><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// short array initializer:</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">// initializes arr[0] and arr[1],</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">// does not start lifetime of rest</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> arr<span class="op">[</span><span class="dv">42</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span>a, b, <span class="dt">short</span><span class="op">}</span>;</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">// in std::allocator&lt;T&gt;::allocate:</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="kw">new</span> <span class="op">(</span>ptr<span class="op">)</span> T<span class="op">[</span>n<span class="op">]{</span><span class="dt">short</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>I don’t think we strictly need to solve that problem right now, but
@@ -961,7 +993,7 @@ is not within its lifetime.</li>
 members of unions. This is the fix necessary to ensure that this:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>inplace_vector<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">4</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>inplace_vector<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">4</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>is a valid constexpr variable if the implementation uses a <code class="sourceCode cpp"><span class="kw">union</span> <span class="op">{</span> <span class="dt">int</span> storage<span class="op">[</span><span class="dv">4</span><span class="op">]</span>; <span class="op">}</span></code>
@@ -1043,40 +1075,40 @@ is not within its lifetime.</li>
 </ul>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> X <span class="op">{</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> i;</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> j;</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Y <span class="op">{</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        X x1;</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        X x2;</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> i;</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> arr<span class="op">[</span><span class="dv">4</span><span class="op">]</span>;</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        Y y;</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v1;       <span class="co">// ok, no constituent values</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v2<span class="op">{.</span>i<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// ok, the constituent values are {v2.i}</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v3 <span class="op">=</span> <span class="op">[]{</span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    A a;</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>start_lifetime<span class="op">(</span>a<span class="op">.</span>arr<span class="op">)</span>; <span class="co">// ok, arr is now the active element of the union</span></span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// ok, the constituent values are {v3.arr[1], v3.arr[2]}</span></span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v4 <span class="op">=</span> <span class="op">[]{</span></span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    A a;</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x1<span class="op">.</span>i <span class="op">=</span> <span class="dv">1</span>;</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x2<span class="op">.</span>j <span class="op">=</span> <span class="dv">2</span>;</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// error: the constituent values include v4.y.x1.j and v4.y.x2.i</span></span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="co">//                   // which have erroneous value</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> X <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> i;</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> j;</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Y <span class="op">{</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        X x1;</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        X x2;</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> i;</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> arr<span class="op">[</span><span class="dv">4</span><span class="op">]</span>;</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        Y y;</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v1;       <span class="co">// ok, no constituent values</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v2<span class="op">{.</span>i<span class="op">=</span><span class="dv">1</span><span class="op">}</span>; <span class="co">// ok, the constituent values are {v2.i}</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v3 <span class="op">=</span> <span class="op">[]{</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    A a;</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>start_lifetime<span class="op">(</span>a<span class="op">.</span>arr<span class="op">)</span>; <span class="co">// ok, arr is now the active element of the union</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="op">(&amp;</span>a<span class="op">.</span>arr<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="dt">int</span><span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// ok, the constituent values are {v3.arr[1], v3.arr[2]}</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> A v4 <span class="op">=</span> <span class="op">[]{</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    A a;</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x1<span class="op">.</span>i <span class="op">=</span> <span class="dv">1</span>;</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>y<span class="op">.</span>x2<span class="op">.</span>j <span class="op">=</span> <span class="dv">2</span>;</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a;</span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a><span class="op">}()</span>;                 <span class="co">// error: the constituent values include v4.y.x1.j and v4.y.x2.i</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a><span class="co">//                   // which have erroneous value</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -1132,29 +1164,29 @@ lifetime</span>, or</li>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  // ...</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  // [obj.lifetime], explicit lifetime management</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class T&gt;</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr void start_lifetime(T&amp; r) noexcept;                                   // freestanding</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    T* start_lifetime_as(void* p) noexcept;                                         // freestanding</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    const T* start_lifetime_as(const void* p) noexcept;                             // freestanding</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    volatile T* start_lifetime_as(volatile void* p) noexcept;                       // freestanding</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    const volatile T* start_lifetime_as(const volatile void* p) noexcept;           // freestanding</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    T* start_lifetime_as_array(void* p, size_t n) noexcept;                         // freestanding</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    const T* start_lifetime_as_array(const void* p, size_t n) noexcept;             // freestanding</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    volatile T* start_lifetime_as_array(volatile void* p, size_t n) noexcept;       // freestanding</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    const volatile T* start_lifetime_as_array(const volatile void* p,               // freestanding</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>                                          size_t n) noexcept;</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  // [obj.lifetime], explicit lifetime management</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class T&gt;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr void start_lifetime(T&amp; r) noexcept;                                   // freestanding</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    T* start_lifetime_as(void* p) noexcept;                                         // freestanding</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    const T* start_lifetime_as(const void* p) noexcept;                             // freestanding</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    volatile T* start_lifetime_as(volatile void* p) noexcept;                       // freestanding</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    const volatile T* start_lifetime_as(const volatile void* p) noexcept;           // freestanding</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    T* start_lifetime_as_array(void* p, size_t n) noexcept;                         // freestanding</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    const T* start_lifetime_as_array(const void* p, size_t n) noexcept;             // freestanding</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    volatile T* start_lifetime_as_array(volatile void* p, size_t n) noexcept;       // freestanding</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    const volatile T* start_lifetime_as_array(const volatile void* p,               // freestanding</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>                                          size_t n) noexcept;</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1162,22 +1194,22 @@ lifetime</span>, or</li>
 <div class="std">
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> start_lifetime<span class="op">(</span>T<span class="op">&amp;</span> r<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> start_lifetime<span class="op">(</span>T<span class="op">&amp;</span> r<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">1</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">T</code> is a complete
 type and an implicit-lifetime ([basic.type]) aggregate ([dcl.init.aggr])
 type.</p>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">2</a></span>
 <em>Effects</em>: If the object referenced by
-<code class="sourceCode cpp">r</code> is already within its lifetime,
-none. Otherwise, begins the lifetime ([basic.life]) of the object
-referenced by <code class="sourceCode cpp">r</code>. If
-<code class="sourceCode cpp">r</code> denotes a member of a union, it is
-now the active member of its union and this ends the lifetime of the
-previously-active member of the union, if any. <span class="note"><span>[ <em>Note 2:</em> </span>No initialization is
-performed and no subobject has its lifetime started.<span> — <em>end
-note</em> ]</span></span></p>
+<code class="sourceCode cpp">r</code> is already within its lifetime
+([basic.life]), no effect. Otherwise, begins the lifetime of the object
+referenced by <code class="sourceCode cpp">r</code>. <span class="note"><span>[ <em>Note 2:</em> </span>No initialization is
+performed and no subobject has its lifetime started. If
+<code class="sourceCode cpp">r</code> denotes a member of a union
+<code class="sourceCode cpp"><em>U</em></code>, it is the active member
+of <code class="sourceCode cpp"><em>U</em></code> ([class.union]).<span>
+— <em>end note</em> ]</span></span></p>
 </div>
 </blockquote>
 </div>
@@ -1186,15 +1218,16 @@ note</em> ]</span></span></p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_trivial_union 202502L</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_trivial_union 2026XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_trivial_union 202502L</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_trivial_union 2026XXL</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="acknowledgments"><span class="header-section-number">5</span>
 Acknowledgments<a href="#acknowledgments" class="self-link"></a></h1>
 <p>Thank you to Richard Smith for bringing the issue to our attention
-and for all the helpful suggestions.</p>
+and for all the helpful suggestions. Thank you to Tim Song for all the
+help on this topic.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">

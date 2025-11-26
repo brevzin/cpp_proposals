@@ -160,6 +160,19 @@ struct FixedVector {
 
 Note that the previous revision of this paper had to consider the problem of template-argument equivalences because a default-constructed `FixedVector` would not yet have started `storage`'s lifetime, so two empty vectors could be in different states. But that is no longer an issue here since `storage`'s lifetime is always started on construction. This makes it so that all empty `FixedVector`s are equivalent: they both have an in-lifetime `storage` member with 0 active elements.
 
+We propose the signature:
+
+::: std
+```cpp
+template<class T>
+  constexpr void start_lifetime(T& r) noexcept;
+```
+:::
+
+Where `T` is restricted to be an implicit-lifetime aggregate. We need `T` to be implicit-lifetime for all lifetime starting reasons, but we also want a narrower restriction that `T` is specifically an aggregate type because we're really not invoking any constructors here. Also, this is notably distinct from `std::start_lifetime_as<T>` since that function also recursively begins the lifetime of all implicit-lifetime subobjects, and in this context we need that to not happen. This function will only start the lifetime of the top-level object. Perhaps this function could eventually be extended to also allow implicit-lifetime non-aggregates, but for now we think we should start narrow.
+
+Additionally, this function takes a `T&` rather than `T*`. The other `start_lifetime` functions take a `void*` — because that is how they are expected to be used. `std::start_lifetime_as<T>` brings forth a `T*` out of a buffer. But this function needs to be run during constant evaluation, where you already have an object at hand, just not one within its lifetime. So taking a reference is more suitable for this problem.
+
 
 ## Fixing Which Values are Constituent Values
 
@@ -357,7 +370,7 @@ template<class T>
 
 [1]{.pnum} *Mandates*: `T` is a complete type and an implicit-lifetime ([basic.type]) aggregate ([dcl.init.aggr]) type.
 
-[#]{.pnum} *Effects*: If the object referenced by `r` is already within its lifetime, none. Otherwise, begins the lifetime ([basic.life]) of the object referenced by `r`. If `r` denotes a member of a union, it is now the active member of its union and this ends the lifetime of the previously-active member of the union, if any. [No initialization is performed and no subobject has its lifetime started.]{.note}
+[#]{.pnum} *Effects*: If the object referenced by `r` is already within its lifetime ([basic.life]), no effect. Otherwise, begins the lifetime of the object referenced by `r`. [No initialization is performed and no subobject has its lifetime started. If `r` denotes a member of a union `$U$`, it is the active member of `$U$` ([class.union]).]{.note}
 :::
 :::
 
@@ -375,4 +388,4 @@ And bump the feature-test macro added by [@P3074R7]:
 
 # Acknowledgments
 
-Thank you to Richard Smith for bringing the issue to our attention and for all the helpful suggestions.
+Thank you to Richard Smith for bringing the issue to our attention and for all the helpful suggestions. Thank you to Tim Song for all the help on this topic.
