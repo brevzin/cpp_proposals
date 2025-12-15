@@ -2,7 +2,7 @@
 title: "Adjustments to Union Lifetime Rules"
 document: P3726R1
 date: today
-audience: CWG
+audience: EWG, LEWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
