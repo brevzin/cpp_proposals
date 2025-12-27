@@ -615,10 +615,12 @@ Expressions<span></span></a></li>
 <li><a href="#data-members" id="toc-data-members"><span class="toc-section-number">2.3</span> Data Members<span></span></a></li>
 <li><a href="#interpolation-information" id="toc-interpolation-information"><span class="toc-section-number">2.4</span> Interpolation
 Information<span></span></a></li>
-<li><a href="#the-templatestring-concept" id="toc-the-templatestring-concept"><span class="toc-section-number">2.5</span> The
+<li><a href="#redundant-information" id="toc-redundant-information"><span class="toc-section-number">2.5</span> Redundant
+Information<span></span></a></li>
+<li><a href="#the-templatestring-concept" id="toc-the-templatestring-concept"><span class="toc-section-number">2.6</span> The
 <code class="sourceCode cpp">TemplateString</code>
 Concept<span></span></a></li>
-<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">2.6</span> Implementation
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">2.7</span> Implementation
 Experience<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">3</span> References<span></span></a></li>
@@ -745,8 +747,9 @@ too? All this complexity buys us is the ability to create a
 in a single character. However, I don’t think that’s even a good goal
 for C++ — we shouldn’t hide an operation as costly as string formatting
 in a single character, and we shouldn’t tie the language so tightly to
-this particular library (as this proposal does via
-<code class="sourceCode cpp">__format__</code>).</p>
+this particular library (as P3412 does via
+<code class="sourceCode cpp">__format__</code> directly calling
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>).</p>
 <p>Instead, this paper proposes an idea much closer to the P1819
 model.</p>
 <h2 data-number="1.2" id="prior-art-in-python"><span class="header-section-number">1.2</span> Prior Art in Python<a href="#prior-art-in-python" class="self-link"></a></h2>
@@ -873,7 +876,7 @@ expression. So how do we know when we’re done with the
 can appear in template strings. Rust, for instance, <em>only</em>
 supports identifiers. That obviously makes parsing quite easy, but it
 also is very limiting. On the other extreme, supporting <em>all</em>
-expressions can easily lead to undecipherable code. I think on balance,
+expressions can easily lead to indecipherable code. I think on balance,
 supporting only identifiers is far too restrictive. But once you start
 adding what other kinds of expressions to allow (surely, at least class
 member access), it quickly becomes too difficult to keep track of what
@@ -1184,6 +1187,33 @@ since it is formatting all of them, but not the
 <code class="sourceCode cpp">expression</code> and
 <code class="sourceCode cpp">index</code> — it doesn’t need any of the
 format specifier logic, since it isn’t actually doing formatting.</p>
+<p>And of course, all of these operations can be performed on the same
+object:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> verb<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string <span class="op">{</span> <span class="cf">return</span> <span class="st">&quot;die&quot;</span>; <span class="op">}</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> main<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string name <span class="op">=</span> <span class="st">&quot;Inigo Montoya&quot;</span>;</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string relation <span class="op">=</span> <span class="st">&quot;father&quot;</span>;</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> msg <span class="op">=</span> t<span class="st">&quot;Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb()}.</span><span class="sc">\n</span><span class="st">&quot;</span>;</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>print<span class="op">(</span>msg<span class="op">)</span>;</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    highlighted_print<span class="op">(</span>msg<span class="op">)</span>;</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>println<span class="op">(</span><span class="st">&quot;{}&quot;</span>, into_json<span class="op">(</span>msg<span class="op">))</span>;</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>will print (note that
+<code class="sourceCode cpp">highlighted_print</code> uses the format
+specifiers, so the name is quoted):</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>Hello, my name is &quot;Inigo Montoya&quot;. You killed my father. Prepare to die.</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>Hello, my name is <span style="color:green;font-weight:bold">“Inigo Montoya”</span>. You killed my <span style="color:green;font-weight:bold">father</span>. Prepare to <span style="color:green;font-weight:bold">die</span>.</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>{&quot;name&quot;:&quot;Inigo Montoya&quot;,&quot;relation&quot;:&quot;father&quot;,&quot;verb()&quot;:&quot;die&quot;}</span></code></pre></div>
+</blockquote>
+</div>
 <p>Having both
 <code class="sourceCode cpp">interp<span class="op">.</span>index</code>
 and
@@ -1195,7 +1225,49 @@ will almost always be
 think it’s better to put the clunkiness there and maintain the trivial
 formatting implementations (where you can just unpack the template
 string object).</p>
-<h2 data-number="2.5" id="the-templatestring-concept"><span class="header-section-number">2.5</span> The
+<h2 data-number="2.5" id="redundant-information"><span class="header-section-number">2.5</span> Redundant Information<a href="#redundant-information" class="self-link"></a></h2>
+<p>A template string like</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>t<span class="st">&quot;New connection on {ip:#x}:{port}&quot;</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Will evaluate to an instance of a type like:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> S <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> fmt <span class="op">=</span> <span class="st">&quot;New connection on {:#x}:{}&quot;</span>;</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> strings<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span><span class="st">&quot;New connection on &quot;</span>, <span class="st">&quot;:&quot;</span>, <span class="st">&quot;&quot;</span><span class="op">}</span>;</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> interpolation interpolations<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span><span class="st">&quot;ip&quot;</span>, <span class="st">&quot;{:#x}&quot;</span>, <span class="dv">0</span>, <span class="dv">1</span><span class="op">}</span>,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span><span class="st">&quot;port&quot;</span>, <span class="st">&quot;{}&quot;</span>, <span class="dv">1</span>, <span class="dv">1</span><span class="op">}</span>,</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span>;</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>  u32 _0;</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>  u16 _1;</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Note that
+<code class="sourceCode cpp">S<span class="op">::</span>fmt</code> is
+exactly the result of concatenating <code class="sourceCode cpp">S<span class="op">::</span>strings<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>,
+<code class="sourceCode cpp">S<span class="op">::</span>interpolations<span class="op">[</span><span class="dv">0</span><span class="op">].</span>fmt</code>,
+<code class="sourceCode cpp">S<span class="op">:::</span>strings<span class="op">[</span><span class="dv">1</span><span class="op">]</span></code>,
+<code class="sourceCode cpp">S<span class="op">::</span>interpolations<span class="op">[</span><span class="dv">1</span><span class="op">].</span>fmt</code>,
+and <code class="sourceCode cpp">S<span class="op">::</span>strings<span class="op">[</span><span class="dv">2</span><span class="op">]</span></code>.
+This is true by construction for all template strings, and is precisely
+how it is implemented as well. Given that
+<code class="sourceCode cpp">S<span class="op">::</span>strings</code>
+and <code class="sourceCode cpp">S<span class="op">::</span>interpolations</code>
+will both exist (as being more fundamental), do we need to also provide
+<code class="sourceCode cpp">S<span class="op">::</span>fmt</code> —
+which can simply be derived from both arrays?</p>
+<p>I think we should. While formatting will not be the only usage of
+these objects, it is both the main motivating and primary one, so it
+will both be more convenient for users and more efficient if the
+compiler simply does that little bit of extra work to produce the full
+format string as well.</p>
+<h2 data-number="2.6" id="the-templatestring-concept"><span class="header-section-number">2.6</span> The
 <code class="sourceCode cpp">TemplateString</code> Concept<a href="#the-templatestring-concept" class="self-link"></a></h2>
 <p>In these examples, I’ve been using this
 <code class="sourceCode cpp">TemplateString</code> concept to identify a
@@ -1204,7 +1276,7 @@ like? This one I’m not sure about yet. It can’t be a built-in, since
 users might need to create one of these objects. Consider a logger:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>log<span class="op">::</span>info<span class="op">(</span>t<span class="st">&quot;Got a trade for in {symbol}: {side} {qty} @ {price}&quot;</span><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>log<span class="op">::</span>info<span class="op">(</span>t<span class="st">&quot;Got a trade for in {symbol}: {side} {qty} @ {price}&quot;</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The expressions here are all cheap to copy, but formatting is
@@ -1217,28 +1289,28 @@ then keep the same <code class="sourceCode cpp">fmt</code>,
 <code class="sourceCode cpp">interpolations</code>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>TemplateString S, <span class="kw">class</span> F<span class="op">&gt;</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> map<span class="op">(</span>S s, F f<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Base;</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="op">{</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        vector<span class="op">&lt;</span>meta<span class="op">::</span>info<span class="op">&gt;</span> specs;</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>meta<span class="op">::</span>info m <span class="op">:</span> nonstatic_data_members_of<span class="op">(^^</span>S<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>            specs<span class="op">.</span>push_back<span class="op">(</span>data_member_spec<span class="op">({</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>type<span class="op">=</span>invoke_result<span class="op">(^^</span>F, <span class="op">{</span>type_of<span class="op">(</span>m<span class="op">)})</span>,</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>name<span class="op">=</span>identifier_of<span class="op">(</span>m<span class="op">)</span>,</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>            <span class="op">}))</span>;</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>        define_aggregate<span class="op">(^^</span>Base, specs<span class="op">)</span>;</span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> R <span class="op">:</span> Base <span class="op">{</span></span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> fmt <span class="op">=</span> S<span class="op">::</span>fmt;</span>
-<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> strings <span class="op">=</span> S<span class="op">::</span>strings;</span>
-<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> interpolations <span class="op">=</span> S<span class="op">::</span>interpolations;</span>
-<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">&amp;</span> <span class="op">[...</span>pieces<span class="op">]</span> <span class="op">=</span> s;</span>
-<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> R<span class="op">{{</span>f<span class="op">(</span>FWD<span class="op">(</span>pieces<span class="op">))...}}</span>;</span>
-<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>TemplateString S, <span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> map<span class="op">(</span>S s, F f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> Base;</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="op">{</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>        vector<span class="op">&lt;</span>meta<span class="op">::</span>info<span class="op">&gt;</span> specs;</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>meta<span class="op">::</span>info m <span class="op">:</span> nonstatic_data_members_of<span class="op">(^^</span>S<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>            specs<span class="op">.</span>push_back<span class="op">(</span>data_member_spec<span class="op">({</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>type<span class="op">=</span>invoke_result<span class="op">(^^</span>F, <span class="op">{</span>type_of<span class="op">(</span>m<span class="op">)})</span>,</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>name<span class="op">=</span>identifier_of<span class="op">(</span>m<span class="op">)</span>,</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>            <span class="op">}))</span>;</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>        define_aggregate<span class="op">(^^</span>Base, specs<span class="op">)</span>;</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> R <span class="op">:</span> Base <span class="op">{</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static</span> <span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> fmt <span class="op">=</span> S<span class="op">::</span>fmt;</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> strings <span class="op">=</span> S<span class="op">::</span>strings;</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> interpolations <span class="op">=</span> S<span class="op">::</span>interpolations;</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">&amp;</span> <span class="op">[...</span>pieces<span class="op">]</span> <span class="op">=</span> s;</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> R<span class="op">{{</span>f<span class="op">(</span>FWD<span class="op">(</span>pieces<span class="op">))...}}</span>;</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Which allows the implementation of all of the logging functions to
@@ -1247,7 +1319,7 @@ object to decay or otherwise transform every member into something that
 won’t dangle.</p>
 <p>I’d want to make sure this <code class="sourceCode cpp">R</code> here
 is also considered a template string for all of these purposes. There
-are a few attributes here, not really sure which would be best:</p>
+are a few options here, not really sure which would be best:</p>
 <ul>
 <li>an attribute</li>
 <li>an annotation</li>
@@ -1256,7 +1328,7 @@ are a few attributes here, not really sure which would be best:</p>
 <code class="sourceCode cpp">strings</code>, and
 <code class="sourceCode cpp">interpolations</code>?</li>
 </ul>
-<h2 data-number="2.6" id="implementation-experience"><span class="header-section-number">2.6</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<h2 data-number="2.7" id="implementation-experience"><span class="header-section-number">2.7</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>I implemented this in Clang, on top of the p2996 reflection branch.
 Code can be found in my fork in the
 <code><span class="op">template-strings</span></code> branch <a href="https://github.com/brevzin/llvm-project/tree/template-strings">here</a>.

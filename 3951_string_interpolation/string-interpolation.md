@@ -63,7 +63,7 @@ In short, P1819 gives us an object (that doesn't evaluate any of the expressions
 
 Of the two, I think P1819 is significantly better. We get a simple object that can allow for a wide variety of potential functionality. It has two big problems though. The first is that it evaluates lazily and stores its data opaquely — which leads to more surprising behavior, the potential for dangling references, and arbitrarily limited usage. The other is its breakup into pieces doesn't actually play very well with `std::format` — where we would want there to be a format string and we don't have one. The original motivation for the lambda approach was ease of use — get all the expressions in one convenient format. But the language has evolved since 2019. We have both reflection and packs in structured bindings now, so we don't need the lambda approach anymore.
 
-On the other hand, P3412 is a very complex design, with an overload resolution mechanism that is very strongly coupled to the current implementation strategy of formatting. What if we someday get `constexpr` function parameters and it turns out to be better to implement `basic_format_string<char, Args...>` as taking a `constexpr string_view` instead of it being a `consteval` constructor? Would we need to change how string interpolation is defined too? All this complexity buys us is the ability to create a `std::string` in a single character. However, I don't think that's even a good goal for C++ — we shouldn't hide an operation as costly as string formatting in a single character, and we shouldn't tie the language so tightly to this particular library (as this proposal does via `__format__`).
+On the other hand, P3412 is a very complex design, with an overload resolution mechanism that is very strongly coupled to the current implementation strategy of formatting. What if we someday get `constexpr` function parameters and it turns out to be better to implement `basic_format_string<char, Args...>` as taking a `constexpr string_view` instead of it being a `consteval` constructor? Would we need to change how string interpolation is defined too? All this complexity buys us is the ability to create a `std::string` in a single character. However, I don't think that's even a good goal for C++ — we shouldn't hide an operation as costly as string formatting in a single character, and we shouldn't tie the language so tightly to this particular library (as P3412 does via `__format__` directly calling `std::format`).
 
 Instead, this paper proposes an idea much closer to the P1819 model.
 
@@ -151,7 +151,7 @@ $replacement-field$:
 
 C++ expressions can be arbitrary complicated. Notably, they can also include `:` or `}`. both of which are significant in formatting and indicate the end of the expression. So how do we know when we're done with the `$expr$` part here?
 
-One approach would be to simply limit the kinds of expressions that can appear in template strings. Rust, for instance, _only_ supports identifiers. That obviously makes parsing quite easy, but it also is very limiting. On the other extreme, supporting _all_ expressions can easily lead to undecipherable code. I think on balance, supporting only identifiers is far too restrictive. But once you start adding what other kinds of expressions to allow (surely, at least class member access), it quickly becomes too difficult to keep track of what is allowed (indexing? function calls? splices?) and ironically makes both the implementation more difficult (to enforce what is and isn't allowed) and harder to understand for the user (to know which expressions are and aren't allowed).
+One approach would be to simply limit the kinds of expressions that can appear in template strings. Rust, for instance, _only_ supports identifiers. That obviously makes parsing quite easy, but it also is very limiting. On the other extreme, supporting _all_ expressions can easily lead to indecipherable code. I think on balance, supporting only identifiers is far too restrictive. But once you start adding what other kinds of expressions to allow (surely, at least class member access), it quickly becomes too difficult to keep track of what is allowed (indexing? function calls? splices?) and ironically makes both the implementation more difficult (to enforce what is and isn't allowed) and harder to understand for the user (to know which expressions are and aren't allowed).
 
 I think it's best to simply allow anything in the expression (as Python does) and trust the user to refactor their expressions to be as legible as they desire. This allows us to take a very simple approach: we simply lex `$expr$` as a balanced token sequence (just counting `{}`s, `()`s, and `[]`s), so that colons and braces inside of any of the bracket kinds are treated as part of an expression. But the first `:` or `}` encountered when we're at a brace depth of zero means we're done with `$expr$`.
 
@@ -341,7 +341,67 @@ auto into_json(S&& s) -> boost::json::object {
 
 The important thing is to expose all the relevant information to users to let them do whatever they want with it. Note that `highlighted_print` uses the `fmt`, `index`, and `count` fields of the interpolation, since it is formatting all of them, but not the `expression` field. Meanwhile, `into_json` uses only `expression` and `index` — it doesn't need any of the format specifier logic, since it isn't actually doing formatting.
 
+And of course, all of these operations can be performed on the same object:
+
+::: std
+```cpp
+auto verb() -> std::string { return "die"; }
+
+auto main() -> int {
+    std::string name = "Inigo Montoya";
+    std::string relation = "father";
+
+    auto const& msg = t"Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb()}.\n";
+    std::print(msg);
+    highlighted_print(msg);
+    std::println("{}", into_json(msg));
+}
+```
+:::
+
+will print (note that `highlighted_print` uses the format specifiers, so the name is quoted):
+
+::: std
+```
+Hello, my name is "Inigo Montoya". You killed my father. Prepare to die.
+Hello, my name is @<span style="color:green;font-weight:bold">"Inigo Montoya"</span>@. You killed my @<span style="color:green;font-weight:bold">father</span>@. Prepare to @<span style="color:green;font-weight:bold">die</span>@.
+{"name":"Inigo Montoya","relation":"father","verb()":"die"}
+```
+:::
+
 Having both `interp.index` and `interp.count` is a little clunky, especially since `interp.count` will almost always be `1`. But I think it's better to put the clunkiness there and maintain the trivial formatting implementations (where you can just unpack the template string object).
+
+## Redundant Information
+
+A template string like
+
+::: std
+```cpp
+t"New connection on {ip:#x}:{port}"
+```
+:::
+
+Will evaluate to an instance of a type like:
+
+::: std
+```cpp
+struct S {
+  static constexpr char const* fmt = "New connection on {:#x}:{}";
+  static constexpr char const* strings[] = {"New connection on ", ":", ""};
+  static constexpr interpolation interpolations[] = {
+    {"ip", "{:#x}", 0, 1},
+    {"port", "{}", 1, 1},
+  };
+
+  u32 _0;
+  u16 _1;
+};
+```
+:::
+
+Note that `S::fmt` is exactly the result of concatenating `S::strings[0]`, `S::interpolations[0].fmt`, `S:::strings[1]`, `S::interpolations[1].fmt`, and `S::strings[2]`. This is true by construction for all template strings, and is precisely how it is implemented as well. Given that `S::strings` and `S::interpolations` will both exist (as being more fundamental), do we need to also provide `S::fmt` — which can simply be derived from both arrays?
+
+I think we should. While formatting will not be the only usage of these objects, it is both the main motivating and primary one, so it will both be more convenient for users and more efficient if the compiler simply does that little bit of extra work to produce the full format string as well.
 
 ## The `TemplateString` Concept
 
@@ -384,7 +444,7 @@ auto map(S s, F f) {
 
 Which allows the implementation of all of the logging functions to `map` their provided template string object to decay or otherwise transform every member into something that won't dangle.
 
-I'd want to make sure this `R` here is also considered a template string for all of these purposes. There are a few attributes here, not really sure which would be best:
+I'd want to make sure this `R` here is also considered a template string for all of these purposes. There are a few options here, not really sure which would be best:
 
 * an attribute
 * an annotation
