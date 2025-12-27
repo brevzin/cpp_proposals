@@ -1237,10 +1237,14 @@ then keep the same <code class="sourceCode cpp">fmt</code>,
 <span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
 <span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">&amp;</span> <span class="op">[...</span>pieces<span class="op">]</span> <span class="op">=</span> s;</span>
-<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> R<span class="op">{{</span>f<span class="op">(</span>pieces<span class="op">)...}}</span>;</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> R<span class="op">{{</span>f<span class="op">(</span>FWD<span class="op">(</span>pieces<span class="op">))...}}</span>;</span>
 <span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
+<p>Which allows the implementation of all of the logging functions to
+<code class="sourceCode cpp">map</code> their provided template string
+object to decay or otherwise transform every member into something that
+won’t dangle.</p>
 <p>I’d want to make sure this <code class="sourceCode cpp">R</code> here
 is also considered a template string for all of these purposes. There
 are a few attributes here, not really sure which would be best:</p>

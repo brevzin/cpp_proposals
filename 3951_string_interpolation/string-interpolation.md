@@ -377,10 +377,12 @@ auto map(S s, F f) {
     };
 
     auto& [...pieces] = s;
-    return R{{f(pieces)...}};
+    return R{{f(FWD(pieces))...}};
 }
 ```
 :::
+
+Which allows the implementation of all of the logging functions to `map` their provided template string object to decay or otherwise transform every member into something that won't dangle.
 
 I'd want to make sure this `R` here is also considered a template string for all of these purposes. There are a few attributes here, not really sure which would be best:
 
