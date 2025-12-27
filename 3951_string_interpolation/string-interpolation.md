@@ -396,6 +396,8 @@ I implemented this in Clang, on top of the p2996 reflection branch. Code can be 
 
 This does raise the question of how `std::interpolation` should be defined. It does make sense for it to be one type, rather than the distinct type per template string that I implemented. But should this facility really require a new header? Maybe it's a sufficiently trivial type (an aggregate with no member functions and just four data members, each of scalar type) that the compiler can just generate it? Maybe we don't care about additional headers because `import std;` anyway?
 
+The same question goes for if we want to implement the [concept](#the-templatestring-concept) by way of annotation. That annotation would be an empty type, could the compiler just create it?
+
 ---
 references:
     - id: PEP-498
