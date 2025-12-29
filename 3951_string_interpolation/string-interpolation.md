@@ -137,7 +137,7 @@ The rest of the paper will go through details on first on how the parsing works 
 
 Keep in mind that since a template string object is _just an object_, where most of the information are static data members, this ends up being a very embedded-friendly design too.
 
-## Parsing
+## Lexing
 
 A template string is conceptually an alternating sequence of string literals and interpolations. The string literal parts are just normal string literals — we look ahead until we find a non-escaped `{` to start the next replacement field (`"{{"` in a format string is used to print the single character `'{'`). A replacement-field comes in two forms:
 
@@ -149,7 +149,19 @@ $replacement-field$:
 ```
 :::
 
-C++ expressions can be arbitrary complicated. Notably, they can also include `:` or `}`. both of which are significant in formatting and indicate the end of the expression. So how do we know when we're done with the `$expr$` part here?
+For example, a template string like `t"The price of {id:x} is {price}."` needs to be lexed into these five pieces:
+
+<table>
+<tr><td>String Literal</td><td>`"The price of "`</td></tr>
+<tr><td>Interpolation</td><td>`"{:x}"` with expression `id`</td></tr>
+<tr><td>String Literal</td><td>`" is "`</td></tr>
+<tr><td>Interpolation</td><td>`"{}"` with expression `price`</td></tr>
+<tr><td>String Literal</td><td>`"."`</td></tr>
+</table>
+
+The first and last piece are always (possibly-empty) string literals — for `$N$` interpolations there will be `$N$+1` strings.
+
+However, C++ expressions can be arbitrary complicated. Notably, they can also include `:` or `}`. both of which are significant in formatting and indicate the end of the expression. So how do we know when we're done with the `$expr$` part here?
 
 One approach would be to simply limit the kinds of expressions that can appear in template strings. Rust, for instance, _only_ supports identifiers. That obviously makes parsing quite easy, but it also is very limiting. On the other extreme, supporting _all_ expressions can easily lead to indecipherable code. I think on balance, supporting only identifiers is far too restrictive. But once you start adding what other kinds of expressions to allow (surely, at least class member access), it quickly becomes too difficult to keep track of what is allowed (indexing? function calls? splices?) and ironically makes both the implementation more difficult (to enforce what is and isn't allowed) and harder to understand for the user (to know which expressions are and aren't allowed).
 
@@ -169,7 +181,32 @@ Here are some examples of template string formatting calls and how they would be
 
 In order to format expressions that use scoping or the conditional operator, you'll just have to write parentheses. That seems easy enough to both understand and use. Otherwise, anything goes.
 
-## Parsing Nested Expressions
+## Lexing Trailing Equals
+
+One nice debugging feature that Python's f-strings (and template strings) have is the equals suffix:
+
+::: std
+```python
+>>> f"{x=}, {y=}, {z=}"
+"x=5, y=7, z='hello world'"``
+```
+:::
+
+Concretely, an expression that ends with an `=` (surrounded by any amount of whitespace) has that suffix appended to the previous string literal piece. Occasionally, there are requests to support `std::print(x, y, z)` to just concatenate those three elements — but that's not as useful as it initially seems since you quickly forget what variables you're printing in what order. The ability to support this on the other hand is _very_ useful for debugging:
+
+::: std
+```cpp
+std::println(t"{x=}, {y=}, {z=:?}");
+```
+:::
+
+It is also quite easy to implement, since it's just a matter of checking if the last lexed token of the expression was an `=`. And, if so, dropping that from the expression (since no valid C++ expression ends with `=`) and instead adding the stringified expression to the previous string part.
+
+Concretely: `t"Hello {name=}"` behaves exactly equivalently to `t"Hello name={name}"`.
+
+Note that this isn't _quite_ what Python does — as you might notice from the Python example. In Python, it behaves like `t"Hello name={name!r}`, which is basically calling `repr(name)` instead of `str(name)`. It would be really nice if we actually had a real answer for debug formatting — but neither `std::format` nor `fmt::format` really have one. There is a `?` specifier which is used to help ensure that range formatting properly works ([@P2286R8]), but it's not valid across all types, and there's no special handling for it. So we can't really make `t"{name=}"` evaluate as `t"name={name:?}"`, since that would only work for a small set of types. Instead, this paper proposes not to add any format specifier here.
+
+## Lexing Nested Expressions
 
 Consider the template string:
 
@@ -218,18 +255,42 @@ t"{name:>{width}}"
 ```
 :::
 
-This would parse as two expressions: `name` and `width`, with a single corresponding format string `"{:>{}}"`. If we simply stored the expressions and the format string, that would be straightforward: we just have two [data members](#data-members). But we can do better than that. But before we get into the [interpolation information](#interpolation-information), I'll talk about the data members.
+This would lex as:
+
+<table>
+<tr><td>String Literal</td><td>`""`</td></tr>
+<tr><td>Interpolation</td><td>`"{:>{}}"` with two expressions: `name` and `width`</td></tr>
+<tr><td>String Literal</td><td>`""`</td></tr>
+</table>
+
+
+If we simply stored the expressions and the format string, that would be straightforward: we just have two [data members](#data-members). But we can do better than that. But before we get into the [interpolation information](#interpolation-information), I'll talk about the data members.
+
+## Lexing Consecutive String Literals
+
+Consecutive string literals are concatenated during preprocessing. The same should hold true for template string literals — which can be concatenated with each other and also with regular string literals, in any order. That follows user expectation:
+
+|Tokens|Equivalent To|
+|-|-|
+|`"Hello, " "World"`|`"Hello, World"`|
+|`"Hello, " t"{name}"`|`t"Hello, {name}"`|
+|`t"{greeting}, " t"{name}"`|`t"{greeting}, {name}"`|
+|`t"{greeting}, " "World"`|`t"{greeting}, World"`|
+|`t"{greeting}, " "{}"`|`t"{greeting}, {}"`|
+
+Note the last line. We're concatenating a template string literal and a regular string literal — that simply concatenates the contents of the 2nd string literal onto the last string piece of the 1st — there is no implicit escaping of the braces.
+
 
 ## Data Members
 
-For any expression, `$E$`, including nested expressions, a non-static data member will be generated (and then initialized from `$E$`) having type `decltype(($E$))`. This ensures that we get the right type, but also that we're not copying anything unnecessarily. For instance:
+For any expression, `$E$` (including nested expressions — so there may be more expressions than interpolations), a non-static data member will be generated (and then initialized from `$E$`) having type `decltype(($E$))`. This ensures that we get the right type, but also that we're not copying anything unnecessarily. For instance:
 
 ::: std
 ```cpp
 auto verb() -> std::string;
 
 auto example(std::string const& name, std::string relation) -> void {
-    auto tmpl = t"Hello, my name is {name}. You killed my {relation}. Prepare to {verb()}.";
+    auto tmpl = t"Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb()}.";
 }
 ```
 :::
@@ -371,38 +432,6 @@ Hello, my name is @<span style="color:green;font-weight:bold">"Inigo Montoya"</s
 
 Having both `interp.index` and `interp.count` is a little clunky, especially since `interp.count` will almost always be `1`. But I think it's better to put the clunkiness there and maintain the trivial formatting implementations (where you can just unpack the template string object).
 
-## Redundant Information
-
-A template string like
-
-::: std
-```cpp
-t"New connection on {ip:#x}:{port}"
-```
-:::
-
-Will evaluate to an instance of a type like:
-
-::: std
-```cpp
-struct S {
-  static constexpr char const* fmt = "New connection on {:#x}:{}";
-  static constexpr char const* strings[] = {"New connection on ", ":", ""};
-  static constexpr interpolation interpolations[] = {
-    {"ip", "{:#x}", 0, 1},
-    {"port", "{}", 1, 1},
-  };
-
-  u32 _0;
-  u16 _1;
-};
-```
-:::
-
-Note that `S::fmt` is exactly the result of concatenating `S::strings[0]`, `S::interpolations[0].fmt`, `S:::strings[1]`, `S::interpolations[1].fmt`, and `S::strings[2]`. This is true by construction for all template strings, and is precisely how it is implemented as well. Given that `S::strings` and `S::interpolations` will both exist (as being more fundamental), do we need to also provide `S::fmt` — which can simply be derived from both arrays?
-
-I think we should. While formatting will not be the only usage of these objects, it is both the main motivating and primary one, so it will both be more convenient for users and more efficient if the compiler simply does that little bit of extra work to produce the full format string as well.
-
 ## The `TemplateString` Concept
 
 In these examples, I've been using this `TemplateString` concept to identify a template string object. The question is, what does that concept look like? This one I'm not sure about yet. It can't be a built-in, since users might need to create one of these objects. Consider a logger:
@@ -457,6 +486,166 @@ I implemented this in Clang, on top of the p2996 reflection branch. Code can be 
 This does raise the question of how `std::interpolation` should be defined. It does make sense for it to be one type, rather than the distinct type per template string that I implemented. But should this facility really require a new header? Maybe it's a sufficiently trivial type (an aggregate with no member functions and just four data members, each of scalar type) that the compiler can just generate it? Maybe we don't care about additional headers because `import std;` anyway?
 
 The same question goes for if we want to implement the [concept](#the-templatestring-concept) by way of annotation. That annotation would be an empty type, could the compiler just create it?
+
+# Alternate Approaches
+
+This proposal is definitely not the only way to do string interpolation in C++. I've [already discussed](#prior-work) two previous proposals in this space and why I think what I'm proposing is a better design. But it's worth talking about other approaches as well.
+
+## `f`-strings
+
+This paper _only_ proposes template strings, it does _not_ propose a convenient shorthand for creating a `std::string`. If a `std::string` is desired, the user will have to write:
+
+::: std
+```cpp
+auto a = std::format("My name is {} and my age next year is {}", name, age+1); // status quo
+auto b = std::format(t"My name is {name} and my age next year is {age+1}");    // proposed
+auto c = f"My name is {name} and my age next year is {age+1}";                 // not proposed
+```
+:::
+
+The reasoning here is that moving from `a` to `b` is a significant gain in readability (as well as other functionality, as illustrated in previous examples), but the gain from `b` to `c` is simply saving a few characters. It's _nice_, but it comes at a heavy cost that I'm simply not sure is actually worth it. Is `std::format` specifically the most common formatting facility? I think small programs will have more calls to `std::print` or `std::println` while larger programs will have more calls to `std::format_to` as well as use logging. I just don't think the trade-off is there.
+
+## Reduced Representation
+
+What should this template string literal evaluate to?
+
+::: std
+```cpp
+t"New connection on {ip:#x}:{port}"
+```
+:::
+
+This paper proposes the one on the left, but we could just do the one on the right:
+
+::: cmptable
+### Proposed
+```cpp
+struct S {
+  static constexpr char const* fmt =
+    "New connection on {:#x}:{}";
+  static constexpr char const* strings[] =
+    {"New connection on ", ":", ""};
+  static constexpr interpolation interpolations[] = {
+    {"ip", "{:#x}", 0, 1},
+    {"port", "{}", 1, 1},
+  };
+
+  u32 _0;
+  u16 _1;
+};
+```
+
+### Simpler
+```cpp
+struct S {
+  static constexpr char const* fmt =
+    "New connection on {:#x}:{}";
+
+  u32 _0;
+  u16 _1;
+};
+```
+:::
+
+But the main motivation (and likely the most common use-case) is some version of formatting, for which all we need is `S::fmt`. We wouldn't need `S::interpolations` or `S::strings`. Should we still generate the two arrays?
+
+I would argue that we should. The implementation has to do all the work to get those pieces anyway (with the exception of the `index` and `count` members for each `interpolation`, which really isn't much work), so it's not like we're saving much in the way of computation by stripping the interface. The simpler interface is only simple in that it reduces the available functionality. Doesn't seem like a good idea.
+
+## Redundant Information
+
+Continuing with the previous example, what if instead of removing `S::strings` and `S::interpolations`, we instead removed `S::fmt`?
+
+::: cmptable
+### Proposed
+```cpp
+struct S {
+  static constexpr char const* fmt =
+    "New connection on {:#x}:{}";
+  static constexpr char const* strings[] =
+    {"New connection on ", ":", ""};
+  static constexpr interpolation interpolations[] = {
+    {"ip", "{:#x}", 0, 1},
+    {"port", "{}", 1, 1},
+  };
+
+  u32 _0;
+  u16 _1;
+};
+```
+
+### Simpler
+```cpp
+struct S {
+
+
+  static constexpr char const* strings[] =
+    {"New connection on ", ":", ""};
+  static constexpr interpolation interpolations[] = {
+    {"ip", "{:#x}", 0, 1},
+    {"port", "{}", 1, 1},
+  };
+
+  u32 _0;
+  u16 _1;
+};
+```
+:::
+
+Note that `S::fmt` is exactly the result of concatenating `S::strings[0]`, `S::interpolations[0].fmt`, `S:::strings[1]`, `S::interpolations[1].fmt`, and `S::strings[2]`. This is true by construction for all template strings, and is precisely how it is implemented as well. Given that `S::strings` and `S::interpolations` will both exist (as being more fundamental), do we need to also provide `S::fmt` — which can simply be derived from both arrays?
+
+One advantage of removing `S::fmt` is to avoid having that string spill into the binary even if unused, if the implementation simply fails to detect its lack of use. However, I think we should. While formatting will not be the _only_ usage of these objects, it is both the main motivating and primary one, so it will both be more convenient for users and more efficient if the compiler simply does that little bit of extra work to produce the full format string as well.
+
+And regardless, the opposite problem would still exist anyway — if only `S::fmt` were used, there is the potential that the string literals in `S::strings` and `S::interpolations` spill into the binary unnecessary as well.
+
+## Static Data Members or Static Member Functions
+
+Building on the above, an alternative presentation of the same information might be:
+
+::: std
+```cpp
+struct S {
+    static consteval auto fmt() -> char const*;
+    static consteval auto strings() -> std::span<char const* const>;
+    static consteval auto interpolations() -> std::span<interpolation const>;
+
+    // unspecified if there exist any static data members
+};
+```
+:::
+
+The advantage of this layout is that it lets the implementation represent template string objects in however way it finds most efficient, potentially allowing us to change more easily. It also makes the question of how to represent zero interpolations trivial — just return an empty span. Otherwise, we don't have 0-sized arrays, so would have to figure out how to handle that.
+
+Another shape might be:
+
+::: std
+```cpp
+struct S {
+    static consteval auto fmt() -> char const*;
+    static consteval auto num_interpolations() -> size_t;
+    static consteval auto string(size_t index) -> char const*;
+    static consteval auto interpolation(size_t index) -> interpolation;
+
+    // unspecified if there exist any static data members
+};
+```
+:::
+
+Using static data members seems more direct, but I don't think there's really a huge usability difference one way or another.
+
+
+## Wait for Reflection
+
+The evergreen question with proposals like this is to wonder if we should wait for reflection. There even is a proposal, [@P3294R2]{.title}, that has walks through how a future macro could solve this problem. Concretely, we would need:
+
+* macros that can inject token sequences,
+* the ability to invoke such a macro with a string literal (or `string_view`), and
+* the ability to turn a `string_view` into a token sequence
+
+Given those pieces, the implementation of something like Rust's `format_args!` is basically the same as how you would implement it in a compiler. And the benefit of being able to do this in a library is pretty clear: it is much easier to experiment with different functionality. Plus, this would just be a very small taste of what code injections could do.
+
+So should we wait? It seems incredibly unlikely that we will land something as expansive as token sequence injection in C++29 (if ever?), and a dedicated language feature for template string objects is pretty small and self-contained.
+
+
 
 ---
 references:
