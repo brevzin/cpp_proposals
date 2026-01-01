@@ -303,6 +303,13 @@ This would lex as:
 <tr><td>String Literal</td><td>`""`</td></tr>
 </table>
 
+And [this works](https://godbolt.org/z/r7rKdWMhb) because we recognize `{:x}` as not being a nested expression:
+
+::: std
+```cpp
+fmt::print(t"as template: {elems:{:x}{}{:x}}\n"); // as template: (a, 20, 1e)
+```
+:::
 
 If we simply stored the expressions and the format string, that would be straightforward: we just have two [data members](#data-members). But we can do better than that. But before we get into the [interpolation information](#interpolation-information), I'll talk about the data members.
 
