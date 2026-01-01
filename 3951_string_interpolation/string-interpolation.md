@@ -84,9 +84,7 @@ Our example from earlier:
 auto get_result() -> int { return 42; }
 
 auto example() -> void {
-    auto interp = t"The result is {get_result()}\n";     // #1
-    std::print(interp);                                  // #2
-    std::print(t"The result is {get_result()}\n");       // #3
+    auto interp = t"The result is {get_result()}\n";
 }
 ```
 :::
@@ -95,29 +93,34 @@ will evaluate as:
 
 ::: std
 ```cpp
-struct $Template$ {
-    static constexpr char const* fmt = "The result is {}\n";
-
-    static constexpr char const* strings[] = {"The result is ", "\n"};
-    static constexpr std::interpolation interpolations[] = {{"get_result()", "{}", 0, 1}};
-
-    int $_0$;
-};
-
 auto example() -> void {
+    struct $Template$ {
+        static consteval auto fmt() -> char const* { return "The result is {}\n"; }
+        static consteval auto num_interpolations() -> size_t { return 1; }
+        static consteval auto string(size_t i) -> char const* {
+            constexpr char const* data[] = {"The result is ", "\n"};
+            return data[i];
+        }
+        static consteval auto interpolation(size_t i) -> std::interpolation {
+            constexpr std::interpolation data[] = {{"get_result()", "{}", 0, 1}};
+            return data[i];
+        }
+
+        int $_0$;
+    };
+
     auto interp = $Template${get_result()};
-    std::print(interp);
-    std::print($Template${get_result()});
 }
 ```
 :::
 
-Let's go through all of these pieces in order. A template string will generate an instance of a not-necessarily-unique type (unlike a lambda expression, which always has a unique type) by parsing the replacement fields of the string literal. The parsing logic here is very basic and does not need to understand very much about either the format specifier mini-language or C++ expressions more broadly. The interpolation type will have four public pieces of information in it:
+Let's go through all of these pieces in order. A template string will generate an instance of a not-necessarily-unique type (unlike a lambda expression, which always has a unique type) by parsing the replacement fields of the string literal. The parsing logic here is very basic and does not need to understand very much about either the format specifier mini-language or C++ expressions more broadly. The interpolation type will have five public pieces of information in it:
 
-* `fmt` is a static data member that contains a format string,
-* `strings` is a static array of string literals that are just the string parts,
-* `interpolations` is a static array of the [interpolation information](#interpolation-information), and then
-* one non-static data member for each expression. The type of the member for expression `$E$` is `decltype(($E$))`, and the name of the member is unspecified.
+* `fmt()` is a static member function that returns the format string,
+* `num_interpolations()` is a static member function that returns the number of interpolations (possibly 0),
+* `string(i)` is a static member function that returns the `i`th string part
+* `interpolation(i)` is a static member function that returns the `i`th [interpolation information](#interpolation-information), and then lastly
+* one non-static [data member](#data-members) for each (possibly-nested) expression. The name of the member is unspecified, but the order and types are.
 
 With this structure, we can easily add additional overloads to the format library to handle template strings:
 
@@ -125,13 +128,13 @@ With this structure, we can easily add additional overloads to the format librar
 ```cpp
 template <TemplateString S>
 auto print(S&& s) -> void {
-    auto& [...pieces] = s;
-    std::print(s.fmt(), pieces...);
+    auto& [...exprs] = s;
+    std::print(s.fmt(), exprs...);
 }
 ```
 :::
 
-Note that there is no difference in handling between lines `#1-2` and line `#3` in the example (like the P1819 design and unlike the P3412 one). A template string is just an object, that contains within it all the relevant information.
+Note that there is no difference in handling between lines `#1-2` and line `#3` in the example (like the P1819 design and unlike the P3412 one). A template string is just an object, that contains within it all the relevant information. So whether we construct the object separately doesn't matter.
 
 The rest of the paper will go through details on first on how the parsing works and then into other examples to help motivate the structure.
 
@@ -159,7 +162,7 @@ For example, a template string like `t"The price of {id:x} is {price}."` needs t
 <tr><td>String Literal</td><td>`"."`</td></tr>
 </table>
 
-The first and last piece are always (possibly-empty) string literals — for `$N$` interpolations there will be `$N$+1` strings.
+The first and last piece are always (possibly-empty) string literals — for `$N$` interpolations there will be `$N$+1` strings. Even for the template string `t"{expr}"` which entirely consists of an expression, there will be two empty string pieces.
 
 However, C++ expressions can be arbitrary complicated. Notably, they can also include `:` or `}`. both of which are significant in formatting and indicate the end of the expression. So how do we know when we're done with the `$expr$` part here?
 
@@ -167,19 +170,56 @@ One approach would be to simply limit the kinds of expressions that can appear i
 
 I think it's best to simply allow anything in the expression (as Python does) and trust the user to refactor their expressions to be as legible as they desire. This allows us to take a very simple approach: we simply lex `$expr$` as a balanced token sequence (just counting `{}`s, `()`s, and `[]`s), so that colons and braces inside of any of the bracket kinds are treated as part of an expression. But the first `:` or `}` encountered when we're at a brace depth of zero means we're done with `$expr$`.
 
-Here are some examples of template string formatting calls and how they would be evaluated:
+Here are some examples of template string formatting calls and how they would be evaluated. The first column will show a template string that consists entirely of an expression. The second column will show how the format string for that expression will be lexed and the third column will show the expression.
 
-|template string|evaluated as|
-|-|-|
-|`std::format(t"x={x}")`|`std::format("x={}", x)`|
-|`std::format(t"x={[]{ return 42; }()}")`|`std::format("x={}", []{ return 42; }())`|
-|`std::format(t"x={co_await f(x) + g(y) / z}")`|`std::format("x={}", co_await f(x) + g(y) / z)`|
-|`std::format(t"x={a::b}")`|`std::format("x={::b}", a)`|
-|`std::format(t"x={(a::b)}")`|`std::format("x={}", (a::b))`|
-|`std::format(t"x={cond ? a : b}")`|`std::format("x={:b}", cond ? a)` ❌|
-|`std::format(t"x={(cond ? a : b)}")`|`std::format("x={}", (cond ? a : b))`|
+|template string|lexed format string|lexed expression|
+|-|-|-|
+|`t"{x}"`|`"{}"`|`x`|
+|`t"{[]{ return 42; }()}"`|`"{}"`|`[]{ return 42; }()`|
+|`t"{co_await f(x) + g(y) / z}"`|`"{}"`|`co_await f(x) + g(y) / z`|
+|`t"{a::b}"`|`"{::b}"`|`a`|
+|`t"{(a::b)}"`|`"{}"`|`a::b`|
+|`t"{cond ? a : b}"`|`"{:b}"`|`cond ? a` ❌|
+|`t"{(cond ? a : b)}"`|`"{}"`|`(cond ? a : b)`|
+
+Two important things to note here. First, it is possible to lex an invalid expression due to finding a `:` first, as in the penultimate line. The lexing won't know about this though.
+
+Second, note that `"{a::b}"` lexes as simply the expression `a`, not`a::b`. If the latter is desired, it has to be parenthesized. That is, while lexing, we are not simply looking for the _token_ `:`, but the _character_ `:`. Which could be the token `:` but also includes not just two-character tokens like `::` and `:]`, and even the digraph `:<`. This is a difference in the logic proposed in [@P3412R3], which looks specifically for the _token_ (not character) `:`. This is important because it allows for the most functionality:
+
+::: std
+```cpp
+namespace v { int x = 2; }
+
+auto example() -> void {
+    std::vector<int> v = {10, 20, 30};
+    std::println(t"{v::x}");    // [a, 14, 1e]
+    std::println(t"{(v::x)}");  // 2
+}
+```
+:::
 
 In order to format expressions that use scoping or the conditional operator, you'll just have to write parentheses. That seems easy enough to both understand and use. Otherwise, anything goes.
+
+## Lexing Macro Expansion
+
+While lexing expressions, macro expansion occurs too. This is both what users expect and is important to support, otherwise we're not actually meeting the claim of supporting all expressions. There are even standard utilities that are defined as macros, like `errno`. The one thing to note is that looking for the terminating `:` or `}` of an expression will _not_ consider such a character from macros. Otherwise, the macros wouldn't actually be usable properly and also the format string itself would become illegible.
+
+Extending the previous example:
+
+::: std
+```cpp
+namespace v { int x = 2; }
+
+auto example() -> void {
+    std::vector<int> v = {10, 20, 30};
+    std::println(t"{v::x}");    // [a, 14, 1e]
+    std::println(t"{(v::x)}");  // 2
+
+    #define SCOPED v::x
+    std::println(t"{SCOPED}");  // 2, not [a, 14, 1e]
+}
+```
+:::
 
 ## Lexing Trailing Equals
 
@@ -268,17 +308,19 @@ If we simply stored the expressions and the format string, that would be straigh
 
 ## Lexing Consecutive String Literals
 
-Consecutive string literals are concatenated during preprocessing. The same should hold true for template string literals — which can be concatenated with each other and also with regular string literals, in any order. That follows user expectation:
+Consecutive string literals are concatenated during preprocessing. The same should hold true for template string literals — which can be concatenated with each other and also with regular string literals, in any order. In the table below, imagine we are initializing a variable `s` to the token sequence shown in the first column and examining the resulting `s.fmt()` and the expressions being lexed:
 
-|Tokens|Equivalent To|
-|-|-|
-|`"Hello, " "World"`|`"Hello, World"`|
-|`"Hello, " t"{name}"`|`t"Hello, {name}"`|
-|`t"{greeting}, " t"{name}"`|`t"{greeting}, {name}"`|
-|`t"{greeting}, " "World"`|`t"{greeting}, World"`|
-|`t"{greeting}, " "{}"`|`t"{greeting}, {}"`|
+|Tokens|`s.fmt()`|expressions|
+|-|-|-|
+|`"Hello, " "World"`|n/a|n/a|
+|`"Hello, " t"{name}"`|`"Hello, {}"`|1: `name`|
+|`t"{greeting}, " t"{name}"`|`"{}, {}"`|2: `greeting`, `name`|
+|`t"{greeting}, " "World"`|`"{}, World"`|1: `greeting`|
+|`t"{greeting}, " "{}"`|`"{}, {}"`|1: `greeting` ❌|
 
-Note the last line. We're concatenating a template string literal and a regular string literal — that simply concatenates the contents of the 2nd string literal onto the last string piece of the 1st — there is no implicit escaping of the braces.
+Note the last line. We're concatenating a template string literal and a regular string literal — that simply concatenates the contents of the 2nd string literal onto the last string piece of the 1st — there is no implicit escaping of the braces, so the resulting format string would be incomplete — it has 2 replacement fields but only one expression.
+
+We could consider implicitly escaping the braces for regular string literals that are concatenated to template string literals. I don't know if that's a good idea though.
 
 
 ## Data Members
@@ -303,9 +345,19 @@ The object `tmpl` will have three members:
 
 These are all public, non-static data members. If we want to copy all of the members (e.g. because we want to serialize them), we can easily do so. It's just that there is no need for the template string itself to do so directly. Note that the call to `verb()` happens immediately and the result is stored in `tmpl`. We are not lazily holding onto the expression `verb()`.
 
+This _does_ open up the opportunity for dangling if you write something like this:
+
+::: std
+```cpp
+auto oops(int value) { return t"{value}"; }
+```
+:::
+
+That template string object will have an `int&` member, refer to the parameter that will be destroyed when we return from the function. I don't think this is a huge use-case of template strings, but it's something to keep in mind. The `decltype(($E$))` logic is essential for ensuring no overhead for template strings in the expected use-cases. We could consider something like a _leading_ `=` to capture by value instead of by reference, but users can already write `"t{auto(value)}"` there too.
+
 ## Interpolation Information
 
-A template string will have a `static constexpr` data member of type `std::interpolation`, which is a simple aggregate with four members:
+A template string will have a `static consteval` member function which returns objects of type `std::interpolation`, which is a simple aggregate with four members:
 
 ::: std
 ```cpp
@@ -318,21 +370,28 @@ struct interpolation {
 ```
 :::
 
-`expression` is a string literal that is the stringified version of the expression. `fmt` is the full format specifier with the expression removed, that you would need in order to format this specific expression. Then, we need both `index` and `num` in order to support nested replacement expressions, as we just went through. That gives us both the first non-static data member and the amount of non-static data members this interpolation is associated with.
+`expression` is a string literal that is the stringified version of the expression (before macro expansion). `fmt` is the full format specifier with the expression removed, that you would need in order to format this specific expression. Then, we need both `index` and `count` in order to support nested replacement expressions, as we just went through. That gives us both the first non-static data member and the amount of non-static data members this interpolation is associated with.
 
-The template string literal `t"{name:>{width}}"` needs to generate the object
+The template string literal `t"{name=:>{width}}"` would generate the object
 
 ::: std
 ```cpp
 struct $Template$ {
-    static constexpr char const* fmt = "{:>{}}";
-    static constexpr char const* strings[] = {"", ""};
-    static constexpr interpolation interpolations[] = {{
-        .expression = "name",
-        .fmt = "{:>{}}",
-        .index = 0,
-        .count = 2
-    }};
+    static consteval auto fmt() -> char const* { return "name={:>{}}"; }
+    static consteval auto num_interpolations() -> size_t { return 1; }
+    static consteval auto string(size_t n) -> char const* {
+        constexpr char const* data[] = {"name=", ""};
+        return data[n];
+    }
+    static consteval auto interpolation(size_t n) -> std::interpolation {
+        consteval std::interpolation data[] = {{
+            .expression = "name",  // note that "name" is preserved
+            .fmt = "{:>{}}",       // but "width" is not
+            .index = 0,
+            .count = 2
+        }};
+        return data[n];
+    }
 
     std::string const& $_0$;
     int const& $_1$;
@@ -341,11 +400,15 @@ struct $Template$ {
 :::
 
 
-Why do we go through the trouble of proving `strings` and `interpolations`?  Consider again our example from earlier:
+Why do we go through the trouble of proving `string(n)` and `interpolation(n)`?  Let's look at some examples...
+
+## Examples
+
+Consider again our example from earlier:
 
 ::: std
 ```cpp
-auto tmpl = t"Hello, my name is {name}. You killed my {relation}. Prepare to {verb()}.";
+auto tmpl = t"Hello, my name is {name}. You killed my {relation}. Prepare to {verb():*^{width}}.";
 ```
 :::
 
@@ -355,8 +418,8 @@ I already showed how we could print this normally, which didn't use either of th
 ```cpp
 template <TemplateString S>
 auto print(S&& s) -> void {
-    auto& [...pieces] = s;
-    std::print(s.fmt, pieces...);
+    auto& [...exprs] = s;
+    std::print(s.fmt(), exprs...);
 }
 ```
 :::
@@ -366,19 +429,22 @@ But we could do a lot more with this object other than just print it. We could w
 ::: std
 ```cpp
 template <TemplateString S>
-auto highlighted_print(S&& s) -> void {
+auto highlight_print(S&& s) -> void {
+    constexpr size_t N = s.num_interpolations();
+
     auto& [...exprs] = s;
 
-    template for (constexpr auto [str, interp] : std::views::zip(s.strings, s.interpolations)) {
-        fmt::print(str);
+    template for (constexpr int I : std::views::indices(N)) {
+        fmt::print(s.string(I));
 
-        constexpr auto [...I] = std::make_index_sequence<interp.count>();
+        constexpr auto interp = s.interpolation(I);
+        constexpr auto [...J] = std::make_index_sequence<interp.count>();
         fmt::print(fmt::emphasis::bold | fg(fmt::color::green),
                    interp.fmt,
-                   exprs...[interp.index + I]...);
+                   exprs...[interp.index + J]...);
     }
 
-    fmt::print(s.strings[std::size(s.strings) - 1]);
+    fmt::print(s.string(N));
 }
 ```
 :::
@@ -392,7 +458,8 @@ auto into_json(S&& s) -> boost::json::object {
     auto& [...exprs] = s;
 
     boost::json::object o;
-    template for (constexpr auto interp : s.interpolations) {
+    template for (constexpr int I : std::views::indices(N)) {
+        constexpr auto interp = s.interpolation(I);
         o[interp.expression] = exprs...[interp.index];
     }
     return o;
@@ -400,9 +467,54 @@ auto into_json(S&& s) -> boost::json::object {
 ```
 :::
 
-The important thing is to expose all the relevant information to users to let them do whatever they want with it. Note that `highlighted_print` uses the `fmt`, `index`, and `count` fields of the interpolation, since it is formatting all of them, but not the `expression` field. Meanwhile, `into_json` uses only `expression` and `index` — it doesn't need any of the format specifier logic, since it isn't actually doing formatting.
+Or we could use entirely different formatting mechanisms. We could make this work with `printf` too! This isn't a complete implementation, but should give a sense of what's possible:
 
-And of course, all of these operations can be performed on the same object:
+::: std
+```cpp
+template <TemplateString S>
+auto with_printf(S&& s) -> void {
+    constexpr char const* fmt_string = [&]() consteval {
+        std::string fmt = s.string(0);
+        auto nsdms = nonstatic_data_members_of(remove_cvref(^^S), std::meta::access_context::current());
+
+        for (size_t i = 0; i < s.num_interpolations(); ++i) {
+            // in theory, this logic would be more interesting
+            auto interp = s.interpolation(i);
+            auto type = remove_cvref(type_of(nsdms[interp.index]));
+            if (type == ^^int) {
+                fmt += "%d";
+            } else {
+                if (interp.fmt == std::string_view("{:?}")) {
+                    fmt += "\"%s\"";
+                } else {
+                    fmt += "%s";
+                }
+            }
+
+            fmt += s.string(i + 1);
+        }
+
+        return std::define_static_string(fmt);
+    }();
+
+    auto adjust = []<class T>(T const& arg){
+        if constexpr (std::same_as<T, std::string>) {
+            return arg.c_str();
+        } else {
+            return arg;
+        }
+    };
+
+    auto& [...exprs] = s;
+    constexpr auto [...Is] = std::make_index_seequence<s.num_interpolations()>();
+    std::printf(fmt_string, adjust(exprs...[s.interpolation(Is).index])...);
+}
+```
+:::
+
+The important thing is to expose all the relevant information to users to let them do whatever they want with it. Note that `highlighted_print` uses the `fmt`, `index`, and `count` fields of the interpolation, since it is formatting all of them, but not the `expression` field. Meanwhile, `into_json` uses only `expression` and `index` — it doesn't need any of the format specifier logic, since it isn't actually doing formatting. The `printf` example uses `string` to build up its own format specifier.
+
+And of course, _all_ of these operations can be performed on the same object:
 
 ::: std
 ```cpp
@@ -410,12 +522,13 @@ auto verb() -> std::string { return "die"; }
 
 auto main() -> int {
     std::string name = "Inigo Montoya";
-    std::string relation = "father";
+    int width = 5;
 
-    auto const& msg = t"Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb()}.\n";
+    auto msg = t"Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb():*^{width}}.\n";
     std::print(msg);
     highlighted_print(msg);
     std::println("{}", into_json(msg));
+    with_printf(msg);
 }
 ```
 :::
@@ -424,13 +537,16 @@ will print (note that `highlighted_print` uses the format specifiers, so the nam
 
 ::: std
 ```
-Hello, my name is "Inigo Montoya". You killed my father. Prepare to die.
-Hello, my name is @<span style="color:green;font-weight:bold">"Inigo Montoya"</span>@. You killed my @<span style="color:green;font-weight:bold">father</span>@. Prepare to @<span style="color:green;font-weight:bold">die</span>@.
+Hello, my name is "Inigo Montoya". You killed my father. Prepare to *die*.
+Hello, my name is @<span style="color:green;font-weight:bold">"Inigo Montoya"</span>@. You killed my @<span style="color:green;font-weight:bold">father</span>@. Prepare to @<span style="color:green;font-weight:bold">\*die\*</span>@.
 {"name":"Inigo Montoya","relation":"father","verb()":"die"}
+Hello, my name is "Inigo Montoya". You killed my father. Prepare to die.
 ```
 :::
 
 Having both `interp.index` and `interp.count` is a little clunky, especially since `interp.count` will almost always be `1`. But I think it's better to put the clunkiness there and maintain the trivial formatting implementations (where you can just unpack the template string object).
+
+You can see this example on [compiler explorer](https://compiler-explorer.com/z/98KTah4eq). Note that the implementations there are slightly different, since Clang doesn't yet implement `constexpr` structured bindings and the implementations of pack indexing and expansion statements had a few bugs so I came up with workarounds.
 
 ## The `TemplateString` Concept
 
@@ -460,9 +576,10 @@ auto map(S s, F f) {
         define_aggregate(^^Base, specs);
     }
     struct R : Base {
-        static constexpr char const* fmt = S::fmt;
-        static constexpr auto const& strings = S::strings;
-        static constexpr auto const& interpolations = S::interpolations;
+        static constexpr auto fmt = S::fmt;
+        static constexpr auto string = S::string;
+        static constexpr auto interpolation = S::interpolation;
+        static constexpr auto num_interpolations = S::num_interpolations;
     };
 
     auto& [...pieces] = s;
@@ -477,13 +594,15 @@ I'd want to make sure this `R` here is also considered a template string for all
 
 * an attribute
 * an annotation
-* structural conformance: simply check for the presence of `fmt`, `strings`, and `interpolations`?
+* structural conformance: simply check for the presence of `fmt`, `string`, `num_interpolations`, and `interpolation`?
 
 ## Implementation Experience
 
-I implemented this in Clang, on top of the p2996 reflection branch. Code can be found in my fork in the `template-strings`{.op} branch [here](https://github.com/brevzin/llvm-project/tree/template-strings). I'm sure there are better ways to do some of what I did, but on the whole, the implementation is completely standalone. The only difference between this paper and the implementation is that instead of introducing the type `std::interpolation`, I just made `interpolation` a nested class of each template string type, just for convenience.
+I implemented this in Clang, on top of the p2996 reflection branch. Code can be found in my fork in the `template-strings`{.op} branch [here](https://github.com/brevzin/llvm-project/tree/template-strings) (you can see the diff against p2996 [here](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:template-strings)) I'm sure there are better ways to do some of what I did. It can also be used on [compiler explorer](https://compiler-explorer.com/z/98KTah4eq).
 
-This does raise the question of how `std::interpolation` should be defined. It does make sense for it to be one type, rather than the distinct type per template string that I implemented. But should this facility really require a new header? Maybe it's a sufficiently trivial type (an aggregate with no member functions and just four data members, each of scalar type) that the compiler can just generate it? Maybe we don't care about additional headers because `import std;` anyway?
+The only difference between this paper and the implementation is that instead of introducing the type `std::interpolation`, I just made `_Interpolation` implicitly defined at global scope for convenience.
+
+This does raise the question of how `std::interpolation` should be defined. Should this facility really require a new header? Maybe it's a sufficiently trivial type (an aggregate with no member functions and just four data members, each of scalar type) that the compiler can just generate it? Maybe we don't care about additional headers because `import std;` anyway?
 
 The same question goes for if we want to implement the [concept](#the-templatestring-concept) by way of annotation. That annotation would be an empty type, could the compiler just create it?
 
@@ -521,14 +640,10 @@ This paper proposes the one on the left, but we could just do the one on the rig
 ### Proposed
 ```cpp
 struct S {
-  static constexpr char const* fmt =
-    "New connection on {:#x}:{}";
-  static constexpr char const* strings[] =
-    {"New connection on ", ":", ""};
-  static constexpr interpolation interpolations[] = {
-    {"ip", "{:#x}", 0, 1},
-    {"port", "{}", 1, 1},
-  };
+  static consteval auto fmt() -> char const*;
+  static consteval auto num_interpolations() -> size_t;
+  static consteval auto string(size_t n) -> char const*;
+  static consteval auto interpolation(size_t n) -> interpolation;
 
   u32 _0;
   u16 _1;
@@ -538,8 +653,10 @@ struct S {
 ### Simpler
 ```cpp
 struct S {
-  static constexpr char const* fmt =
-    "New connection on {:#x}:{}";
+  static consteval auto fmt() -> char const*;
+
+
+
 
   u32 _0;
   u16 _1;
@@ -547,43 +664,35 @@ struct S {
 ```
 :::
 
-But the main motivation (and likely the most common use-case) is some version of formatting, for which all we need is `S::fmt`. We wouldn't need `S::interpolations` or `S::strings`. Should we still generate the two arrays?
+But the main motivation (and likely the most common use-case) is some version of formatting, for which all we need is `S::fmt()`. We wouldn't need `S::interpolation(n)` or `S::string(n)`. Should we still generate the extra functions?
 
 I would argue that we should. The implementation has to do all the work to get those pieces anyway (with the exception of the `index` and `count` members for each `interpolation`, which really isn't much work), so it's not like we're saving much in the way of computation by stripping the interface. The simpler interface is only simple in that it reduces the available functionality. Doesn't seem like a good idea.
 
 ## Redundant Information
 
-Continuing with the previous example, what if instead of removing `S::strings` and `S::interpolations`, we instead removed `S::fmt`?
+Continuing with the previous example, what if instead of removing `S::string` and `S::interpolation`, we instead removed `S::fmt`?
 
 ::: cmptable
 ### Proposed
 ```cpp
 struct S {
-  static constexpr char const* fmt =
-    "New connection on {:#x}:{}";
-  static constexpr char const* strings[] =
-    {"New connection on ", ":", ""};
-  static constexpr interpolation interpolations[] = {
-    {"ip", "{:#x}", 0, 1},
-    {"port", "{}", 1, 1},
-  };
+  static consteval auto fmt() -> char const*;
+  static consteval auto num_interpolations() -> size_t;
+  static consteval auto string(size_t n) -> char const*;
+  static consteval auto interpolation(size_t n) -> interpolation;
 
   u32 _0;
   u16 _1;
 };
 ```
 
-### Simpler
+### Minimal
 ```cpp
 struct S {
 
-
-  static constexpr char const* strings[] =
-    {"New connection on ", ":", ""};
-  static constexpr interpolation interpolations[] = {
-    {"ip", "{:#x}", 0, 1},
-    {"port", "{}", 1, 1},
-  };
+  static consteval auto num_interpolations() -> size_t;
+  static consteval auto string(size_t n) -> char const*;
+  static consteval auto interpolation(size_t n) -> interpolation;
 
   u32 _0;
   u16 _1;
@@ -591,46 +700,63 @@ struct S {
 ```
 :::
 
-Note that `S::fmt` is exactly the result of concatenating `S::strings[0]`, `S::interpolations[0].fmt`, `S:::strings[1]`, `S::interpolations[1].fmt`, and `S::strings[2]`. This is true by construction for all template strings, and is precisely how it is implemented as well. Given that `S::strings` and `S::interpolations` will both exist (as being more fundamental), do we need to also provide `S::fmt` — which can simply be derived from both arrays?
+Note that `S::fmt()` is exactly the result of concatenating `S::string(0)`, `S::interpolation(0).fmt`, `S:::string(1)`, `S::interpolation(1).fmt`, and `S::string(2)`. This is true by construction for all template strings, and is precisely how it is implemented as well. Given that `S::string(n)` and `S::interpolation(n)` will both exist (as being more fundamental), do we need to also provide `S::fmt()` — which can simply be derived from both arrays?
 
-One advantage of removing `S::fmt` is to avoid having that string spill into the binary even if unused, if the implementation simply fails to detect its lack of use. However, I think we should. While formatting will not be the _only_ usage of these objects, it is both the main motivating and primary one, so it will both be more convenient for users and more efficient if the compiler simply does that little bit of extra work to produce the full format string as well.
+One advantage of removing `S::fmt()` is to avoid having that string spill into the binary even if unused, if the implementation simply fails to detect its lack of use. However, I think we should. While formatting will not be the _only_ usage of these objects, it is both the main motivating and primary one, so it will both be more convenient for users and more efficient if the compiler simply does that little bit of extra work to produce the full format string as well.
 
-And regardless, the opposite problem would still exist anyway — if only `S::fmt` were used, there is the potential that the string literals in `S::strings` and `S::interpolations` spill into the binary unnecessary as well.
+And regardless, the opposite problem would still exist anyway — if only `S::fmt()` were used, there is the potential that the string literals in `S::string(n)` and `S::interpolation(n)` spill into the binary unnecessary as well.
 
 ## Static Data Members or Static Member Functions
 
-Building on the above, an alternative presentation of the same information might be:
+The proposal right now has 4 static member functions. But a simple alternative would be to instead provide three, with `strings()` and `interpolations()` returning `std::span`s instead of having a `string(n)` and `interpolation(n)` and `num_interpolations()`:
 
 ::: std
 ```cpp
 struct S {
     static consteval auto fmt() -> char const*;
     static consteval auto strings() -> std::span<char const* const>;
-    static consteval auto interpolations() -> std::span<interpolation const>;
-
-    // unspecified if there exist any static data members
+    static consteval auto interpolations() -> std::span<std::interpolation const>;
 };
 ```
 :::
 
-The advantage of this layout is that it lets the implementation represent template string objects in however way it finds most efficient, potentially allowing us to change more easily. It also makes the question of how to represent zero interpolations trivial — just return an empty span. Otherwise, we don't have 0-sized arrays, so would have to figure out how to handle that.
+The advantage of approach is that it allows directly looping over the interpolations via:
 
-Another shape might be:
+::: std
+```cpp
+template for (constexpr auto interp : s.interpolations()) {
+    // ...
+}
+```
+:::
+
+Which instead some of the [examples](#examples) work around via:
+
+::: std
+```cpp
+template for (constexpr auto I : std::views::indices(s.num_interpolations())) {
+    constexpr auto interp = s.interpolation(I);
+}
+```
+:::
+
+The disadvantage is that it brings in the `std::span` dependency. But if we're declaring `std::interpolation` anyway, that's probably not that big a deal.
+
+A very different shape might instead be to have static _data members_ instead of static functions, where:
 
 ::: std
 ```cpp
 struct S {
-    static consteval auto fmt() -> char const*;
-    static consteval auto num_interpolations() -> size_t;
-    static consteval auto string(size_t index) -> char const*;
-    static consteval auto interpolation(size_t index) -> interpolation;
-
-    // unspecified if there exist any static data members
+    static constexpr char const* fmt = /* ... */;
+    static constexpr char const* strings[] = /* ... */;
+    static constexpr std::interpolation interpolations[] = /* ... */;
 };
 ```
 :::
 
-Using static data members seems more direct, but I don't think there's really a huge usability difference one way or another.
+This would avoid the `span` dependency and avoid a bunch of parentheses that you would have to write, as compared to the other function version. However, it has two problems. First, a template string can have no interpolations, and we still don't have zero-sized arrays in C++. We ran into this problem with specifying `std::meta::reflect_constant_array`, and it's very annoying that it doesn't just work (even as gcc and clang happily support them with expected semantics with no warnings). Neither the version where `interpolations()` returns a `std::span` nor the version where we have `interpolation(n)` which returns the `n`th interpolation have this problem.
+
+The second problem is that these types may have to be local types in some contexts, and local types cannot have static data members in C++. I do not know why local types have this restriction, given that local types are allowed to have static member functions and those member functions are allowed to have static local variables. But the restriction does currently exist.
 
 
 ## Wait for Reflection
