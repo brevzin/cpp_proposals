@@ -1,7 +1,7 @@
 ---
 title: "String Interpolation with Template Strings"
 document: P3951R0
-date: today
+date: 2026-01-01
 audience: EWG
 author:
     - name: Barry Revzin
@@ -200,9 +200,9 @@ auto example() -> void {
 
 In order to format expressions that use scoping or the conditional operator, you'll just have to write parentheses. That seems easy enough to both understand and use. Otherwise, anything goes.
 
-## Lexing Macro Expansion
+## Handling Macro Expansion
 
-While lexing expressions, macro expansion occurs too. This is both what users expect and is important to support, otherwise we're not actually meeting the claim of supporting all expressions. There are even standard utilities that are defined as macros, like `errno`. The one thing to note is that looking for the terminating `:` or `}` of an expression will _not_ consider such a character from macros. Otherwise, the macros wouldn't actually be usable properly and also the format string itself would become illegible.
+While lexing expressions, macro expansion occurs too (although at a later phase, see below). This is both what users expect and is important to support, otherwise we're not actually meeting the claim of supporting all expressions. There are even standard utilities that are defined as macros, like `errno`. The one thing to note is that looking for the terminating `:` or `}` of an expression will _not_ consider such a character from macros. Otherwise, the macros wouldn't actually be usable properly and also the format string itself would become illegible.
 
 Extending the previous example:
 
@@ -228,7 +228,7 @@ One nice debugging feature that Python's f-strings (and template strings) have i
 ::: std
 ```python
 >>> f"{x=}, {y=}, {z=}"
-"x=5, y=7, z='hello world'"``
+"x=5, y=7, z='hello world'"
 ```
 :::
 
@@ -313,7 +313,7 @@ fmt::print(t"as template: {elems:{:x}{}{:x}}\n"); // as template: (a, 20, 1e)
 
 If we simply stored the expressions and the format string, that would be straightforward: we just have two [data members](#data-members). But we can do better than that. But before we get into the [interpolation information](#interpolation-information), I'll talk about the data members.
 
-## Lexing Consecutive String Literals
+## Concatenating Consecutive String Literals
 
 Consecutive string literals are concatenated during preprocessing. The same should hold true for template string literals — which can be concatenated with each other and also with regular string literals, in any order. In the table below, imagine we are initializing a variable `s` to the token sequence shown in the first column and examining the resulting `s.fmt()` and the expressions being lexed:
 
@@ -612,6 +612,52 @@ The only difference between this paper and the implementation is that instead of
 This does raise the question of how `std::interpolation` should be defined. Should this facility really require a new header? Maybe it's a sufficiently trivial type (an aggregate with no member functions and just four data members, each of scalar type) that the compiler can just generate it? Maybe we don't care about additional headers because `import std;` anyway?
 
 The same question goes for if we want to implement the [concept](#the-templatestring-concept) by way of annotation. That annotation would be an empty type, could the compiler just create it?
+
+## More Formal Lexing Specification
+
+In Clang, preprocessing happens during lexing — and so the way I implemented it was that a template string lexes as a new kind of token — really a meta-token that itself contains a bunch of other tokens. That's fine as far as Clang goes (or maybe not, there might be a more preferred approach), but the standard defines the phases of translation ([lex.phases]{.sref}) in a strict order. Specifically:
+
+* Phase 3: Source file decomposed into preprocessing tokens
+* Phase 4: Preprocessing directives and macro expansion occurs
+* Phase 5: String-literal encoding and concatenation
+* Phase 6: Tokens
+
+The wording needs to fit this specification. Which we can do by defining a new set of preprocessing tokens. For example, the template string
+
+::: std
+```cpp
+t"My name is {name():>{width}}.\n"
+```
+:::
+
+can lex into the tokens (indentation for clarity):
+
+::: std
+```cpp
+$template-string-begin$
+  $string-literal$ "My name is "
+
+  $template-string-interpolation-begin$
+    $string-literal$ "{:>{}}"
+    $string-literal$ "name()"
+
+    $template-string-expression-begin$
+      $identifier$ "name"
+      (
+      )
+    $template-string-expression-end$
+
+    $template-string-expression-begin$
+      $identifier$ "width"
+    $template-string-expression-end$
+  $template-string-interpolation-end$
+
+  $string-literal$ ".\n"
+$template-string-end$
+```
+:::
+
+That is, we have a bunch of meta-tokens that don't lead to any output and are just there to guide parsing. A template string literal lexes into this alternating sequence of `$string-literal$`s and interpolations. An interpolation is bounded by `$template-string-interpolation-begin$` and `$template-string-interpolation-end$`, starts with two `$string-literal$`s for the format string and expression, and then continues with at least one expression. An expression is bounded by `$template-string-expression-begin$` and `$template-string-expression-end$`.
 
 # Alternate Approaches
 
