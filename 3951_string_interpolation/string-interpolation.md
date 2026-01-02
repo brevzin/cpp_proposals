@@ -67,11 +67,13 @@ On the other hand, P3412 is a very complex design, with an overload resolution m
 
 Instead, this paper proposes an idea much closer to the P1819 model.
 
-## Prior Art in Python
+## Prior Art in Other Languages
 
-Python 3.6 introduced literal string interpolation (`f"..."`) in [@PEP-498], which was later extended in Python 3.14 by template strings (`t"..."`) in [@PEP-750]. The former directly produces a `string`, while the latter gives a template string — an object with enough information in it to be formatted later. This is similar to Rust's `format_args!`, which gives you a completely opaque object (unlike Python's which is completely specified).
+Python 3.6 introduced literal string interpolation (`f"..."`) in [@PEP-498], which was later extended in Python 3.14 by template strings (`t"..."`) in [@PEP-750]. The former directly produces a `string`, while the latter gives a template string — an object with enough information in it to be formatted later. This is similar to Rust's `format_args!`, which gives you a completely opaque object (unlike Python's which is completely specified). Both languages gives you a facility to take an interpolated string and produce an object for future work (similar to P1819).
 
-Both languages gives you a facility to take an interpolated string and produce an object for future work (similar to P1819).
+JavaScript also has [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals), which support tagging. A tagged template literal is quite similar to what [@P3412R3] proposes: the expression `` myTag`That ${person} is a ${age}.` ``{.js} evaluates as `myTag(["That ", " is a ", "."], person, age)`, similar to the C++ proposal having `myTag(f"That {person} is a {age}")` evaluate the transformed call `myTag("That {} is a {}", person, age)`. Here, the literal is _not_ an object.
+
+
 
 # Design
 

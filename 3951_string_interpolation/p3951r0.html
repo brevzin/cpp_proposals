@@ -604,8 +604,8 @@ Template Strings</h1>
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction<span></span></a>
 <ul>
 <li><a href="#prior-work" id="toc-prior-work"><span class="toc-section-number">1.1</span> Prior Work<span></span></a></li>
-<li><a href="#prior-art-in-python" id="toc-prior-art-in-python"><span class="toc-section-number">1.2</span> Prior Art in
-Python<span></span></a></li>
+<li><a href="#prior-art-in-other-languages" id="toc-prior-art-in-other-languages"><span class="toc-section-number">1.2</span> Prior Art in Other
+Languages<span></span></a></li>
 </ul></li>
 <li><a href="#design" id="toc-design"><span class="toc-section-number">2</span> Design<span></span></a>
 <ul>
@@ -773,7 +773,7 @@ this particular library (as P3412 does via
 <code class="sourceCode cpp">std<span class="op">::</span>format</code>).</p>
 <p>Instead, this paper proposes an idea much closer to the P1819
 model.</p>
-<h2 data-number="1.2" id="prior-art-in-python"><span class="header-section-number">1.2</span> Prior Art in Python<a href="#prior-art-in-python" class="self-link"></a></h2>
+<h2 data-number="1.2" id="prior-art-in-other-languages"><span class="header-section-number">1.2</span> Prior Art in Other Languages<a href="#prior-art-in-other-languages" class="self-link"></a></h2>
 <p>Python 3.6 introduced literal string interpolation (<code class="sourceCode cpp">f<span class="st">&quot;...&quot;</span></code>)
 in <span class="citation" data-cites="PEP-498"><a href="https://peps.python.org/pep-0498/" role="doc-biblioref">[PEP-498]</a></span>, which was later extended in
 Python 3.14 by template strings (<code class="sourceCode cpp">t<span class="st">&quot;...&quot;</span></code>)
@@ -783,9 +783,16 @@ template string — an object with enough information in it to be
 formatted later. This is similar to Rust’s
 <code class="sourceCode cpp">format_args<span class="op">!</span></code>,
 which gives you a completely opaque object (unlike Python’s which is
-completely specified).</p>
-<p>Both languages gives you a facility to take an interpolated string
-and produce an object for future work (similar to P1819).</p>
+completely specified). Both languages gives you a facility to take an
+interpolated string and produce an object for future work (similar to
+P1819).</p>
+<p>JavaScript also has <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals">template
+literals</a>, which support tagging. A tagged template literal is quite
+similar to what <span class="citation" data-cites="P3412R3"><a href="https://wg21.link/p3412r3" role="doc-biblioref">[P3412R3]</a></span> proposes: the expression <code class="sourceCode javascript"><span class="fu">myTag</span><span class="vs">`That </span><span class="sc">${</span>person<span class="sc">}</span><span class="vs"> is a </span><span class="sc">${</span>age<span class="sc">}</span><span class="vs">.`</span></code>
+evaluates as <code class="sourceCode cpp">myTag<span class="op">([</span><span class="st">&quot;That &quot;</span>, <span class="st">&quot; is a &quot;</span>, <span class="st">&quot;.&quot;</span><span class="op">]</span>, person, age<span class="op">)</span></code>,
+similar to the C++ proposal having <code class="sourceCode cpp">myTag<span class="op">(</span>f<span class="st">&quot;That {person} is a {age}&quot;</span><span class="op">)</span></code>
+evaluate the transformed call <code class="sourceCode cpp">myTag<span class="op">(</span><span class="st">&quot;That {} is a {}&quot;</span>, person, age<span class="op">)</span></code>.
+Here, the literal is <em>not</em> an object.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="design"><span class="header-section-number">2</span> Design<a href="#design" class="self-link"></a></h1>
 <p>This paper proposes that we introduce string interpolation for C++
 following the same idea as Python’s template strings. We’ll have to come
