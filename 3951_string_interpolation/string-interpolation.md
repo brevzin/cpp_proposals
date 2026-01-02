@@ -184,7 +184,7 @@ Here are some examples of template string formatting calls and how they would be
 
 Two important things to note here. First, it is possible to lex an invalid expression due to finding a `:` first, as in the penultimate line. The lexing won't know about this though.
 
-Second, note that `"{a::b}"` lexes as simply the expression `a`, not `a::b`. If the latter is desired, it has to be parenthesized. That is, while lexing, we are not simply looking for the _token_ `:`, but the _character_ `:`. Which could be the token `:` but also includes not just two-character tokens like `::` and `:]`, and even the digraph `:<`. This is a difference in the logic proposed in [@P3412R3], which looks specifically for the _token_ (not character) `:`. This is important because it allows for the most functionality:
+Second, note that `"{a::b}"` lexes as simply the expression `a`, not `a::b`. If the latter is desired, it has to be parenthesized. That is, while lexing, we are not simply looking for the _token_ `:`, but the _character_ `:`. Which could be the token `:` but also includes not just two-character tokens like `::` and `:]`, and even the digraph `:<` (e.g. `"{a:<5}"` lexes as the expression `a` with the format specifier `<5` — left-aligned with width `5` — not as the incomplete expression `a[5`). This is a difference in the logic proposed in [@P3412R3], which looks specifically for the _token_ (not character) `:`. This is important because it allows for the most functionality:
 
 ::: std
 ```cpp
