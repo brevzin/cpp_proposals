@@ -73,8 +73,6 @@ Python 3.6 introduced literal string interpolation (`f"..."`) in [@PEP-498], whi
 
 JavaScript also has [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals), which support tagging. A tagged template literal is quite similar to what [@P3412R3] proposes: the expression `` myTag`That ${person} is a ${age}.` ``{.js} evaluates as `myTag(["That ", " is a ", "."], person, age)`, similar to the C++ proposal having `myTag(f"That {person} is a {age}")` evaluate the transformed call `myTag("That {} is a {}", person, age)`. Here, the literal is _not_ an object.
 
-
-
 # Design
 
 This paper proposes that we introduce string interpolation for C++ following the same idea as Python's template strings. We'll have to come up with a better name than "template string" for this, but for now I'm going to stick with it. A template string literal will eagerly evaluate all of the expressions and produce a new object with all of the relevant pieces, such that it will be suitable for both formatting APIs (like `std::format` and `std::print`) and other APIs that have nothing to do with formatting.
@@ -204,7 +202,7 @@ In order to format expressions that use scoping or the conditional operator, you
 
 ## Handling Macro Expansion
 
-While lexing expressions, macro expansion occurs too (although at a later phase, see below). This is both what users expect and is important to support, otherwise we're not actually meeting the claim of supporting all expressions. There are even standard utilities that are defined as macros, like `errno`. The one thing to note is that looking for the terminating `:` or `}` of an expression will _not_ consider such a character from macros. Otherwise, the macros wouldn't actually be usable properly and also the format string itself would become illegible.
+While lexing expressions, macro expansion occurs too (although at a later phase, [see below](#more-formal-lexing-specification)). This is both what users expect and is important to support, otherwise we're not actually meeting the claim of supporting all expressions. There are even standard utilities that are defined as macros, like `errno`. The one thing to note is that looking for the terminating `:` or `}` of an expression will _not_ consider such a character from macros. Otherwise, the macros wouldn't actually be usable properly and also the format string itself would become illegible.
 
 Extending the previous example:
 
@@ -623,6 +621,7 @@ In Clang, preprocessing happens during lexing — and so the way I implemented i
 * Phase 4: Preprocessing directives and macro expansion occurs
 * Phase 5: String-literal encoding and concatenation
 * Phase 6: Tokens
+* Phase 7: The rest of the owl
 
 The wording needs to fit this specification. Which we can do by defining a new set of preprocessing tokens. For example, the template string
 
@@ -641,6 +640,7 @@ $template-string-begin$
 
   $template-string-interpolation-begin$
     $string-literal$ "{:>{}}"
+    ,
     $string-literal$ "name()"
 
     $template-string-expression-begin$
@@ -659,7 +659,105 @@ $template-string-end$
 ```
 :::
 
-That is, we have a bunch of meta-tokens that don't lead to any output and are just there to guide parsing. A template string literal lexes into this alternating sequence of `$string-literal$`s and interpolations. An interpolation is bounded by `$template-string-interpolation-begin$` and `$template-string-interpolation-end$`, starts with two `$string-literal$`s for the format string and expression, and then continues with at least one expression. An expression is bounded by `$template-string-expression-begin$` and `$template-string-expression-end$`.
+That is, we have a bunch of meta-tokens that don't lead to any output and are just there to guide parsing. A template string literal lexes into this alternating sequence of `$string-literal$`s and interpolations. An interpolation is bounded by `$template-string-interpolation-begin$` and `$template-string-interpolation-end$`, starts with two `$string-literal$`s for the format string and expression (with a separator token just to avoid string concatenation from kicking in — I used `,` above but the actual separator doesn't matter), and then continues with at least one expression. An expression is bounded by `$template-string-expression-begin$` and `$template-string-expression-end$`.
+
+To handle [trailing `=`](#lexing-trailing-equals), we could go one of two ways. Consider just `t"Got {x = }."`. That could be either:
+
+::: cmptable
+
+### Pre-emptively append
+```cpp
+$template-string-begin$
+  $string-literal$ "Got x = "
+
+  $template-string-interpolation-begin$
+    $string-literal$ "{}"
+    ,
+    $string-literal$ "x"
+    $template-string-expression-begin$
+      $identifier$ "name"
+    $template-string-expression-end$
+  $template-string-interpolation-end$
+  $string-literal$ "."
+$template-string-end$
+```
+
+### Delayed concat
+```cpp
+$template-string-begin$
+  $string-literal$ "Got " // the initial string
+  $string-literal$ "x = " // expression with trailing =
+  $template-string-interpolation-begin$
+    $string-literal$ "{}"
+    ,
+    $string-literal$ "x"
+    $template-string-expression-begin$
+      $identifier$ "name"
+    $template-string-expression-end$
+  $template-string-interpolation-end$
+  $string-literal$ "."
+$template-string-end$
+```
+:::
+
+It works either way. With delayed concatenation, we rely on phase 5 to concatenate the string literals before parsing anyway.
+
+We could conceivably also just introduce a single token and use braces for everything else. Though probably better to ues something other than braces to make it easier to diagnose poorly formatted expressions? Whatever people prefer:
+
+::: cmptable
+
+### Several tokens for clarity
+```cpp
+$template-string-begin$
+
+  $string-literal$ "My name is "
+
+  $template-string-interpolation-begin$
+    $string-literal$ "{:>{}}"
+    ,
+    $string-literal$ "name()"
+
+    $template-string-expression-begin$
+      $identifier$ "name"
+      (
+      )
+    $template-string-expression-end$
+
+    $template-string-expression-begin$
+      $identifier$ "width"
+    $template-string-expression-end$
+  $template-string-interpolation-end$
+
+  $string-literal$ ".\n"
+$template-string-end$
+```
+
+### Just one token
+```cpp
+$template-string$
+{
+  $string-literal$ "My name is "
+
+  {
+    $string-literal$ "{:>{}}"
+    ,
+    $string-literal$ "name()"
+
+    {
+      $identifier$ "name"
+      (
+      )
+    }
+
+    {
+      $identifier$ "width"
+    }
+  }
+
+  $string-literal$ ".\n"
+}
+```
+:::
 
 # Alternate Approaches
 
