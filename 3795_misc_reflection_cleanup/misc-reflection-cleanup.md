@@ -168,22 +168,7 @@ consteval info apply_result(info fn, info tuple);
 
 ## Inconsistent Error-Handling API
 
-[@P2996R13]'s approach to error-handling was to add a "Constant When" specification to every function. Failing to meet that condition resulted in failing to be a constant expression.
-
-Every other paper in the reflection constellation followed that same path.
-
-However, [@P3560R2] changes the error-handling approach to instead throw an object of type `std::meta::exception`. Its wording changed most of the functions in [@P2996R13] — but it both did not change the error-handling for the type traits and it also neglected to be clairvoyant enough to change the error-handling for all of the other functions added by all of the other reflection papers.
-
-That is:
-
-|Paper|Functions|
-|-|-|
-[@P3394R4]|`annotations_of` and `annotations_of_with_type`|
-|[@P3293R3]|`subobjects_of`|
-|[@P3491R3]|`reflect_constant_array`|
-|[@P3096R12]|`parameters_of`, `variable_of`, and `return_type_of`|
-
-All of these functions should just `throw` as well. That's a pretty straightforward wording change.
+This section in [@P3795R0] pointed out how some functions in `std::meta::` still had a *Constant When* specification instead of a *Throws* specification, but that was already resolved directly by the handling of [@P3560R2]. Nothing more is needed here.
 
 ## Specifying Error-Handling More Precisely
 
@@ -193,13 +178,29 @@ But one thing that `std::meta::exception` gives you is a `from()` accessor that 
 
 # Wording
 
-Extend what an annotation can represent in [dcl.attr.annotation]:
+Extend what an annotation can represent in [dcl.attr.annotation]{.sref}:
 
 ::: std
 [1]{.pnum} An annotation may be applied to any declaration of a type, type alias, variable, function, [function parameter,]{.addu} namespace, enumerator, `$base-specifier$`, or non-static data member.
 :::
 
-The synopsis change for [meta.syn] is:
+Change [class.mem.general]{.sref} to extend our quintuple to a sextuple:
+
+::: std
+[32]{.pnum} A _data member description_ is a [quintuple]{.rm} [sextuple]{.addu} (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$` [, `$ANN$`]{.addu}) describing the potential declaration of a non-static data member where
+
+- [#.#]{.pnum} `$T$` is a type,
+- [#.#]{.pnum} `$N$` is an `$identifier$` or ⊥,
+- [#.#]{.pnum} `$A$` is an alignment or ⊥,
+- [#.#]{.pnum} `$W$` is a bit-field width or ⊥, [and]{.rm}
+- [#.#]{.pnum} `$NUA$` is a boolean value[.]{.rm} [, and]{.addu}
+- [#.#]{.pnum} [`$ANN$` is a sequence of annotations.]{.addu}
+
+Two data member descriptions are equal if each of their respective components are the same entities, are the same identifiers, have equal values, or are both ⊥.
+
+:::
+
+The synopsis change for [meta.syn]{.sref} is:
 
 ::: std
 ```diff
@@ -208,130 +209,7 @@ The synopsis change for [meta.syn] is:
 namespace std::meta {
   using info = decltype(^^::);
 
-  // [meta.reflection.operators], operator representations
-  enum class operators {
-    $see below$;
-  };
-  using enum operators;
-  consteval operators operator_of(info r);
-  consteval string_view symbol_of(operators op);
-  consteval u8string_view u8symbol_of(operators op);
-
-  // [meta.reflection.names], reflection names and locations
-  consteval bool has_identifier(info r);
-
-  consteval string_view identifier_of(info r);
-  consteval u8string_view u8identifier_of(info r);
-
-  consteval string_view display_string_of(info r);
-  consteval u8string_view u8display_string_of(info r);
-
-  consteval source_location source_location_of(info r);
-
-  // [meta.reflection.queries], reflection queries
-  consteval info type_of(info r);
-  consteval info object_of(info r);
-  consteval info constant_of(info r);
-
-  consteval bool is_public(info r);
-  consteval bool is_protected(info r);
-  consteval bool is_private(info r);
-
-  consteval bool is_virtual(info r);
-  consteval bool is_pure_virtual(info r);
-  consteval bool is_override(info r);
-  consteval bool is_final(info r);
-
-  consteval bool is_deleted(info r);
-  consteval bool is_defaulted(info r);
-  consteval bool is_user_provided(info r);
-  consteval bool is_user_declared(info r);
-  consteval bool is_explicit(info r);
-  consteval bool is_noexcept(info r);
-
-  consteval bool is_bit_field(info r);
-  consteval bool is_enumerator(info r);
-  consteval bool is_annotation(info r);
-
-  consteval bool is_const(info r);
-  consteval bool is_volatile(info r);
-  consteval bool is_mutable_member(info r);
-  consteval bool is_lvalue_reference_qualified(info r);
-  consteval bool is_rvalue_reference_qualified(info r);
-
-  consteval bool has_static_storage_duration(info r);
-  consteval bool has_thread_storage_duration(info r);
-  consteval bool has_automatic_storage_duration(info r);
-
-  consteval bool has_internal_linkage(info r);
-  consteval bool has_module_linkage(info r);
-  consteval bool has_external_linkage(info r);
-  consteval bool has_c_language_linkage(info r);
-  consteval bool has_linkage(info r);
-
-  consteval bool is_complete_type(info r);
-  consteval bool is_enumerable_type(info r);
-
-  consteval bool is_variable(info r);
-  consteval bool is_type(info r);
-  consteval bool is_namespace(info r);
-  consteval bool is_type_alias(info r);
-  consteval bool is_namespace_alias(info r);
-
-  consteval bool is_function(info r);
-  consteval bool is_conversion_function(info r);
-  consteval bool is_operator_function(info r);
-  consteval bool is_literal_operator(info r);
-  consteval bool is_special_member_function(info r);
-  consteval bool is_constructor(info r);
-  consteval bool is_default_constructor(info r);
-  consteval bool is_copy_constructor(info r);
-  consteval bool is_move_constructor(info r);
-  consteval bool is_assignment(info r);
-  consteval bool is_copy_assignment(info r);
-  consteval bool is_move_assignment(info r);
-  consteval bool is_destructor(info r);
-
-  consteval bool is_function_parameter(info r);
-  consteval bool is_explicit_object_parameter(info r);
-  consteval bool has_default_argument(info r);
-  consteval bool has_ellipsis_parameter(info r);
-
-  consteval bool is_template(info r);
-  consteval bool is_function_template(info r);
-  consteval bool is_variable_template(info r);
-  consteval bool is_class_template(info r);
-  consteval bool is_alias_template(info r);
-  consteval bool is_conversion_function_template(info r);
-  consteval bool is_operator_function_template(info r);
-  consteval bool is_literal_operator_template(info r);
-  consteval bool is_constructor_template(info r);
-  consteval bool is_concept(info r);
-
-  consteval bool is_value(info r);
-  consteval bool is_object(info r);
-
-  consteval bool is_structured_binding(info r);
-
-  consteval bool is_class_member(info r);
-  consteval bool is_namespace_member(info r);
-  consteval bool is_nonstatic_data_member(info r);
-  consteval bool is_static_member(info r);
-  consteval bool is_base(info r);
-
-  consteval bool has_default_member_initializer(info r);
-
-  consteval bool has_parent(info r);
-  consteval info parent_of(info r);
-
-  consteval info dealias(info r);
-
-  consteval bool has_template_arguments(info r);
-  consteval info template_of(info r);
-  consteval vector<info> template_arguments_of(info r);
-  consteval vector<info> parameters_of(info r);
-  consteval info variable_of(info r);
-  consteval info return_type_of(info r);
+  // ...
 
   // [meta.reflection.access.context], access control context
   struct access_context;
@@ -348,47 +226,7 @@ namespace std::meta {
 + consteval info current_namespace();
 
   // [meta.reflection.member.queries], reflection member queries
-  consteval vector<info> members_of(info r, access_context ctx);
-  consteval vector<info> bases_of(info type, access_context ctx);
-  consteval vector<info> static_data_members_of(info type, access_context ctx);
-  consteval vector<info> nonstatic_data_members_of(info type, access_context ctx);
-  consteval vector<info> subobjects_of(info type, access_context ctx);
-  consteval vector<info> enumerators_of(info type_enum);
-
-  // [meta.reflection.layout], reflection layout queries
-  struct member_offset;
-  consteval member_offset offset_of(info r);
-  consteval size_t size_of(info r);
-  consteval size_t alignment_of(info r);
-  consteval size_t bit_size_of(info r);
-
-  // [meta.reflection.extract], value extraction
-  template<class T>
-    consteval T extract(info);
-
-  // [meta.reflection.substitute], reflection substitution
-  template<class R>
-    concept reflection_range = $see below$;
-
-  template<reflection_range R = initializer_list<info>>
-    consteval bool can_substitute(info templ, R&& arguments);
-  template<reflection_range R = initializer_list<info>>
-    consteval info substitute(info templ, R&& arguments);
-
-  // [meta.reflection.result], expression result reflection
-  template<class T>
-    consteval info reflect_constant(const T& value);
-  template<class T>
-    consteval info reflect_object(T& object);
-  template<class T>
-    consteval info reflect_function(T& fn);
-
-  // [meta.reflection.array], promoting to static storage arrays
-  template<ranges::input_range R>
-    consteval info reflect_constant_string(R&& r);
-
-  template<ranges::input_range R>
-    consteval info reflect_constant_array(R&& r);
+  // ...
 
   // [meta.reflection.define.aggregate], class definition generation
   struct data_member_options;
@@ -399,148 +237,7 @@ namespace std::meta {
     consteval info define_aggregate(info type_class, R&&);
 
   // associated with [meta.unary.cat], primary type categories
-  consteval bool is_void_type(info type);
-  consteval bool is_null_pointer_type(info type);
-  consteval bool is_integral_type(info type);
-  consteval bool is_floating_point_type(info type);
-  consteval bool is_array_type(info type);
-  consteval bool is_pointer_type(info type);
-  consteval bool is_lvalue_reference_type(info type);
-  consteval bool is_rvalue_reference_type(info type);
-  consteval bool is_member_object_pointer_type(info type);
-  consteval bool is_member_function_pointer_type(info type);
-  consteval bool is_enum_type(info type);
-  consteval bool is_union_type(info type);
-  consteval bool is_class_type(info type);
-  consteval bool is_function_type(info type);
-  consteval bool is_reflection_type(info type);
-
-  // associated with [meta.unary.comp], composite type categories
-  consteval bool is_reference_type(info type);
-  consteval bool is_arithmetic_type(info type);
-  consteval bool is_fundamental_type(info type);
-  consteval bool is_object_type(info type);
-  consteval bool is_scalar_type(info type);
-  consteval bool is_compound_type(info type);
-  consteval bool is_member_pointer_type(info type);
-
-  // associated with [meta.unary.prop], type properties
-  consteval bool is_const_type(info type);
-  consteval bool is_volatile_type(info type);
-  consteval bool is_trivially_copyable_type(info type);
-  consteval bool is_trivially_relocatable_type(info type);
-  consteval bool is_replaceable_type(info type);
-  consteval bool is_standard_layout_type(info type);
-  consteval bool is_empty_type(info type);
-  consteval bool is_polymorphic_type(info type);
-  consteval bool is_abstract_type(info type);
-  consteval bool is_final_type(info type);
-  consteval bool is_aggregate_type(info type);
-  consteval bool is_consteval_only_type(info type);
-  consteval bool is_signed_type(info type);
-  consteval bool is_unsigned_type(info type);
-  consteval bool is_bounded_array_type(info type);
-  consteval bool is_unbounded_array_type(info type);
-  consteval bool is_scoped_enum_type(info type);
-
-  template<reflection_range R = initializer_list<info>>
-    consteval bool is_constructible_type(info type, R&& type_args);
-  consteval bool is_default_constructible_type(info type);
-  consteval bool is_copy_constructible_type(info type);
-  consteval bool is_move_constructible_type(info type);
-
-  consteval bool is_assignable_type(info type_dst, info type_src);
-  consteval bool is_copy_assignable_type(info type);
-  consteval bool is_move_assignable_type(info type);
-
-  consteval bool is_swappable_with_type(info type_dst, info type_src);
-  consteval bool is_swappable_type(info type);
-
-  consteval bool is_destructible_type(info type);
-
-  template<reflection_range R = initializer_list<info>>
-    consteval bool is_trivially_constructible_type(info type, R&& type_args);
-  consteval bool is_trivially_default_constructible_type(info type);
-  consteval bool is_trivially_copy_constructible_type(info type);
-  consteval bool is_trivially_move_constructible_type(info type);
-
-  consteval bool is_trivially_assignable_type(info type_dst, info type_src);
-  consteval bool is_trivially_copy_assignable_type(info type);
-  consteval bool is_trivially_move_assignable_type(info type);
-  consteval bool is_trivially_destructible_type(info type);
-
-  template<reflection_range R = initializer_list<info>>
-    consteval bool is_nothrow_constructible_type(info type, R&& type_args);
-  consteval bool is_nothrow_default_constructible_type(info type);
-  consteval bool is_nothrow_copy_constructible_type(info type);
-  consteval bool is_nothrow_move_constructible_type(info type);
-
-  consteval bool is_nothrow_assignable_type(info type_dst, info type_src);
-  consteval bool is_nothrow_copy_assignable_type(info type);
-  consteval bool is_nothrow_move_assignable_type(info type);
-
-  consteval bool is_nothrow_swappable_with_type(info type_dst, info type_src);
-  consteval bool is_nothrow_swappable_type(info type);
-
-  consteval bool is_nothrow_destructible_type(info type);
-  consteval bool is_nothrow_relocatable_type(info type);
-
-  consteval bool is_implicit_lifetime_type(info type);
-
-  consteval bool has_virtual_destructor(info type);
-
-  consteval bool has_unique_object_representations(info type);
-
-  consteval bool reference_constructs_from_temporary(info type_dst, info type_src);
-  consteval bool reference_converts_from_temporary(info type_dst, info type_src);
-
-  // associated with [meta.unary.prop.query], type property queries
-  consteval size_t rank(info type);
-  consteval size_t extent(info type, unsigned i = 0);
-
-  // associated with [meta.rel], type relations
-  consteval bool is_same_type(info type1, info type2);
-  consteval bool is_base_of_type(info type_base, info type_derived);
-  consteval bool is_virtual_base_of_type(info type_base, info type_derived);
-  consteval bool is_convertible_type(info type_src, info type_dst);
-  consteval bool is_nothrow_convertible_type(info type_src, info type_dst);
-  consteval bool is_layout_compatible_type(info type1, info type2);
-  consteval bool is_pointer_interconvertible_base_of_type(info type_base, info type_derived);
-
-  template<reflection_range R = initializer_list<info>>
-    consteval bool is_invocable_type(info type, R&& type_args);
-  template<reflection_range R = initializer_list<info>>
-    consteval bool is_invocable_r_type(info type_result, info type, R&& type_args);
-
-  template<reflection_range R = initializer_list<info>>
-    consteval bool is_nothrow_invocable_type(info type, R&& type_args);
-  template<reflection_range R = initializer_list<info>>
-    consteval bool is_nothrow_invocable_r_type(info type_result, info type, R&& type_args);
-
-  // associated with [meta.trans.cv], const-volatile modifications
-  consteval info remove_const(info type);
-  consteval info remove_volatile(info type);
-  consteval info remove_cv(info type);
-  consteval info add_const(info type);
-  consteval info add_volatile(info type);
-  consteval info add_cv(info type);
-
-  // associated with [meta.trans.ref], reference modifications
-  consteval info remove_reference(info type);
-  consteval info add_lvalue_reference(info type);
-  consteval info add_rvalue_reference(info type);
-
-  // associated with [meta.trans.sign], sign modifications
-  consteval info make_signed(info type);
-  consteval info make_unsigned(info type);
-
-  // associated with [meta.trans.arr], array modifications
-  consteval info remove_extent(info type);
-  consteval info remove_all_extents(info type);
-
-  // associated with [meta.trans.ptr], pointer modifications
-  consteval info remove_pointer(info type);
-  consteval info add_pointer(info type);
+  // ...
 
   // associated with [meta.trans.other], other transformations
   consteval info remove_cvref(info type);
@@ -573,7 +270,7 @@ namespace std::meta {
 ```
 :::
 
-Add to the front matter in 21.4.1, [meta.syn]:
+Add to the front matter in [meta.syn]{.sref}:
 
 ::: std
 [1]{.pnum} Unless otherwise specified, each function, and each specialization of any function template, specified in this header is a designated addressable function ([namespace.std]).
@@ -585,7 +282,45 @@ Add to the front matter in 21.4.1, [meta.syn]:
 [2]{.pnum} The behavior of any function specified in namespace `std::meta` is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
 :::
 
-Add the new clause [meta.reflection.scope] before 21.4.7, [meta.reflection.access.context]. The wording for `$current-scope$` is lifted wholesale from `access_context::current`:
+Adjust the data member description wording in [meta.reflection.names]{.sref}:
+
+::: std
+```cpp
+consteval bool has_identifier(info r);
+```
+[1]{.pnum} *Returns* [...]
+
+* [1.13]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]); `true` if `N` is not `⊥`. Otherwise, `false`.
+
+```cpp
+consteval string_view identifier_of(info r);
+consteval u8string_view u8identifier_of(info r);
+```
+
+[2]{.pnum} Let `$E$` be [...]
+[3]{.pnum} *Returns*: An NTMBS, encoded with E, determined as follows:
+
+* [3.6]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]); a `string_view` or `u8string_view`, respectively, containing the identifier `N`.
+:::
+
+Adjust the data member description wording in [meta.reflection.queries]{.sref}:
+
+::: std
+```cpp
+consteval info type_of(info r);
+```
+[2]{.pnum} *Returns*:
+
+* [2.6]{.pnum} Otherwise, for a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]), a reflection of the type `$T$`.
+
+```cpp
+consteval bool is_bit_field(info r);
+```
+
+[19]{.pnum} *Returns*: `true` if `r` represents a bit-field, or if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]) for which `$W$` is not ⊥. Otherwise, `false`.
+:::
+
+Add the new subclause [meta.reflection.scope] before [meta.reflection.access.context]{.sref}. The wording for `$current-scope$` is lifted wholesale from `access_context::current`:
 
 ::: std
 ::: addu
@@ -655,7 +390,7 @@ consteval info current_namespace();
 :::
 :::
 
-Adjust down the now-moved wording from 21.4.7, [meta.reflection.access.context]:
+Adjust down the now-moved wording from [meta.reflection.access.context]{.sref}:
 
 ::: std
 ```cpp
@@ -692,32 +427,43 @@ static consteval access_context current() noexcept;
 [#]{.pnum} *Returns*: An `access_context` whose designating class is the null reflection and whose scope [represents the function, class, or namespace whose corresponding function parameter scope, class scope, or namespace scope is `$ctx-scope$($S$)`, where `$S$` is the immediate scope of `$eval-point$($P$)` and]{.rm} [is `$CURRENT-SCOPE$($P$)` where]{.addu} `$P$` is the point at which the invocation of `current` lexically appears.
 :::
 
-Fix error-handling in `subobjects_of` in [meta.reflection.member.queries]:
-
-::: std
-```
-consteval vector<info> subobjects_of(info type, access_context ctx);
-```
-
-[12]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `dealias(type)` represents a class type that is complete from some point in the evaluation context.
-:::
-
-Fix error-handling in `reflect_constant_array` in 21.4.14, [meta.reflection.array]:
+Adjust the data member description wording in [meta.reflection.layout]{.sref}:
 
 ::: std
 ```cpp
-template <ranges::input_range R>
-consteval info reflect_constant_array(R&& r);
+consteval size_t size_of(info r);
+```
+[5]{.pnum} *Returns*:
+
+- [#.#]{.pnum} If `r` represents a non-static data member of type `$T$` or a a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}), or
+
+[6]{.pnum} *Throws*: `meta::exception` unless all of the following conditions are met:
+
+- [#.#]{.pnum} `dealias(r)` is a reflection of a type, object, value, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]) where `$W$` is ⊥.
+
+```cpp
+consteval size_t alignment_of(info r);
 ```
 
-[8]{.pnum} Let `$T$` be `ranges::range_value_t<R>`.
+[7]{.pnum} *Returns*:
 
-[#]{.pnum} *Mandates*: `$T$` is a structural type ([temp.param]), `is_constructible_v<$T$, ranges::range_reference_t<R>>` is `true`, and `is_copy_constructible_v<$T$>` is `true`.
+* [#.5]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]). If `$A$` is not ⊥, then the value `$A$`. Otherwise, `alignment_of(^^$T$)`.
 
-[#]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `reflect_constant(e)` is a constant subexpression for every element `e` of `r`.
+[8]{.pnum} *Throws*: `meta::exception` unless all of the following conditions are met:
+
+* [8.1]{.pnum} `dealias(r)` is a reflection of a type, object, variable of non-reference type, non-static data member that is not a bit-field, direct base class relationship, or data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]) where `$W$` is ⊥.
+
+```cpp
+consteval size_t bit_size_of(info r);
+```
+
+[9]{.pnum} *Returns*:
+
+* [9.2]{.pnum} Otherwise, if r represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) and `$W$` is not ⊥, then `$W$`.
+
 :::
 
-Change the `data_member_spec` API in 21.4.15, [meta.reflection.define.aggregate]:
+Change the `data_member_spec` API in [meta.reflection.define.aggregate]{.sref}:
 
 ::: std
 ```diff
@@ -735,9 +481,12 @@ struct data_member_options {
 
 + info type;
   optional<$name-type$> name;
-  optional<int> alignment;
-  optional<int> bit_width;
+- optional<int> alignment;
+- optional<int> bit_width;
++ optional<int> alignment = {};
++ optional<int> bit_width = {};
   bool no_unique_address = false;
++ vector<info> annotations = {};
 };
 ```
 
@@ -763,8 +512,8 @@ The class `$name-type$` allows the function `data_member_spec` to accept an ordi
 ```diff
 consteval void fn() {
 - data_member_options o1 = {.name="ordinary_literal_encoding"};
-+ data_member_options o1 = {.type=^^int, .name="ordinary_literal_encoding"};
 - data_member_options o2 = {.name=u8"utf8_encoding"};
++ data_member_options o1 = {.type=^^int, .name="ordinary_literal_encoding"};
 + data_member_options o2 = {.type=^^char, .name=u8"utf8_encoding"};
 }
 ```
@@ -777,34 +526,37 @@ consteval void fn() {
 -                                 data_member_options options);
 + consteval info data_member_spec(data_member_options options);
 ```
-[#]{.pnum} *Constant When*:
-
-- [#.#]{.pnum} [`dealias(type)`]{.rm} [`dealias(options.type)`]{.addu} represents either an object type or a reference type;
-- [#.#]{.pnum} if `options.name` contains a value, then:
-  - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier ([lex.name]) that is not a keyword ([lex.key]) when interpreted with UTF-8, or
-  - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier that is not a keyword when interpreted with the ordinary literal encoding;
-
-  [The name corresponds to the spelling of an identifier token after phase 6 of translation ([lex.phases]). Lexical constructs like `$universal-character-name$`s [lex.universal.char] are not processed and will cause evaluation to fail. For example, `R"(\u03B1)"` is an invalid identifier and is not interpreted as `"α"`.]{.note}
-- [#.#]{.pnum} if `options.name` does not contain a value, then `options.bit_width` contains a value;
-- [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
-  - [#.#.#]{.pnum} `is_integral_type(type) || is_enumeration_type(type)` is `true`,
-  - [#.#.#]{.pnum} `options.alignment` does not contain a value,
-  - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
-  - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value; and
-- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`.
-
-[#]{.pnum} *Returns*: A reflection of a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`) ([class.mem.general]) where
+[#]{.pnum} *Returns*: A reflection of a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]) where
 
 - [#.#]{.pnum} `$T$` is the type represented by [`dealias(type)`]{.rm} [`dealias(options.type)`]{.addu},
 - [#.#]{.pnum} `$N$` is either the identifier encoded by `options.name` or ⊥ if `options.name` does not contain a value,
 - [#.#]{.pnum} `$A$` is either the alignment value held by `options.alignment` or ⊥ if `options.alignment` does not contain a value,
-- [#.#]{.pnum} `$W$` is either the value held by `options.bit_width` or ⊥ if `options.bit_width` does not contain a value, and
-- [#.#]{.pnum} `$NUA$` is the value held by `options.no_unique_address`.
+- [#.#]{.pnum} `$W$` is either the value held by `options.bit_width` or ⊥ if `options.bit_width` does not contain a value, [and]{.rm}
+- [#.#]{.pnum} `$NUA$` is the value held by `options.no_unique_address`[.]{.rm} [, and]{.addu}
+- [#.#]{.pnum} [`$ANN$` is the sequence of annotations in `options.annotations`.]{.addu}
 
 [#]{.pnum} [The returned reflection value is primarily useful in conjunction with `define_aggregate`; it can also be queried by certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`).]{.note}
+
+```cpp
+template<reflection_range R = initializer_list<info>>
+  consteval info define_aggregate(info class_type, R&& mdescrs);
+```
+
+[7]{.pnum} Let `$C$` be the class represented by `class_type` and `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`. For every `@$r$~$K$~@` in `mdescrs`, let (`@$T$~$K$~@`, `@$N$~$K$~@`, `@$A$~$K$~@`, `@$W$~$K$~@`, `@$NUA$~$K$~@`[, `@$ANN$~$K$~@`]{.addu}) be the corresponding data member description represented by `@$r$~$K$~@`.
+
+[9]{.pnum} Produces an injected declaration `$D$` ([expr.const]) that defines `$C$` and has properties as follows:
+
+* [9.5]{.pnum} For each `@$r$~$K$~@`, there is a corresponding entity `@$M$~$K$~@` belonging to the class scope of `$D$` with the following properties:
+
+  - [#.#.#]{.pnum} If `@$N$~$K$~@` is ⊥, `@$M$~$K$~@` is an unnamed bit-field. Otherwise, `@$M$~$K$~@` is a non-static data member whose name is the identifier determined by the character sequence encoded by `@$N$~$K$~@` in UTF-8.
+  - [#.#.#]{.pnum} The type of `@$M$~$K$~@` is `@$T$~$K$~@`.
+  - [#.#.#]{.pnum} `@$M$~$K$~@` is declared with the attribute `[[no_unique_address]]` if and only if `@$NUA$~$K$~@` is `true`.
+  - [#.#.#]{.pnum} If `@$W$~$K$~@` is not ⊥, `@$M$~$K$~@` is a bit-field whose width is that value. Otherwise, `@$M$~$K$~@` is not a bit-field.
+  - [#.#.#]{.pnum} If `@$A$~$K$~@` is not ⊥, `@$M$~$K$~@` has the `$alignment-specifier$` `alignas(@$A$~$K$~@)`. Otherwise, `@$M$~$K$~@` has no `$alignment-specifier$`.
+  - [#.#.#]{.pnum} [`@$M$~$K$~@` has the annotations `@$ANN$~$K$~@`.]{.addu}
 :::
 
-Add the various tuple traits in 21.4.16, [meta.reflection.traits]:
+Add the various tuple traits in 21.4.16, [meta.reflection.traits]{.sref}:
 
 ::: std
 ```cpp
@@ -829,23 +581,43 @@ consteval info apply_result(info fn, info tuple);
 :::
 :::
 
-Change 21.4.17, [meta.reflection.annotation]:
+Change 21.4.17, [meta.reflection.annotation]{.sref}:
 
 ::: std
 ```cpp
 consteval vector<info> annotations_of(info item);
 ```
 
-[1]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu} `item` represents a type, type alias, variable, function, [function parameter,]{.addu}, namespace, enumerator, direct base class relationship, or non-static data member.
+[1]{.pnum} Let `$S$(r)` be:
 
-[...]
+* [#.#]{.pnum} if `r` represents a direct base class relationship, then the set of all declarations of the corresponding `$base-specifier$`,
+* [#.#]{.pnum} otherwise, if `r` represents a function `$F$`, then the set of declarations, ignoring any explicit instantiations, that precede some point in the evaluation context and that declare either `$F$` or a templated function of which `$F$` is a specialization,
+* [#.#]{.pnum} otherwise, if `r` represents a function parameter `$P$` of a function `$F$`, then `$S$(^^$F$)`.
+* [#.#]{.pnum} otherwise, the set of declarations of the entity represented by `r`.
 
-```cpp
-consteval vector<info> annotations_of_with_type(info item, info type);
-```
+[2]{.pnum} Let `$E$(d)` be
 
-[4]{.pnum} [*Constant When*]{.rm} [*Throws*]{.addu}: [`meta::exception` unless]{.addu}
+* [#.#]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the corresponding function parameter of `d`.
+* [#.#]{.pnum} otherwise, `d`.
 
-- [#.#]{.pnum} `annotations_of(item)` is a constant subexpression and
-- [#.#]{.pnum} `dealias(type)` represents a type that is complete from some point in the evaluation context.
+[3]{.pnum} *Returns*:
+
+* [#.1]{.pnum} If `item` represents the data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`, `$ANN$`), then a `vector` containing all of the reflections in `$ANN$`, in order.
+* [#.2]{.pnum} Otherwise, a `vector` containing all of the reflections `$R$` representing each annotation applying to `$E$($D$)` for each declaration `$D$` in `$S$(item)` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
+
+[3]{.pnum} *Returns*:
+
+* [#.1]{.pnum} If `item` represents the data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`, `$ANN$`), then a `vector` containing all of the reflections in `$ANN$`, in order.
+* [#.2]{.pnum} Otherwise, a `vector` containing all of the reflections `$R$` representing each annotation applying to:
+  * [#.#.1]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the declaration of `$P$` in each declaration of `$F$` in `$S$($F$)`,
+  * [#.#.#]{.pnum} otherwise, if `item` represents a function `$F$`, then each declaration of `$F$` in `$S$($F$)`,
+  * [#.#.#]{.pnum} otherwise, if `item` represents a direct base class relationship, then each declaration of the corresponding `$base-specifier$`,
+  * [#.#.#]{.pnum} otherwise, the each declaration of the entity represented by `item`,
+
+  such that the specified declaration precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
+
+[The order in which two annotations appear is otherwise unspecified.]{.note}
+
+[3]{.pnum} Throws: `meta​::​exception` unless item represents a type, type alias, variable, function, [function parameter,]{.addu} namespace, enumerator, direct base class relationship, [data member description,]{.addu} or non-static data member.
+
 :::
