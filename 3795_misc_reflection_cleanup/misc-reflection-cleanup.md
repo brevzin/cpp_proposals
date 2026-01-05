@@ -374,7 +374,7 @@ consteval info current_class();
 
 [#]{.pnum} *Throws*: `meta::exception` unless `$S$` represents either a class or a member function.
 
-[#]{.pnum} *Returns*: `$S$` is `$S$` represents a class. Otherwise, `parent_of($S$)`.
+[#]{.pnum} *Returns*: `$S$` if `$S$` represents a class. Otherwise, `parent_of($S$)`.
 
 
 ```cpp
@@ -385,7 +385,7 @@ consteval info current_namespace();
 
 [#]{.pnum} Let `$S$` be `$CURRENT-SCOPE$($P$)` where `$P$` is the point at which the invocation of `$current-namespace$` lexically appears.
 
-[#]{.pnum} *Returns*: `$S$` is `$S$` represents a namespace. Otherwise, a reflection representing the nearest enclosing namespace of the entity represented by `$S$`.
+[#]{.pnum} *Returns*: `$S$` if `$S$` represents a namespace. Otherwise, a reflection representing the nearest enclosing namespace of the entity represented by `$S$`.
 
 :::
 :::
@@ -460,6 +460,47 @@ consteval size_t bit_size_of(info r);
 [9]{.pnum} *Returns*:
 
 * [9.2]{.pnum} Otherwise, if r represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) and `$W$` is not ⊥, then `$W$`.
+
+:::
+
+Change [meta.reflection.annotation]{.sref}:
+
+::: std
+```cpp
+consteval vector<info> annotations_of(info item);
+```
+
+[1]{.pnum} Let `$S$(r)` be:
+
+* [#.#]{.pnum} if `r` represents a direct base class relationship, then the set of all declarations of the corresponding `$base-specifier$`,
+* [#.#]{.pnum} otherwise, if `r` represents a function `$F$`, then the set of declarations, ignoring any explicit instantiations, that precede some point in the evaluation context and that declare either `$F$` or a templated function of which `$F$` is a specialization,
+* [#.#]{.pnum} otherwise, if `r` represents a function parameter `$P$` of a function `$F$`, then `$S$(^^$F$)`.
+* [#.#]{.pnum} otherwise, the set of declarations of the entity represented by `r`.
+
+[2]{.pnum} Let `$E$(d)` be
+
+* [#.#]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the corresponding function parameter of `d`.
+* [#.#]{.pnum} otherwise, `d`.
+
+[3]{.pnum} *Returns*:
+
+* [#.1]{.pnum} If `item` represents the data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`, `$ANN$`), then a `vector` containing all of the reflections in `$ANN$`, in order.
+* [#.2]{.pnum} Otherwise, a `vector` containing all of the reflections `$R$` representing each annotation applying to `$E$($D$)` for each declaration `$D$` in `$S$(item)` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
+
+[3]{.pnum} *Returns*:
+
+* [#.1]{.pnum} If `item` represents the data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`, `$ANN$`), then a `vector` containing all of the reflections in `$ANN$`, in order.
+* [#.2]{.pnum} Otherwise, a `vector` containing all of the reflections `$R$` representing each annotation applying to:
+  * [#.#.1]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the declaration of `$P$` in each declaration of `$F$` in `$S$($F$)`,
+  * [#.#.#]{.pnum} otherwise, if `item` represents a function `$F$`, then each declaration of `$F$` in `$S$($F$)`,
+  * [#.#.#]{.pnum} otherwise, if `item` represents a direct base class relationship, then each declaration of the corresponding `$base-specifier$`,
+  * [#.#.#]{.pnum} otherwise, the each declaration of the entity represented by `item`,
+
+  such that the specified declaration precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
+
+[The order in which two annotations appear is otherwise unspecified.]{.note}
+
+[3]{.pnum} Throws: `meta​::​exception` unless item represents a type, type alias, variable, function, [function parameter,]{.addu} namespace, enumerator, direct base class relationship, [data member description,]{.addu} or non-static data member.
 
 :::
 
@@ -556,7 +597,7 @@ template<reflection_range R = initializer_list<info>>
   - [#.#.#]{.pnum} [`@$M$~$K$~@` has the annotations `@$ANN$~$K$~@`.]{.addu}
 :::
 
-Add the various tuple traits in 21.4.16, [meta.reflection.traits]{.sref}:
+Add the various tuple traits in [meta.reflection.traits]{.sref}:
 
 ::: std
 ```cpp
@@ -579,45 +620,4 @@ consteval info apply_result(info fn, info tuple);
 
 [y]{.pnum} *Returns*: A reflection representing the type denoted by `apply_result_t<$F$, $T$>`, where `$F$` and `$T$` are the types represented by `dealias(fn)` and `dealias(tuple)`, respectively.
 :::
-:::
-
-Change 21.4.17, [meta.reflection.annotation]{.sref}:
-
-::: std
-```cpp
-consteval vector<info> annotations_of(info item);
-```
-
-[1]{.pnum} Let `$S$(r)` be:
-
-* [#.#]{.pnum} if `r` represents a direct base class relationship, then the set of all declarations of the corresponding `$base-specifier$`,
-* [#.#]{.pnum} otherwise, if `r` represents a function `$F$`, then the set of declarations, ignoring any explicit instantiations, that precede some point in the evaluation context and that declare either `$F$` or a templated function of which `$F$` is a specialization,
-* [#.#]{.pnum} otherwise, if `r` represents a function parameter `$P$` of a function `$F$`, then `$S$(^^$F$)`.
-* [#.#]{.pnum} otherwise, the set of declarations of the entity represented by `r`.
-
-[2]{.pnum} Let `$E$(d)` be
-
-* [#.#]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the corresponding function parameter of `d`.
-* [#.#]{.pnum} otherwise, `d`.
-
-[3]{.pnum} *Returns*:
-
-* [#.1]{.pnum} If `item` represents the data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`, `$ANN$`), then a `vector` containing all of the reflections in `$ANN$`, in order.
-* [#.2]{.pnum} Otherwise, a `vector` containing all of the reflections `$R$` representing each annotation applying to `$E$($D$)` for each declaration `$D$` in `$S$(item)` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
-
-[3]{.pnum} *Returns*:
-
-* [#.1]{.pnum} If `item` represents the data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`, `$ANN$`), then a `vector` containing all of the reflections in `$ANN$`, in order.
-* [#.2]{.pnum} Otherwise, a `vector` containing all of the reflections `$R$` representing each annotation applying to:
-  * [#.#.1]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the declaration of `$P$` in each declaration of `$F$` in `$S$($F$)`,
-  * [#.#.#]{.pnum} otherwise, if `item` represents a function `$F$`, then each declaration of `$F$` in `$S$($F$)`,
-  * [#.#.#]{.pnum} otherwise, if `item` represents a direct base class relationship, then each declaration of the corresponding `$base-specifier$`,
-  * [#.#.#]{.pnum} otherwise, the each declaration of the entity represented by `item`,
-
-  such that the specified declaration precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
-
-[The order in which two annotations appear is otherwise unspecified.]{.note}
-
-[3]{.pnum} Throws: `meta​::​exception` unless item represents a type, type alias, variable, function, [function parameter,]{.addu} namespace, enumerator, direct base class relationship, [data member description,]{.addu} or non-static data member.
-
 :::
