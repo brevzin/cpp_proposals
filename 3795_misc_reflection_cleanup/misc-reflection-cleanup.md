@@ -194,7 +194,7 @@ Change [class.mem.general]{.sref} to extend our quintuple to a sextuple:
 - [#.#]{.pnum} `$A$` is an alignment or ⊥,
 - [#.#]{.pnum} `$W$` is a bit-field width or ⊥, [and]{.rm}
 - [#.#]{.pnum} `$NUA$` is a boolean value[.]{.rm} [, and]{.addu}
-- [#.#]{.pnum} [`$ANN$` is a sequence of annotations.]{.addu}
+- [#.#]{.pnum} [`$ANN$` is a sequence of reflections representing either values or objects.]{.addu}
 
 Two data member descriptions are equal if each of their respective components are the same entities, are the same identifiers, have equal values, or are both ⊥.
 
@@ -276,7 +276,7 @@ Add to the front matter in [meta.syn]{.sref}:
 [1]{.pnum} Unless otherwise specified, each function, and each specialization of any function template, specified in this header is a designated addressable function ([namespace.std]).
 
 ::: addu
-[*]{.pnum} When a function or function template `$F$` specified in this header throws a `meta::exception` `$E$`, `$E$.from()` is a reflection representing `$F$`.
+[*]{.pnum} When a function or function template specialization `$F$` specified in this header throws a `meta::exception` `$E$`, `$E$.from()` is a reflection representing `$F$` and `$E$.where()` is a `source_location` representing where the call to `$F$` originated from.
 :::
 
 [2]{.pnum} The behavior of any function specified in namespace `std::meta` is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
@@ -290,6 +290,7 @@ consteval bool has_identifier(info r);
 ```
 [1]{.pnum} *Returns* [...]
 
+* [1.1]{.pnum} [...]
 * [1.13]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]); `true` if `N` is not `⊥`. Otherwise, `false`.
 
 ```cpp
@@ -298,8 +299,10 @@ consteval u8string_view u8identifier_of(info r);
 ```
 
 [2]{.pnum} Let `$E$` be [...]
+
 [3]{.pnum} *Returns*: An NTMBS, encoded with E, determined as follows:
 
+* [3.1]{.pnum} [...]
 * [3.6]{.pnum} Otherwise, `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]); a `string_view` or `u8string_view`, respectively, containing the identifier `N`.
 :::
 
@@ -465,42 +468,38 @@ consteval size_t bit_size_of(info r);
 
 Change [meta.reflection.annotation]{.sref}:
 
+[This doesn't work for data member specifications, because those contain constants — not annotations yet. Is it even useful to pull them back out? They're not annotations yet. Do we have to synthesize annotations? It's useful to add annotations to generated data members — I'm not sure if it's useful to query the annotations on a pre-generated data member? There's also a drive-by cleanup of the wording around direct base class relationships, since `$base-specifier$`s aren't technically declared. ]{.draftnote}
+
 ::: std
 ```cpp
 consteval vector<info> annotations_of(info item);
 ```
 
-[1]{.pnum} Let `$S$(r)` be:
+::: addu
+[1]{.pnum} Let `$S$(F)` for a function `$F$` be the set of declarations, ignoring any explicit instantiations, that precede some point in the evaluation context and that declare either `$F$` or a templated function of which `$F$` is a specialization.
+:::
 
-* [#.#]{.pnum} if `r` represents a direct base class relationship, then the set of all declarations of the corresponding `$base-specifier$`,
-* [#.#]{.pnum} otherwise, if `r` represents a function `$F$`, then the set of declarations, ignoring any explicit instantiations, that precede some point in the evaluation context and that declare either `$F$` or a templated function of which `$F$` is a specialization,
-* [#.#]{.pnum} otherwise, if `r` represents a function parameter `$P$` of a function `$F$`, then `$S$(^^$F$)`.
-* [#.#]{.pnum} otherwise, the set of declarations of the entity represented by `r`.
+::: rm
+[1]{.pnum} Let `$E$` be
 
-[2]{.pnum} Let `$E$(d)` be
+* [#.#]{.pnum} the corresponding `$base-specifier$` if `item` represents a direct base class relationship,
+* [#.#]{.pnum} otherwise, the entity represented by `item`.
+:::
 
-* [#.#]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the corresponding function parameter of `d`.
-* [#.#]{.pnum} otherwise, `d`.
+[2]{.pnum} *Returns*: a `vector` containing all of the reflections `$R$` representing each annotation applying to [each declaration of `$E$` that]{.rm}:
 
-[3]{.pnum} *Returns*:
+::: addu
+* [#.1]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the declaration of `$P$` in each declaration of `$F$` in `$S$($F$)`,
+* [#.#]{.pnum} otherwise, if `item` represents a function `$F$`, then each declaration of `$F$` in `$S$($F$)`,
+* [#.#]{.pnum} otherwise, if `item` represents a direct base class relationship (`$D$`, `$B$`), then the corresponding `$base-specifier$` in the definition of `$D$`,
+* [#.#]{.pnum} otherwise, the each declaration of the entity represented by `item`,
+:::
 
-* [#.1]{.pnum} If `item` represents the data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`, `$ANN$`), then a `vector` containing all of the reflections in `$ANN$`, in order.
-* [#.2]{.pnum} Otherwise, a `vector` containing all of the reflections `$R$` representing each annotation applying to `$E$($D$)` for each declaration `$D$` in `$S$(item)` that precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
-
-[3]{.pnum} *Returns*:
-
-* [#.1]{.pnum} If `item` represents the data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`, `$ANN$`), then a `vector` containing all of the reflections in `$ANN$`, in order.
-* [#.2]{.pnum} Otherwise, a `vector` containing all of the reflections `$R$` representing each annotation applying to:
-  * [#.#.1]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the declaration of `$P$` in each declaration of `$F$` in `$S$($F$)`,
-  * [#.#.#]{.pnum} otherwise, if `item` represents a function `$F$`, then each declaration of `$F$` in `$S$($F$)`,
-  * [#.#.#]{.pnum} otherwise, if `item` represents a direct base class relationship, then each declaration of the corresponding `$base-specifier$`,
-  * [#.#.#]{.pnum} otherwise, the each declaration of the entity represented by `item`,
-
-  such that the specified declaration precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
+[such that each specified declaration]{.addu} precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
 
 [The order in which two annotations appear is otherwise unspecified.]{.note}
 
-[3]{.pnum} Throws: `meta​::​exception` unless item represents a type, type alias, variable, function, [function parameter,]{.addu} namespace, enumerator, direct base class relationship, [data member description,]{.addu} or non-static data member.
+[3]{.pnum} Throws: `meta​::​exception` unless item represents a type, type alias, variable, function, [function parameter,]{.addu} namespace, enumerator, direct base class relationship, or non-static data member.
 
 :::
 
@@ -574,9 +573,26 @@ consteval void fn() {
 - [#.#]{.pnum} `$A$` is either the alignment value held by `options.alignment` or ⊥ if `options.alignment` does not contain a value,
 - [#.#]{.pnum} `$W$` is either the value held by `options.bit_width` or ⊥ if `options.bit_width` does not contain a value, [and]{.rm}
 - [#.#]{.pnum} `$NUA$` is the value held by `options.no_unique_address`[.]{.rm} [, and]{.addu}
-- [#.#]{.pnum} [`$ANN$` is the sequence of annotations in `options.annotations`.]{.addu}
+- [#.#]{.pnum} [`$ANN$` is the sequence of reflection values in `options.annotations`.]{.addu}
 
-[#]{.pnum} [The returned reflection value is primarily useful in conjunction with `define_aggregate`; it can also be queried by certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`).]{.note}
+[The returned reflection value is primarily useful in conjunction with `define_aggregate`; it can also be queried by certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`).]{.note}
+
+[#]{.pnum} *Throws*: `meta::exception` unless the following conditions are met:
+
+- [#.#]{.pnum} [`dealias(type)`]{.rm} [`dealias(options.type)`]{.addu} represents either an object type or a reference type;
+- [#.#]{.pnum} if `options.name` contains a value, then:
+  - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier ([lex.name]) that is not a keyword ([lex.key]) when interpreted with UTF-8, or
+  - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier that is not a keyword when interpreted with the ordinary literal encoding;
+
+  [The name corresponds to the spelling of an identifier token after phase 6 of translation ([lex.phases]). Lexical constructs like `$universal-character-name$`s [lex.universal.char] are not processed and will cause evaluation to fail. For example, `R"(\u03B1)"` is an invalid identifier and is not interpreted as `"α"`.]{.note}
+- [#.#]{.pnum} if `options.name` does not contain a value, then `options.bit_width` contains a value;
+- [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
+  - [#.#.#]{.pnum} [`is_integral_type(type) || is_enumeration_type(type)`]{.rm} [`is_integral_type(options.type) || is_enumeration_type(options.type)`]{.addu} is `true`,
+  - [#.#.#]{.pnum} `options.alignment` does not contain a value,
+  - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
+  - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value; [and]{.rm}
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than [`alignment_of(type)`.]{.rm} [`alignment_of(options.type)`; and]{.addu}
+- [#.#]{.pnum} [for every reflection `r` in `options.annotations`, `is_value(r) || is_object(r)` is `true`.]{.addu}
 
 ```cpp
 template<reflection_range R = initializer_list<info>>
@@ -585,8 +601,14 @@ template<reflection_range R = initializer_list<info>>
 
 [7]{.pnum} Let `$C$` be the class represented by `class_type` and `@$r$~$K$~@` be the `$K$`^th^ reflection value in `mdescrs`. For every `@$r$~$K$~@` in `mdescrs`, let (`@$T$~$K$~@`, `@$N$~$K$~@`, `@$A$~$K$~@`, `@$W$~$K$~@`, `@$NUA$~$K$~@`[, `@$ANN$~$K$~@`]{.addu}) be the corresponding data member description represented by `@$r$~$K$~@`.
 
+[8]{.pnum} *Constant When*: [...]
+
 [9]{.pnum} Produces an injected declaration `$D$` ([expr.const]) that defines `$C$` and has properties as follows:
 
+* [9.1]{.pnum} The target scope of `$D$` is [...]
+* [9.2]{.pnum} The locus of `$D$` [...]
+* [9.3]{.pnum} The characteristic sequence of `$D$` [...]
+* [9.4]{.pnum} If `$C$` is a specialization [...]
 * [9.5]{.pnum} For each `@$r$~$K$~@`, there is a corresponding entity `@$M$~$K$~@` belonging to the class scope of `$D$` with the following properties:
 
   - [#.#.#]{.pnum} If `@$N$~$K$~@` is ⊥, `@$M$~$K$~@` is an unnamed bit-field. Otherwise, `@$M$~$K$~@` is a non-static data member whose name is the identifier determined by the character sequence encoded by `@$N$~$K$~@` in UTF-8.
@@ -594,30 +616,7 @@ template<reflection_range R = initializer_list<info>>
   - [#.#.#]{.pnum} `@$M$~$K$~@` is declared with the attribute `[[no_unique_address]]` if and only if `@$NUA$~$K$~@` is `true`.
   - [#.#.#]{.pnum} If `@$W$~$K$~@` is not ⊥, `@$M$~$K$~@` is a bit-field whose width is that value. Otherwise, `@$M$~$K$~@` is not a bit-field.
   - [#.#.#]{.pnum} If `@$A$~$K$~@` is not ⊥, `@$M$~$K$~@` has the `$alignment-specifier$` `alignas(@$A$~$K$~@)`. Otherwise, `@$M$~$K$~@` has no `$alignment-specifier$`.
-  - [#.#.#]{.pnum} [`@$M$~$K$~@` has the annotations `@$ANN$~$K$~@`.]{.addu}
+  - [#.#.#]{.pnum} [`@$M$~$K$~@` has an annotation with constant `r` for every reflection `r` in `@$ANN$~$K$~@`.]{.addu}
+* [9.6]{.pnum} For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$` [...]
 :::
 
-Add the various tuple traits in [meta.reflection.traits]{.sref}:
-
-::: std
-```cpp
-consteval info tuple_element(size_t index, info type);
-```
-
-[9]{.pnum} *Returns*: A reflection representing the type denoted by `tuple_element_t<$I$, $T$>` where `$T$` is the type represented by `dealias(type)` and `$I$` is a constant equal to `index`.
-
-::: addu
-```cpp
-consteval bool is_applicable_type(info fn, info tuple);
-consteval bool is_nothrow_applicable_type(info fn, info tuple);
-```
-
-[x]{.pnum} *Returns*: `is_applicable_v<$F$, $T$>` and `is_nothrow_applicable_v<$F$, $T$>`, respectively, where `$F$` and `$T$` are the types represented by `dealias(fn)` and `dealias(tuple)`, respectively.
-
-```cpp
-consteval info apply_result(info fn, info tuple);
-```
-
-[y]{.pnum} *Returns*: A reflection representing the type denoted by `apply_result_t<$F$, $T$>`, where `$F$` and `$T$` are the types represented by `dealias(fn)` and `dealias(tuple)`, respectively.
-:::
-:::
