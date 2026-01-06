@@ -592,7 +592,7 @@ consteval void fn() {
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
   - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value; [and]{.rm}
 - [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than [`alignment_of(type)`.]{.rm} [`alignment_of(options.type)`; and]{.addu}
-- [#.#]{.pnum} [for every reflection `r` in `options.annotations`, `is_value(r) || is_object(r)` is `true`.]{.addu}
+- [#.#]{.pnum} [for every reflection `r` in `options.annotations`, either `r` represents a value or `r` represents a template parameter object. [`r` must be a possible result of a call to `meta::reflect_constant`.]{.note}]{.addu}
 
 ```cpp
 template<reflection_range R = initializer_list<info>>
@@ -616,7 +616,7 @@ template<reflection_range R = initializer_list<info>>
   - [#.#.#]{.pnum} `@$M$~$K$~@` is declared with the attribute `[[no_unique_address]]` if and only if `@$NUA$~$K$~@` is `true`.
   - [#.#.#]{.pnum} If `@$W$~$K$~@` is not ⊥, `@$M$~$K$~@` is a bit-field whose width is that value. Otherwise, `@$M$~$K$~@` is not a bit-field.
   - [#.#.#]{.pnum} If `@$A$~$K$~@` is not ⊥, `@$M$~$K$~@` has the `$alignment-specifier$` `alignas(@$A$~$K$~@)`. Otherwise, `@$M$~$K$~@` has no `$alignment-specifier$`.
-  - [#.#.#]{.pnum} [`@$M$~$K$~@` has an annotation with constant `r` for every reflection `r` in `@$ANN$~$K$~@`.]{.addu}
+  - [#.#.#]{.pnum} [`@$M$~$K$~@` has an annotation whose underlying constant is `r` for every reflection `r` in `@$ANN$~$K$~@`.]{.addu}
 * [9.6]{.pnum} For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$` [...]
 :::
 
