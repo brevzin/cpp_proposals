@@ -1,6 +1,6 @@
 ---
 title: "Miscellaneous Reflection Cleanup"
-document: P3795R0
+document: P3795R1
 date: today
 audience: EWG
 author:
@@ -276,7 +276,7 @@ Add to the front matter in [meta.syn]{.sref}:
 [1]{.pnum} Unless otherwise specified, each function, and each specialization of any function template, specified in this header is a designated addressable function ([namespace.std]).
 
 ::: addu
-[*]{.pnum} When a function or function template specialization `$F$` specified in this header throws a `meta::exception` `$E$`, `$E$.from()` is a reflection representing `$F$` and `$E$.where()` is a `source_location` representing where the call to `$F$` originated from.
+[*]{.pnum} When a function or function template specialization `$F$` specified in this header throws a `meta::exception` `$E$`, `$E$.from()` is a reflection representing `$F$` and `$E$.where()` is a `source_location` representing from where the call to `$F$` originated.
 :::
 
 [2]{.pnum} The behavior of any function specified in namespace `std::meta` is implementation-defined when a reflection of a construct not otherwise specified by this document is provided as an argument.
@@ -323,14 +323,13 @@ consteval bool is_bit_field(info r);
 [19]{.pnum} *Returns*: `true` if `r` represents a bit-field, or if `r` represents a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]) for which `$W$` is not ⊥. Otherwise, `false`.
 :::
 
-Add the new subclause [meta.reflection.scope] before [meta.reflection.access.context]{.sref}. The wording for `$current-scope$` is lifted wholesale from `access_context::current`:
+Add the new subclause [meta.reflection.scope] before [meta.reflection.access.context]{.sref}. [The wording for `$eval-point$` (p3)  and `$ctx-scope$` (p4) is moved wholesale from `access_context::current`. Paragraphs 1, 2, and 5 onwards are new]{.draftnote}:
 
 ::: std
 ::: addu
-[1]{.pnum} The function in this subclause can be used to retrieve information about where in the program they are invoked from.
+[1]{.pnum} The functions in this subclause retrieve information about where in the program they are invoked.
 
-[#]{.pnum} None of the functions in this clause are addressable functions ([namespace.std]).
-
+[#]{.pnum} None of the functions in this subclause is an addressable function ([namespace.std]).
 
 [#]{.pnum} Given a program point `$P$`, let `$eval-point$($P$)` be the following program point:
 
@@ -353,7 +352,7 @@ Add the new subclause [meta.reflection.scope] before [meta.reflection.access.con
 * [#.#]{.pnum} Otherwise, if `$S$` is a lambda scope introduced by a `$lambda-expression$` `$L$`, the function parameter scope corresponding to the call operator of the closure type for `$L$`.
 * [#.#]{.pnum} Otherwise, `$ctx-scope$($S$')` where `$S$'` is the parent scope of `$S$`.
 
-[#]{.pnum} Let `$CURRENT-SCOPE$($P$)` for a point `$P$` be a reflection representing the function, class, or namespace whose corresponding function parameter scope, class scope, or namespace scope is `$ctx-scope$($S$)`, where `$S$` is the immediate scope of `$eval-point$($P$)`.
+[#]{.pnum} Let `$CURRENT-SCOPE$($P$)` for a point `$P$` be a reflection representing the function, class, or namespace whose corresponding function parameter scope, class scope, or namespace scope, respectively, is `$ctx-scope$($S$)`, where `$S$` is the immediate scope of `$eval-point$($P$)`.
 
 ```cpp
 consteval info current_function();
@@ -361,7 +360,7 @@ consteval info current_function();
 
 [#]{.pnum} An invocation of `current_function` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a scope corresponding to a templated entity.
 
-[#]{.pnum} Let `$S$` be `$CURRENT-SCOPE$($P$)` where `$P$` is the point at which the invocation of `$current-scope$` lexically appears.
+[#]{.pnum} Let `$S$` be `$CURRENT-SCOPE$($P$)` where `$P$` is the point at which the invocation of `current_function` lexically appears.
 
 [#]{.pnum} *Throws*: `meta::exception` unless `$S$` represents a function.
 
@@ -373,7 +372,7 @@ consteval info current_class();
 
 [#]{.pnum} An invocation of `current_class` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a scope corresponding to a templated entity.
 
-[#]{.pnum} Let `$S$` be `$CURRENT-SCOPE$($P$)` where `$P$` is the point at which the invocation of `$current-class$` lexically appears.
+[#]{.pnum} Let `$S$` be `$CURRENT-SCOPE$($P$)` where `$P$` is the point at which the invocation of `current_class` lexically appears.
 
 [#]{.pnum} *Throws*: `meta::exception` unless `$S$` represents either a class or a member function.
 
@@ -386,7 +385,7 @@ consteval info current_namespace();
 
 [#]{.pnum} An invocation of `current_namespace` that appears at a program point `$P$` is value-dependent ([temp.dep.contexpr]) if `$eval-point$($P$)` is enclosed by a scope corresponding to a templated entity.
 
-[#]{.pnum} Let `$S$` be `$CURRENT-SCOPE$($P$)` where `$P$` is the point at which the invocation of `$current-namespace$` lexically appears.
+[#]{.pnum} Let `$S$` be `$CURRENT-SCOPE$($P$)` where `$P$` is the point at which the invocation of `current_namespace` lexically appears.
 
 [#]{.pnum} *Returns*: `$S$` if `$S$` represents a namespace. Otherwise, a reflection representing the nearest enclosing namespace of the entity represented by `$S$`.
 
@@ -476,7 +475,7 @@ consteval vector<info> annotations_of(info item);
 ```
 
 ::: addu
-[1]{.pnum} Let `$S$(F)` for a function `$F$` be the set of declarations, ignoring any explicit instantiations, that precede some point in the evaluation context and that declare either `$F$` or a templated function of which `$F$` is a specialization.
+[1]{.pnum} For a function `$F$`, let `$S$($F$)` be the set of declarations, ignoring any explicit instantiations, that declare either `$F$` or a templated function of which `$F$` is a specialization.
 :::
 
 ::: rm
@@ -492,7 +491,7 @@ consteval vector<info> annotations_of(info item);
 * [#.1]{.pnum} if `item` represents a function parameter `$P$` of a function `$F$`, then the declaration of `$P$` in each declaration of `$F$` in `$S$($F$)`,
 * [#.#]{.pnum} otherwise, if `item` represents a function `$F$`, then each declaration of `$F$` in `$S$($F$)`,
 * [#.#]{.pnum} otherwise, if `item` represents a direct base class relationship (`$D$`, `$B$`), then the corresponding `$base-specifier$` in the definition of `$D$`,
-* [#.#]{.pnum} otherwise, the each declaration of the entity represented by `item`,
+* [#.#]{.pnum} otherwise, each declaration of the entity represented by `item`,
 :::
 
 [such that each specified declaration]{.addu} precedes either some point in the evaluation context ([expr.const]) or a point immediately following the `$class-specifier$` of the outermost class for which such a point is in a complete-class context. For any two reflections `@*R*~1~@` and `@*R*~2~@` in the returned `vector`, if the annotation represented by `@*R*~1~@` precedes the annotation represented by `@*R*~2~@`, then `@*R*~1~@` appears before `@*R*~2~@`. If `@*R*~1~@` and `@*R*~2~@` represent annotations from the same translation unit `T`, any element in the returned `vector` between `@*R*~1~@` and `@*R*~2~@` represents an annotation from `T`.
@@ -503,7 +502,7 @@ consteval vector<info> annotations_of(info item);
 
 :::
 
-Change the `data_member_spec` API in [meta.reflection.define.aggregate]{.sref}:
+Change the `data_member_spec` API in [meta.reflection.define.aggregate]{.sref} [The nested example in the note is now separate from the note]{.draftnote}:
 
 ::: std
 ```diff
@@ -521,12 +520,10 @@ struct data_member_options {
 
 + info type;
   optional<$name-type$> name;
-- optional<int> alignment;
-- optional<int> bit_width;
-+ optional<int> alignment = {};
-+ optional<int> bit_width = {};
+  optional<int> alignment;
+  optional<int> bit_width;
   bool no_unique_address = false;
-+ vector<info> annotations = {};
++ vector<info> annotations;
 };
 ```
 
@@ -547,6 +544,7 @@ consteval $name-type$(T&& value);
 
 ::: note
 The class `$name-type$` allows the function `data_member_spec` to accept an ordinary string literal (or `string_view`, `string`, etc.) or a UTF-8 string literal (or `u8string_view`, `u8string`, etc.) equally well.
+:::
 
 ::: example
 ```diff
@@ -559,8 +557,6 @@ consteval void fn() {
 ```
 :::
 
-:::
-
 ```diff
 - consteval info data_member_spec(info type,
 -                                 data_member_options options);
@@ -568,18 +564,18 @@ consteval void fn() {
 ```
 [#]{.pnum} *Returns*: A reflection of a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]) where
 
-- [#.#]{.pnum} `$T$` is the type represented by [`dealias(type)`]{.rm} [`dealias(options.type)`]{.addu},
+- [#.#]{.pnum} `$T$` is the type represented by `dealias(@[options.]{.addu}@type)`,
 - [#.#]{.pnum} `$N$` is either the identifier encoded by `options.name` or ⊥ if `options.name` does not contain a value,
 - [#.#]{.pnum} `$A$` is either the alignment value held by `options.alignment` or ⊥ if `options.alignment` does not contain a value,
 - [#.#]{.pnum} `$W$` is either the value held by `options.bit_width` or ⊥ if `options.bit_width` does not contain a value, [and]{.rm}
 - [#.#]{.pnum} `$NUA$` is the value held by `options.no_unique_address`[.]{.rm} [, and]{.addu}
-- [#.#]{.pnum} [`$ANN$` is the sequence of reflection values in `options.annotations`.]{.addu}
+- [#.#]{.pnum} [`$ANN$` is the sequence of values `constant_of(r)` for each `r` in `options.annotations`.]{.addu}
 
 [The returned reflection value is primarily useful in conjunction with `define_aggregate`; it can also be queried by certain other functions in `std::meta` (e.g., `type_of`, `identifier_of`).]{.note}
 
 [#]{.pnum} *Throws*: `meta::exception` unless the following conditions are met:
 
-- [#.#]{.pnum} [`dealias(type)`]{.rm} [`dealias(options.type)`]{.addu} represents either an object type or a reference type;
+- [#.#]{.pnum} `dealias(@[options.]{.addu}@type)` represents either an object type or a reference type;
 - [#.#]{.pnum} if `options.name` contains a value, then:
   - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier ([lex.name]) that is not a keyword ([lex.key]) when interpreted with UTF-8, or
   - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier that is not a keyword when interpreted with the ordinary literal encoding;
@@ -587,12 +583,12 @@ consteval void fn() {
   [The name corresponds to the spelling of an identifier token after phase 6 of translation ([lex.phases]). Lexical constructs like `$universal-character-name$`s [lex.universal.char] are not processed and will cause evaluation to fail. For example, `R"(\u03B1)"` is an invalid identifier and is not interpreted as `"α"`.]{.note}
 - [#.#]{.pnum} if `options.name` does not contain a value, then `options.bit_width` contains a value;
 - [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
-  - [#.#.#]{.pnum} [`is_integral_type(type) || is_enumeration_type(type)`]{.rm} [`is_integral_type(options.type) || is_enumeration_type(options.type)`]{.addu} is `true`,
+  - [#.#.#]{.pnum} `is_integral_type(@[options.]{.addu}@type) || is_enumeration_type(@[options.]{.addu}@type)` is `true`,
   - [#.#.#]{.pnum} `options.alignment` does not contain a value,
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
   - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value; [and]{.rm}
-- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than [`alignment_of(type)`.]{.rm} [`alignment_of(options.type)`; and]{.addu}
-- [#.#]{.pnum} [for every reflection `r` in `options.annotations`, either `r` represents a value or `r` represents a template parameter object. [`r` must be a possible result of a call to `meta::reflect_constant`.]{.note}]{.addu}
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(@[options.]{.addu}@type)`[.]{.rm} [; and]{.addu}
+- [#.#]{.pnum} [for every reflection `r` in `options.annotations`, `type_of(r)` represents a non-array object type, and evaluation of `constant_of(r)` does not exit via an exception.]{.addu}
 
 ```cpp
 template<reflection_range R = initializer_list<info>>
@@ -616,7 +612,7 @@ template<reflection_range R = initializer_list<info>>
   - [#.#.#]{.pnum} `@$M$~$K$~@` is declared with the attribute `[[no_unique_address]]` if and only if `@$NUA$~$K$~@` is `true`.
   - [#.#.#]{.pnum} If `@$W$~$K$~@` is not ⊥, `@$M$~$K$~@` is a bit-field whose width is that value. Otherwise, `@$M$~$K$~@` is not a bit-field.
   - [#.#.#]{.pnum} If `@$A$~$K$~@` is not ⊥, `@$M$~$K$~@` has the `$alignment-specifier$` `alignas(@$A$~$K$~@)`. Otherwise, `@$M$~$K$~@` has no `$alignment-specifier$`.
-  - [#.#.#]{.pnum} [`@$M$~$K$~@` has an annotation whose underlying constant is `r` for every reflection `r` in `@$ANN$~$K$~@`.]{.addu}
+  - [#.#.#]{.pnum} [`@$M$~$K$~@` has an annotation whose underlying constant ([dcl.attr.annotation]) is `r` for every reflection `r` in `@$ANN$~$K$~@`.]{.addu}
 * [9.6]{.pnum} For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$` [...]
 :::
 
