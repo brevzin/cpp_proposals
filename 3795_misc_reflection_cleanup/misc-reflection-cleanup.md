@@ -2,7 +2,7 @@
 title: "Miscellaneous Reflection Cleanup"
 document: P3795R1
 date: today
-audience: EWG
+audience: CWG, LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
