@@ -534,14 +534,14 @@ struct data_member_options {
 
 ```cpp
 template <class T> requires constructible_from<u8string, T>
-consteval data_member_options::$name-type$(T&& value);
+consteval $name-type$(T&& value);
 ```
 
 [#]{.pnum} *Effects*: Initializes `$contents$` with `u8string(std::forward<T>(value))`.
 
 ```cpp
 template<class T> requires constructible_from<string, T>
-consteval data_member_options::$name-type$(T&& value);
+consteval $name-type$(T&& value);
 ```
 [#]{.pnum} *Effects*: Initializes `$contents$` with `string(std::forward<T>(value))`.
 
