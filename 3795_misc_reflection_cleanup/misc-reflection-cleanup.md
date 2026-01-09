@@ -182,6 +182,27 @@ Extend what an annotation can represent in [dcl.attr.annotation]{.sref}:
 
 ::: std
 [1]{.pnum} An annotation may be applied to any declaration of a type, type alias, variable, function, [function parameter,]{.addu} namespace, enumerator, `$base-specifier$`, or non-static data member.
+
+::: addu
+::: note
+[*]{.pnum} An annotation on a `$parameter-declaration$` in a function definition applies to both the function parameter and the variable.
+
+::: example
+```cpp
+void f([[=1]] int x);
+void f([[=2]] int y) {
+  constexpr info rp = parameters_of(^^f)[0];
+  constexpr info ry = variable_of(rp);
+  static_assert(ry == ^^y);
+
+  static_assert(annotations_of(rp).size() == 2); // both [1, 2]
+  static_assert(annotations_of(ry).size() == 1); // just [2]
+}
+```
+:::
+:::
+:::
+
 :::
 
 Change [class.mem.general]{.sref} to extend our quintuple to a sextuple:
@@ -194,9 +215,9 @@ Change [class.mem.general]{.sref} to extend our quintuple to a sextuple:
 - [#.#]{.pnum} `$A$` is an alignment or ⊥,
 - [#.#]{.pnum} `$W$` is a bit-field width or ⊥, [and]{.rm}
 - [#.#]{.pnum} `$NUA$` is a boolean value[.]{.rm} [, and]{.addu}
-- [#.#]{.pnum} [`$ANN$` is a sequence of reflections representing either values or objects.]{.addu}
+- [#.#]{.pnum} [`$ANN$` is a sequence of reflections representing either values or template parameter objects.]{.addu}
 
-Two data member descriptions are equal if each of their respective components are the same entities, are the same identifiers, have equal values, or are both ⊥.
+Two data member descriptions are equal if each of their respective components are the same [entities]{.rm} [entity]{.addu}, [are]{.rm} the same identifier[s]{.rm}, [have equal values]{.rm} [the same value, the same sequence]{.addu}, or [are]{.rm} both ⊥.
 
 :::
 
