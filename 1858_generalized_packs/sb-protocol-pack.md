@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
+status: abandoned
 ---
 
 # Introduction and Motivation
@@ -43,7 +44,7 @@ struct tuple_element<I, tuple<Ts...>> {
 ```
 
 That's short, easy to read, easy to write, and easy to follow - dramatically
-more so than the status quo without P1858. 
+more so than the status quo without P1858.
 
 But there's quite a bit of redundancy there. And a problem with the
 tuple-like protocol here is that we need to instantiate a lot of templates.
@@ -138,7 +139,7 @@ template <typename T, typename U>
 struct pair {
     T first;
     U second;
-    
+
     template <size_t I>
     constexpr auto get() const& -> decltype(auto)
     {
@@ -171,16 +172,16 @@ namespace std {
     struct tuple_size<pair<T, U>>
         : integral_constant<size_t, 2>
     { };
-    
+
     template <typename T, typename U>
     struct tuple_element<0, pair<T, U>> {
         using type = T;
     };
-    
+
     template <typename T, typename U>
     struct tuple_element<0, pair<T, U>> {
         using type = U;
-    };    
+    };
 }
 ```
 
@@ -190,7 +191,7 @@ template <typename T, typename U>
 struct pair {
     T first;
     U second;
-    
+
     using ...tuple_elements = tuple<T, U>::[:];
 
     template <size_t I>

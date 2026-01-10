@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: false
+status: abandoned
 ---
 
 # Introduction
@@ -15,7 +16,7 @@ This paper is not a proposal. It does not offer any concrete suggestions of addi
 
 One of the marquee features of C++20 is Concepts. C++20 Concepts are a language feature that was set out to solve the problem of constraining templates and overload sets. They offer many significant improvements over the C++17 status quo; there are many problems with become straightforwardly and easily solveable with constraints that used to be either impossible or of sufficient difficulty and verbosity that only a small handful of experts, that were sufficiently motivated, could solve them:
 
-- Constraining non-template functions of class templates. Notably, constraining the special member functions of class templates. 
+- Constraining non-template functions of class templates. Notably, constraining the special member functions of class templates.
 
 - Having multiple constrained overloads, without having to be exceedingly careful in ensuring that all of them are disjointly constrained.
 
@@ -45,7 +46,7 @@ template <typename F, typename... Args>
         std::convertible_to<std::invoke_result_t<F, Args...>, bool>;
 ```
 
-Now here's the question: what is the relationship between the `concept` `std::invocable` and the type trait `std::invoke_result_t`? None. There is no relationship. How did I know the correct type trait to use in this situation? I just did. It's just something I had to know. 
+Now here's the question: what is the relationship between the `concept` `std::invocable` and the type trait `std::invoke_result_t`? None. There is no relationship. How did I know the correct type trait to use in this situation? I just did. It's just something I had to know.
 
 Some readers might quibble at this point that this isn't a real problem - after all, I introduced this as wanting to know the "result type" of "invocable", so perhaps it's not at all surprising that this thing is spelled `invoke_result_t`. But we typically want to have closely associated entities actually be more closely associated than simply having similar names. These two aren't even in the same header.
 
@@ -68,9 +69,9 @@ Pretty much every function template that takes a `std::range` will need to use a
 
 And I don't know if there's a type trait for the category.
 
-Because we don't have a way to express associated types, we have to solve this problem with a proliferation of type traits. Which means a much larger surface area of things people have to know in order to write any kind of code. Or worse, instead of using the type traits, people resort to reimplementing them - possibly incorrectly. 
+Because we don't have a way to express associated types, we have to solve this problem with a proliferation of type traits. Which means a much larger surface area of things people have to know in order to write any kind of code. Or worse, instead of using the type traits, people resort to reimplementing them - possibly incorrectly.
 
-# Explicit opt-in/opt-out 
+# Explicit opt-in/opt-out
 
 C++20 concepts are completely implicit. But sometimes, implicit isn't really what we want. We have `explicit` for type conversions precisely because we understand that sometimes implicit conversions are good and safe and sometimes they are not. Type adherence to a concept is really no different. There are many cases where a type might fit the _syntactic_ requirements of a concept but we don't have a way of checking that it meets the _semantic_ requirements of a concept, and those semantics might be important enough to merit explicit action by the user.
 
@@ -86,7 +87,7 @@ template<class T>
     range<T> &&
     !disable_sized_range<remove_cvref_t<T>> &&
     requires(T& t) { ranges::size(t); };
-    
+
 template<class S, class I>
   concept sized_sentinel_for =
     sentinel_for<S, I> &&
@@ -105,7 +106,7 @@ The `sized_range` concept illustrates similar functionality. The semantics of `s
 
 There is a another Ranges concept that requires explicit opt-in, but does so without a type trait. And that is _`forwarding-range`_. The semantics of a _`forwarding-range`_ are that the iterators' validity is not tied to the lifetime of the `range` object. This is a purely semantic constraint that is impossible to determine merely syntactically, and a semantic that would be dangerous to get wrong at that, so it's precisely that kind of thing that merits an explicit opt-in. The design is: a (non-reference) type `R` satisfies _`forwarding-range`_ if there is are _non-member_ `begin()` and `end()` functions that can be found by argument-dependent lookup that either take an `R` by value or by rvalue reference. While this mechanism is not exactly a type trait, it does provide the same function: we need an explicit opt-in mechanism for a `concept`.
 
-Because we don't have a way to express explicit opt-in or opt-out, we have to solve this problem with either a proliferation of type traits or more bespoke solutions. Which again means a much larger surface area of things people have to know in order to write any kind of code. 
+Because we don't have a way to express explicit opt-in or opt-out, we have to solve this problem with either a proliferation of type traits or more bespoke solutions. Which again means a much larger surface area of things people have to know in order to write any kind of code.
 
 ## Opting into customization
 
@@ -117,10 +118,10 @@ But there's also a different kind of opting into concepts to consider: how do we
 template <typename T>
 struct my_vector {
    // ...
-   
+
    auto begin() -> T*;
    auto end()   -> T*;
-   
+
    auto begin() const -> T const*;
    auto end() const   -> T const*;
 };
@@ -229,16 +230,16 @@ template<class R>
 using __begin_t = decltype(begin(std::declval<R>()));
 ```
 
-Unless you've seen this style of code before and are very familiar with the design, it's probably going to be pretty hard to figure out what you actually need to do. Moreover, for the authors of a concept, this is a lot of fairly complex code! Using C++20 concepts makes this code substantially easier to write and understand than than the C++17 version would have been, but it's still not exactly either easy to write or understand. 
+Unless you've seen this style of code before and are very familiar with the design, it's probably going to be pretty hard to figure out what you actually need to do. Moreover, for the authors of a concept, this is a lot of fairly complex code! Using C++20 concepts makes this code substantially easier to write and understand than than the C++17 version would have been, but it's still not exactly either easy to write or understand.
 
 The important question is: why does this have to be so complex?
 
 We have two sources of implementation complexity here, in my opinion:
 
 1. In the implementation of `ranges::begin`, we have the explicit opt-in for _`forwarding-range`_ mentioned earlier: the poison pill overloads, the specific overload for `basic_string_view` and deleted rvalue array, and the `is_lvalue_reference` constraint on `has_member`.
-1. To maximize usability, we want to specify _what_ a type must opt into, but not make any restrictions on _how_ a type must opt into it. 
+1. To maximize usability, we want to specify _what_ a type must opt into, but not make any restrictions on _how_ a type must opt into it.
 
-The first part I already discussed, so let's talk about the second. 
+The first part I already discussed, so let's talk about the second.
 
 A type models `std::range` if it has a `begin()` function that returns an iterator. The question is _how_ can a type provide this `begin()`?
 
@@ -247,9 +248,9 @@ We don't want to impose on class authors how their types have to model our conce
 ```cpp
 using std::begin;
 begin(x);
-``` 
+```
 
-A this point, you might be thinking that the solution that I'm thinking of for this problem is unified function call syntax. But UFCS would not actually solve this problem [^2], we need something else. 
+A this point, you might be thinking that the solution that I'm thinking of for this problem is unified function call syntax. But UFCS would not actually solve this problem [^2], we need something else.
 
 As a result, if we want to give people flexibility in how they can opt into concepts (which of course we do), then we cannot even specify our constraints within concepts themselves. We have to defer to function objects with pairs of concepts to handle both member and non-member implementations. None of the code is reusable. We have a fairly simple concept (we're just checking for two functions whose return types have to satisfy other concepts, this isn't, in of itself, especially complex), yet this still takes about 140 lines of code in Casey Carter's implementation.
 
@@ -307,7 +308,7 @@ If we had the ability to take a `concept` and create a type erased type out of i
 
 +   template <typename Sig>
 +   using any_invocable = any_concept<invocable<Sig>, move_only_storage>;
-+      
++
 +   template <typename Sig>
 +   using function_ref = any_concept<invocable<Sig>, non_owning_storage>;
   }
@@ -315,27 +316,27 @@ If we had the ability to take a `concept` and create a type erased type out of i
 
 Concept-driven type erasure is an important use case of `concept`s, one which isn't solved by the language feature we have today. Instead, we have to solve this with a proliferation of types which hand-implement the specific type erasure with the specific storage choice on a case-by-case basis. Because these types are so difficult to write, yet so useful, there is a push to add them to the standard library -- and each such type is an independent, slow process.
 
-Potentially, with a future generative metaprogramming language feature, built on [@P0707R4] and [@P1717R0], we could write a library to avoid hand-implementing type erased objects (as in Sy's example [@Brand.Github]). It's just that such a library would not be based on `concept`s, and would either lead to a bifurcation of the contraint system or we would have such a library would inject a `concept`s for us. Either of which seems like an inadequacy of `concept`s. 
+Potentially, with a future generative metaprogramming language feature, built on [@P0707R4] and [@P1717R0], we could write a library to avoid hand-implementing type erased objects (as in Sy's example [@Brand.Github]). It's just that such a library would not be based on `concept`s, and would either lead to a bifurcation of the contraint system or we would have such a library would inject a `concept`s for us. Either of which seems like an inadequacy of `concept`s.
 
 # Proposal
 
 As I said in the very beginning of this paper, this paper is not a proposal. I do not have concrete suggestions for how to solve any of these problems (or even vaguely amorphous suggestions). The goal of this paper is instead to present the problems that the concepts language feature could solve, and should solve, but at the moment does not.
 
-But because these problems have to be solved, we end up with proliferations of type traits, bespoke opt-in solutions, customization point objects, and whole classes. The surface area that a programmer needs to know to write good generic code is enormous. 
+But because these problems have to be solved, we end up with proliferations of type traits, bespoke opt-in solutions, customization point objects, and whole classes. The surface area that a programmer needs to know to write good generic code is enormous.
 
-To the extent that that this paper is a proposal, it's a proposal for proposals to solve these problems and a proposal to seriously consider those future proposals. This might mean restarting SG8, or simply taking more EWG time. But they're big problems and solving them could reap huge benefits. 
+To the extent that that this paper is a proposal, it's a proposal for proposals to solve these problems and a proposal to seriously consider those future proposals. This might mean restarting SG8, or simply taking more EWG time. But they're big problems and solving them could reap huge benefits.
 
 
-[^1]: This is not the current definition of `std::predicate`, but possibly should be, and in any case, the difference isn't relevant for this paper. 
-[^2]: 
+[^1]: This is not the current definition of `std::predicate`, but possibly should be, and in any case, the difference isn't relevant for this paper.
+[^2]:
 
     Let's consider the version of UFCS that said that member functions can find non-member functions. What would this mean:
-    
+
     ```cpp
     int arr[10];
     arr.begin();
     ```
-    
+
     Arrays do not have member functions, so we try to find a `begin(arr)`. But `int[10]` doesn’t have any associated namespaces. Such a call would only succeed if there were a `begin` in scope. Where would our array overload for `begin` live? It would have to live in global namespace? But even then, we would have to rely on there not being any other `begin`s between where we are and that global declaration otherwise this won’t work. To be safe, we’d have to put the array overload somewhere specific and bring it in scope:
 
     ```cpp
@@ -401,7 +402,7 @@ references:
     author:
         - family: Sy Brand
     issued:
-        - year: 2019    
+        - year: 2019
     URL: https://github.com/tartanllama/typeclasses/
   - id: Sutton
     citation-label: Sutton
@@ -409,6 +410,6 @@ references:
     author:
         - family: Andrew Sutton
     issued:
-        - year: 2019    
+        - year: 2019
     URL: https://youtu.be/kjQXhuPX-Ac?t=2057
 ---

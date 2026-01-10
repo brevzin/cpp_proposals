@@ -5,8 +5,10 @@ import re
 import collections
 import sys
 import frontmatter
+from typing import Any
 from bs4 import BeautifulSoup
 import jinja2
+import attrs
 
 def get_title(filename):
     with open(filename) as f:
@@ -45,9 +47,24 @@ def get_tag_from_md(path, num):
     paper = frontmatter.load(open(md))
     return paper.get('tag', None)
 
+def get_frontmatter_from(path, num):
+    md = get_markdown_from(path, num)
+    if md is None:
+        return
+
+    return frontmatter.load(open(md))
+
 iso = re.compile(r'([pd])(\d{4})r(\d+).html')
 papers = collections.defaultdict(list)
 others = []
+
+@attrs.define(order=True)
+class Paper:
+    rev : int
+    pd : str
+    yaml : Any | None = attrs.field(eq=False, order=False)
+    filename : str
+
 
 for filename in glob.glob(f'*/*.html'):
     path, base = os.path.split(filename)
@@ -59,14 +76,43 @@ for filename in glob.glob(f'*/*.html'):
         pd, num, rev = m.groups()
         num = int(num)
         rev = int(rev)
-        papers[num].append((rev, pd, get_tag_from_md(path, num), filename))
+        papers[num].append(Paper(
+            rev=rev,
+            pd=pd,
+            yaml=get_frontmatter_from(path, num),
+            filename=filename))
     else:
         others.append((base, filename))
 
-titles = {847: "Deducing `this`"}
+titles = {847: "Deducing <code>this</code>"}
+initial_status = {
+    312: "rejected",
+    573: "rejected",
+    644: "rejected",
+    704: "accepted",
+    780: "accepted",
+    892: "accepted",
+    893: "rejected",
+    1170: "abandoned",
+    1185: "accepted",
+    1186: "accepted",
+    1187: "accepted",
+    1188: "accepted",
+    1189: "accepted",
+    1500: "abandoned",
+    1614: "accepted",
+    1630: "accepted",
+}
 
 template = jinja2.Template(open("all_papers.tpl").read())
 numbered_papers = []
+
+numbered_papers = {
+    "accepted": [],
+    "rejected": [],
+    "abandoned": [],
+    "progress": [],
+}
 
 badges = {
     "ranges": "-ranges-brightgreen",
@@ -79,18 +125,30 @@ for num in sorted(papers):
     vals = sorted(papers[num])
     title = titles.get(num)
     if title is None:
-        title = get_title(vals[-1][-1])
+        title = get_title(vals[-1].filename)
 
     current = {"number": f"P{num:04}", "title": title}
-    current["revisions"] = [{"href": filename, "name": f"{pd}{num:04}r{rev}"} for (rev, pd, _, filename) in vals]
+    current["revisions"] = [
+        {
+            "href": val.filename,
+            "name": f"{val.pd}{num:04}r{val.rev}"
+        }
+        for val in vals
+    ]
 
-    tag = vals[-1][2]
-    if tag is not None:
-        current["badge"] = badges[tag]
+    status = initial_status.get(num, "progress")
+    if vals[-1].yaml is not None:
+        tag = vals[-1].yaml.get("tag", None)
+        if tag is not None:
+            current["badge"] = badges[tag]
+        status = vals[-1].yaml.get("status", status)
 
-    numbered_papers.append(current)
+    numbered_papers[status].append(current)
 
-print(template.render({"numbered_papers": numbered_papers}), file=open("all_papers.html", "w"))
+print(
+    template.render(numbered_papers),
+    file=open("all_papers.html", "w")
+)
 
 # out = open('all_papers.md', 'w')
 # print('# Papers with Numbers', file=out)

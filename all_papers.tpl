@@ -42,12 +42,21 @@
       <h1><a href="https://brevzin.github.io/cpp_proposals/">cpp_proposals</a></h1>
 
 
-      <h1 id="papers-with-numbers">Papers with Numbers</h1>
-<ul>
-  {% for paper in numbered_papers %}
-    <li>{% if paper.badge %}<img src="https://img.shields.io/badge/{{paper.badge}}" alt="" /> {% endif %}<a href="https://wg21.link/{{paper.number}}/github">{{paper.number}}</a> {{paper.title}}: {% for rev in paper.revisions %}<a href="{{rev.href}}">{{rev.name}}</a> {% endfor %}</li>
-  {% endfor %}
-</ul>
+     <h1 id="papers-with-numbers">Papers with Numbers</h1>
+
+{% macro show_papers(var, title) -%}
+    <h2>{{title}}</h2>
+    <ul>
+      {% for paper in var %}
+        <li>{% if paper.badge %}<img src="https://img.shields.io/badge/{{paper.badge}}" alt="" /> {% endif %}<a href="https://wg21.link/{{paper.number}}/github">{{paper.number}}</a> {{paper.title}}: {% for rev in paper.revisions %}<a href="{{rev.href}}">{{rev.name}}</a> {% endfor %}</li>
+      {% endfor %}
+    </ul>
+{%- endmacro %}
+
+  {{ show_papers(accepted, "Accepted Papers") }}
+  {{ show_papers(rejected, "Rejected Papers") }}
+  {{ show_papers(abandoned, "Abandoned Papers") }}
+  {{ show_papers(progress, "In Progress Papers") }}
 
 <h1 id="other-papers">Other Papers</h1>
 <ul>

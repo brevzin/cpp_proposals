@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
+status: abandoned
 ---
 
 # Introduction
@@ -22,9 +23,9 @@ It’s worth elaborating a bit on what I mean by "proper customization." There a
 4. The inability to _incorrectly_ opt in to the interface (for instance, if the interface has a function that takes an `int`, you cannot opt in by accidentally taking an `unsigned int`).
 5. The ability to easily invoke the customized implementation. Alternatively, the inability to accidentally invoke the base implementation.
 6. The ability to easily verify that a type implements an interface.
-7. The ability to present an atomic group of functionality that needs to be customized together (and diagnosed early). 
+7. The ability to present an atomic group of functionality that needs to be customized together (and diagnosed early).
 
-This list is neither complete (I will add a few additional important requirements later in the paper) nor do I consider all of these aspects to be equally important, but it's a good list to introduce this discussion. 
+This list is neither complete (I will add a few additional important requirements later in the paper) nor do I consider all of these aspects to be equally important, but it's a good list to introduce this discussion.
 
 ## Polymorphism using `virtual` member functions
 
@@ -48,9 +49,9 @@ C++ has precisely one language feature that meets all of these criteria: `virtua
     };
     ```
 
-5. Given a pointer to the interface, just invoking the function you want will automatically do virtual dispatch per the language rules, which automatically invokes the most derived implementation. This requires no additional work on the part of either the interface author or interface user ✔️. 
+5. Given a pointer to the interface, just invoking the function you want will automatically do virtual dispatch per the language rules, which automatically invokes the most derived implementation. This requires no additional work on the part of either the interface author or interface user ✔️.
 
-6. Checking if a type `T` implements an interface `I` is as easy as checking if `derived_from<T, I>` holds ✔️. 
+6. Checking if a type `T` implements an interface `I` is as easy as checking if `derived_from<T, I>` holds ✔️.
 
 7. If there is an interface has two pure `virtual` member functions, there cannot be an implementation of that interface that only implements one of them. You must implement both, otherwise you cannot even construct an instance of the implementation type ✔️.
 
@@ -64,10 +65,10 @@ There’s another interesting aspect of using virtual functions for polymorphism
 struct InputIterator {
     // this one is fine
     virtual input_iterator& operator++() = 0;
-    
+
     // this one is... questionable
     virtual bool operator==(input_iterator const&) const = 0;
-    
+
     // .. but what about this one?
     virtual auto operator*() const -> ????;
 };
@@ -109,7 +110,7 @@ Let's extend our list of requirements to include these, and present compliance i
 
 ## Named Conformance vs Structural Conformance
 
-One criteria in the above list is the ability to explicitly opt-in to interfaces. I actually consider this quite important. 
+One criteria in the above list is the ability to explicitly opt-in to interfaces. I actually consider this quite important.
 
 There are two approaches to checking that a type meets an interface: structural conformance (validate that the signatures of an interface are satisfied) and named conformance (validate that the _name_ of the interface is satisfied).
 
@@ -139,11 +140,11 @@ template <typename T>
 struct MyContainer {
     using iterator = /* ... */;
     using const_iterator = /* ... */;
-    
+
     // erase by iterator, usual container interface
     iterator erase(iterator);
     iterator erase(const_iterator);
-    
+
     // this container has to erase by index a lot, so
     // this is a convenient interface to avoid having to
     // write c.erase(c.begin() + idx) all the time
@@ -153,7 +154,7 @@ struct MyContainer {
 };
 ```
 
-The author here may not have known about `std::erase(container, value)` and it would certainly be surprising to them (and other users) if `std::erase(container, 42)` on a `MyContainer<int>` instead of erasing those objects that have value `42` instead erased the object at index `42`. 
+The author here may not have known about `std::erase(container, value)` and it would certainly be surprising to them (and other users) if `std::erase(container, 42)` on a `MyContainer<int>` instead of erasing those objects that have value `42` instead erased the object at index `42`.
 
 The fact that we already even have this conflict in the standard library means that it's quite imperative to be vigilant with concept checks (and hopefully also demonstrates why any kind of unified function call syntax doesn't really help).
 
@@ -166,7 +167,7 @@ C++ has two strategies for non-intrusive static polymorphism today:
     a. "pure" ADL
     b. customization point objects (see [@N4381], [customization.point.object]{.sref})
     c. `tag_invoke` (see [@P1895R0])
-    
+
 Not only are both of these non-intrusive, but neither have any additional runtime overhead, nor do either typically require allocation. But how well do they actually do at customization?
 
 This paper will go through these four strategies in turn to see how well they apply to my criteria and where they succeed and where they come up wanting.
@@ -194,7 +195,7 @@ Now, yes, I probably have to read the docs anyway to understand the nuance of th
 
 The only real way to provide this information is with a concept. But the concept for this interface is actually fairly difficult to express (see [formatter.requirements]{.sref}).
 
-Second, do we have the ability to provide default implementations that can be overridden? ❌ No, not really. 
+Second, do we have the ability to provide default implementations that can be overridden? ❌ No, not really.
 
 The `parse` function that the `formatter` needs to provide could have a meaningful default: allow only `"{}"` and parse it accordingly. But you can’t actually provide default implementations using class template specialization as a customization mechanism — you have to override _the whole thing_.
 
@@ -214,7 +215,7 @@ Sixth, can you easily verify that a type implements an interface? Arguably, ❌ 
 
 Here, it would be up to the class author to write a `concept` that checks that the user did everything right. But this also something extra that needs to be provided by the class author.
 
-Seventh, can we group multiple pieces of functionality atomically into one umbrella, such that failure to provide all of them can be diagnosed early? 🤷 Kind of. `formatter` is a good example here: while you cannot _only_ provide a `parse` or _only_ provide a `format` function (you _must_ provide both), there isn't anything in the language that enforces this. I can easily provide a specialization that only has one or the other (or neither), and this will only become an error at the point of use. In this sense, this is no different from any other incorrect implementation. But at least a missing customization point is much easier to diagnose than an incorrect one. 
+Seventh, can we group multiple pieces of functionality atomically into one umbrella, such that failure to provide all of them can be diagnosed early? 🤷 Kind of. `formatter` is a good example here: while you cannot _only_ provide a `parse` or _only_ provide a `format` function (you _must_ provide both), there isn't anything in the language that enforces this. I can easily provide a specialization that only has one or the other (or neither), and this will only become an error at the point of use. In this sense, this is no different from any other incorrect implementation. But at least a missing customization point is much easier to diagnose than an incorrect one.
 
 Eighth, is class template specialization non-intrusive? ✔️ Absolutely! Not much else to say here.
 
@@ -248,21 +249,21 @@ namespace std {
     constexpr auto begin(C& c) -> decltype(c.begin()) {
         return c.begin();
     }
-    
+
     template <typename T, size_t N>
     constexpr auto begin(T(&a)[N]) -> T* {
         return a;
     }
-    
+
     template <typename C>
     constexpr auto end(C& c) -> decltype(c.end()) {
         return c.end();
     }
-    
+
     template <typename T, size_t N>
     constexpr auto end(T(&a)[N]) -> T* {
         return a + N;
-    }    
+    }
 }
 ```
 
@@ -274,9 +275,9 @@ Let’s run through our criteria:
 
 3. Can we opt in explicitly? ❌ Nope! You certainly have to explicitly provide `begin` and `end` overloads for your type to be a range, that much is true. But nowhere in your implementation of those functions is there any kind of annotation that you can provide that indicates _why_ you are writing these functions. The opt-in is only implicit. For `begin`/`end`, sure, everybody knows what Ranges are — but for less universally known interfaces, some kind of indication of what you are doing could only help.
 
-    On the other hand, you can certainly provide a function named `begin` for a type that has nothing to do with a range - it could be starting some task, or starting a timer, etc - and there's no way to say that this has nothing to do with ranges. 
+    On the other hand, you can certainly provide a function named `begin` for a type that has nothing to do with a range - it could be starting some task, or starting a timer, etc - and there's no way to say that this has nothing to do with ranges.
 
-4. Is there protection against incorrect opt-in? ❌ Nope! What’s stopping me from writing a `begin` for my type that returns `void`? Nothing. From the language’s perspective, it’s just another function (or function template) and those are certainly allowed to return `void`. 
+4. Is there protection against incorrect opt-in? ❌ Nope! What’s stopping me from writing a `begin` for my type that returns `void`? Nothing. From the language’s perspective, it’s just another function (or function template) and those are certainly allowed to return `void`.
 
 5. Can we easily invoke the customized implementation? ❌ Nope! Writing `begin(E)` doesn’t work for a lot of containers, `std::begin(E)` doesn’t work for others. A more dangerous example is `std::swap(E, F)`, which probably compiles and works fine for lots of times but is a subtle performance trap if the type provides a customized implementation and that customized implementation is not an overload in namespace `std`.
 
@@ -288,7 +289,7 @@ Let’s run through our criteria:
 
 8. Can we opt-in non-intrusively? ✔️ Yep! It's just as easy as writing a free function. No issues.
 
-9. Can we add associated type support? ❌ I would say no. ADL is entirely about functions and not really about types. An associated type of the range concept would be it's iterator type, which is the type that `begin` returns. But it's not even easy to call that function, much less get its type properly. Would have to lean no here. 
+9. Can we add associated type support? ❌ I would say no. ADL is entirely about functions and not really about types. An associated type of the range concept would be it's iterator type, which is the type that `begin` returns. But it's not even easy to call that function, much less get its type properly. Would have to lean no here.
 
 Not a great solution overall:
 
@@ -309,7 +310,7 @@ Not a great solution overall:
 Customization Point Objects (CPOs) were designed to solve several of the above problems:
 
 1. Provide an easy way to invoke the customized implementation. `ranges::swap(E, F)` just Does The Right Thing. ✔️.
-2. Provide a way to to verify that a type implements the interface correctly, diagnosing some incorrect opt-ins. But it takes work. If a user provides a `begin` that returns `void`, `ranges::begin(E)` will fail at that point. This is not as early a failure as we get with virtual member functions, but it’s at least earlier than we would otherwise get. But I’m not really open to giving a full check, since the way `ranges::begin` does this verification is that the author of `ranges::begin` has to manually write it. 
+2. Provide a way to to verify that a type implements the interface correctly, diagnosing some incorrect opt-ins. But it takes work. If a user provides a `begin` that returns `void`, `ranges::begin(E)` will fail at that point. This is not as early a failure as we get with virtual member functions, but it’s at least earlier than we would otherwise get. But I’m not really open to giving a full check, since the way `ranges::begin` does this verification is that the author of `ranges::begin` has to manually write it.
 3. Provide a name for the interface that makes it easier to verify, which addresses the issue of interface verification. As above, it is possible to provide, but it must be done manually.
 
 While `ranges::begin` and `ranges::end` do verify that those customization points properly return an iterator and a sentinel, and `ranges::range` as a concept verifies the whole interface, the fact that everything about this interface is implicit still leads to inherently and fundamentally poor diagnostics. Consider:
@@ -420,7 +421,7 @@ In file included from /opt/compiler-explorer/gcc-trunk-20210102/include/c++/11.0
   114 |         requires is_array_v<remove_reference_t<_Tp>> || __member_begin<_Tp>
       |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~
   115 |           || __adl_begin<_Tp>
-      |           ~~~~~~~~~~~~~~~~~~~                            
+      |           ~~~~~~~~~~~~~~~~~~~
 In file included from /opt/compiler-explorer/gcc-trunk-20210102/include/c++/11.0.0/bits/stl_iterator_base_types.h:71,
                  from /opt/compiler-explorer/gcc-trunk-20210102/include/c++/11.0.0/iterator:61,
                  from /opt/compiler-explorer/gcc-trunk-20210102/include/c++/11.0.0/ranges:43,
@@ -503,7 +504,7 @@ In file included from /opt/compiler-explorer/gcc-trunk-20210102/include/c++/11.0
   168 |         requires is_bounded_array_v<remove_reference_t<_Tp>> || __member_end<_Tp>
       |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
   169 |         || __adl_end<_Tp>
-      |         ~~~~~~~~~~~~~~~~~                                        
+      |         ~~~~~~~~~~~~~~~~~
 /opt/compiler-explorer/gcc-trunk-20210102/include/c++/11.0.0/bits/ranges_base.h:134:15:   required for the satisfaction of '__member_end<_Tp>' [with _Tp = R&]
 /opt/compiler-explorer/gcc-trunk-20210102/include/c++/11.0.0/bits/ranges_base.h:134:30:   in requirements with '_Tp& __t' [with _Tp = R&]
 /opt/compiler-explorer/gcc-trunk-20210102/include/c++/11.0.0/bits/ranges_base.h:136:25: note: the required expression 'std::__detail::__decay_copy(__t.end())' is invalid, because
@@ -530,9 +531,9 @@ In file included from /opt/compiler-explorer/gcc-trunk-20210102/include/c++/11.0
       |          ^~~
 ```
 
-The issue here is explicitness. We have no idea if some random `begin` function we found is intended to be _the_ entry point for `range` or not, so we don't know if a non-matching `begin` (whether the arguments don't line up or, as in this case, the return type doesn't meet requirements) is meaningful to diagnose or not. 
+The issue here is explicitness. We have no idea if some random `begin` function we found is intended to be _the_ entry point for `range` or not, so we don't know if a non-matching `begin` (whether the arguments don't line up or, as in this case, the return type doesn't meet requirements) is meaningful to diagnose or not.
 
-This case might seem silly but it's actually very serious. Consider an example where instead of an "obvious" failure like trying to use `void` as an iterator, I actually had what I thought was a valid iterator, but was missing one operation or other (maybe it was missing postfix `operator++`, or its `operator*()` was not const-qualified?)? I'd get the exact same diagnostic: hundreds of lines of diagnostic, which simply _cannot_ point to the problem. 
+This case might seem silly but it's actually very serious. Consider an example where instead of an "obvious" failure like trying to use `void` as an iterator, I actually had what I thought was a valid iterator, but was missing one operation or other (maybe it was missing postfix `operator++`, or its `operator*()` was not const-qualified?)? I'd get the exact same diagnostic: hundreds of lines of diagnostic, which simply _cannot_ point to the problem.
 
 It might seem that the single-line MSVC diagnostic of "static assertion failed" is something that reflects negatively on MSVC. But honestly, gcc's 154-line diagnostic when I crank up the diagnostic depth doesn't really provide me any meaningful information either.
 
@@ -564,12 +565,12 @@ namespace N::hidden {
             return eq(x, y);
         }
     };
-  
+
     template <has_eq T>
     constexpr bool ne(T const& x, T const& y) {
         return not eq(x, y);
     }
-  
+
     struct ne_fn {
         template <typename T>
             requires requires (T const& v) {
@@ -586,7 +587,7 @@ namespace N {
         inline constexpr hidden::eq_fn eq{};
         inline constexpr hidden::ne_fn ne{};
     }
-    
+
     template <typename T>
     concept equality_comparable =
         requires (std::remove_reference_t<T> const& t) {
@@ -623,7 +624,7 @@ The `tag_invoke` paper ([@P1895R0]) lays out two issues with Customization Point
 
 This paper will discuss the second issue later. Instead I'll focus on the first point. This is an unequivocally real and serious issue. C++, unlike C, has namespaces, and we’d like to be able to take advantage that when it comes to customization. But ADL, very much by design, isn’t bound by namespace. With virtual member functions, there are no issues with having `libA::Interface` and `libB::Interface` coexist (only if both provide virtual member functions of the same name and take the same parameters and a type wants to implement both). Likewise with class template specializations - specializing one name in one namespace has nothing to do with specializing a similarly-spelled name in a different namespace. But if `libA` and `libB` decide that they both want ADL customization points named `eq`? You better hope their arguments are sufficiently distinct or you simply cannot use both libraries.
 
-The goal of `tag_invoke` is to instead globally reserve a single name: `tag_invoke`. Not likely to have been used much before the introduction of this paper. 
+The goal of `tag_invoke` is to instead globally reserve a single name: `tag_invoke`. Not likely to have been used much before the introduction of this paper.
 
 The implementation of the `eq` interface introduced above in the `tag_invoke` model would look as follows:
 
@@ -637,16 +638,16 @@ namespace N {
             return std::tag_invoke(*this, x, y);
         }
     };
-  
+
     inline constexpr eq_fn eq{};
-  
+
     struct ne_fn {
         template <typename T>
             requires std::invocable<eq_fn, T const&, T const&>
         friend constexpr bool tag_invoke(ne_fn, T const& x, T const& y) {
             return not eq(x, y);
         }
-  
+
         template <typename T>
             requires std::same_as<
                 std::tag_invoke_result_t<ne_fn, T const&, T const&>, bool>
@@ -654,19 +655,19 @@ namespace N {
             return std::tag_invoke(*this, x, y);
         }
     };
-  
+
     inline constexpr ne_fn ne{};
-  
+
     template <typename T>
     concept equality_comparable =
         requires (std::remove_reference_t<T> const& t) {
             eq(t, t);
             ne(t, t);
-        };  
+        };
 }
 ```
 
-This is 36 lines of code. 
+This is 36 lines of code.
 
 To what extent does this `tag_invoke`-based implementation of `eq` and `ne` address the customization facilities that regular CPOs fall short on? It does help: we can now explicitly opt into the interface (indeed, the only way to opt-in is explicit) ✔️!
 
@@ -675,12 +676,12 @@ But the above is harder to write for the library author (I am unconvinced by the
 ```cpp
 struct Widget {
   int i;
-  
+
   // with CPO: just some function named eq
   constexpr friend bool eq(Widget a, Widget b) {
     return a.i == b.i;
   }
-  
+
   // with tag_invoke: we are visibly opting
   // into support for N::eq
   constexpr friend bool tag_invoke(std::tag_t<N::eq>, Widget a, Widget b) {
@@ -694,7 +695,7 @@ struct N::Eq<Widget> {
     static constexpr bool eq(Widget a, Widget b) {
         return a.i == b.i;
     }
-    
+
     // have no mechanism for providing a default
     // so it's either this or have some base class
     static constexpr bool ne(Widget a, Widget b) {
@@ -793,7 +794,7 @@ Because this is how I would implement the `eq`/`ne` interface in Rust (wherein t
 ```rust
 trait PartialEq {
     fn eq(&self, rhs: &Self) -> bool;
-    
+
     fn ne(&self, rhs: &Self) -> bool {
         !self.eq(rhs)
     }
@@ -858,7 +859,7 @@ template <typename T>
 void swap(Widget<T>&, Widget<T>);
 ```
 
-That is, take the second parameter by value instead of by lvalue-reference. Here, our candidate _would_ get selected, but just not actually do a proper swap. We'd eventually discover this error by seeing `swap` fail to actually `swap` one of the arguments. 
+That is, take the second parameter by value instead of by lvalue-reference. Here, our candidate _would_ get selected, but just not actually do a proper swap. We'd eventually discover this error by seeing `swap` fail to actually `swap` one of the arguments.
 
 A third kind of incorrect opt-in would be if we put it in the wrong namespace:
 
@@ -868,15 +869,15 @@ namespace N {
         template <typename T>
         struct Widget { ... };
     }
-    
+
     template <typename T>
     void swap(Inner::Widget<T>&, Inner::Widget<T>&);
 }
 ```
 
-Here, we finally got the parameters right. But ADL won't find this overload, since `N` isn't an associated namespace of `N::Inner::Widget<T>`, only `N::Inner` is. 
+Here, we finally got the parameters right. But ADL won't find this overload, since `N` isn't an associated namespace of `N::Inner::Widget<T>`, only `N::Inner` is.
 
-The first problem is something that might be guarded against, perhaps by verifying that `swap(c, c)` for a `T const& c` does not find a candidate if `swap(x, x)` did not, or some other similar implementation heroics. But this basically means doing an extra bout of overload resolution for every swap, even when _not_ providing a custom swap is fairly typical, so seems unlikely to be done. I'm not sure how you could guard against either the second or third problems. 
+The first problem is something that might be guarded against, perhaps by verifying that `swap(c, c)` for a `T const& c` does not find a candidate if `swap(x, x)` did not, or some other similar implementation heroics. But this basically means doing an extra bout of overload resolution for every swap, even when _not_ providing a custom swap is fairly typical, so seems unlikely to be done. I'm not sure how you could guard against either the second or third problems.
 
 The problem here is we're not just writing a function template whose name is `swap` - we're very specifically opting into an interface. It's just that unlike virtual member functions, we have no way of expressing this intent today. And without that intent, we can't get diagnostics for such mistakes.
 
@@ -893,22 +894,22 @@ One paper that addresses this topic is Matt Calabrese's [@P1292R0]. This paper p
 namespace N {
     template <typename T>
     virtual constexpr auto eq(T const&, T const&) -> bool = 0;
-    
+
     template <typename T>
     virtual constexpr auto ne(T const& x, T const& y) -> bool {
         return not eq(x, y);
     }
-    
+
     template <typename T>
     concept equality_comparable =
         requires (std::remove_reference_t<T> const& t) {
             eq(t, t);
             ne(t, t);
-        };    
+        };
 }
 ```
 
-Which is now just 16 lines of code. 
+Which is now just 16 lines of code.
 
 We would opt-in to this facility by providing an `override`:
 
@@ -989,14 +990,14 @@ Lewis Baker (one of the `tag_invoke` authors) suggests an extension to this dire
 template <typename Receiver>
 struct receiver {
     Receiver inner;
-    
+
     // Override get_stop_token()
     auto get_stop_token() const -> std::never_stop_token
             override : std::execution::get_stop_token
     {
         return {}
     }
-    
+
     // Pass through other customization points
     template <auto CPO, typename Self, typename... Args>
     auto fwd_cpo(this Self&& self, Args&&... args) -> decltype(CPO(FWD(self).inner, FWD(args)...))
@@ -1007,7 +1008,7 @@ struct receiver {
 };
 ```
 
-Definitely something to seriously consider. One issue might be how to figure out how to pick the right overrides. But collecting overrides and relying on them to be constrained seems likely to produce a smaller set of candidates than having to perform name lookup across all associated namespaces and classes. 
+Definitely something to seriously consider. One issue might be how to figure out how to pick the right overrides. But collecting overrides and relying on them to be constrained seems likely to produce a smaller set of candidates than having to perform name lookup across all associated namespaces and classes.
 
 ## Reflective Metaprogramming
 
@@ -1019,7 +1020,7 @@ Consider a block of code like the following (I'm using the stereotypes suggested
 namespace N {
     template <typename T>
     <<virtual_>> constexpr auto eq(T const&, T const&) -> bool;
-    
+
     template <typename T>
         requires requires (T const& x, T const& y){
             eq(x, y);
@@ -1039,12 +1040,12 @@ namespace N::virtual_ {
 
     template <typename T>
     using eq_parameters = mp_list<T const&, T const&>;
-    
+
     template <typename T>
     concept eq_return = std::same_as<T, bool>;
 }
 
-namespace N {    
+namespace N {
     inline constexpr auto eq =
         []<typename T>
             requires requires (virtual_::eq_t<T> f, T const& x, T const& y) {
@@ -1055,10 +1056,10 @@ namespace N {
         };
 }
 
-namespace N::virtual_ {    
+namespace N::virtual_ {
     template <typename T>
     struct ne_t;
-    
+
     template <typename T>
         requires requires (T const& x, T const& y){
             eq(x, y);
@@ -1068,15 +1069,15 @@ namespace N::virtual_ {
             return not eq(x, y);
         }
     };
-    
+
     template <typename T>
-    using ne_parameters = mp_list<T const&, T const&>;    
-    
+    using ne_parameters = mp_list<T const&, T const&>;
+
     template <typename T>
-    concept ne_return = std::same_as<T, bool>;    
+    concept ne_return = std::same_as<T, bool>;
 }
 
-namespace N {   
+namespace N {
     inline constexpr auto ne =
         []<typename T>
             requires requires (virtual_::ne_t<T> f, T const& x, T const& y) {
@@ -1084,7 +1085,7 @@ namespace N {
             }
         (T const& x, T const& y) -> bool {
             return virtual_::ne_t<T>{}(x, y);
-        };   
+        };
 }
 ```
 
@@ -1103,7 +1104,7 @@ As in:
 ```cpp
 namespace N {
     template <typename T> struct Widget { ... };
-    
+
     template <typename T>
     <<override(std::ranges::swap)>> void swap(Widget<T>& x, Widget<T> const& y) { ... }
 }
@@ -1129,7 +1130,7 @@ Which should allow a library implementation to now accurately diagnose incorrect
 Arguably the constraints that I illustrated earlier on the function objects aren't actually necessary. That is, I showed `eq` as:
 
 ```cpp
-namespace N {    
+namespace N {
     inline constexpr auto eq =
         []<typename T>
             requires requires (virtual_::eq_t<T> f, T const& x, T const& y) {
@@ -1144,7 +1145,7 @@ namespace N {
 We don't need to verify the expression `f(x, y)`. The `override` stereotype already does that for us. We just need to validate that `virtual_::eq_t<T>` is a valid type, which should reduce some compile overhead:
 
 ```cpp
-namespace N {    
+namespace N {
     inline constexpr auto eq =
         []<typename T>
             requires requires {
@@ -1158,11 +1159,11 @@ namespace N {
 
 The above requires a lot of new language features, but if what I'm describing here is actually implementable (and there are certainly _many_ questions here about that), then we may be able to implement customization point functions exactly as a library. With all of their benefits (as compared to `tag_invoke`: having the implementation visible in code and the ability to diagnose incorrect opt-ins) and their weaknesses (no way of grouping multiple customization points into a cohesive unit, providing an easy verification for that grouping, or support for associated types).
 
-I also haven't the slighest idea how to do forwarding of arbitrary customization points in this model. 
+I also haven't the slighest idea how to do forwarding of arbitrary customization points in this model.
 
 An important downside to this approach as compared to the customization point functions language feature is prvalue propagation. With `virtual` member functions and the `virtual` "free" functions design, if I have a `virtual` function that takes a prvalue, invoking the customization point _directly_ invokes the most derived implementation with a prvalue. That is, the prvalue is materialized at its target. The same is true of "pure" ADL-based customization points, since we just invoke the target function.
 
-But this is not the case with CPOs, `tag_invoke`, or the above reflection-based implementation of class template specializations. In each of these cases, we invoke a function object that dispatches to the most derived implementation. This means the prvalue must be materialized earlier and then moved. This is a known gotcha with implementing something like `std::function<void(std::string)>` &mdash; it can't quite be as good as you'd want it to be, because you end up with _two_ functions in your call chain taking a `std::string` (or, if you implement it poorly, more than two). 
+But this is not the case with CPOs, `tag_invoke`, or the above reflection-based implementation of class template specializations. In each of these cases, we invoke a function object that dispatches to the most derived implementation. This means the prvalue must be materialized earlier and then moved. This is a known gotcha with implementing something like `std::function<void(std::string)>` &mdash; it can't quite be as good as you'd want it to be, because you end up with _two_ functions in your call chain taking a `std::string` (or, if you implement it poorly, more than two).
 
 Perhaps there's yet another language feature that could facilitate efficient prvalue materialization here? Expression aliases? Lazy parameters?
 
@@ -1175,7 +1176,7 @@ Rust is hardly the only language that can solve this problem. Indeed, C++0x Conc
 ```rust
 trait PartialEq {
     fn eq(&self, rhs: &Self) -> bool;
-    
+
     fn ne(&self, rhs: &Self) -> bool {
         !self.eq(rhs)
     }
@@ -1187,7 +1188,7 @@ trait PartialEq {
 template <typeid T>
 concept PartialEq {
     auto eq(T const&, T const&) -> bool;
-    
+
     auto ne(T const& x, T const& y) -> bool {
         return not eq(x, y);
     }
@@ -1267,7 +1268,7 @@ concept_map C<receiver<R>>
 }
 ```
 
-Customization point functions give us an aswer - since the customization point function itself is an object that gives us some nice properties. But in this concepts model, not so much. 
+Customization point functions give us an aswer - since the customization point function itself is an object that gives us some nice properties. But in this concepts model, not so much.
 
 ## The contenders
 
@@ -1296,7 +1297,7 @@ Let's append customization forwarding to our table and drop all the other option
 </tbody>
 </table>
 
-I'm giving customization point functions credit for customization forwarding, even though that paper makes no mention of such a thing, since at least I'm under the impression that it's a direction that could be pursued. 
+I'm giving customization point functions credit for customization forwarding, even though that paper makes no mention of such a thing, since at least I'm under the impression that it's a direction that could be pursued.
 
 `tag_invoke` is an improvement over customization point objects as a library solution to the static polymorphism problem. But I don't really think it's better enough, and we really need a language solution to this problem. I'm hoping this paper is a good starting point for a discussion, at least.
 

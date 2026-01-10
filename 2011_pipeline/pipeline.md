@@ -10,6 +10,7 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 toc-depth: 2
+status: abandoned
 ---
 
 # Revision History
@@ -24,7 +25,7 @@ This revision lowers the precedence of `|>` (as described in
 [operator precedence](#operator-precedence)
 and includes discussions of [what to do about Ranges pipelines](#what-to-do-about-ranges-going-forward)
  in C++23 and also
-considers the idea of using a [placeholder syntax](#a-placeholder-syntax). 
+considers the idea of using a [placeholder syntax](#a-placeholder-syntax).
 
 This revision also expands the kinds of expressions that can be pipelined into
 to additionally include casts and explicit type conversion.
@@ -33,7 +34,7 @@ to additionally include casts and explicit type conversion.
 
 This paper proposes a new non-overloadable operator `|>` such that the
 expression `x |> f(y)` evaluates exactly as `f(x, y)`. There would be no
-intermediate subexpression `f(y)`. 
+intermediate subexpression `f(y)`.
 
 This is notably unrelated to, and quite different from, [@P1282R0], which
 proposed an overloadable `operator|>`, allowing the evaluation of the above
@@ -49,7 +50,7 @@ incarnation of the pipeline functionality brings a few important drawbacks:
     amounts of complexity, creating a larger maintenance burden on developers
     who wish to use and write pipeline-style code.
 2. The support machinery can incur large amounts of overhead when inlining
-    and peephole optimizations are not enabled. 
+    and peephole optimizations are not enabled.
 3. The support machinery places additional large burdens on the implementation
     in that it needs to parse and process large amounts of the support code
     that is needed to support the syntax.
@@ -310,7 +311,7 @@ There are a few facially obvious drawbacks to using `|` for pipeline semantics:
     provide both partial and full algorithm implementations, where the partial
     implementation is mostly boilerplate to generate the partially applied
     closure object.
-    
+
 We showed in the previous section how a `|`-friendly `transform_view` could
 be implemented. Could this be improved in a different way, perhaps with reflection?
 This seems, at least, theoretically possible. The algorithm would be: take the
@@ -348,7 +349,7 @@ compiler's part for each TU (possibly less of an issue in a modules world)
 - even with modules, this abstraction has compile time cost as `transform` now
 has two overloads (instead of one) regardless of if we use the pipeline syntax
 or not - and then we need to do an additional overload resolution for the `|`,
-all of which are function templates that need to be instantiated. 
+all of which are function templates that need to be instantiated.
 
 We'll discuss the second and third points more in the context of what we
 propose to do about [Ranges going forward](#what-to-do-about-ranges-going-forward).
@@ -358,7 +359,7 @@ work for the programmer to write the initial `|` support to begin with (just the
 one time), work for the programmer to write each additional overload to opt-in,
 work for the compiler to compile all these things together, work for the
 optimizer to get rid of all these things, work for the programmer to try to
-figure out what's getting called where. 
+figure out what's getting called where.
 
 ## Ambiguity problems with `|` as a Pipeline Operator
 
@@ -383,7 +384,7 @@ pipeline syntax.
 - `concat` is a view that takes a bunch of ranges and concatenates
 them all together in a larger range. Much like `zip`, `concat(a)` is a valid
 expression and so `a | concat(b)` can't work. range-v3's `concat` does not
-support the pipeline syntax. 
+support the pipeline syntax.
 
 - `transform` actually has two forms: a unary form and a binary form. C++20
 adds an algorithm that is `ranges::transform(rng1, rng2, result, binary_op)`.
@@ -399,7 +400,7 @@ in between each element. But can itself be a range of ranges, then you'll run
 into problems with `rng | join(delim)`. range-v3 only considers the pipeable
 form for non-joinable-ranges. An alternative approach might have to been to
 just name them differently - `join(rng)` is unambiguous with `rng | join` and
-`join_with(rng, delim)` is unambiguous with `rng | join_with(delim)`. 
+`join_with(rng, delim)` is unambiguous with `rng | join_with(delim)`.
 
 Each of these are specific cases that have to be considered by the library
 author, which is just a lot of extra mental overhead to have to deal with. But
@@ -473,7 +474,7 @@ f(x, y)
 
 Without any intermediate operands. That is, it rewrites code written in a
 pipeline style into immediate function call style. This rewriting of pipeline-style
-is why the name "pipeline-rewrite" was chosen. 
+is why the name "pipeline-rewrite" was chosen.
 
 It's important to be clear that the above **does not** evaluate as:
 
@@ -582,7 +583,7 @@ auto trim(std::string const& str) -> std::string
 
 This ordering is a more direct translation of the original thought process: we
 take our `string`, reverse it, find the first alpha character, then get the base
-iterator out of it. 
+iterator out of it.
 
 To make the `ranges::find_if` algorithm work with the `|>` operator, we need
 to write this additional code:
@@ -862,7 +863,7 @@ int main() {
 }
 ```
 
-Which demonstrates the linear flow of execution quite well. 
+Which demonstrates the linear flow of execution quite well.
 
 Here's a more realistic example from libunifex [@libunifex] (I changed the printf
 strings just to fit side-by-side better, in the original code they are more
@@ -1039,10 +1040,10 @@ user=> (first (.split (.replace (.toUpperCase "a b c d") "A" "X") " "))
 "X"
 
 ;; Perhaps easier to read:
-user=> (-> "a b c d" 
-           .toUpperCase 
-           (.replace "A" "X") 
-           (.split " ") 
+user=> (-> "a b c d"
+           .toUpperCase
+           (.replace "A" "X")
+           (.split " ")
            first)
 "X"
 
@@ -1190,7 +1191,7 @@ above assignment.
 Before we delve further into precedence question, let's consider the situation
 with the left- and right-hand sides of `|>`. Unlike all the other binary operators,
 we're not evaluating both sides separately and then combining them with some
-function. Here, the right-hand side has to be something that is shaped like a 
+function. Here, the right-hand side has to be something that is shaped like a
 function call - that isn't evaluated until we first evaluate the left hand side
 and then treat it as an argument.
 
@@ -1207,7 +1208,7 @@ every right-hand side is just a call. In:
 ```
 
 we have basically `s |> f(x) |> g(y) |> h(z)`, nothing especially complicated.
-But how do we deal with more complex examples? 
+But how do we deal with more complex examples?
 
 We think the appropriate model for handling the right-hand side is that it must
 look like a call expression (that is, it must look like `f()`) when we parse up
@@ -1317,7 +1318,7 @@ to specify. It's already hard to keep track of operator precedence, but this wou
 bring in an entirely novel problem which is that in `x + y |> f() + z()`, this
 would then evaluate as `f(x + y) + z()` and you would
 have the two `+`s differ in their precedence to the `|>`? We're not sure what
-the mental model for that would be. 
+the mental model for that would be.
 
 For the paper itself, we propose the precedence of `|>` to be at 4.5: just
 below `.*` and `->*`. But a significant argument in favor of lower precedence comes
@@ -1329,7 +1330,7 @@ placeholder.
 This proposal (along with languages like Elixir) is for `x |> f(y)` to evaluate
 as `f(x, y)`: the left-hand argument always gets put in the first slot of the
 call expression on the right-hand side. This feature has a lot of utility in a
-wide variety of contexts. 
+wide variety of contexts.
 
 But what if you want to put the left-hand argument somewhere else? While `|>`
 can allow pipelining into `views::zip`, it would not be able to allow pipelining
@@ -1370,7 +1371,7 @@ if (file) {
     file |> fseek(>, 9, SEEK_SET);
     file |> fclose(>);
 }
-``` 
+```
 
 An the earlier trim example could change to be fully pipelined (that is, we can
 take the extra `.base()` at the end without having to introduce parentheses - it
@@ -1422,7 +1423,7 @@ x |> f(y, >)   // f(y, x)
 But it's quite important that we consider this now, since this would inform
 the choice of precedence. If we ever want to go in the direction of placeholder
 syntax, it's quite valuable for the precedence of `|>` to be as low as possible.
-With placeholders, such a choice of precedence allows `|>` to behave as an 
+With placeholders, such a choice of precedence allows `|>` to behave as an
 operator separator - and allows you to write whatever flow of operations you want
 to write without thoughts to precedence at all. Look again at the [JavaScript
 example](#javascript) presented earlier. There's a lot of different operations
@@ -1436,7 +1437,7 @@ There are two major concerns regarding a pipeline operator that need to be
 discussed:
 
 1. Why can't we just have unified function call syntax?
-2. Ranges already has a pipeline operator, that additionally supports 
+2. Ranges already has a pipeline operator, that additionally supports
 composition. What about composition, and what should we do about Ranges
 going forward?
 
@@ -1447,7 +1448,7 @@ C++20 ranges, will eventually hit on Unified Function Call Syntax (UFCS). As
 previously described in a blog post [@revzin], UFCS means different things to
 different people: there were quite a few proposals under this banner that had
 a variety of different semantics and different applicability to this problem
-space. 
+space.
 
 In [@N4165], Herb Sutter presented two goals:
 
@@ -1512,7 +1513,7 @@ concept ufcs_range = requires (R& rng) {
 
 You don't even need any language changes for this to work with all the standard
 library containers - those just have member `begin` and `end` directly.
-`ufcs_range<vector<int>>` is satisfies without much fuss. 
+`ufcs_range<vector<int>>` is satisfies without much fuss.
 
 For a type that looks like:
 
@@ -1520,7 +1521,7 @@ For a type that looks like:
 namespace lib {
     struct some_container { /* ... */ };
     struct some_iterator { /* ... */ };
-    
+
     auto begin(some_container&) -> some_iterator;
     auto end(some_container&) -> some_iterator;
 }
@@ -1546,7 +1547,7 @@ we have no member functions but we also have no associated namespaces in which
 to look for what we need! Do we conclude that `int[10]` is not a range? The only
 way for `rng.begin()` to work on a simple array of `int`s with UFCS is to have
 `begin` in scope - which means either that it has to be a global function with
-no intervening declarations of `begin` (not going to happen) or it's up to 
+no intervening declarations of `begin` (not going to happen) or it's up to
 every algorithm to bring them into scope. Something like:
 
 ```cpp
@@ -1555,12 +1556,12 @@ namespace std {
     auto begin(T (&arr)[N]) -> T* { return arr; }
     template <typename T, size_t N>
     auto end(T (&arr)[N])   -> T* { return arr+N; }
-    
+
     template <typename R>
     concept ufcs_range = requires (R& rng) {
         { rng.begin() } ->  input_or_output_iterator;
         { rng.end() } -> sentinel_for<decltype(rng.begin())>;
-    }    
+    }
 }
 
 template <std::range R, typename Value>
@@ -1578,7 +1579,7 @@ auto find(R& r, Value const& value)
 But if we have to do this dance _anyway_, we didn't gain anything from UFCS at
 all. We can do the exact same thing already, at the cost of a few more lines of
 code (adding declarations of `begin` and `end` that invoke member functions)
-and using non-member syntax instead. 
+and using non-member syntax instead.
 
 And if we don't have a generic solution that works for the fundamental types
 (this example fails for raw arrays, but the general solution will fail if you
@@ -1624,14 +1625,14 @@ problem is really about using ADL for customization points. UFCS as a language
 feature would push much harder in that direction, and it's not a good direction.
 
 Put differently, designing generic code on top of ADL is somewhat akin to
-just eschewing namespaces altogether and going back to our C roots. 
+just eschewing namespaces altogether and going back to our C roots.
 
 #### This is a concepts problem
 
 As argued in [@P1900R0], the problem of customization should be considered
 a `concept`s problem and merits a `concept`s solution. What we are trying to do
 with this paper has nothing to do with customization - we are not trying to
-solve, or even address, this problem. 
+solve, or even address, this problem.
 
 Instead, what we are trying to do is address...
 
@@ -1650,10 +1651,10 @@ autocomplete to work.
 But the question we have is: why does this feature _need_ to be spelled `.`?
 There are many problems with that specific choice that completely evaporate if
 we simply choose an alternate spelling. There is no question about how the
-candidate set should be considered, or how overload resolution should work, 
+candidate set should be considered, or how overload resolution should work,
 nor is there any concern about long term library work and accidentally breaking
 user code by adding a private member function. The alternate spelling this paper
-is proposing is `|>`. 
+is proposing is `|>`.
 
 One example from that document is:
 
@@ -1683,7 +1684,7 @@ if (file) {
 
 Fundamentally, a problem with UFCS is that it would be yet another example in
 C++ where a single syntax has two potential meanings: `x.f()` would either be
-a member function call or a non-member function call, it simply depends. 
+a member function call or a non-member function call, it simply depends.
 
 We already have several examples of this kind of thing in the language, and they
 are very frequent sources of complaint by beginners and experts alike:
@@ -1691,7 +1692,7 @@ are very frequent sources of complaint by beginners and experts alike:
 - `T&&` is either an rvalue reference or a forwarding reference, depending
 on where `T` comes from.
 - `X{v}` can construct an `initializer_list` from `v`, or not, depending on
-`X`. 
+`X`.
 
 Name lookup and overload resolution are two of the most complex aspects of
 a very complex language. Instead of pursuing UFCS, we are proposing a second
@@ -1699,7 +1700,7 @@ syntax that actually has the same meaning as an already existing syntax:
 `x |> f()` has the exact same meaning as `f(x)`. But both of these syntaxes
 always mean invoking the free function `f` and `x.f()` always means invoking
 the member function `f`, and having that differentiation seems like a positive
-thing rather than a negative thing. 
+thing rather than a negative thing.
 
 ## What about pipeline composition?
 
@@ -1740,7 +1741,7 @@ auto traffic = accumulate(my_sessions | session_traffic());
 
 
 Note the comments: it says that the input is a `range<Session>`. Where is it? It's
-nowhere. 
+nowhere.
 
 What's actually going on here is, effectively, a big foray by C++ into the
 world of partial function composition. Now we are become Haskell. This is a very
@@ -1778,14 +1779,14 @@ template <std::range R>
 auto session_traffic(R&&);
 ```
 
-On the other hand, this is more that we have to write every time. 
+On the other hand, this is more that we have to write every time.
 
 This would certainly open up questions about how we want to handle range
 adapters in the future if we choose to adopt this proposal. The above code
 cannot work without the input range (`views::filter(f) |> views::transform(g)`
 would not work). The only way to preserve the composition of range
 adapters as separate from the range input would be to preserve the current
-implementation of `operator|`. 
+implementation of `operator|`.
 
 However, the utility of partial function application and composition is much,
 much more expansive than just range adapters. And if we think it's a valuable
@@ -1814,7 +1815,7 @@ anyway.
 existing ones.
 
 The advantage of deprecation is that we really would only want one way to do
-something - and `|>` is a superior pipeline tool to `|`. 
+something - and `|>` is a superior pipeline tool to `|`.
 
 But deprecation has cost. Even though we're still in C++20, standard libraries
 will ship Ranges implementations this year, and this proposal could not be adopted
@@ -1824,7 +1825,7 @@ to be perfectly functional and correct. If we deprecate `|`, users may be in
 a position where they have code that has to compile against one compiler that
 supports `|>` and one that doesn't. Deprecation warnings seem like they would
 make for an unnecessarily difficult situation for early adopters (unless we
-very nicely suggest and encourage all the implementations to provide a flag 
+very nicely suggest and encourage all the implementations to provide a flag
 to specifically disabling the deprecation of this specific feature - otherwise
 users might have to just disable all deprecation warnings, which seems inherently
 undesirable).
@@ -1852,8 +1853,8 @@ address of an `operator<=` as a template argument (`f<&operator<=>()` would now
 have to be written as `f<&operator<= >()`), a `|>` token would break code that
 passes the address of an `operator|` as a template argument (`g<&operator|>()`
 would now have to be written as `g<&operator| >()`). This wasn't a huge
-concern with the spaceship operator, and it isn't a huge concern with the 
-pipeline rewrite operator. 
+concern with the spaceship operator, and it isn't a huge concern with the
+pipeline rewrite operator.
 
 There may be a concern that this would lead to yet another conflict
 in the C++ community as to whether the proper way to invoke functions is
@@ -1891,7 +1892,7 @@ Add a new section named "Pipeline rewrite" [expr.pizza]:
 @_pipeline-expression_@:
   @_pm-expression_@
   @_pipeline-expression_@ |> @_pipeline-rhs_@
-  
+
 @_pipeline-rhs_@:
   @_pm-expression_@ ( @_expression-list_~opt~@ )
   @_simple-type-specifier_@ ( @_expression-list_~opt~@ )
@@ -1974,7 +1975,7 @@ Several people helped enormously with shaping this paper, both with direct
 feedback and giving us more information about other languages: Gašper Ažman,
 Davis Herring,
 Arthur O'Dwyer, Tim Song, Richard Smith, Faisal Vali, Tony van Eerd,
-Daveed Vandevoorde, and Ville Voutilainen. 
+Daveed Vandevoorde, and Ville Voutilainen.
 
 ---
 references:
@@ -2017,7 +2018,7 @@ references:
         - family: ClojureDocs
     issued:
         - year: 2010
-    URL: https://clojuredocs.org/clojure.core/-%3E%3E    
+    URL: https://clojuredocs.org/clojure.core/-%3E%3E
   - id: racket.threading
     citation-label: racket.threading
     title: "Threading Macros"
@@ -2112,7 +2113,7 @@ references:
     author:
         - family: julialang
     issued:
-        - year: 2020    
+        - year: 2020
     URL: https://docs.julialang.org/en/v1/manual/functions/#Function-composition-and-piping-1
   - id: odwyer.precedence
     citation-label: odwyer.precedence
@@ -2120,7 +2121,7 @@ references:
     author:
         - family: Arthur O'Dwyer
     issued:
-        - year: 2020    
+        - year: 2020
     URL: https://quuxplusone.github.io/blog/2020/04/10/pipeline-operator-examples/
   - id: libunifex
     citation-label: libunifex
@@ -2129,5 +2130,5 @@ references:
         - family: libunifex
     issued:
         - year: 2020
-    URL: https://github.com/facebookexperimental/libunifex/blob/epoll-moar-sfinae/examples/linux/io_epoll_test.cpp#L89-L108    
+    URL: https://github.com/facebookexperimental/libunifex/blob/epoll-moar-sfinae/examples/linux/io_epoll_test.cpp#L89-L108
 ---

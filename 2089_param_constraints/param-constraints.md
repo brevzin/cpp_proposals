@@ -8,6 +8,7 @@ author:
       email: <barry.revzin@gmail.com>
 toc: false
 tag: constexpr
+status: abandoned
 ---
 
 # Introduction

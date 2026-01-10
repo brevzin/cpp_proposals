@@ -10,6 +10,7 @@ author:
       email: <casey@carter.com>
 toc: false
 tag: spaceship
+status: accepted
 ---
 
 # Introduction and Motivation

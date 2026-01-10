@@ -10,6 +10,7 @@ author:
       email: <pdimov@gmail.com>
 toc: true
 tag: constexpr
+status: rejected
 ---
 
 # Introduction

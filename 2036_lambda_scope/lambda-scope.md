@@ -1,12 +1,13 @@
 ---
 title: "Change scope of lambda _trailing-return-type_"
-document: P2036R3   
+document: P2036R3
 date: today
 audience: EWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: true
+status: accepted
 ---
 
 # Revision History
@@ -97,14 +98,14 @@ For the _trailing-return-type_ case, this problem only surfaces with
 _init-capture_ (which can introduce new names) and any kind of copy capture
 (which may change the const qualification on some names). With reference
 capture (specifically either just `[&]` or `[&a]`), both the inner and outer
-uses of names are equivalent so there is no issue. 
+uses of names are equivalent so there is no issue.
 
 While it is possible (and quite easy) to produce examples that demonstrate this
 sort of different behavior, it's quite difficult to come up with examples in
 which this difference is actually desired and intended. I wrote a clang-tidy
 check to find any uses of problematic captures (those that are come from a copy
 capture or _init-capture_) and ran it on multiple code bases and could not find
-one. I would love to see a real world example. 
+one. I would love to see a real world example.
 
 This issue (the potentially-different interpretations of the same name in the
 _trailing-return-type_ and lambda body) was one of (but not the only) reason
@@ -135,7 +136,7 @@ just needlessly confounding. It seems to me that whenever the meaning of an
 _id-expression_ differs between the two contexts, it's a bug. I think we should
 just remove this corner case. It's also blocking reasonable future language
 evolution, and is likely a source of subtle bugs and preexisting user
-frustration.  
+frustration.
 
 # Potential Impact
 
@@ -159,10 +160,10 @@ so it's unlikely that much such code exists today.
 
 This is basically the same result as the _init-capture_ case: we know the types
 by the time we get to the beginning of the _trailing-return-type_, so there are
-no issues determining what it should be. 
+no issues determining what it should be.
 
 With the reference capture cases (as well the _init-capture_ spelling `[&a=a]`),
-there is actually no difference in interpretation anyway. 
+there is actually no difference in interpretation anyway.
 
 ### _capture-default_ with `[&]` {-}
 
@@ -192,7 +193,7 @@ Then we have a problem. First, let's go over the cases that are not problematic.
 `a` by copy so we can figure out what the type of `a` would be when nominated
 in the body.
 4. Eliminates cases like `[=]() -> X<decltype(a)>`, which actually have the
-same meaning in the body already. 
+same meaning in the body already.
 5. Eliminates cases like `[=]() mutable -> decltype(f(a))`. Whether or not we
 end up having to capture `a`, the meaning of `f(a)` is the same in the body
 as it is in the _trailing-return-type_.
@@ -321,7 +322,7 @@ There are four options for what this lambda could mean:
 
 While there's a lot of motivation for the _trailing-return-type_, I have never seen anybody write this and do not know what the motivation for such a thing would be. (1) isn't very reasonable since the _init-capture_ is lexically closer to use and it's just as surprising to find `::x` in the _parameter-declaration-clause_ as it is in the _trailing-return-type_.
 
-The advantage of (4) is that it guarantees that all uses of `x` in the _lambda-expression_ after the _lambda-introducer_ mean the same thing &mdash; we reject the cases up front where we are not sure what answer to give without doing lookahead. If motivation arises in the future for using captures in these contexts, we can always change the lookup in these contexts to allow such uses &mdash; rejecting now doesn't cut off that path. 
+The advantage of (4) is that it guarantees that all uses of `x` in the _lambda-expression_ after the _lambda-introducer_ mean the same thing &mdash; we reject the cases up front where we are not sure what answer to give without doing lookahead. If motivation arises in the future for using captures in these contexts, we can always change the lookup in these contexts to allow such uses &mdash; rejecting now doesn't cut off that path.
 
 This paper proposes (4).
 
@@ -362,7 +363,7 @@ auto f() {
 }
 ```
 
-Today, this example is ill-formed (although no compiler diagnoses it) because `value` is odr-used in the _trailing-return-type_, but it is not odr-usable ([basic.def.odr]{.sref}/9) there. It would be consistent with the theme of this paper (having the _trailing-return-type_ have the same meaning as the body) to change the rules to allow this case. Such a rule change would involve extending the reach of odr-usable to include more of the parts of the lambda (but not default arguments) but making sure to narrow the capture rules (which currently are based on odr-usable) to ensure that we don't start capturing more things. 
+Today, this example is ill-formed (although no compiler diagnoses it) because `value` is odr-used in the _trailing-return-type_, but it is not odr-usable ([basic.def.odr]{.sref}/9) there. It would be consistent with the theme of this paper (having the _trailing-return-type_ have the same meaning as the body) to change the rules to allow this case. Such a rule change would involve extending the reach of odr-usable to include more of the parts of the lambda (but not default arguments) but making sure to narrow the capture rules (which currently are based on odr-usable) to ensure that we don't start capturing more things.
 
 I'm wary of such a change because I'm very wary of touching anything related to ODR. Especially because in an example like this, we could easily make `value` not odr-used here (either by making `value` `static` or by changing `read` to not take by reference).
 
@@ -372,7 +373,7 @@ The change this paper suggests doesn't merit a feature test macro. If you had to
 
 ## Implementation Experience
 
-None, but the behavior changes suggested here don't require any kind of parsing heroics. We still have everything we need to know at the time that we're parsing the *trailing-return-type*, it's just that there's a new scope that is looked in first. No implementors have reported any concerns. 
+None, but the behavior changes suggested here don't require any kind of parsing heroics. We still have everything we need to know at the time that we're parsing the *trailing-return-type*, it's just that there's a new scope that is looked in first. No implementors have reported any concerns.
 
 # Wording
 
@@ -380,7 +381,7 @@ This wording is based on the working draft after Davis Herring's opus [@P1787R6]
 
 The wording strategy here is as follows. We have the following scopes today:
 
-- _lambda-introducer_ 
+- _lambda-introducer_
 - _template-parameter-list_
 - _requires-clause_ (#1)
 - _lambda-declarator_
@@ -432,7 +433,7 @@ Change [expr.prim.id.unqual]{.sref}/3, including adding bullet points to make it
 ::: bq
 [3]{.pnum} The result is the entity denoted by the _unqualified-id_ ([basic.lookup.unqual]). If the [_unqualified-id_ appears in a _lambda-expression_ at program point `P` and the]{.addu} entity is a local entity [or a variable declared by an _init-capture_ ([expr.prim.lambda.capture]), then let `S` be the _compound-expression_ of the innermost enclosing _lambda-expression_ of `P`.]{.addu} [and]{.rm} [If]{.addu} naming [it]{.rm} [the entity]{.addu} from outside of an unevaluated operand within [the scope where the _unqualified-id_ appears]{.rm} [`S`]{.addu} would [result in some intervening _lambda-expression_ capturing it by copy]{.rm} [refer to an entity captured by copy in some intervening _lambda-expression_]{.addu} ([expr.prim.lambda.capture]), [then let `E` be the innermost such _lambda-expression_, and:]{.addu}
 
-- [3.#]{.pnum} [If `P` is in `E`'s function parameter scope but not its _parameter-declaration-clause_, then]{.addu} the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of [the innermost such intervening _lambda-expression_]{.rm} [`E`]{.addu}. 
+- [3.#]{.pnum} [If `P` is in `E`'s function parameter scope but not its _parameter-declaration-clause_, then]{.addu} the type of the expression is the type of the class member access expression ([expr.ref]) naming the non-static data member that would be declared for such a capture in the closure object of [the innermost such intervening _lambda-expression_]{.rm} [`E`]{.addu}.
 
     [*Note* 3: If [that *lambda-expression*]{.rm} [`E`]{.addu} is not declared `mutable`, the type of such an identiﬁer will typically be `const` qualiﬁed. — *end note*]
 
@@ -460,7 +461,7 @@ Extend the example in [expr.prim.id.unqual]{.sref}/3 to demonstrate this rule:
       decltype((r)) r2 = y2;      // r2 has type float const&
 +     return y2;
     };
-    
+
 +   [=]<decltype(x) P>{};         // error: x refers to local entity but precedes the
 +                                 // lambda's function parameter scope
 +   [=](decltype((x)) y){};       // error: x refers to local entity but is in lambda's
@@ -493,9 +494,9 @@ And extend the example to demonstrate this usage (now we do have an `i` in scope
               r += 2;
               return x+2;
            }();                                    // Updates ​::​x to 6, and initializes y to 7.
-           
+
   auto z = [a = 42](int a) { return 1; };          // error: parameter and local variable have the same name
-  
+
 + auto counter = [i=0]() mutable -> decltype(i) {  // ok: returns int
 +   return i++;
 + };

@@ -8,6 +8,7 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 tag: constexpr
+status: accepted
 ---
 
 # Revision History

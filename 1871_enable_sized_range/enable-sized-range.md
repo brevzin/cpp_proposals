@@ -8,6 +8,7 @@ author:
       email: <barry.revzin@gmail.com>
 toc: false
 tag: ranges
+status: accepted
 ---
 
 # Revision History

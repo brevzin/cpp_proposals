@@ -8,6 +8,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: false
+status: accepted
 ---
 
 # Revision History
@@ -20,9 +21,9 @@ Since [@P2162R0], added more information in the implementation experience sectio
 
 [@LWG3052] describes an under-specification to `std::visit`:
 
->  the _Requires_ element imposes no explicit requirements on the types in `Variant`s. Notably, the `Variant`s are not required to be `variant`s. This lack of constraints appears to be simply an oversight. 
+>  the _Requires_ element imposes no explicit requirements on the types in `Variant`s. Notably, the `Variant`s are not required to be `variant`s. This lack of constraints appears to be simply an oversight.
 
-The original proposal [@P0088R3] makes no mention of other kinds of of variants besides `std::variant`, and this does not appear to have been discussed in LEWG. 
+The original proposal [@P0088R3] makes no mention of other kinds of of variants besides `std::variant`, and this does not appear to have been discussed in LEWG.
 
 The proposed resolution in the library issue is to make `std::visit` only work if all of the `Variant`s are, in fact, `std::variant`s:
 
@@ -40,11 +41,11 @@ One is to simply extend functionality. If we're using `variant` to represent a s
 struct State : variant<Disconnected, Connecting, Connected>
 {
     using variant::variant;
-    
+
     bool is_connected() const {
         return std::holds_alternative<Connected>(*this);
     }
-    
+
     friend std::ostream& operator<<(std::ostream&, State const&) {
         // ...
     }
@@ -74,7 +75,7 @@ struct Expr : std::variant<int, Neg, Add, Mul> {
 
 namespace std {
     template <> struct variant_size<Expr> : variant_size<Expr::variant> {};
-    
+
     template <std::size_t I> struct variant_alternative<I, Expr> : variant_alternative<I, Expr::variant> {};
 }
 ```
@@ -148,7 +149,7 @@ But... who cares. Don't write types like that.
 
 # Implementation Experience
 
-The Microsoft STL implementation already supports exactly this design [@stlstl] since the first Visual Studio 2019 release in April 2019. 
+The Microsoft STL implementation already supports exactly this design [@stlstl] since the first Visual Studio 2019 release in April 2019.
 
 The libc++ implementation has supported _nearly_ this design since day one [@libcpp]. While the incoming variants to `visit` are upcast to specializations of `std::variant`, the member function `valueless_by_exception()` is invoked directly on the arguments. The spirit of the implementation matches the intent of this paper, though it does technically break on Tim's example (but does work fine on any types that inherit from `std::variant` without touching `valueless_by_exception()` -- and it's just the `valueless_by_exception` member that causes the problem, the `index` member doesn't).
 
@@ -198,7 +199,7 @@ the type `decltype(@_as-variant_@(std::forward<Variants@~i~@>(vars@~i~@)))`.
 [-1]{.pnum} _Constraints_: _`V@~i~@`_ is a valid type for all `0 <= i < n`.
 
 [0]{.pnum} Let _`V`_ denote the pack of types _`V@~i~@`_.
-::: 
+:::
 
 [1]{.pnum} [Let `n` be `sizeof...(Variants)`.]{.rm}
 Let [`m`]{.rm} [_`m`_]{.addu} [Italicize `m` throughout]{.ednote} be a pack of `n` values of type `size_t`.
@@ -224,7 +225,7 @@ All such expressions are of the same type and value category.
 
 [3]{.pnum} _Returns_: `e(m)`, where `m` is the pack for which `m@~i~@` is [`vars@~i~@.index()`]{.rm} [`@_as-variant_@(vars@~i~@).index()`]{.addu} for all `0 <= i < n`. The return type is `decltype(e(m))` for the first form.
 
-[4]{.pnum} _Throws_: `bad_variant_access` if [any `variant` in `vars` is `valueless_by_exception()`]{.rm} [`(@_as-variant_@(vars).valueless_by_exception() || ...)` is `true`]{.addu}. 
+[4]{.pnum} _Throws_: `bad_variant_access` if [any `variant` in `vars` is `valueless_by_exception()`]{.rm} [`(@_as-variant_@(vars).valueless_by_exception() || ...)` is `true`]{.addu}.
 
 [5]{.pnum} _Complexity_: For `n <= 1`, the invocation of the callable object is implemented in constant time, i.e., for `n=1`, it does not depend on the number of alternative types of [`Variants@~0~@`]{.rm} [_`V@~0~@`_]{.addu}.
 For `n>1`, the invocation of the callable object has no complexity requirements.

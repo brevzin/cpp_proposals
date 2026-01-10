@@ -8,6 +8,7 @@ author:
     email: <tomaszkam@gmail.com>
   - name: Barry Revzin
     email: <barry.revzin@gmail.com>
+status: accepted
 ---
 
 # Revision History
@@ -21,11 +22,11 @@ Currently, one of the most important utility functions in the standard libary,
 `std::invoke()`, is not `constexpr`. Even though `std::apply()` and
 `std::visit()`, both of which rely on <code>*INVOKE*</code>, are both `constexpr`.
 The standard library thus finds itself in an odd state where `std::invoke()` is
-and is not `constexpr`. 
+and is not `constexpr`.
 
 The reason that `std::invoke()` is not `constexpr` has some interesting history
 associated with it. But at this point, it is simply history, and there is no
-further blocker to making this change. This proposal resolves [@LWG2894] but also 
+further blocker to making this change. This proposal resolves [@LWG2894] but also
 goes one step further and addresses various other <code>*INVOKE*</code>-related
 machinery.
 
@@ -81,7 +82,7 @@ int main() {
   return 0;
 }
 ```
-    
+
 In both cases the fundamental issue was eager instantiation of the body, which
 doesn't actually seem necessary to determine the results here. In neither example
 is the return type deduced.
@@ -91,14 +92,14 @@ exactly, are `constexpr` functions defined. In the broken programs above, the
 `constexpr` functions (the non-`const` call operator of the binder object being
 returned in the first case and `g()` in the second) were eagerly instantiated,
 triggering hard compile errors, in cases where the program ultimately would not
-have required their instantiation. 
+have required their instantiation.
 
 Thankfully, this difficult problem has been resolved by the adoption of
 [@P0859R0] in Albuquerque, 2017. As a result, both of the above programs are
-valid. 
+valid.
 
 This issue was the blocker for having a `constexpr std::invoke()` due to this
-eager instantiation issue - which no longer exists. 
+eager instantiation issue - which no longer exists.
 
 # Proposal
 
@@ -160,7 +161,7 @@ namespace std {
 -   invoke_result_t<F, Args...> invoke(F&& f, Args&&... args)
 +   @[constexpr]{.diffins}@ invoke_result_t<F, Args...> invoke(F&& f, Args&&... args)
       noexcept(is_nothrow_invocable_v<F, Args...>);
-	  
+
   // [refwrap], reference_wrapper
   template<class T> class reference_wrapper;
 
@@ -174,11 +175,11 @@ namespace std {
 - template<class T> reference_wrapper<T> ref(reference_wrapper<T>) noexcept;
 - template<class T> reference_wrapper<const T> cref(reference_wrapper<T>);
 + template<class T> @[constexpr]{.diffins}@ reference_wrapper<T> ref(reference_wrapper<T>) noexcept;
-+ template<class T> @[constexpr]{.diffins}@ reference_wrapper<const T> cref(reference_wrapper<T>) noexcept;	  
-  
++ template<class T> @[constexpr]{.diffins}@ reference_wrapper<const T> cref(reference_wrapper<T>) noexcept;
+
   // [arithmetic.operations], arithmetic operations
   // ...
-  
+
   // [comparisons], comparisons
   // ...
 
@@ -198,7 +199,7 @@ namespace std {
   // [func.bind.front], function template bind_front
 - template<class F, class... Args> @_unspecified_@ bind_front(F&&, Args&&...);
 + template<class F, class... Args> @[constexpr]{.diffins} _unspecified_@ bind_front(F&&, Args&&...);
- 
+
   // [func.bind], bind
   template<class T> struct is_bind_expression;
   template<class T> struct is_placeholder;
@@ -227,7 +228,7 @@ namespace std {
 -   @_unspecified_@ mem_fn(R T::*) noexcept;
 +   @[constexpr]{.diffins} _unspecified_@ mem_fn(R T::*) noexcept;
 
-  // ...	
+  // ...
 }
 ```
 
@@ -264,27 +265,27 @@ Apply following changes to 20.14.3 [func.require]:
 >-   R operator()(UnBoundArgs&&... unbound_args) @_cv-qual_@;
 >+   @[constexpr]{.diffins}@ R operator()(UnBoundArgs&&... unbound_args) @_cv-qual_@;
 > ```
-> —*end note*]  
-> 
+> —*end note*]
+>
 > [4]{.pnum} A *perfect forwarding call wrapper* is an argument forwarding call
 > wrapper that forwards its state entities to the underlying call expression.
 > This forwarding step delivers a state entity of type `T` as *cv* `T&` when the
 > call is performed on an lvalue of the call wrapper type and as *cv* `T&&`
 > otherwise, where *cv* represents the cv-qualifiers of the call wrapper and
-> where *cv* shall be neither `volatile` nor `const volatile`.  
-> 
+> where *cv* shall be neither `volatile` nor `const volatile`.
+>
 > [5]{.pnum} A *call pattern* defines the semantics of invoking a perfect
 > forwarding call wrapper. A postfix call performed on a perfect forwarding call
 > wrapper is expression-equivalent ([defns.expression-equivalent]) to an
 > expression `e` determined from its call pattern cp by replacing all
 > occurrences of the arguments of the call wrapper and its state entities with
-> references as described in the corresponding forwarding steps.  
-> 
+> references as described in the corresponding forwarding steps.
+>
 > [a]{.pnum} [A *simple call wrapper* is a perfect forwarding call wrapper that
 > meets the *Cpp17CopyConstructible* and *Cpp17CopyAssignable* and whose copy
 > constructor, move constructor, and assignment operators are constexpr functions
 > which do not throw exceptions.]{.addu}
-> 
+>
 > [6]{.pnum} The copy/move constructor of [a perfect]{.rm} [an argument]{.addu}
 > forwarding call wrapper has the same apparent semantics as if memberwise
 > copy/move of its state entities were performed ([class.copy.ctor]). [ *Note*:
@@ -292,7 +293,7 @@ Apply following changes to 20.14.3 [func.require]:
 > *exception-specification* as the corresponding implicit definition and is
 > declared as `constexpr` if the corresponding implicit definition would be
 > considered to be constexpr. —*end note* ]
-> 
+>
 > [7]{.pnum} [Perfect]{.rm} [Argument]{.addu} forwarding call wrappers returned
 > by a given standard library function template have the same type if the types
 > of their corresponding state entities are the same.
@@ -305,7 +306,7 @@ Add `constexpr` to `std::invoke()` in 20.14.4 [func.invoke]
 -   invoke_result_t<F, Args...> invoke(F&& f, Args&&... args)
 +   @[constexpr]{.diffins}@ invoke_result_t<F, Args...> invoke(F&& f, Args&&... args)
       noexcept(is_nothrow_invocable_v<F, Args...>);
-```	
+```
 :::
 
 Add `constexpr` to `std::reference_wrapper<T>` in 20.14.5 [refwrap]
@@ -345,7 +346,7 @@ namespace std {
 }
 ```
 :::
-	
+
 And its corresponding subsections, 20.14.5.1 [refwrap.const]
 
 ::: bq
@@ -563,7 +564,7 @@ requirements. If all of `FD` and <code>TD<sub>i</sub></code> satisfy the
 :::
 
 Define <code>v<sub>fd</sub></code> and add reference to the *cv*-qualifies in
-20.14.14.3 [func.bind.bind]/10: 
+20.14.14.3 [func.bind.bind]/10:
 
 ::: bq
 
@@ -580,7 +581,7 @@ is `true`, the argument is <code>[td<sub><i>i</i></sub>]{.rm}
 [static_cast&lt;TD<sub><i>i</i></sub> <i>cv</i> &&gt;(td<sub><i>i</i></sub>)]{.addu}(std::forward&lt;U<sub>j</sub>&gt;(u<sub>j</sub>)...)</code>
 and its type <code>V<sub><i>i</i></sub></code> is
 <code>invoke_result_t&lt;TD<sub><i>i</i></sub> <i>cv</i> &, U<sub><i>j</i></sub>...&gt;&&</code>;
-- [10.3]{.pnum} if the value `j` of [...] 
+- [10.3]{.pnum} if the value `j` of [...]
 - [10.4]{.pnum} otherwise, [...]
 
 [11]{.pnum} [The value of the <i>target argument</i> <code>v<sub>fd</sub></code>
@@ -598,7 +599,7 @@ implementation-defined whether placeholder types [meet the]{.addu} [are]{.rm}
 *Cpp17CopyAssignable* [requirements, but if so, their]{.addu}
 [. *Cpp17CopyAssignable* placeholders']{.rm} copy assignment operators [are
 constexpr functions which do]{.addu} [shall]{.rm} not throw exceptions.
-  
+
 Add `constexpr` to `std::mem_fn()` in 20.14.15 [func.memfn]
 
 ::: bq

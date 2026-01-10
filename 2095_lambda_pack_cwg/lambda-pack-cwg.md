@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: false
+status: accepted
 ---
 
 # Introduction
@@ -75,8 +76,8 @@ Change [expr.prim.lambda.capture]{.sref}/6:
 ::: bq
 An _init-capture_ [without ellipsis]{.addu} behaves as if it declares and
 explicitly captures a variable of the form “`auto init-capture ;`{.x}”
-whose declarative region is the _lambda-expression_'s compound-statement, except that: 
-::: 
+whose declarative region is the _lambda-expression_'s compound-statement, except that:
+:::
 
 Change [expr.prim.lambda.capture]{.sref}/17:
 
@@ -112,5 +113,5 @@ references:
       - family: Barry Revzin
     issued:
       - year: 2019
-    URL: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91847  
+    URL: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=91847
 ---

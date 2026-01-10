@@ -10,6 +10,7 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 tag: constexpr
+status: abandoned
 ---
 
 # Abstract

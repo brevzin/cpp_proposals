@@ -8,6 +8,7 @@ author:
     email: <barry.revzin@gmail.com>
   - name: Casey Carter
     email: <casey@carter.net>
+status: accepted
 ---
 
 # Revision History
@@ -58,7 +59,7 @@ template <typename T>
 struct X {
 	// #1
 	X(X const&) requires C<T> = default;
-	
+
 	// #2
 	X(X const& ) { /* ... */ }
 };
@@ -68,21 +69,21 @@ According to the current working draft, both `#1` and `#2` are copy
 constructors. The current definition for trivially copyable requires that _each_
 copy constructor be either deleted or trivial. That is, we always consider both
 copy constructors, regardless of `T` and `C<T>`, and hence no instantation of
-`X` is ever trivially copyable. 
+`X` is ever trivially copyable.
 
 This paper suggests that those specializations `X<T>` for which `T` satisfies
 `C` should be considered trivially copyable - this very logically follows the
 model of constraints and would make it substantially easier to write class
 templates that are conditionally trivially copyable. Indeed, it would become
 actually easy to do such a thing rather than quite complex with multiple layers
-of conditional base classes. 
+of conditional base classes.
 
 # Proposal
 
 The current relevant definitions in [class.prop] read:
 
 > A _trivially copyable class_ is a class:
-> 
+>
 > - where each copy constructor, move constructor, copy assignment operator, and
 > move assignment operator ([class.copy.ctor], [class.copy.assign]) is either
 > deleted or trivial,
@@ -109,13 +110,13 @@ function that is:
   type (except for the default constructor), is more constrained
 
 And then simplify the definitions of _trivially copyable_ and _trivial_ to use
-eligible special members instead of just any special members. 
+eligible special members instead of just any special members.
 
 For the destructor, we go in a slightly different direction. We introduce a
 sub-classification called a _prospective destructor_ which is simply any
 function declared for a class `X` that is spelled `~X()` with some constraints,
 and then redefine destructor to be the eligible destructor, requiring that
-there be only one. 
+there be only one.
 
 Using the example from R0:
 
@@ -126,7 +127,7 @@ struct optional {
 	optional(optional const&)
 		requires TriviallyCopyConstructible<T> && CopyConstructible<T>
 		= default;
-		
+
 	// #2
 	optional(optional const& rhs)
 			requires CopyConstructible<T>
@@ -137,8 +138,8 @@ struct optional {
 		}
 	}
 };
-``` 
-    
+```
+
 For all specializations, we have two copy constructors: `#1` and `#2`. For
 `T=unique_ptr<int>`, neither copy constructor has its constraints satisfied so
 there is no eligible copy constructor. For `T=std::string`, only `#2` has its
@@ -164,7 +165,7 @@ eligibility:
 > initialized as if by using the [non-deleted]{.rm} [eligible]{.addu} trivial
 > constructor to copy the temporary (even if that constructor is inaccessible
 > or would not be selected by overload resolution to perform a copy or move of
-> the object). 
+> the object).
 
 And likewise for 7.6.1.2 [expr.call]:
 
@@ -196,13 +197,13 @@ Insert at the beginning of 11.1 [class.prop] a definition of eligibility:
 >
 > - [-1.1]{.pnum} they are both default constructors,
 > - [-1.2]{.pnum} they are both copy or move constructors with the same first parameter type, or
-> - [-1.3]{.pnum} they are both copy or move assignment operators with 
+> - [-1.3]{.pnum} they are both copy or move assignment operators with
 > the same first parameter type and the same *cv-qualifier*s
 > and *ref-qualifier*, if any.
 
 > [0]{.pnum} An _eligible special member function_ is a special member function
 > ([special])
-> 
+>
 > - [0.1]{.pnum} that is not deleted,
 > - [0.2]{.pnum} where its associated constraints ([temp.constr]), if
 > any, are satisfied, and
@@ -215,7 +216,7 @@ Change the definitions of _trivially copyable_ and _trivial_ in 11.1
 [class.prop] (this flips the first two bullet points):
 
 > [1]{.pnum} A _trivially copyable class_ is a class:
-> 
+>
 > - [1.0]{.pnum} [where each copy constructor, move constructor, copy assignment
 operator, and move assignment operator ([class.copy.ctor], [class.copy.assign])
 is either deleted or trivial,]{.rm}
@@ -277,7 +278,7 @@ Change 11.3.6 [class.dtor]:
     ~X()
 	```
 :::
-    
+
 Change 11.3.6 [class.dtor]:
 
 > [10]{.pnum} A [prospective]{.addu} destructor can be declared `virtual`
@@ -290,7 +291,7 @@ Change 11.3.6 [class.dtor]:
 Add to 13.8.2 [temp.explicit], immediately after paragraph 12:
 
 > [12]{.pnum} An explicit instantiation definition that names a class template specialization explicitly instantiates the class template specialization and is an explicit instantiation definition of only those members that have been defined at the point of instantiation.
-> 
+>
 > [12b]{.pnum} [An explicit instantiation of a prospective destructor shall name
 > the selected destructor of the class.]{.addu}
 
@@ -298,7 +299,7 @@ Add to 13.8.2 [temp.explicit], immediately after paragraph 12:
 
 Thanks to Gaby dos Reis, Daveed Vandevoorde, and Jonathan Wakely for helping
 bring us to this design. Thanks to Jens Maurer and Richard Smith for the
-lengthy discussions and wording wizardry. 
+lengthy discussions and wording wizardry.
 
 ---
 references:

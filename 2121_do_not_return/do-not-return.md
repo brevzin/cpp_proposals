@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: false
+status: abandoned
 ---
 
 # Introduction
@@ -57,7 +58,7 @@ statements is:
 - `return`
 - `throw`
 
-`goto` is a little special, but the others behave a lot like `throw`: they 
+`goto` is a little special, but the others behave a lot like `throw`: they
 necessarily escape scope and have no possible value, so they can't meaningfully
 affect the type of an expression. The following could be a perfectly reasonable
 function (though this paper is not proposing it):
@@ -126,14 +127,14 @@ int maybe_terminate(int arg) {
 
 The above could then be allowed: the second case would be considered an escaping
 statement by virtue of the `!{ ... }` and would thus not participate in determining
-the type. This leaves a single case having type `int`. 
+the type. This leaves a single case having type `int`.
 
 Such an annotation could be enforced by the language to not escape (e.g. by
 inserting a call to `std::terminate` on exiting the scope), so there is no UB
 concern here or anything.
 
 There may be other mechanisms to annotate escaping blocks besides `!{ ... }` but
-this paper considers any others to be just differences in spelling anyway, so 
+this paper considers any others to be just differences in spelling anyway, so
 only this one is considered (and the spelling isn't really important anyway).
 
 ## Annotate escaping functions
@@ -148,7 +149,7 @@ C and C++ have the type `void`, but despite the name, it's not an entirely
 uninhabited type. You can't have an object of type `void` (yet?), but functions
 which return `void` do, in fact, return. We could introduce a new type that
 actually has zero possible values, which would indicate that a function can
-never return. For the sake of discussion, let's call this type `true void`. 
+never return. For the sake of discussion, let's call this type `true void`.
 Actually, that's a bit much. Let's call it `std::never`.
 
 We could then change the declaration of functions like `std::abort()`:
@@ -219,7 +220,7 @@ as an escaping function, as a language rule, and allow that to work.
 # Comparison of Alternatives
 
 The set of `[[noreturn]]`-annotated functions is
-very small (the standard library has 9: `std::abort`, `std::exit`, `std::_Exit`, 
+very small (the standard library has 9: `std::abort`, `std::exit`, `std::_Exit`,
 `std::quick_exit`, `std::terminate`, `std::rethrow_exception`,
 `std::throw_with_nested`, `std::nested_exception::rethrow_nested`, and
 `std::longjmp` - with `std::unreachable` on the way),
@@ -252,10 +253,10 @@ ill-formed or would that mean that a function returning a `never&` never returns
 - `never*`? Since there can never be a `never` object to point to, this seems
 like the same case as `never&` - but there is one exception. A `never*` could
 still have a null pointer value. That's not pointing to an object right? Does
-this mean that a `never* f()` necessarily returns a null pointer? 
+this mean that a `never* f()` necessarily returns a null pointer?
 - `pair<never, int>`? As a proxy for having a class type with a
 `never` - this would also be a type that's impossible to form. So this one,
-like `never&`, would either also be an "escaping type" or ill-formed. 
+like `never&`, would either also be an "escaping type" or ill-formed.
 - `optional<never>`? This is a lot like `never*` - it can never hold a value
 but it's perfectly fine to empty? But how would you construct the
 language rules such that it's implementable properly? If you could, then this
@@ -273,7 +274,7 @@ That reduces us to the last two choices:
 2. Allow the language to impart semantics on `[[noreturn]]`.
 
 The advantage of the former is it allows us to preserve the adopted guidance
-on the meaning of attributes from Albuquerque. 
+on the meaning of attributes from Albuquerque.
 
 The advantage of the latter is: we already have an existing solution to exactly
 this problem, and having to introduce a new language feature, to solve exactly
@@ -306,11 +307,11 @@ as well. C has a _different_ function annotation to indicate an escaping
 function, introduced in C11 by [@C.N1478]:
 
 ```cpp
-_Noreturn void fatal(void); 
+_Noreturn void fatal(void);
 
-void fatal() { 
+void fatal() {
   /* ... */
-  exit(1); 
+  exit(1);
 }
 ```
 
@@ -340,13 +341,13 @@ with corresponding footnote:
 Standard attributes specified by this document can be parsed but ignored by an implementation without changing thesemantics of a correct program; the same is not true for attributes not specified by this document.
 :::
 
-That's pretty clear. If C++ adopts semantics for `[[noreturn]]`, that kills any attempt at C compatibility going forward. 
+That's pretty clear. If C++ adopts semantics for `[[noreturn]]`, that kills any attempt at C compatibility going forward.
 
 # Proposal
 
 Given WG21's guidance that attributes should be ignorable, and WG14's normative
 rule of the same, it seems like the best course of action is to introduce a new,
-keyword to indicate that a function will not return. 
+keyword to indicate that a function will not return.
 
 For compatibility with C, which already has exactly this feature, we should just
 adopt the C feature.
@@ -411,7 +412,7 @@ Add somewhere in [expr.prim.lambda.closure]{.sref}:
 
 ::: addu
 [*]{.pnum} If the _lambda-expression_'s _decl-specifier-seq_ contains `_Noreturn` and if the function call operator or any given operator template specification is called and eventually returns, the behavior is undefined.
-::: 
+:::
 
 In [dcl.fct.spec]{.sref}, change the grammar to add `@[_Noreturn]{.kw}@` as a _function-specifier_:
 
@@ -420,7 +421,7 @@ In [dcl.fct.spec]{.sref}, change the grammar to add `@[_Noreturn]{.kw}@` as a _f
     virtual
 +   _Noreturn
     @_explicit-specifier_@
-    
+
 @_explicit-specifier_@:
     explicit ( @_constant-expression_@ )
     explicit
@@ -445,7 +446,7 @@ to use the `@[_Noreturn]{.kw}@` specifier instead. Those uses are:
 * `rethrow_exception` in [propagation]{.sref}
 * `nested_exception::rethrow_nested` and `throw_with_nested` in [except.nested]{.sref}
  `longjmp` in [csetjmp.syn]{.sref}
-:::     
+:::
 
 ## Feature-test macro
 

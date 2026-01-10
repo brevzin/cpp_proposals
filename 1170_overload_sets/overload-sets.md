@@ -6,7 +6,7 @@ Audience: EWG, LEWG
 
 # Motivation
 
-Calling a function in C++ in pretty fundamental. But abstracting that function call, the most basic generalization, doesn't always work out neatly. 
+Calling a function in C++ in pretty fundamental. But abstracting that function call, the most basic generalization, doesn't always work out neatly.
 
 Anytime today that we can write:
 
@@ -15,9 +15,9 @@ Anytime today that we can write:
         struct X { ... };
         X getX();
     }
-    
+
     foo(N::getX()); // for any 'foo'
-    
+
 We might want to also be able to write:
 
     :::cpp
@@ -25,9 +25,9 @@ We might want to also be able to write:
     void algorithm(F f, X x) {
         f(x);
     }
-    
+
     algorithm(foo, N::getX()); // for that same 'foo'
-    
+
 These are, conceptually, very similar. But there are many cases where the former code compiles and runs without issue but the latter fails:
 
 1. `foo` could be a function that takes default arguments
@@ -42,21 +42,21 @@ These are, conceptually, very similar. But there are many cases where the former
 The only solution to this problem today, outside of trafficking exclusively in function objects, is to manually wrap `foo` in a lambda - and probably be quite vigiliant about doing so:
 
     :::cpp
-    algorithm(getX(), [&](auto&& ...args) 
+    algorithm(getX(), [&](auto&& ...args)
         noexcept(noexcept(foo(std::forward<decltype(args)>(args)...)))
         -> decltype(foo(std::forward<decltype(args)>(args)...)) {
         return foo(std::forward<decltype(args)>(args)...);
     });
-    
+
 which is usually seen in the wild in macro form:
 
     :::cpp
     #define FWD(x) static_cast<decltype(x)&&>(x)
     #define RETURNS(expr) noexcept(noexcept(expr)) -> decltype(expr) { return expr; }
     #define OVERLOADS_OF(name) [&](auto&& ...args) RETURNS(name(FWD(args)...))
-    
+
     algorithm(getX(), OVERLOADS_OF(foo));
-    
+
 This can be found, for instance, in [Boost.HOF] as `BOOST_HOF_LIFT`, and in a recent blog of Andrzej Krzemieński's on [this topic][andrzej.funcs].
 
 However, this is a pretty unsatisfactory solution: we rely on a macro. Or even if not, we have to be vigilant about manually wrapping each and every function at every call site. Why "every"? Because otherwise, we might write code that works today but ends up being very brittle, easily broken. Consider a fairly trivial example:
@@ -64,7 +64,7 @@ However, this is a pretty unsatisfactory solution: we rely on a macro. Or even i
     :::cpp+
     // some library
     void do_something(int );
-    
+
     // some user
     std::invoke(do_something, 42);
 
@@ -77,14 +77,14 @@ or, at the very least:
 
     :::cpp
     std::invoke([](int i){ do_something(i); }, 42);
-    
+
 And that's simply too much to ask of the user - it's too much to have to think about it! We're asking the user to, every time, put a bunch of seemingly unnecessary annotation on every call site. After all, in the context of being invoked by a single argument, these two _should be_ equivalent:
 
 <table>
 <tr>
 <td>
     :::cpp
-    [&](auto&& arg) 
+    [&](auto&& arg)
         noexcept(noexcept(foo(FWD(arg))))
         -> decltype(foo(FWD(arg)))
     {
@@ -107,7 +107,7 @@ Being able to write just the function name, as opposed to having to list the arg
 Titus Winters in a [recent C++Now talk][winters.modern] described the overload set as the atom of C++ API design. And yet, we cannot even pass this atom into other atoms with reaching for lambdas, forwarding references, and trailing return types.
 
 We can do better.
-    
+
 # History
 
 This problem has a long history attached to it, with two different tacks explored.
@@ -119,7 +119,7 @@ This problem has a long history attached to it, with two different tacks explore
     :::cpp
     algorithm(getX(), []foo);
     std::invoke([]do_something, 42);
-    
+
 This was rejected by EWG in the [Albuquerque][abq.p0834], but it is a syntax that has many benefits. It is point-free and terse enough as to be practically invisible. It would still place the onus on the user to avoid brittleness at each call site, but it is a very manageable burden. That discussion did conclude with this poll:
 
 > *Are we interested in a core language feature for packing concrete overload sets?*
@@ -150,17 +150,17 @@ We propose a new magic library type, `std::overload_set<T>` (see [alternative sp
     :::cpp
     void foo(int);      // #1
     void foo(int, int); // #2
-    
+
     template <typename F, typename... Args>
     void algorithm(std::overload_set<F> f, Args... args) {
         f(args...);
     }
-    
+
     foo(1);               // calls #1
     foo(2, 3);            // calls #2
     algorithm(foo, 1);    // ok: calls #1
     algorithm(foo, 2, 3); // ok: calls #2
-    
+
     std::overload_set f = foo; // note: deduction guide magic
     f(1);                      // ok: calls #1
     f(2, 3);                   // ok: calls #2
@@ -181,30 +181,30 @@ A hypothetical implementation might look like:
         T f;
     public:
         overload_set(/* unspecified */);
-        
+
         overload_set(overload_set const&) = default;
         overload_set(overload_set&&) = default;
         overload_set& operator=(overload_set const&) = default;
         overload_set& operator=(overload_set&&) = default;
         ~overload_set() = default;
-        
+
         template <typename... Us>
         invoke_result_t<F&, Us...> operator()(Us&&... us) &
             noexcept(is_nothrow_invocable_v<F&, Us...>);
 
         template <typename... Us>
-        invoke_result_t<F const&, Us...> operator()(Us&&... us) const& 
+        invoke_result_t<F const&, Us...> operator()(Us&&... us) const&
             noexcept(is_nothrow_invocable_v<F const&, Us...>);
-            
+
         template <typename... Us>
         invoke_result_t<F, Us...> operator()(Us&&... us) &&
             noexcept(is_nothrow_invocable_v<F, Us...>);
 
         template <typename... Us>
-        invoke_result_t<F const, Us...> operator()(Us&&... us) const&& 
+        invoke_result_t<F const, Us...> operator()(Us&&... us) const&&
             noexcept(is_nothrow_invocable_v<F const, Us...>);
     };
-    
+
 With appropriate deduction guides. An open question is whether or not an `overload_set<T>` should be (explicitly or implicitly) convertible to a `T`.
 
 ## Constraining on `overload_set`
@@ -217,7 +217,7 @@ Since `overload_set<T>` simply contains a `T`, and its call operators are based 
     void foo(overload_set<F> f) {
         f(42);
     }
-    
+
     // trailing-return constrained has the desired effect
     template <typename F>
     auto foo(overload_set<F> f) -> decltype(f(17)) {
@@ -231,7 +231,7 @@ Since `overload_set<T>` simply contains a `T`, and its call operators are based 
     }
 
 ## Deduction rules
-    
+
 The annotation `overload_set` will trigger new deduction rules based not just on the type of the argument it is being deduced from, but also on its _name_, and even the token sequence.
 
 There are many cases we're proposing, each will synthesize a slightly different function object. We will go over these proposed deduction rules in detail, and then [summarize them](#summary-of-deduction-rules).
@@ -242,32 +242,32 @@ If the argument is an object, whether it is a function object or a pointer (or r
 
     :::cpp
     auto square = [](int i){ return i * i; };
-    
+
     template <typename T> void deduce(std::overload_set<T> f);
     deduce(square); // deduce T as decltype(square)
-    
-The function parameter `f` will have the same underlying type as `square`. There is no synthesis of a new lambda in this scenario, we are just copying the lambda. 
+
+The function parameter `f` will have the same underlying type as `square`. There is no synthesis of a new lambda in this scenario, we are just copying the lambda.
 
 An `overload_set` can be deduced from an object if that object is callable. It must be either a pointer or reference to function or member function, or have class type with at least one declared `operator()` or one declared conversion function which can create a surrogate call function as per [\[over.call.object\]][over.call.object]. For any other type, `overload_set` cannot be deduced:
 
     :::cpp
     deduce(42);      // error
-    deduce(new int); // error 
+    deduce(new int); // error
     deduce(&square); // error
     deduce("hi"s);   // error
-    
+
 We also propose that deducing an `overload_set` whose template type parameter is an rvalue reference to *cv*-unqualified template parameter behaves as a forwarding reference. Since `overload_set<T>` is simply a `T`, `overload_set<T&>` is likewise simply a `T&`. This allows for overload set objects that are actually references:
 
     :::cpp
     // copy
     template <typename T> auto f_copy(overload_set<T> f) { return f; }
-    
+
     // const copy
     template <typename T> auto f_const(overload_set<T const> f) { return f; }
-    
+
     // lvalue reference
     template <typename T> auto f_lref(overload_set<T&> f) { return f; }
-    
+
     // forwarding reference
     template <typename T> auto f_fref(overload_set<T&&> f) { return f; }
 
@@ -275,11 +275,11 @@ We also propose that deducing an `overload_set` whose template type parameter is
         int i;
         int operator() { return ++i; }
     };
-    
+
     Counter c{0};
     c();
     assert(c.i == 1);
-    
+
     f_copy(c)();
     assert(c.i == 1);
     f_const(c)(); // ill-formed, Counter::operator() isn't const
@@ -288,8 +288,8 @@ We also propose that deducing an `overload_set` whose template type parameter is
     f_fref(c)(); // calls f_fref<Counter&>, because forwarding reference
     assert(c.i == 3);
 
-This allows the API to avoid copying if it so desires. 
-    
+This allows the API to avoid copying if it so desires.
+
 This rule gives the appearance of the `&` simply being in the wrong place. But there is a difference between `overload_set<T&>` (an overload set object which is a reference to a callable object) and `overload_set<T>&` (a reference to an overload set object).
 
 ### Deducing from a name of a function
@@ -301,16 +301,16 @@ If the argument is the (qualified or unqualified) name of a function, function t
             -> decltype(name(FWD(args)...)) {
         return name(FWD(args)...);
     }
-    
+
 Qualified names synthesize a lambda that makes a qualified call. Unqualified names synthesize a lambda that makes an unqualified call. Note that this lambda has no capture - we're just calling functions by name.
 
 This is true even if name lookup finds _one single_ function:
 
     :::cpp
-    int square(int i) { 
+    int square(int i) {
         return i * i;
     }
-    
+
     // note that square is not an object here, it's the name of a function.
     // the underlying type of f is a lambda, not a function pointer
     auto f = std::overload_set(square);
@@ -323,25 +323,25 @@ The reason for this is we want to have ADL still work:
     void h(double);
     namespace N {
         struct X { };
-        
+
         void g(X);
         void h(X);
     }
-    
+
     auto over_g = std::overload_set(g);
     auto over_h = std::overload_set(h);
     over_g(N::X{}); // ok, calls N::g... not an error trying to invoke ::g
     over_h(N::X{}); // ok, calls N::h
-    
+
 Note that this is only the case if we deduce by _name_. If we had instead passed in a pointer to `g`, we would be in the object case described in the previous section:
 
     :::cpp
     auto ptr_g = std::overload_set(&g);
     ptr_g(0);      // ok
     ptr_g(N::X{}); // error, no conversion from N::X to int
-    
+
     auto ptr_h = std::overload_set(&h); // error: unresolved overloaded function
-    
+
 The lookup set is frozen at the time of the construction of the overload set object, in the same way it would be had we done it manually:
 
     :::cpp
@@ -349,7 +349,7 @@ The lookup set is frozen at the time of the construction of the overload set obj
     auto f1 = std::overload_set(foo);
     void foo(double);
     auto f2 = std::overload_set(foo);
-    
+
     f1(2.0); // calls foo(int)
     f2(2.0); // calls foo(double)
 
@@ -359,7 +359,7 @@ This works with function templates or qualified names:
     namespace N {
         template <typename T> T twice(T);
     }
-    
+
     std::invoke(overload_set(N::twice), 1);      // calls N::twice<int>
     std::invoke(overload_set(N::twice), "hi"s);  // calls N::twice<std::string>
 
@@ -370,12 +370,12 @@ This works even with function templates where one template parameter is explicit
     :::cpp
     template <typename T, typename U>
     T convert_to(U);
-    
+
     // this is okay
     auto to_int = overload_set(convert_to<int>);
     to_int(1);   // ok: calls convert_to<int, int>
     to_int(2.0); // ok: calls convert_to<int, double>
-    
+
     // but not this
     auto convert = overload_set(convert_to);
     convert(1);      // error: can't deduce T
@@ -390,12 +390,12 @@ It is an open question as to whether or not parenthesized unqualified names shou
         struct X { };
         void foo(X);
     }
-    
+
     auto f = std::overload_set((foo)); // NB: parenthesized
     f(N::X{}); // ok or error?
-    
+
 Does that call succeed (ADL finding `N::foo`) or does the synthesized function behave as if `(foo)(FWD(args)...)`, which would not consider ADL, and hence fail with no matching overload?
-    
+
 #### Deducing from a name that cannot be found by unqualified lookup
 
 Consider a slight variation from an example from the previous section:
@@ -406,50 +406,50 @@ Consider a slight variation from an example from the previous section:
     void h(double);
     namespace N {
         struct X { };
-    
+
         void f(X);
         void g(X);
         void h(X);
     }
-    
+
     auto over_f = std::overload_set(f);
     auto over_g = std::overload_set(g);
     auto over_h = std::overload_set(h);
-    
+
     over_f(N::X{});
     over_g(N::X{});
     over_h(N::X{});
 
 Should this work? In the previous section, we introduced a rule based on synthesizing a lambda if name lookup finds a function or function template or overload set... but on line 12 here, name lookup on `f` finds nothing. Can we really ignore that?
 
-Perhaps `f` was a typo, and the programmer really meant `g` and we would be doing them a disservice if we do not diagnose at the point of its use on line 12. 
+Perhaps `f` was a typo, and the programmer really meant `g` and we would be doing them a disservice if we do not diagnose at the point of its use on line 12.
 
 On the other hand, a user trying to pass the name `f` into a function would write this code:
 
     :::cpp
     auto over_f = [](auto e) { return f(e); };
     over_f(N::X{});
-    
-which would diagnose at the point of call rather than at the point of the declaration of the lambda if there was no such function `f`. 
+
+which would diagnose at the point of call rather than at the point of the declaration of the lambda if there was no such function `f`.
 
 The motivation of this paper is very much to allow for the separation of the function from its arguments, and since in the original example `f(N::X{})` would work (by finding `N::f` via ADL), we firmly believe that `std::overload_set(f)(N::X{})` should work as well.
 
-In order to achieve that goal, we amend the previous stated rule to also synthesize the same kind of lambda from an unqualified name for which lookup finds nothing. 
+In order to achieve that goal, we amend the previous stated rule to also synthesize the same kind of lambda from an unqualified name for which lookup finds nothing.
 
-We can safely reject any attempt to use a qualified name for which we cannot find any candidates. 
+We can safely reject any attempt to use a qualified name for which we cannot find any candidates.
 
 ### Deducing from partial class member access
 
 If the argument is a partial class member access, of the forms `x.y`, `x->y`, or, in the context of a member function, `y`, where `y` is the name of a member function, member function template, overload set of member functions, or an object that is callable in some way, then `overload_set<T>` deduces `T` as a synthesized type which captures the class object or pointer.
 
-The rule here is that `overload_set(obj.mem)` will copy `obj`, just as `overload_set(ptr->mem)` will copy `ptr`. This gives the user control over how the object is captures to invoke the member function. If capture-by-copy is desired, use the dot access syntax. If capture-by-reference is desired, then either take a pointer to your object (i.e. `overload_set((&obj).mem)`) or wrap it in a reference (i.e. `overload_set(std::ref(obj).mem)`). 
+The rule here is that `overload_set(obj.mem)` will copy `obj`, just as `overload_set(ptr->mem)` will copy `ptr`. This gives the user control over how the object is captures to invoke the member function. If capture-by-copy is desired, use the dot access syntax. If capture-by-reference is desired, then either take a pointer to your object (i.e. `overload_set((&obj).mem)`) or wrap it in a reference (i.e. `overload_set(std::ref(obj).mem)`).
 
     :::cpp
-    std::string s = "hello";    
+    std::string s = "hello";
     std::overload_set f = s.size;        // f holds a copy of s, i.e. by value
     std::overload_set g1 = (&s)->size;   // g1 holds a copy of &s, i.e. by reference
     std::overload_set g2 = ref(s).size;  // g2 also holds a reference
-    
+
     s += ", world";
     assert(f() == 5);
     assert(g1() == 12);
@@ -460,29 +460,29 @@ This rule is necessary to cover the two situations where we can directly invoke 
     :::cpp
     struct X {
         void foo();
-        
+
         void bar() {
             foo();                    // ok
             std::overload_set(foo)(); // proposed ok
         }
     };
-    
+
     X x;
     x.foo();                    // ok
     std::overload_set(x.foo)(); // proposed ok
-    
+
 Such partial member syntax is ill-formed today, which seems wasteful. This syntax is available in Python and is widely used. The desire to write such code is the entire motivation for [P0356](https://wg21.link/p0356r3):
 
     :::cpp
     struct Strategy { double process(std:string, std::string, double, double); };
 
-    std::unique_ptr<Strategy> createStrategy();    
-    
+    std::unique_ptr<Strategy> createStrategy();
+
     // p0356: note that this suffers from all of the same problems
     // through this paper regarding API brittleness, due to the named
     // pointer to member function
     auto f = std::bind_front(&Strategy::process, createStrategy());
-    
+
     // proposed: strictly better than the above: more expressive
     // of user intent, in addition to simply working in more cases
     auto g = std::overload_set(createStrategy()->process);
@@ -494,12 +494,12 @@ Given a general output function iterator, you could, for instance, specify `push
     std::transform(src.begin(), src.end(),
         std::back_inserter(dst),
         f);
-    
+
     // proposed
     std::transform(src.begin(), src.end(),
         function_output(std::ref(dst).push_back),
         f);
-    
+
 ### Deducing from a type-member access
 
 When it comes to member functions, we depart somewhat from our initially stated goal of having the validity of `foo(a, b, c)` imply the validity of `std::overload_set(foo)(a, b, c)`. While member functions are conceptually functions that take, as their first argument, an instance of the class type, that is not the way they are spelled (despite `INVOKE`). Moreover, we cannot use `&Class::mem` as a launching point for a special deduction rule, since that already is a pointer to member function and would be covered by the object rules.
@@ -508,9 +508,9 @@ However, invoking member functions in such a way is still highly useful today, a
 
     :::cpp
     std::sort(a, std::less<>(), &employee::last);
-    auto p = std::lower_bound(a, "Parent", std::less<>(), &employee::last);    
-    
-Which is great. And `last` is a non-static data member, there are no problems whatsoever. But what if `last` is an overloaded function or a function template? Such cases are not infrequent, and should be just as easy to use! 
+    auto p = std::lower_bound(a, "Parent", std::less<>(), &employee::last);
+
+Which is great. And `last` is a non-static data member, there are no problems whatsoever. But what if `last` is an overloaded function or a function template? Such cases are not infrequent, and should be just as easy to use!
 
 We propose a novel syntax to cover these cases: `Type.member`. Such syntax is ill-formed today, and has an intuitive meaning: invoke the member `member` given an instance of type `Type`. In other words, `Type.member` is syntax for invoking a non-static member function/data set whereas `Type::member` is syntax for invoking a static member function/data set.
 
@@ -522,40 +522,40 @@ That is:
         void bar(T ) const;
         void bar(double, double) const;
     };
-    
+
     std::overload_set bar = X.bar;
-    
+
     X x;
     bar(x, 1);                  // calls X::bar<int>
     bar(&x, 'x');               // calls X::bar<char>
     bar(std::ref(x), 2.0, 3.0); // calls X::bar(double, double)
 
-    
+
 The underlying type of `bar` behaves similarly to having synthesized:
 
     :::cpp
     struct overloads_x_bar {
         template <typename T, typename... Args>
             requires std::is_base_of_v<X, std::uncvref_t<T>>
-        auto operator()(T&& x, Args&&... args) const 
+        auto operator()(T&& x, Args&&... args) const
             RETURNS(FWD(x).bar(FWD(args)...))
-        
+
         template <typename T, typename... Args>
             requires std::is_base_of_v<X,
                 std::uncvref_t<decltype(*std::declval<T>())>>
         auto operator()(T&& x, Args&&... args) const
             RETURNS((*FWD(x)).bar(FWD(args)...))
-        
+
         template <typename T, typename... Args>
             requires std::is_base_of_v<X, T>
         auto operator()(std::reference_wrapper<T> x, Args&&... args) const
             RETURNS(x.get().bar(FWD(args)...))
     };
-    
+
     overloads_x_bar bar;
-    
+
 In this way, `std::overload_set(X.bar)` is a strictly superior alternative to `std::mem_fn(&X::bar)` and effectively obsoletes it:
-    
+
 <table style="width:100%">
 <tr><th colspan="2">Defaulted arguments</th></tr>
 <tr>
@@ -564,16 +564,16 @@ In this way, `std::overload_set(X.bar)` is a strictly superior alternative to `s
     struct C {
         int f(int, int=4);
     } obj;
-    
+
     std::mem_fn(&C::f)(obj, 1);    // error
     std::mem_fn(&C::f)(obj, 1, 2); // ok, obj.f(1, 2)
 </td>
-<td style="width:50%">    
+<td style="width:50%">
     :::cpp
     struct C {
         int f(int, int=4);
-    } obj;    
-    
+    } obj;
+
     std::overload_set(C.f)(obj, 1);    // ok, obj.f(1, 4);
     std::overload_set(C.f)(obj, 1, 2); // ok, obj.f(1, 2);
 </td>
@@ -585,10 +585,10 @@ In this way, `std::overload_set(X.bar)` is a strictly superior alternative to `s
     struct C {
         int g(int);
         int g(int, int);
-    } obj;    
-    
+    } obj;
+
     std::mem_fn(&C::g); // error already
-    
+
     // technically, okay, for some definition of okay
     std::mem_fn(static_cast<int(C::*)(int)>(&C::g))(obj, 1);
 </td>
@@ -597,8 +597,8 @@ In this way, `std::overload_set(X.bar)` is a strictly superior alternative to `s
     struct C {
         int g(int);
         int g(int, int);
-    } obj;        
-    
+    } obj;
+
     std::overload_set(C.g)(obj, 1);    // ok, obj.g(1)
     std::overload_set(C.g)(obj, 1, 2); // ok, obj.g(1, 2)
 </td>
@@ -609,8 +609,8 @@ In this way, `std::overload_set(X.bar)` is a strictly superior alternative to `s
     struct C {
         template <typename T>
         void h(T);
-    } obj;        
-    
+    } obj;
+
     std::mem_fn(&C::h);                // error already
     std::mem_fn(&C::h<int>, obj, 1);   // ok, obj.h<int>(1)
     std::mem_fn(&C::h<int>, obj, '1'); // ok, but
@@ -621,15 +621,15 @@ In this way, `std::overload_set(X.bar)` is a strictly superior alternative to `s
     struct C {
         template <typename T>
         void h(T);
-    } obj;            
-    
+    } obj;
+
     std::overload_set(C.h)(obj, 1);    // ok, obj.h<int>(1)
     std::overload_set(C.h)(obj, '1');  // ok, obj.h<char>('1')
 </td>
 </tr>
 </table>
 
-In the case where the notation `Type.member` nominates a data member (whether static or non-static), we can simply fallback to using the object deduction from the pointer to member `&Type::member`. In these cases, there are no issues with overloading or template deduction - since there can just be one member. 
+In the case where the notation `Type.member` nominates a data member (whether static or non-static), we can simply fallback to using the object deduction from the pointer to member `&Type::member`. In these cases, there are no issues with overloading or template deduction - since there can just be one member.
 
 Getting back to the initial examples from Ranges. Assuming projections would be implemented using this proposal, we would write:
 
@@ -637,16 +637,16 @@ Getting back to the initial examples from Ranges. Assuming projections would be 
     std::sort(a, std::less<>(), employee.last);
     auto p = std::lower_bound(a, "Parent", std::less<>(), employee.last);
 
-And then just... not have to worry about anything. It just works. 
+And then just... not have to worry about anything. It just works.
 
 
 ### Deducing from an *operator-function-id*
 
-Going one step further from the previous cases, we want to further allow the synthesis of a lambda overload set from the name of an *operator-function-id*. This will synthesize a unary, binary, or hybrid callable depending on the operator in question. 
+Going one step further from the previous cases, we want to further allow the synthesis of a lambda overload set from the name of an *operator-function-id*. This will synthesize a unary, binary, or hybrid callable depending on the operator in question.
 
-Many of these cases are already covered by preexisting function objects in `<functional>`. `std::overload_set(operator<)` is `std::less()`, `std::overload_set(operator==)` is `std::equal_to()`, and so forth. So why do we need them? 
+Many of these cases are already covered by preexisting function objects in `<functional>`. `std::overload_set(operator<)` is `std::less()`, `std::overload_set(operator==)` is `std::equal_to()`, and so forth. So why do we need them?
 
-The main argument is a question of readability. Everyone is familiar with the operators, they jump out more than names of objects. Not everyone is familiar with all of the equivalent names - very few are familiar with all of them. 
+The main argument is a question of readability. Everyone is familiar with the operators, they jump out more than names of objects. Not everyone is familiar with all of the equivalent names - very few are familiar with all of them.
 
 As initially suggested in P0119, we propose a shorthand parenthesized form for these operators as well.
 
@@ -662,7 +662,7 @@ As initially suggested in P0119, we propose a shorthand parenthesized form for t
     // overload_set<Compare>
     std::sort(values, operator>);
     std::sort(values, (>));
-    
+
     // equivalent to
     std::sort(values, [](auto&& a, auto&& b)
         -> decltype(FWD(a) > FWD(b)) {
@@ -707,12 +707,12 @@ One final place situation we want to handle is when the function or overload set
     struct X {
         X(int);
     };
-    
+
     // with Ranges today
     std::vector<X> makeXs(std::vector<int> const& input) {
         return input | view::transform([](int i){ return X(i); });
     }
-    
+
 The lambda `[](int i){ return X(i); }` follows the same pattern as can be seen throughout the paper. In the same way that we've been able to replace this lambda with an overload set object for functions and operators and class member access, we'd also like to replace this for types. Writing `X(1)` is a valid expression, so writing `std::overload_set(X)(1)` should be as well:
 
     :::cpp
@@ -722,7 +722,7 @@ The lambda `[](int i){ return X(i); }` follows the same pattern as can be seen t
     }
 
 A type name very much behaves as if it were an overload set that, when invoked, produces an instance of that type. The `emplace()` functions are very much forwarding arguments to that type function. Being able to deduce an overload set object from a type name just cements that model.
-    
+
 ### Summary of deduction rules
 
 The following table goes through all the rules presented above. For each row, on the left is some declaration <code>std::overload_set <i>name</i> = <i>tokens</i>;</code> and on the right is an declaration for the type `T` that would be synthesized for `std::overload_set<T>` in this deduction.
@@ -745,7 +745,7 @@ Objects
 <td>
     :::cpp
     auto square = [](int i) { return i * i; };
-    
+
     std::overload_set a = square;
 </td>
 <td>
@@ -774,7 +774,7 @@ Function names
     :::cpp
     void foo(int);
     void foo(int, int);
-    
+
     std::overload_set c = foo;
 </td>
 <td>
@@ -809,7 +809,7 @@ Function names
         template <typename T>
         static void bar(T);
     };
-    
+
     std::overload_set e = X::bar;
 </td>
 <td>
@@ -836,15 +836,15 @@ Partial class access
     :::cpp
     struct T_f {
         std::string _s;
-        
+
         template <typename... Args>
         auto operator()(Args&&... args) &
             RETURNS(_s.size(FWD(args)...))
-            
+
         template <typename... Args>
         auto operator()(Args&&... args) &&
             RETURNS(std::move(_s).size(FWD(args)...))
-            
+
         // + two more overloads
     };
 </td>
@@ -859,12 +859,12 @@ Partial class access
     :::cpp
     struct T_g {
         std::string* _s;
-        
+
         template <typename... Args>
         auto operator()(Args&&... args) const
             RETURNS(_s->size(FWD(args)...))
     };
-</td>    
+</td>
 </tr>
 <tr>
 <td>
@@ -876,7 +876,7 @@ Partial class access
     :::cpp
     struct T_h {
         std::reference_wrapper<std::string> _s;
-        
+
         template <typename... Args>
         auto operator()(Args&&... args) const
             RETURNS(_s.get().append(FWD(args)...))
@@ -895,23 +895,23 @@ Class type member access
 </td>
 <td>
     :::cpp
-    
+
     struct T_i {
         template <typename T, typename... Args>
             requires std::is_base_of_v<std::string, std::uncvref_t<T>>
-        auto operator()(T&& x, Args&&... args) const 
+        auto operator()(T&& x, Args&&... args) const
             RETURNS(FWD(x).size(FWD(args)...))
-        
+
         template <typename T, typename... Args>
             requires std::is_base_of_v<std::string,
                 std::uncvref_t<decltype(*std::declval<T>())>>
         auto operator()(T&& x, Args&&... args) const
             RETURNS((*FWD(x)).size(FWD(args)...))
-        
+
         template <typename T, typename... Args>
             requires std::is_base_of_v<std::string, T>
         auto operator()(std::reference_wrapper<T> x, Args&&... args) const
-            RETURNS(x.get().size(FWD(args)...))    
+            RETURNS(x.get().size(FWD(args)...))
     };
 </td>
 </tr>
@@ -928,7 +928,7 @@ Class type member access
     ::cpp
     struct T_j {
         int Person::* pmd;
-        
+
         template <typename... Args>
         auto operator()(Args&&... args) const
             RETURNS(std::invoke(pmd, std::forward<Args>(args)...))
@@ -979,7 +979,7 @@ Operators
         template <typename T>
         auto operator()(T&& t) const
             RETURNS(-FWD(t))
-            
+
         template <typename T, typename U>
         auto operator()(T&& t, U&& u) const
             RETURNS(FWD(t) - FWD(u))
@@ -1006,7 +1006,7 @@ Type names
 </td>
 </tr>
 </table>
-    
+
 ## Standard library functions, now and future
 
 One of the papers mentioned earlier, P0798, proposed a handful of new member functions for `std::optional`. Currently these just all deduce their arguments in the same way as all other standard library function templates. But if we, instead, specify them to deduce an overload set parameter:
@@ -1024,23 +1024,23 @@ One of the papers mentioned earlier, P0798, proposed a handful of new member fun
             }
         }
     };
-    
-Then any reasonable usage of it would just work, do the right thing, and be a usage that would be blessed by P0921. 
+
+Then any reasonable usage of it would just work, do the right thing, and be a usage that would be blessed by P0921.
 
     :::cpp
     std::optional<std::string> f();
-   
+
     f().map(&std::string::size);     // okay, would compile, but not allowed
     f().map(std::size<std::string>); // likewise
     f().map(std::size);              // okay with this proposal, ill-formed today
     f().map(size);                   // okay with this proposal (would call std::size via ADL), ill-formed today
     f().map(std::string.size);       // okay with this proposal, ill-formed today
-    
+
 Otherwise, the **only** approved way to get this behavior would be:
 
     :::cpp
     f().map([](auto&& s){ return s.size(); });
-    
+
 Which is a lot to write for a simple task. Instead, people will consistently reach for the shorter, more brittle solutions. Let's just solve the problem instead.
 
 As far as preexisting standard library function templates go. We cannot simply _change_ the ones that exist. But, we do allow ourselves to add overloads. We could easily do that, and take advantage of the proposed deduction rules of `overload_set` to not change any behavior:
@@ -1050,14 +1050,14 @@ As far as preexisting standard library function templates go. We cannot simply _
     template <class InputIt, class UnaryPredicate>
     constexpr InputIt find_if(InputIt first, InputIt last, std::overlod_set<UnaryPredicate> p) {
         return find_if(first, last, std::ref(p));
-    }    
-    
+    }
+
     // existing overload
     template <class InputIt, class UnaryPredicate>
     constexpr InputIt find_if(InputIt first, InputIt last, UnaryPredicate p) {
         // same as it ever was
     }
-    
+
 All existing, viable calls to `find_if` will continue to call the existing overload. It is a better match. But a wide variety of new calls to `find_if()` suddenly become possible where they weren't before! This isn't perfect - we still allow users to take pointers to functions and member functions if those happen to work today. But it's a big step in better usability for everyone.
 
 ## Alternative spellings
@@ -1070,7 +1070,7 @@ The name `overload_set` makes a judgement about what is being passed, which may 
 
 ## Other potential avenues
 
-Over the last several standards, C++ has been adding more and more support for a more functionally oriented programming style. Lambdas and then generic lambdas. Algebraic data types (`tuple`, `optional`, `variant`). 
+Over the last several standards, C++ has been adding more and more support for a more functionally oriented programming style. Lambdas and then generic lambdas. Algebraic data types (`tuple`, `optional`, `variant`).
 
 But there are a few things that are still sufficiently difficult to do in the language to the point where we don't even think about them as approaches. One such difficulty is function composition. How do you compose two functions? We can use F#'s syntax for [function composition][f#.comp]: `<<` and `>>` (references and forwarding omitted for brevity):
 
@@ -1082,12 +1082,12 @@ But there are a few things that are still sufficiently difficult to do in the la
             return f(g(xs...));
         }
     }
-    
+
     // f, then g
     template <typename F, typename G>
     auto operator>>(overload_set<F> f, overload_set<G> g) {
         return g << f;
-    }    
+    }
 
 This let's us replace another of the standard library's function objects. We have `std::not_fn()`, which takes one function object and produces a new function objects whose effects are negating the original one. But with function composition, we don't need a special function like `not_fn`. We can just compose with negation:
 
@@ -1104,20 +1104,20 @@ With composition
     namespace std {
         template<class F> unspecified not_fn(F&& f);
     }
-    
+
     auto g = std::not_fn(f);
 </td>
 <td>
     :::cpp
     // We could use the preexisting function object
     auto g1 = f >> std::negate();
-    
+
     // Or we could use the new ability to use operator-function-ids
     auto g2 = f >> operator!;
-    
+
     // Or we could use the new ability to use parenthesized operators
     auto g3 = f >> (!);
-        
+
     // Or we could spell out the !
     auto g4 = f >> (not);
 </td>
@@ -1134,9 +1134,9 @@ Composition isn't the only thing we could do with multiple functions - we could 
         return [=](auto x) -> decltype(f(x) * g(x))
             return f(x) * g(x);
         }
-    }    
-    
-Perhaps also `overload_set<T>` could curry by default. Or provide a way to turn an `overload_set<T>` into a `curried_overload_set<T>`. With a more encompassing idea of what a callable is, these tools become much easier to write. 
+    }
+
+Perhaps also `overload_set<T>` could curry by default. Or provide a way to turn an `overload_set<T>` into a `curried_overload_set<T>`. With a more encompassing idea of what a callable is, these tools become much easier to write.
 
 # Acknowledgements
 

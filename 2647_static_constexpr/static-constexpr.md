@@ -10,6 +10,7 @@ author:
       email: <cxx@kayari.org>
 toc: true
 tag: constexpr
+status: accepted
 ---
 
 # Revision History

@@ -10,6 +10,7 @@ author:
       email: <t.canens.cpp@gmail.com>
 toc: true
 tag: ranges
+status: accepted
 ---
 
 # Revision History

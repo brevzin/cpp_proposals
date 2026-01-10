@@ -7,6 +7,7 @@ author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
 toc: false
+status: abandoned
 ---
 
 # Introduction
@@ -35,17 +36,17 @@ void f(simple_tuple<int, int> xs) {
     // from P1061
     auto& [...a] = xs;
     int sum_squares = (0 + ... + a * a);
-    
+
     // from P1858
     int product = (1 * ... * g(xs.elems));
-    
+
     // from P1240, construct a reflection-range of the template parameters
     // this should be a vector containing two reflections of 'int'
     constexpr auto params = std::meta::parameters_of(reflexpr(decltype(xs)));
-    
+
     // from P1240: decltype(ys) is simple_tuple<int, int>
     simple_tuple<typename(...params)> ys = xs;
-    
+
     // from P2237: decltype(zs) is simple_tuple<int, int>
     simple_tuple<|params|...> zs = xs;
 }
@@ -85,13 +86,13 @@ simple_tuple<int, int> xs = {1, 2};
 simple_tuple<int*, int*> ptrs = {&xs.elems...};
 ```
 
-Compilers would need to be able to handle all of this, which means they have to necessarily do more work. Even existing C++20 code that does not use any of these new language features could see its compile times increase. 
+Compilers would need to be able to handle all of this, which means they have to necessarily do more work. Even existing C++20 code that does not use any of these new language features could see its compile times increase.
 
-[@P1240R1] avoids this problem by only allowing very specific kinds of expansion, as demonstrated earlier. Notably, those specific kinds of expansions have identifiable prefixes, so that compilers can know in advance that a pack expansion is coming, and won't have additional overhead for parsing regular functions (or arbitrary declarations) that don't use the new features. 
+[@P1240R1] avoids this problem by only allowing very specific kinds of expansion, as demonstrated earlier. Notably, those specific kinds of expansions have identifiable prefixes, so that compilers can know in advance that a pack expansion is coming, and won't have additional overhead for parsing regular functions (or arbitrary declarations) that don't use the new features.
 
 If we have a reflection-range of types, with [@P1240R1] we can explode it into a template with those specific types as parameters. But that's it. Any deviation from specific prescribes shapes requires more work from the user.
 
-[@P2237R0] does not have this restriction, and so runs into the same issue as my papers: implementation complexity and added compilation latency. 
+[@P2237R0] does not have this restriction, and so runs into the same issue as my papers: implementation complexity and added compilation latency.
 
 # What Do We Do About It?
 
@@ -99,7 +100,7 @@ I think there are three choices we can make about how to address this problem, b
 
 1. We allow packs outside of templates, understanding the necessary cost (both in time and latency) to make that work.
 
-2. We allow packs outside of templates, but come up with a pack-expansion prefix or something to that effect. The prefixed expansion would be valid in both templates and non-templates, but only the suffixed expansion we already have would be valid in variadic templates. We also encourage people to start using prefixed expansion for compiler latency purposes. 
+2. We allow packs outside of templates, but come up with a pack-expansion prefix or something to that effect. The prefixed expansion would be valid in both templates and non-templates, but only the suffixed expansion we already have would be valid in variadic templates. We also encourage people to start using prefixed expansion for compiler latency purposes.
 
 3. We do not allow packs outside of variadic templates at all. If you want to use packs, you need to have a variadic template.
 
@@ -160,17 +161,17 @@ void h(simple_tuple<int, int> xs) {
 
 Which itself doesn't seem like a great place to end up. On the plus side, we would not need such workarounds in templates &mdash; only in non-templates.
 
-To be clear, I don't think any of these options is an easy choice to just pick and go on a victory parade. 
+To be clear, I don't think any of these options is an easy choice to just pick and go on a victory parade.
 
 # Proposal
 
-This paper isn't a proposal in of itself. We already have four different proposals in front of us solving four different problems. 
+This paper isn't a proposal in of itself. We already have four different proposals in front of us solving four different problems.
 
-But those proposals between them expose a common new language feature: the ability to have and use packs not just outside of variadic templates, but even outside of templates entirely. 
+But those proposals between them expose a common new language feature: the ability to have and use packs not just outside of variadic templates, but even outside of templates entirely.
 
 The problem is: this is a difficult piece of functionality for implementations.
 
-The question we have to answer is: Does the benefit of packs outside of templates (arguably fewer rules to think about and more straightforward code to write) outweigh the cost (large implementation effort and likely compile-time performance hit)? Or is the trade-off not there &mdash; we would rather invest implementation effort on _other_ features even if it means that users will have to write the kinds of silly workarounds presented earlier? 
+The question we have to answer is: Does the benefit of packs outside of templates (arguably fewer rules to think about and more straightforward code to write) outweigh the cost (large implementation effort and likely compile-time performance hit)? Or is the trade-off not there &mdash; we would rather invest implementation effort on _other_ features even if it means that users will have to write the kinds of silly workarounds presented earlier?
 
 While I have my personal preference (easy for me to claim, as not an implementor), I do think it would be valuable for Evolution to provide clear direction on this question earlier rather than later.
 

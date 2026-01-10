@@ -10,6 +10,7 @@ author:
       email: <daveed@edg.com>
 toc: true
 tag: constexpr
+status: accepted
 ---
 
 # Revision History

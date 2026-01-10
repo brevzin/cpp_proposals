@@ -8,6 +8,7 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 tag: ranges
+status: accepted
 ---
 
 # Introduction
