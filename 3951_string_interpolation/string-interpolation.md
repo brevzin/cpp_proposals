@@ -553,7 +553,7 @@ Hello, my name is "Inigo Montoya". You killed my father. Prepare to die.
 
 Having both `interp.index` and `interp.count` is a little clunky, especially since `interp.count` will almost always be `1`. But I think it's better to put the clunkiness there and maintain the trivial formatting implementations (where you can just unpack the template string object).
 
-You can see this example on [compiler explorer](https://compiler-explorer.com/z/98KTah4eq). Note that the implementations there are slightly different, since Clang doesn't yet implement `constexpr` structured bindings and the implementations of pack indexing and expansion statements had a few bugs so I came up with workarounds.
+You can see this example on [compiler explorer](https://compiler-explorer.com/z/hKer7vE9r). Note that the implementations there are slightly different, since Clang doesn't yet implement `constexpr` structured bindings and the implementations of pack indexing and expansion statements had a few bugs so I came up with workarounds.
 
 ## The `TemplateString` Concept
 
@@ -605,7 +605,7 @@ I'd want to make sure this `R` here is also considered a template string for all
 
 ## Implementation Experience
 
-I implemented this in Clang, on top of the p2996 reflection branch. Code can be found in my fork in the `template-strings`{.op} branch [here](https://github.com/brevzin/llvm-project/tree/template-strings) (you can see the diff against p2996 [here](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:template-strings)) I'm sure there are better ways to do some of what I did. It can also be used on [compiler explorer](https://compiler-explorer.com/z/98KTah4eq).
+I implemented this in Clang, on top of the p2996 reflection branch. Code can be found in my fork in the `template-strings`{.op} branch [here](https://github.com/brevzin/llvm-project/tree/template-strings) (you can see the diff against p2996 [here](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:template-strings)) I'm sure there are better ways to do some of what I did. It can also be used on [compiler explorer](https://compiler-explorer.com/z/hKer7vE9r).
 
 The only difference between this paper and the implementation is that instead of introducing the type `std::interpolation`, I just made `_Interpolation` implicitly defined at global scope for convenience.
 
