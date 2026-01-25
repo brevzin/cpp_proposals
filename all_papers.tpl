@@ -45,20 +45,22 @@
      <h1 id="papers-with-numbers">Papers with Numbers</h1>
 
 {% macro show_papers(var, title) -%}
-    <h2>{{title}}</h2>
+    <details>
+    <summary><b>{{title}}</b></summary>
     <ul>
       {% for paper in var %}
         <li>{% if paper.badge %}<img src="https://img.shields.io/badge/{{paper.badge}}" alt="" /> {% endif %}<a href="https://wg21.link/{{paper.number}}/github">{{paper.number}}</a> {{paper.title}}: {% for rev in paper.revisions %}<a href="{{rev.href}}">{{rev.name}}</a> {% endfor %}</li>
       {% endfor %}
     </ul>
+    </details>
 {%- endmacro %}
 
+  {{ show_papers(progress, "In Progress Papers") }}
   {{ show_papers(accepted, "Accepted Papers") }}
   {{ show_papers(rejected, "Rejected Papers") }}
   {{ show_papers(abandoned, "Abandoned Papers") }}
-  {{ show_papers(progress, "In Progress Papers") }}
 
-<h1 id="other-papers">Other Papers</h1>
+<details><summary><b>Other Papers</b></summary>
 <ul>
   <li>Concepts, v2: <a href="/cpp_proposals/concepts_v2/concepts_v2.html">concepts_v2.html</a></li>
   <li>Exploring Placeholders: <a href="/cpp_proposals/xxxx_placeholders/dxxxxr0.html">dxxxxr0.html</a></li>
@@ -66,7 +68,7 @@
   <li>Exploring Placeholders: <a href="/cpp_proposals/xxxx_placeholders/placeholders.html">placeholders.html</a></li>
   <li>Variadic Friends: <a href="variadic_friends/variadic_friends.html">variadic_friends.html</a></li>
 </ul>
-
+</details>
 
 
     </div>
