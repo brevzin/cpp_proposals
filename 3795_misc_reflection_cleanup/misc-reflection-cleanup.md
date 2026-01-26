@@ -8,7 +8,7 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 tag: reflection
-status: progress
+status: accepted
 ---
 
 # Revision History
