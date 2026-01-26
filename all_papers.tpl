@@ -58,6 +58,7 @@
   {{ show_papers(abandoned, "Abandoned Papers") }}
   {{ show_papers(progress, "In Progress Papers") }}
 
+<!--
 <h1 id="other-papers">Other Papers</h1>
 <ul>
   <li>Concepts, v2: <a href="/cpp_proposals/concepts_v2/concepts_v2.html">concepts_v2.html</a></li>
@@ -66,6 +67,7 @@
   <li>Exploring Placeholders: <a href="/cpp_proposals/xxxx_placeholders/placeholders.html">placeholders.html</a></li>
   <li>Variadic Friends: <a href="variadic_friends/variadic_friends.html">variadic_friends.html</a></li>
 </ul>
+-->
 
 
 
