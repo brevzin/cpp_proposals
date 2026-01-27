@@ -74,6 +74,10 @@ These are very significant benefits to returning `optional<T&>`. There are simpl
 
 Similarly, `std::exception_ptr_cast<E>(p)` was introduced by [@P2927R3]{.title}, and the exact same arguments hold. That function wants to either return an object or nothing. `optional<E const&>` is simply a better return type than `E const*` here. With the additional argument that here even the indexing operations are undefined behavior, whereas for the `std::inplace_vector`  case they are simply questionable.
 
+## Other related functions
+
+There are two other, closely related functions in the standard library that each conditionally return a reference to an object: `std::any_cast` (the form that returns a pointer) and `std::get_if` (for `std::variant`). For both of these functions, `std::optional<T&>` didn't exist yet, so the only option was `T*` (and we are not suggesting changing them now), but this behavior has proved quite clunky in practice. Now that we have a better option, we should use it.
+
 # Iterator or Subrange?
 
 The last algorithm is `try_append_range`. Currently, `v.try_append_range(r)` returns an iterator pointing to the first element of `r` that was _not_ inserted into `v`. This is inconvenient, as pointed out by PL-006.

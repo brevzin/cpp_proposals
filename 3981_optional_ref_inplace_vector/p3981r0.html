@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-01-26" />
+  <meta name="dcterms.date" content="2026-01-27" />
   <title>Better return types in std::inplace_vector and
 std::exception_ptr_cast</title>
   <style>
@@ -578,7 +578,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-01-26</td>
+    <td>2026-01-27</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -610,6 +610,8 @@ background-color: #ffff00;
 a poor <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code><span></span></a>
 <ul>
 <li><a href="#the-same-holds-for-stdexception_ptr_caste" id="toc-the-same-holds-for-stdexception_ptr_caste"><span class="toc-section-number">2.1</span> The same holds for <code class="sourceCode cpp">std<span class="op">::</span>exception_ptr_cast<span class="op">&lt;</span>E<span class="op">&gt;</span></code><span></span></a></li>
+<li><a href="#other-related-functions" id="toc-other-related-functions"><span class="toc-section-number">2.2</span> Other related
+functions<span></span></a></li>
 </ul></li>
 <li><a href="#iterator-or-subrange" id="toc-iterator-or-subrange"><span class="toc-section-number">3</span> Iterator or
 Subrange?<span></span></a></li>
@@ -760,6 +762,19 @@ is simply a better return type than <code class="sourceCode cpp">E <span class="
 here. With the additional argument that here even the indexing
 operations are undefined behavior, whereas for the <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>
 case they are simply questionable.</p>
+<h2 data-number="2.2" id="other-related-functions"><span class="header-section-number">2.2</span> Other related functions<a href="#other-related-functions" class="self-link"></a></h2>
+<p>There are two other, closely related functions in the standard
+library that each conditionally return a reference to an object: <code class="sourceCode cpp">std<span class="op">::</span>any_cast</code> (the
+form that returns a pointer) and
+<code class="sourceCode cpp">std<span class="op">::</span>get_if</code>
+(for
+<code class="sourceCode cpp">std<span class="op">::</span>variant</code>).
+For both of these functions, <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code>
+didn’t exist yet, so the only option was
+<code class="sourceCode cpp">T<span class="op">*</span></code> (and we
+are not suggesting changing them now), but this behavior has proved
+quite clunky in practice. Now that we have a better option, we should
+use it.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="iterator-or-subrange"><span class="header-section-number">3</span>
 Iterator or Subrange?<a href="#iterator-or-subrange" class="self-link"></a></h1>
 <p>The last algorithm is
