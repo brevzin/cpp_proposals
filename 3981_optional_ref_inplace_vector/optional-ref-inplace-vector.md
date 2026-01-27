@@ -1,5 +1,5 @@
 ---
-title: "Better return types in `std::inplace_vector` and `std::exception_ptr_cast`"
+title: "Better return types in `std::inplace_vector` <br /> and `std::exception_ptr_cast`"
 document: P3981R0
 date: today
 audience: LEWG
