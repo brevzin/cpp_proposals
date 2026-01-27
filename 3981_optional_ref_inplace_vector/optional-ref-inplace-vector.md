@@ -124,6 +124,8 @@ if (not sr.empty()) {
 
 This follows the general principle that ranges are simply more convenient for users than iterators, because you only need the one object rather than two.
 
+This API is quite unlike a few algorithms which return an iterator, like `std::find`, where the iterator itself is specifically desired. In this case, the return isn't really conceptually a single iterator — it is very much the range _starting from_ that iterator. Hence, `subrange` is the more appropriate return type.
+
 # Why not do this?
 
 [@P3830R0]{.title} argues that we simply should not make this change, mostly on the basis that it is new. Which, yes, the specific specialization `std::optional<T&>` is new, and it took unnecessarily long to adopt it after `std::optional<T>` was adopted (despite its existence in Boost for decades, and proliferation across many other `optional` implementations). But the notion of an optional reference in general is not new, and we have a lot of experience with it outside of the standard library — and even outside of C++. The Rust standard library returns optional references from many APIs quite liberally.
