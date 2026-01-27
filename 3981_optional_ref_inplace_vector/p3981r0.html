@@ -5,7 +5,8 @@
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="dcterms.date" content="2026-01-26" />
-  <title>Using optional&lt;T&amp;&gt; in std::inplace_vector</title>
+  <title>Better return types in std::inplace_vector and
+std::exception_ptr_cast</title>
   <style>
       code{white-space: pre-wrap;}
       span.smallcaps{font-variant: small-caps;}
@@ -568,8 +569,8 @@ background-color: #ffff00;
 <body>
 <div class="wrapper">
 <header id="title-block-header">
-<h1 class="title" style="text-align:center">Using <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code>
-in <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code></h1>
+<h1 class="title" style="text-align:center">Better return types in <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>
+and <code class="sourceCode cpp">std<span class="op">::</span>exception_ptr_cast</code></h1>
 <table style="border:none;float:right">
   <tr>
     <td>Document #:</td>
@@ -606,14 +607,21 @@ in <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</cod
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction<span></span></a></li>
 <li><a href="#t-makes-for-a-poor-optionalt" id="toc-t-makes-for-a-poor-optionalt"><span class="toc-section-number">2</span>
 <code class="sourceCode cpp">T<span class="op">*</span></code> makes for
-a poor <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code><span></span></a></li>
+a poor <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code><span></span></a>
+<ul>
+<li><a href="#the-same-holds-for-stdexception_ptr_caste" id="toc-the-same-holds-for-stdexception_ptr_caste"><span class="toc-section-number">2.1</span> The same holds for <code class="sourceCode cpp">std<span class="op">::</span>exception_ptr_cast<span class="op">&lt;</span>E<span class="op">&gt;</span></code><span></span></a></li>
+</ul></li>
 <li><a href="#iterator-or-subrange" id="toc-iterator-or-subrange"><span class="toc-section-number">3</span> Iterator or
 Subrange?<span></span></a></li>
-<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">4</span> Proposal<span></span></a>
+<li><a href="#why-not-do-this" id="toc-why-not-do-this"><span class="toc-section-number">4</span> Why not do
+this?<span></span></a></li>
+<li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">5</span> Proposal<span></span></a>
 <ul>
-<li><a href="#wording" id="toc-wording"><span class="toc-section-number">4.1</span> Wording<span></span></a></li>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">5.1</span> Wording<span></span></a></li>
+<li><a href="#feature-test-macros" id="toc-feature-test-macros"><span class="toc-section-number">5.2</span> Feature-Test
+Macros<span></span></a></li>
 </ul></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
@@ -621,6 +629,8 @@ Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>This paper seeks to address the following NB comments:</p>
 <ul>
 <li><a href="https://github.com/cplusplus/nbballot/issues/813">PL-006</a></li>
+<li><a href="https://github.com/cplusplus/nbballot/issues/701">US
+68-122</a></li>
 <li><a href="https://github.com/cplusplus/nbballot/issues/799">US
 150-228</a></li>
 <li><a href="https://github.com/cplusplus/nbballot/issues/796">GB
@@ -645,6 +655,12 @@ Those signatures are currently:</p>
 type for each of these algorithms: <code class="sourceCode cpp">optional<span class="op">&lt;</span>reference<span class="op">&gt;</span></code>
 for the first three and <code class="sourceCode cpp">ranges<span class="op">::</span>borrowed_subrange_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>
 for the fourth.</p>
+<p>We are aware that <span class="title"><span class="citation" data-cites="P3739R4"><a href="https://wg21.link/p3739r4" role="doc-biblioref">[P3739R4] (Standard Library Hardening - using
+std::optional)</a></span></span> exists, but we feel that this is an
+important change to make, and that paper’s motivation is weak, has a
+misleading title (it has nothing to do with standard library hardening),
+and argues for a return type of <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span> <span class="kw">const</span></code>,
+which is not a good idea.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="t-makes-for-a-poor-optionalt"><span class="header-section-number">2</span>
 <code class="sourceCode cpp">T<span class="op">*</span></code> makes for
 a poor <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code><a href="#t-makes-for-a-poor-optionalt" class="self-link"></a></h1>
@@ -657,8 +673,8 @@ was added to the container. The functions
 thing, except that these functions signal failure via the return path:
 they can only <em>conditionally</em> return a reference to the element
 that was added, so they need to return something else on failure.</p>
-<p>When <span class="title"><span class="citation" data-cites="P0843R14"><a href="https://wg21.link/p0843r14" role="doc-biblioref">[P0843R14] (inplace_vector)</a></span></span>, the
-only sensible choice for the return type was
+<p>When <span class="title"><span class="citation" data-cites="P0843R14"><a href="https://wg21.link/p0843r14" role="doc-biblioref">[P0843R14] (inplace_vector)</a></span></span> was
+adopted, the only sensible choice for the return type was
 <code class="sourceCode cpp">T<span class="op">*</span></code>: either a
 pointer that points to the new element or a null pointer. However, now
 that <span class="title"><span class="citation" data-cites="P2988R12"><a href="https://wg21.link/p2988r12" role="doc-biblioref">[P2988R12]
@@ -701,13 +717,13 @@ useful to have the chaining operations that give us a different kind of
 optional, or to provide a default value, or to emplace or reset, or even
 to have a throwing accessor. But all the operations in the orange circle
 are highly <em>irrelevant</em> to this problem and would be completely
-wrong to use. They are bugs waiting to happen. We don’t have an array,
-so none of the indexing operations are valid. And we don’t have an
+wrong to use. They are bugs waiting to happen. We we don’t have an
 owning pointer, so neither
 <code class="sourceCode cpp"><span class="kw">delete</span></code> nor
 <code class="sourceCode cpp"><span class="kw">delete</span> <span class="op">[]</span></code>
-are valid. Nevertheless, these operations will actually compile – even
-though they are all undefined behavior.</p>
+are valid. We happen to have an array, but the indexing operations are
+pretty questionable (are people going to use negative indices here?).
+Nevertheless, these operations will actually compile.</p>
 <p>You’ll note that “pattern matching” appears in both circles,
 differently — this is because <span class="title"><span class="citation" data-cites="P2688R5"><a href="https://wg21.link/p2688r5" role="doc-biblioref">[P2688R5] (Pattern Matching: `match`
 Expression)</a></span></span> supports matching both <code class="sourceCode cpp">optional<span class="op">&lt;</span>U<span class="op">&gt;</span></code>
@@ -735,6 +751,15 @@ you segfault?</p>
 <p>These are very significant benefits to returning <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code>.
 There are simply no benefits to returning
 <code class="sourceCode cpp">T<span class="op">*</span></code>.</p>
+<h2 data-number="2.1" id="the-same-holds-for-stdexception_ptr_caste"><span class="header-section-number">2.1</span> The same holds for <code class="sourceCode cpp">std<span class="op">::</span>exception_ptr_cast<span class="op">&lt;</span>E<span class="op">&gt;</span></code><a href="#the-same-holds-for-stdexception_ptr_caste" class="self-link"></a></h2>
+<p>Similarly, <code class="sourceCode cpp">std<span class="op">::</span>exception_ptr_cast<span class="op">&lt;</span>E<span class="op">&gt;(</span>p<span class="op">)</span></code>
+was introduced by <span class="title"><span class="citation" data-cites="P2927R3"><a href="https://wg21.link/p2927r3" role="doc-biblioref">[P2927R3] (Observing exceptions stored in
+exception_ptr)</a></span></span>, and the exact same arguments hold.
+That function wants to either return an object or nothing. <code class="sourceCode cpp">optional<span class="op">&lt;</span>E <span class="kw">const</span><span class="op">&amp;&gt;</span></code>
+is simply a better return type than <code class="sourceCode cpp">E <span class="kw">const</span><span class="op">*</span></code>
+here. With the additional argument that here even the indexing
+operations are undefined behavior, whereas for the <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>
+case they are simply questionable.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="iterator-or-subrange"><span class="header-section-number">3</span>
 Iterator or Subrange?<a href="#iterator-or-subrange" class="self-link"></a></h1>
 <p>The last algorithm is
@@ -818,7 +843,37 @@ on it, you can, without having to re-acquire the original range:</p>
 <p>This follows the general principle that ranges are simply more
 convenient for users than iterators, because you only need the one
 object rather than two.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">4</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="why-not-do-this"><span class="header-section-number">4</span> Why
+not do this?<a href="#why-not-do-this" class="self-link"></a></h1>
+<p><span class="title"><span class="citation" data-cites="P3830R0"><a href="https://wg21.link/p3830r0" role="doc-biblioref">[P3830R0]
+(NB-Commenting is Not a Vehicle for Redesigning
+inplace_vector)</a></span></span> argues that we simply should not make
+this change, mostly on the basis that it is new. Which, yes, the
+specific specialization <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code>
+is new, and it took unnecessarily long to adopt it after <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+was adopted (despite its existence in Boost for decades, and
+proliferation across many other
+<code class="sourceCode cpp">optional</code> implementations). But the
+notion of an optional reference in general is not new, and we have a lot
+of experience with it outside of the standard library — and even outside
+of C++. The Rust standard library returns optional references from many
+APIs quite liberally.</p>
+<p>The paper additionally points out several issues with <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code>
+specifically, which are:</p>
+<ul>
+<li><span class="citation" data-cites="LWG4299"><a href="https://wg21.link/lwg4299" role="doc-biblioref">[LWG4299]</a></span> and <span class="citation" data-cites="LWG4300"><a href="https://wg21.link/lwg4300" role="doc-biblioref">[LWG4300]</a></span> are basically typos and were
+already both fixed.</li>
+<li><span class="citation" data-cites="LWG4308"><a href="https://wg21.link/lwg4308" role="doc-biblioref">[LWG4308]</a></span> is more interesting, but not
+really relevant to the question of whether to use it in <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>,
+and was already fixed.</li>
+<li>That <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code>
+wasn’t explicitly specified to be trivially copyable was also basically
+a typo, and was also already fixed by <span class="title"><span class="citation" data-cites="P3836R2"><a href="https://wg21.link/p3836r2" role="doc-biblioref">[P3836R2] (Make
+optional&lt;T&amp;&gt; trivially copyable (NB comment US
+134-215))</a></span></span>.</li>
+</ul>
+<p>None of which sound to us like reasons to not make these changes.</p>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">5</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>We propose to change the return types of four algorithms in <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector<span class="op">&lt;</span>T, N<span class="op">&gt;</span></code>:</p>
 <ul>
 <li><code class="sourceCode cpp">try_emplace_back</code> and both
@@ -830,11 +885,158 @@ instead of
 <code class="sourceCode cpp">borrowed_subrange_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>
 instead of a <code class="sourceCode cpp">borrowed_iterator_t<span class="op">&lt;</span>R<span class="op">&gt;</span></code>.</li>
 </ul>
-<h2 data-number="4.1" id="wording"><span class="header-section-number">4.1</span> Wording<a href="#wording" class="self-link"></a></h2>
-<p>TBD, but easy enough</p>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
+<p>And to likewise change the return type of <code class="sourceCode cpp">std<span class="op">::</span>exception_ptr_cast</code>
+from <code class="sourceCode cpp">E <span class="kw">const</span><span class="op">*</span></code>
+to <code class="sourceCode cpp">optional<span class="op">&lt;</span>E <span class="kw">const</span><span class="op">&amp;&gt;</span></code>.</p>
+<h2 data-number="5.1" id="wording"><span class="header-section-number">5.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Change <span>17.9.2 <a href="https://wg21.link/exception.syn">[exception.syn]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>// all freestanding</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class E&gt; constexpr const E* exception_ptr_cast(const exception_ptr&amp; p) noexcept;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class E&gt; constexpr optional&lt;const E&amp;&gt; exception_ptr_cast(const exception_ptr&amp; p) noexcept;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class E&gt; void exception_ptr_cast(const exception_ptr&amp;&amp;) = delete;</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<p>Change <span>17.9.7 <a href="https://wg21.link/propagation">[propagation]</a></span>/14-15:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class E&gt; constexpr const E* exception_ptr_cast(const exception_ptr&amp; p) noexcept;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;class E&gt; constexpr optional&lt;const E&amp;&gt; exception_ptr_cast(const exception_ptr&amp; p) noexcept;</span></span></code></pre></div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">14</a></span>
+<em>Mandates</em>: […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">15</a></span>
+<em>Returns</em>: A <span class="rm" style="color: #bf0303"><del>pointer
+to</del></span> the exception object referred to by
+<code class="sourceCode cpp">p</code>, if
+<code class="sourceCode cpp">p</code> is not null and a handler of type
+<code class="sourceCode cpp"><span class="kw">const</span> E<span class="op">&amp;</span></code>
+would be a match ([except.handle]) for that exception object. Otherwise,
+<span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">nullptr</code></span></del></span>
+<span class="addu"><code class="sourceCode cpp">nullopt</code></span>.</p>
+</blockquote>
+</div>
+<p>Change the synopsis in <span>23.3.16.1 <a href="https://wg21.link/inplace.vector.overview">[inplace.vector.overview]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  template&lt;class T, size_t N&gt;</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  class inplace_vector {</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  public:</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    // ...</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    // [inplace.vector.modifiers], modifiers</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    template&lt;class... Args&gt;</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      constexpr reference emplace_back(Args&amp;&amp;... args);                     // freestanding-deleted</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    constexpr reference push_back(const T&amp; x);                              // freestanding-deleted</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    constexpr reference push_back(T&amp;&amp; x);                                   // freestanding-deleted</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    template&lt;container-compatible-range&lt;T&gt; R&gt;</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>      constexpr void append_range(R&amp;&amp; rg);                                  // freestanding-deleted</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    constexpr void pop_back();</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    template&lt;class... Args&gt;</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="st">-     constexpr pointer try_emplace_back(Args&amp;&amp;... args);</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr optional&lt;reference&gt; try_emplace_back(Args&amp;&amp;... args);</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="st">-   constexpr pointer try_push_back(const T&amp; x);</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="st">-   constexpr pointer try_push_back(T&amp;&amp; x);</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr optional&lt;reference&gt; try_push_back(const T&amp; x);</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr optional&lt;reference&gt; try_push_back(T&amp;&amp; x);</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    template&lt;container-compatible-range&lt;T&gt; R&gt;</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="st">-     constexpr ranges::borrowed_iterator_t&lt;R&gt; try_append_range(R&amp;&amp; rg);</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="va">+     constexpr ranges::borrowed_subrange_t&lt;R&gt; try_append_range(R&amp;&amp; rg);</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>    // ...</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<p>Change <span>23.3.16.5 <a href="https://wg21.link/inplace.vector.modifiers">[inplace.vector.modifiers]</a></span>/8-11:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>  template&lt;class... Args&gt;</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="st">-   constexpr pointer try_emplace_back(Args&amp;&amp;... args);</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="va">+   constexpr optional&lt;reference&gt; try_emplace_back(Args&amp;&amp;... args);</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="st">- constexpr pointer try_push_back(const T&amp; x);</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="st">- constexpr pointer try_push_back(T&amp;&amp; x);</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr optional&lt;reference&gt; try_push_back(const T&amp; x);</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr optional&lt;reference&gt; try_push_back(T&amp;&amp; x);</span></span></code></pre></div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">8</a></span>
+Let vals denote a pack: […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">9</a></span>
+<em>Preconditions</em>: […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_5" id="pnum_5">10</a></span>
+<em>Effects</em>: […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_6" id="pnum_6">11</a></span>
+<em>Returns</em>: <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">nullptr</code></span></del></span>
+<span class="addu"><code class="sourceCode cpp">nullopt</code></span> if
+<code class="sourceCode cpp">size<span class="op">()</span> <span class="op">==</span> capacity<span class="op">()</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code>,
+otherwise <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">addressof(back())</code></span></del></span>
+<span class="addu"><code class="sourceCode cpp">back<span class="op">()</span></code></span>.</p>
+</blockquote>
+</div>
+<p>Change <span>23.3.16.5 <a href="https://wg21.link/inplace.vector.modifiers">[inplace.vector.modifiers]</a></span>/15-17:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>template&lt;<em>container-compatible-range</em>&lt;T&gt; R&gt;</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="st">- constexpr ranges::borrowed_iterator_t&lt;R&gt; try_append_range(R&amp;&amp; rg);</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr ranges::borrowed_subrange_t&lt;R&gt; try_append_range(R&amp;&amp; rg);</span></span></code></pre></div>
+</div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_7" id="pnum_7">15</a></span>
+<em>Preconditions</em>: […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_8" id="pnum_8">16</a></span>
+<em>Effects</em>: […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_9" id="pnum_9">17</a></span>
+<em>Returns</em>: <span class="addu"><code class="sourceCode cpp">ranges<span class="op">::</span>subrange<span class="op">(</span>it, ranges<span class="op">::</span>end<span class="op">(</span>rg<span class="op">))</span></code>,
+where <code class="sourceCode cpp">it</code> is</span> <span class="rm" style="color: #bf0303"><del>The</del></span> first iterator in the range
+<code class="sourceCode cpp">ranges<span class="op">::</span>begin<span class="op">(</span>rg<span class="op">)+[</span><span class="dv">0</span>, n<span class="op">)</span></code>
+that was not inserted into <code class="sourceCode cpp"><span class="op">*</span><span class="kw">this</span></code>,
+where <code class="sourceCode cpp">n</code> is the number of elements in
+<code class="sourceCode cpp">rg</code>.</p>
+</blockquote>
+</div>
+<h2 data-number="5.2" id="feature-test-macros"><span class="header-section-number">5.2</span> Feature-Test Macros<a href="#feature-test-macros" class="self-link"></a></h2>
+<p>Bump the two relevant macros in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<div class="std">
+<blockquote>
+<div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_inplace_vector                    202406L // also in &lt;inplace_vector&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_inplace_vector                    2026XXL // also in &lt;inplace_vector&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_exception_ptr_cast                202506L  // also in &lt;exception&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_exception_ptr_cast                2026XXL  // also in &lt;exception&gt;</span></span></code></pre></div>
+</div>
+</blockquote>
+</div>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
+<div id="ref-LWG4299" class="csl-entry" role="doc-biblioentry">
+[LWG4299] Giuseppe D’Angelo. Missing Mandates: part in
+optional&lt;T&amp;&gt;::transform. <a href="https://wg21.link/lwg4299"><div class="csl-block">https://wg21.link/lwg4299</div></a>
+</div>
+<div id="ref-LWG4300" class="csl-entry" role="doc-biblioentry">
+[LWG4300] Giuseppe D’Angelo. Missing Returns: element in
+optional&lt;T&amp;&gt;::emplace. <a href="https://wg21.link/lwg4300"><div class="csl-block">https://wg21.link/lwg4300</div></a>
+</div>
+<div id="ref-LWG4308" class="csl-entry" role="doc-biblioentry">
+[LWG4308] Jiang An. std::optional&lt;T&amp;&gt;::iterator can’t be a
+contiguous iterator for some T. <a href="https://wg21.link/lwg4308"><div class="csl-block">https://wg21.link/lwg4308</div></a>
+</div>
 <div id="ref-P0843R14" class="csl-entry" role="doc-biblioentry">
 [P0843R14] Gonzalo Brito Gadeschi, Timur Doumler, Nevin Liber, David
 Sankel. 2024-06-26. inplace_vector. <a href="https://wg21.link/p0843r14"><div class="csl-block">https://wg21.link/p0843r14</div></a>
@@ -843,9 +1045,25 @@ Sankel. 2024-06-26. inplace_vector. <a href="https://wg21.link/p0843r14"><div cl
 [P2688R5] Michael Park. 2025-01-13. Pattern Matching: `match`
 Expression. <a href="https://wg21.link/p2688r5"><div class="csl-block">https://wg21.link/p2688r5</div></a>
 </div>
+<div id="ref-P2927R3" class="csl-entry" role="doc-biblioentry">
+[P2927R3] Gor Nishanov, Arthur O’Dwyer. 2025-05-19. Observing exceptions
+stored in exception_ptr. <a href="https://wg21.link/p2927r3"><div class="csl-block">https://wg21.link/p2927r3</div></a>
+</div>
 <div id="ref-P2988R12" class="csl-entry" role="doc-biblioentry">
 [P2988R12] Steve Downey, Peter Sommerlad. 2025-04-04.
 std::optional&lt;T&amp;&gt;. <a href="https://wg21.link/p2988r12"><div class="csl-block">https://wg21.link/p2988r12</div></a>
+</div>
+<div id="ref-P3739R4" class="csl-entry" role="doc-biblioentry">
+[P3739R4] Jarrad J Waterloo. 2025-11-07. Standard Library Hardening -
+using std::optional. <a href="https://wg21.link/p3739r4"><div class="csl-block">https://wg21.link/p3739r4</div></a>
+</div>
+<div id="ref-P3830R0" class="csl-entry" role="doc-biblioentry">
+[P3830R0] Nevin Liber. 2025-09-04. NB-Commenting is Not a Vehicle for
+Redesigning inplace_vector. <a href="https://wg21.link/p3830r0"><div class="csl-block">https://wg21.link/p3830r0</div></a>
+</div>
+<div id="ref-P3836R2" class="csl-entry" role="doc-biblioentry">
+[P3836R2] Jan Schultke, Nevin Liber, Steve Downey. 2025-11-06. Make
+optional&lt;T&amp;&gt; trivially copyable (NB comment US 134-215). <a href="https://wg21.link/p3836r2"><div class="csl-block">https://wg21.link/p3836r2</div></a>
 </div>
 </div>
 </div>
