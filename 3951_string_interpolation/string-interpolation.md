@@ -1,7 +1,7 @@
 ---
 title: "String Interpolation with Template Strings"
-document: P3951R0
-date: 2026-01-01
+document: P3951R1
+date: today
 audience: EWG
 author:
     - name: Barry Revzin
@@ -64,7 +64,46 @@ In short, P1819 gives us an object (that doesn't evaluate any of the expressions
 
 Of the two, I think P1819 is significantly better. We get a simple object that can allow for a wide variety of potential functionality. It has two big problems though. The first is that it evaluates lazily and stores its data opaquely — which leads to more surprising behavior, the potential for dangling references, and arbitrarily limited usage. The other is its breakup into pieces doesn't actually play very well with `std::format` — where we would want there to be a format string and we don't have one. The original motivation for the lambda approach was ease of use — get all the expressions in one convenient format. But the language has evolved since 2019. We have both reflection and packs in structured bindings now, so we don't need the lambda approach anymore.
 
-On the other hand, P3412 is a very complex design, with an overload resolution mechanism that is very strongly coupled to the current implementation strategy of formatting. What if we someday get `constexpr` function parameters and it turns out to be better to implement `basic_format_string<char, Args...>` as taking a `constexpr string_view` instead of it being a `consteval` constructor? Would we need to change how string interpolation is defined too? All this complexity buys us is the ability to create a `std::string` in a single character. However, I don't think that's even a good goal for C++ — we shouldn't hide an operation as costly as string formatting in a single character, and we shouldn't tie the language so tightly to this particular library (as P3412 does via `__format__` directly calling `std::format`).
+On the other hand, P3412 is actually not one but two different language features — and it's worth taking some time to evaluate this. This is more explicit in [@P3412R1]:
+
+::: cmptable
+### Expression
+```cpp
+std::print(x"The result is {get_result()}");
+```
+
+### Evaluates As
+```cpp
+std::print("The result is {}", get_result());
+```
+
+---
+
+```cpp
+auto s = f"The result is {get_result()}");
+```
+
+```cpp
+auto s = std::format(x"The result is {get_result()}");
+auto s = std::format("The result is {}", get_result());
+```
+:::
+
+The x-literal did string interpolation — it evaluated as an expression-list. That's the workhorse that provides the value of the feature. In contrast, the f-literal was simply syntax sugar for a call to `std::format` with the appropriate x-literal. It's a language feature for simply calling `std::format`. Not precisely `std::format` — since not everybody uses `std::format` so instead this was introduced as a language customization mechanism. But we're really just abbreviating a function call.
+
+In [@P3412R3], this becomes significantly more complicated because both of those features (the string interpolation part, and the just-calling-`std::format` part) converge to the same spelling as an f-literal. This is I think inherently suspect because the same expression now means different things in different contexts. Because the spelling is the same, there needs to be a way for the language to differentiate which one the user meant — and that mechanism is overload resolution coupled very strongly to the current implementation strategy of formatting. The call
+
+::: std
+```cpp
+std::print(f"The result is {get_result()}");
+```
+:::
+
+Works by relying on the first parameter to `std::print` having a consteval constructor. But what if someday we get `constexpr` function parameters and it turns out to be better to implement `basic_format_string<char, Args...>` as taking a `constexpr string_view` instead of it being a `consteval` constructor? What if we someday get a different/better macro system such that `std::print("x={}", x)` evaluates not as a call to a function template but rather directly as the expression `std::vprint(validate_fmt_string<int>("x={}"), std::make_format_args(x))`?
+
+It's not infeasible that some future language change gives us a better way to solve this problem. But with the P3412R3 design, we wouldn't be able to adopt those changes to the formatting functions because they would break string interpolation (unless we come up with a new, more complicated interpolation design, which would now have to recognize multiple implementation strategies).
+
+All this complexity buys us is the ability to create a `std::string` in a single character. However, I don't think that's even a good goal for C++ — we shouldn't hide an operation as costly as string formatting in a single character — and spelling `std::format` is not itself a huge burden. Now, without that aspect of the design, the P3412 approach of having string interpolation emit an expression-list is a lot simpler — I will do a comparison of the two approaches [later in this paper](#object-vs-expression-list).
 
 Instead, this paper proposes an idea much closer to the P1819 model.
 
@@ -200,6 +239,17 @@ auto example() -> void {
 :::
 
 In order to format expressions that use scoping or the conditional operator, you'll just have to write parentheses. That seems easy enough to both understand and use. Otherwise, anything goes.
+
+Now, this approach incurs the burden that you just have to parenthesize any expression with top-level scoping. But the benefit is that all format specifiers just work — we have a formatting design that is flexible, so it would be nice not restrict that. The logic laid out in P3412 effectively forbids any format specifier that starts with a `:` since that `::` would always be interpreted as a scope operator.
+
+An alternative rule would: look for the character `:`, unless it's the token `::`, _except_ when it is immediately following a `)`. That would lead to this behavior:
+
+|template string|lexed format string|lexed expression|
+|-|-|-|
+|`t"{a::b}"`|`"{}"`|`a::b`|
+|`t"{(a)::b}"`|`"{::b}"`|`(a)`|
+
+This raises the question of how to handle whitespace like `t"{(a) ::b}"`. It's a more complex rule, and it depends on how frequently we expect top-level `::` and how good the error recovery is. It might be worthwhile, since I would expect top-level scoping to be significantly more common than having a format specifier that starts with a colon. Note that expressions like `decltype(a)::b` exist, which would have to be top-level parenthesized too, but that's a rare construction.
 
 ## Handling Macro Expansion
 
@@ -457,7 +507,7 @@ auto highlight_print(S&& s) -> void {
 ```
 :::
 
-Or we could turn it into the JSON object `{"name": "Inigo Montoya", "relation": "father", "verb()": "die"}`:
+Or we could turn it into the JSON object `{"name": "Inigo Montoya", "relation": "father", "verb()": "die"}` for use as structured logging:
 
 ::: std
 ```cpp
@@ -925,7 +975,226 @@ Given those pieces, the implementation of something like Rust's `format_args!` i
 
 So should we wait? It seems incredibly unlikely that we will land something as expansive as token sequence injection in C++29 (if ever?), and a dedicated language feature for template string objects is pretty small and self-contained.
 
+## Object vs Expression-List
 
+As I mentioned earlier, P3412 is really two language features: a string interpolation feature whose intermediate representation is an expression-list, and a feature which just calls `std::format` on that expression-list. In contrast, this paper is a string interpolation feature whose intermediate representation is an object. How do those two intermediate representations compare?
+
+When it comes to formatting specifically — when the sink algorithm is `std::print` or `std::format_to` or `spdlog::info` or anything like that — the object approach is pure overhead. Being able to write `spdlog::info(f"x={x}")` and have that evaluate exactly as `spdlog::info("x={}", x)` means that no library change is necessary whatsoever in order for libraries to "adopt" string interpolation. You can't beat zero work. With this paper, there would have to be library opt-in. Those opt-ins are going to be very simple — mostly two liners as you can see from the `print` implementation [earlier](#examples) — but they still have to exist.
+
+So is it worth the added complexity of the object model to justify the added cost of the interpolation opt-in? We have to talk about the added functionality.
+
+Because the object approach preserves all the information in the original format string, you can do things like structured logging (as in the JSON example from earlier). The expression-list approach simply doesn't have the "names" of the expressions anymore, so they're not available for further use.
+
+But almost anything else you might want to do with the interpolated string that isn't precisely formatting is much easier when you have an object. It's actually still surprising to me that some of these things are even possible, but let's walk through some examples. For logging, I might want to also include the file/line number as part of the message. I have this information available at compile-time along with the format string, so it'd be nice to concatenate those together. That's possible:
+
+::: cmptable
+### Expression-list (P3412)
+```cpp
+template <class... Args>
+struct fmt_string_sloc {
+    char const* fmt;
+
+    template <class S>
+        requires std::convertible_to<S, std::string_view>
+    consteval fmt_string_sloc(S s,
+                              std::source_location sloc =
+                                std::source_location::current()) {
+        // have to do type-checking here
+        [[maybe_unused]] auto _ = std::format_string<Args...>(s);
+
+        this->fmt = std::define_static_string(
+          std::format("[{}:{}] {}",
+                      sloc.file_name(),
+                      sloc.line(),
+                      std::string_view(s)));
+    }
+};
+
+template <class... Args>
+auto print_sloc1(fmt_string_sloc<std::type_identity_t<Args>...> fmt,
+                Args&&... args) -> void {
+    std::print(std::runtime_format(fmt.fmt), args...);
+}
+```
+
+### Object (this paper)
+```cpp
+template <std::template_string S>
+auto print_sloc2(S&& s) -> void {
+    constexpr auto fmt = []{
+        using T = std::remove_cvref_t<S>;
+
+        auto sloc = source_location_of(^^T);
+        return std::define_static_string(
+          std::format("[{}:{}] {}",
+                      sloc.file_name(),
+                      sloc.line(),
+                      T::fmt()));
+    }();
+
+    // type-checking happens out here as usual
+    // since fmt is a constant
+    auto& [...exprs] = s;
+    std::print(fmt, exprs...);
+}
+```
+:::
+
+We cannot provide the source location as a parameter to `print_sloc1`, because it's a variadic function template. And even if we could, it couldn't be a constant. However, we can be clever and provide it as a defaulted parameter to to the consteval constructor of the non-deduced `fmt_string_sloc`. With the object, we can just directly get the source location of the string interpolation type.
+
+This difference in complexity goes up really fast once you start doing more interesting things. Consider the `highlight_print` example from earlier. This is actually [implementable](https://compiler-explorer.com/z/b6jdavTW1) in the expression-list model, but not easily:
+
+::: cmptable
+### Expression-list (P3412)
+```cpp
+struct Interpolation { char const* fmt; int index; int count; };
+
+struct Information {
+    size_t num_interpolations;
+    char const* const* strings;
+    Interpolation const* interpolations;
+};
+
+template <Information Info, class... Args>
+auto highlight_print_impl(fmt::text_style style, Args&&... exprs) -> void {
+    constexpr size_t N = Info.num_interpolations;
+
+    template for (constexpr int I : std::views::indices(N)) {
+        fmt::print(Info.strings[I]);
+
+        constexpr auto interp = Info.interpolations[I];
+        constexpr auto [...J] = std::make_index_sequence<interp.count>();
+        fmt::print(style,
+                   interp.fmt,
+                   exprs...[interp.index + J]...);
+    }
+
+    fmt::print(Info.strings[N]);
+}
+
+template <class T>
+constexpr auto parse_next_impl(fmt::parse_context<char>& ctx) -> void {
+    fmt::formatter<T> f;
+    auto cur = ctx.begin();
+    if (*cur == ':') {
+        ++cur;
+    }
+    ctx.advance_to(cur);
+    (void)ctx.next_arg_id();
+    cur = f.parse(ctx);
+    if (cur != ctx.end()) {
+        ++cur;
+    }
+    ctx.advance_to(cur);
+}
+
+template <class... Ts>
+consteval auto into_interpolation_info(std::string_view sv)
+  -> std::meta::info
+{
+    fmt::detail::type types[] = {
+      fmt::detail::mapped_type_constant<Ts, char>::value...};
+    auto ctx = fmt::detail::compile_parse_context<char>(
+      sv, sizeof...(Ts), types, 0);
+
+    constexpr auto arg_id = nonstatic_data_members_of(
+        ^^fmt::parse_context<char>,
+        std::meta::access_context::unchecked())[1];
+
+    std::vector<char const*> strings;
+    std::vector<Interpolation> interpolations;
+    std::vector<std::meta::info> args = {^^Ts...};
+
+    while (true) {
+        // next string
+        auto next = std::find(ctx.begin(), ctx.end(), '{');
+        strings.push_back(
+          std::define_static_string(std::string_view(ctx.begin(), next)));
+        if (next == ctx.end()) {
+            break;
+        }
+
+        // next interpolation
+        ctx.advance_to(next + 1);
+        int const index = ctx.[:arg_id:];
+        auto parse_fn = substitute(^^parse_next_impl, {args[index]});
+        extract<auto(*)(fmt::parse_context<char>&)->void>(parse_fn)(ctx);
+        int const count = ctx.[:arg_id:] - index;
+
+        interpolations.push_back({
+            .fmt = std::define_static_string(
+              std::string_view(next, ctx.begin())),
+            .index=index,
+            .count=count
+        });
+    }
+
+    auto info = Information{
+        .num_interpolations = interpolations.size(),
+        .strings = std::define_static_array(strings).data(),
+        .interpolations = std::define_static_array(interpolations).data(),
+    };
+
+    return std::meta::reflect_constant(info);
+}
+
+template <class... Ts>
+struct highlight_format_string {
+    auto (*impl)(fmt::text_style, Ts&&...) -> void;
+
+    template <class S> requires std::convertible_to<S, std::string_view>
+    consteval highlight_format_string(S str) {
+        [[maybe_unused]] auto check = fmt::format_string<Ts...>(str);
+
+        impl = extract<auto(*)(fmt::text_style, Ts&&...)->void>(
+            substitute(^^highlight_print_impl, {
+                into_interpolation_info<std::remove_cvref_t<Ts>...>(
+                  std::string_view(str)),
+                ^^Ts...
+            }));
+    }
+};
+
+template <class... Ts>
+auto highlight_print(fmt::text_style style,
+                     std::type_identity_t<highlight_format_string<Ts...>> fmt,
+                     Ts&&... args) -> void {
+    fmt.impl(style, (Ts&&)args...);
+}
+```
+
+### Object (this paper)
+```cpp
+template <TemplateString S>
+auto highlight_print(fmt::text_style style, S&& s) -> void {
+    constexpr size_t N = s.num_interpolations();
+
+    auto& [...exprs] = s;
+
+    template for (constexpr int I : std::views::indices(N)) {
+        fmt::print(s.string(I));
+
+        constexpr auto interp = s.interpolation(I);
+        constexpr auto [...J] = std::make_index_sequence<interp.count>();
+        fmt::print(style,
+                   interp.fmt,
+                   exprs...[interp.index + J]...);
+    }
+
+    fmt::print(s.string(N));
+}
+```
+:::
+
+The implementation on the left reuses `{fmt}` implementation details, to avoid having to re-implement parsing on my own — that's just to save some effort, it's not strictly necessary. The fact that it's implementable at all is kind of incredible (thanks to Reflection), but the difference in complexity here is pretty vast. But this is because we have to basically re-implement interpolation in user-space and then come up with a clever way have that still work during constant evaluation time. Once we actually do all that work, we can produce the same representation, so the actual interesting part (`highlight_print_impl` on the left) looks the same as it does on the right. But you have to do all that work first.
+
+So the comparison boils down to this:
+
+* for vanilla formatting examples, the expression-list approach requires no library changes at all, so is a clear win over the object approach
+* as the examples drift further away from straightforward formatting, the object approach gets steadily more advantageous — since you already have all the information as constants in a single location, you don't need to come up with a clever solution to make this work
+* any structured logging use-cases that might require the names of the expressions is impossible in the expression-list approach.
+
+It depends on how interested we are in all of those other use-cases. I can't promise that none of them will ever be useful, so it seems like a good forward-looking trade-off to me.
 
 ---
 references:
