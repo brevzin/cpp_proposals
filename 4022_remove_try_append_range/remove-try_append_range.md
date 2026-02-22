@@ -26,7 +26,7 @@ In [@P3981R0]{.title}, one of the changed proposed in that paper was changing th
 ```
 :::
 
-During the discussion of this paper at a recent LEWG telecon, a few issues came up with this particular member function that lead us to conclude that we should remove it for C++26 so that we have more time to figure out how it should behave in C++29.
+During the discussion of this paper at a recent LEWG telecon, a few issues came up with this particular member function that lead us to conclude that we should remove it for C++26 so that we have more time to figure out how it should behave in C++29. This also addresses [PL-006](https://github.com/cplusplus/nbballot/issues/813).
 
 # Issues
 
@@ -159,7 +159,7 @@ If an exception is thrown after the insertion of `k` elements, then `size()` equ
 :::
 :::
 
-And bump the feature test macro in [version.syn]{.sref}:
+And bump the feature-test macro in [version.syn]{.sref}:
 
 ::: std
 ```diff
@@ -181,5 +181,5 @@ references:
       - year: 2026
         month: 01
         day: 27
-    URL: https://isocpp.org/files/papers/P3981R0.html
+    URL: https://wg21.link/p3980r0
 ---

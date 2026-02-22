@@ -14,6 +14,10 @@ toc: true
 status: progress
 ---
 
+# Revision History
+
+Since [@P3981R0]: discussion at a LEWG telecon lead to deciding to remove `try_append_range` instead of modifying it. See [@P4022R0]{.title}.
+
 # Introduction
 
 This paper seeks to address the following NB comments:
@@ -37,7 +41,7 @@ template<$container-compatible-range$<T> R>
 ```
 :::
 
-We argue in this paper that there is a better choice for the return type for each of these algorithms: `optional<reference>` for the first three and `ranges::borrowed_subrange_t<R>` for the fourth.
+We argue in this paper that there is a better choice for the return type for each of these algorithms: `optional<reference>` for the first three ~~and `ranges::borrowed_subrange_t<R>` for the fourth~~.
 
 We are aware that [@P3739R4]{.title} exists, but we feel that this is an important change to make, and that paper's motivation is weak, has a misleading title (it has nothing to do with standard library hardening), and argues for a return type of `optional<T&> const`, which is not a good idea.
 
@@ -80,55 +84,7 @@ There are two other, closely related functions in the standard library that each
 
 # Iterator or Subrange?
 
-The last algorithm is `try_append_range`. Currently, `v.try_append_range(r)` returns an iterator pointing to the first element of `r` that was _not_ inserted into `v`. This is inconvenient, as pointed out by PL-006.
-
-First, it makes it more tedious to check if all of the elements were inserted:
-
-::: cmptable
-### Returning an Iterator
-```cpp
-auto range = get_some_elements();
-auto it = v.try_append_range(range);
-if (it == range.end()) {
-  // success
-}
-```
-
-### Returning a Subrange
-```cpp
-auto range = get_some_elements();
-if (v.try_append_range(range).empty()) {
-  // success
-}
-```
-:::
-
-Returning the whole subrange gives you all the information you need in the return type directly. So if you want to do further manipulation on it, you can, without having to re-acquire the original range:
-
-::: cmptable
-
-### Returning an Iterator
-```cpp
-auto range = get_some_elements();
-auto it = v.try_append_range(range);
-if (it != range.end()) {
-  do_something_else(ranges::subrange(it, range.end()));
-}
-```
-
-### Returning a Subrange
-```cpp
-auto range = get_some_elements();
-auto sr = v.try_append_range(range);
-if (not sr.empty()) {
-  do_something_else(sr);
-}
-```
-:::
-
-This follows the general principle that ranges are simply more convenient for users than iterators, because you only need the one object rather than two.
-
-This API is quite unlike a few algorithms which return an iterator, like `std::find`, where the iterator itself is specifically desired. In this case, the return isn't really conceptually a single iterator — it is very much the range _starting from_ that iterator. Hence, `subrange` is the more appropriate return type.
+A previous revision of this paper made the argument that `v.try_append_range(r)` should return a `subrange` instead of an `iterator` (as pointed out by PL-006). But we've decided it is best to remove the function entirely for now, see [@P4022R0]{.title}. This paper no longer proposes any changes.
 
 # Why not do this?
 
@@ -144,12 +100,7 @@ None of which sound to us like reasons to not make these changes.
 
 # Proposal
 
-We propose to change the return types of four algorithms in `std::inplace_vector<T, N>`:
-
-* `try_emplace_back` and both overloads of `try_push_back` to return `optional<T&>` instead of `T*`
-* `try_append_range` to return a `borrowed_subrange_t<R>` instead of a `borrowed_iterator_t<R>`.
-
-And to likewise change the return type of `std::exception_ptr_cast` from `E const*` to `optional<E const&>`.
+We propose to change the return types of ~~four~~ three algorithms in `std::inplace_vector<T, N>`: `try_emplace_back` and both overloads of `try_push_back` to return `optional<T&>` instead of `T*` And to likewise change the return type of `std::exception_ptr_cast` from `E const*` to `optional<E const&>`.
 
 ## Wording
 
@@ -209,8 +160,7 @@ namespace std {
 +   constexpr optional<reference> try_push_back(const T& x);
 +   constexpr optional<reference> try_push_back(T&& x);
     template<container-compatible-range<T> R>
--     constexpr ranges::borrowed_iterator_t<R> try_append_range(R&& rg);
-+     constexpr ranges::borrowed_subrange_t<R> try_append_range(R&& rg);
+      constexpr ranges::borrowed_iterator_t<R> try_append_range(R&& rg);
 
     // ...
   };
@@ -239,21 +189,6 @@ Change [inplace.vector.modifiers]{.sref}/8-11:
 [11]{.pnum} *Returns*: [`nullptr`]{.rm} [`nullopt`]{.addu} if `size() == capacity()` is `true`, otherwise [`addressof(back())`]{.rm} [`back()`]{.addu}.
 :::
 
-Change [inplace.vector.modifiers]{.sref}/15-17:
-
-::: std
-```diff
-template<$container-compatible-range$<T> R>
-- constexpr ranges::borrowed_iterator_t<R> try_append_range(R&& rg);
-+ constexpr ranges::borrowed_subrange_t<R> try_append_range(R&& rg);
-```
-[15]{.pnum} *Preconditions*: [...]
-
-[16]{.pnum} *Effects*: [...]
-
-[17]{.pnum} *Returns*: [`ranges::subrange(it, ranges::end(rg))`, where `it` is]{.addu} [The]{.rm}  first iterator in the range `ranges::begin(rg)+[0, n)` that was not inserted into `*this`, where `n` is the number of elements in `rg`.
-:::
-
 ## Feature-Test Macros
 
 Bump the two relevant macros in [version.syn]{.sref}:
@@ -267,3 +202,32 @@ Bump the two relevant macros in [version.syn]{.sref}:
 + #define __cpp_lib_exception_ptr_cast                2026XXL  // also in <exception>
 ```
 :::
+
+
+---
+references:
+  - id: P3981R0
+    citation-label: P3981R0
+    title: "Better return types in `std::inplace_vector` and `std::exception_ptr_cast`"
+    author:
+      - family: Barry Revzin
+      - family: Jonathan Wakely
+      - family: Tomasz Kamiński
+    issued:
+      - year: 2026
+        month: 01
+        day: 27
+    URL: https://wg21.link/p3980r0
+  - id: P4022R0
+    citation-label: P4022R0
+    title: "Remove `try_append_range` from `inplace_vector` for now"
+    author:
+      - family: Barry Revzin
+      - family: Jonathan Wakely
+      - family: Tomasz Kamiński
+    issued:
+      - year: 2026
+        month: 02
+        day: 22
+    URL: https://wg21.link/p4022r0
+---

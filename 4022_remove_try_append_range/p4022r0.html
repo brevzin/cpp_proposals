@@ -616,7 +616,8 @@ background-color: #ffff00;
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
-<p>In <span class="title"><span class="citation" data-cites="P3981R0"><a href="https://isocpp.org/files/papers/P3981R0.html" role="doc-biblioref">[P3981R0] (Better return types in <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>
+<p>In <span class="title"><span class="citation" data-cites="P3981R0"><a href="https://wg21.link/p3980r0" role="doc-biblioref">[P3981R0] (Better
+return types in <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>
 and <code class="sourceCode cpp">std<span class="op">::</span>exception_ptr_cast</code>)</a></span></span>,
 one of the changed proposed in that paper was changing the return type
 of <code class="sourceCode cpp">try_append_range</code>:</p>
@@ -632,7 +633,7 @@ of <code class="sourceCode cpp">try_append_range</code>:</p>
 <p>During the discussion of this paper at a recent LEWG telecon, a few
 issues came up with this particular member function that lead us to
 conclude that we should remove it for C++26 so that we have more time to
-figure out how it should behave in C++29.</p>
+figure out how it should behave in C++29. This also addresses <a href="https://github.com/cplusplus/nbballot/issues/813">PL-006</a>.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="issues"><span class="header-section-number">2</span> Issues<a href="#issues" class="self-link"></a></h1>
 <p>There are two issues with
 <code class="sourceCode cpp">try_append</code> range:</p>
@@ -651,7 +652,7 @@ overloads)</li>
 </ol>
 <p>The first two are simply fallible versions of the corresponding
 non-prefixed member functions, whose semantics are straightforward and
-obvious, which is why we also argued in <span class="citation" data-cites="P3981R0"><a href="https://isocpp.org/files/papers/P3981R0.html" role="doc-biblioref">[P3981R0]</a></span> that they should return <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code>.
+obvious, which is why we also argued in <span class="citation" data-cites="P3981R0"><a href="https://wg21.link/p3980r0" role="doc-biblioref">[P3981R0]</a></span> that they should return <code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code>.
 They either succeed (returning what the other function returns) or they
 fail (returning nothing).</p>
 <p>But <code class="sourceCode cpp">try_append_range</code> is different
@@ -690,7 +691,7 @@ particular semantic?</p>
 <p>The current specification is to return an
 <code class="sourceCode cpp">iterator</code> pointing to the first
 non-inserted element of <code class="sourceCode cpp">rg</code>. But
-<span class="citation" data-cites="P3981R0"><a href="https://isocpp.org/files/papers/P3981R0.html" role="doc-biblioref">[P3981R0]</a></span> points out that this is
+<span class="citation" data-cites="P3981R0"><a href="https://wg21.link/p3980r0" role="doc-biblioref">[P3981R0]</a></span> points out that this is
 clunky, and suggests instead that we return the whole
 <code class="sourceCode cpp">subrange</code> of non-inserted
 elements.</p>
@@ -818,7 +819,7 @@ the inserted elements.</p>
 </div>
 </blockquote>
 </div>
-<p>And bump the feature test macro in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
+<p>And bump the feature-test macro in <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div>
@@ -834,7 +835,7 @@ References<a href="#bibliography" class="self-link"></a></h1>
 [P3981R0] Barry Revzin, Jonathan Wakely, and Tomasz Kamiński.
 2026-01-27. Better return types in <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>
 and <code class="sourceCode cpp">std<span class="op">::</span>exception_ptr_cast</code>.
-<a href="https://isocpp.org/files/papers/P3981R0.html"><div class="csl-block">https://isocpp.org/files/papers/P3981R0.html</div></a>
+<a href="https://wg21.link/p3980r0"><div class="csl-block">https://wg21.link/p3980r0</div></a>
 </div>
 </div>
 </div>
