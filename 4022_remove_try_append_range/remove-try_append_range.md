@@ -16,7 +16,7 @@ status: progress
 
 # Introduction
 
-In [@P3981R0]{.title}, one of the changed proposed in that paper was changing the return type of `try_append_range`:
+In [@P3981R0]{.title}, one of the changes proposed in that paper was changing the return type of `try_append_range`:
 
 ::: std
 ```diff
@@ -95,7 +95,10 @@ For a fallible `try_append_range` that would be an all-or-nothing analogue to `a
 ```cpp
 template <class R>
 struct append_some_return {
-  borrowed_subrange_t<R> inserted;
+  // subrange into the elements inserted into the inplace_vector
+  subrange<iterator> inserted;
+
+  // subrange into the remaining elements that could not be inserted
   borrowed_subrange_t<R> remaining;
 };
 

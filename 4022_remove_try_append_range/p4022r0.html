@@ -619,7 +619,7 @@ Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>In <span class="title"><span class="citation" data-cites="P3981R0"><a href="https://wg21.link/p3980r0" role="doc-biblioref">[P3981R0] (Better
 return types in <code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>
 and <code class="sourceCode cpp">std<span class="op">::</span>exception_ptr_cast</code>)</a></span></span>,
-one of the changed proposed in that paper was changing the return type
+one of the changes proposed in that paper was changing the return type
 of <code class="sourceCode cpp">try_append_range</code>:</p>
 <div class="std">
 <blockquote>
@@ -734,12 +734,15 @@ isn’t mis-usable. Perhaps something like:</p>
 <blockquote>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> append_some_return <span class="op">{</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  borrowed_subrange_t<span class="op">&lt;</span>R<span class="op">&gt;</span> inserted;</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  borrowed_subrange_t<span class="op">&lt;</span>R<span class="op">&gt;</span> remaining;</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><em>container-compatible-range</em><span class="op">&lt;</span>T<span class="op">&gt;</span> R<span class="op">&gt;</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> append_some_return<span class="op">&lt;</span>R<span class="op">&gt;</span> append_some<span class="op">(</span>R<span class="op">&amp;&amp;</span> rg<span class="op">)</span>;</span></code></pre></div>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// subrange into the elements inserted into the inplace_vector</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  subrange<span class="op">&lt;</span>iterator<span class="op">&gt;</span> inserted;</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">// subrange into the remaining elements that could not be inserted</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  borrowed_subrange_t<span class="op">&lt;</span>R<span class="op">&gt;</span> remaining;</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><em>container-compatible-range</em><span class="op">&lt;</span>T<span class="op">&gt;</span> R<span class="op">&gt;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> append_some_return<span class="op">&lt;</span>R<span class="op">&gt;</span> append_some<span class="op">(</span>R<span class="op">&amp;&amp;</span> rg<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Something like this shape gives us nice ergonomics for dealing with
