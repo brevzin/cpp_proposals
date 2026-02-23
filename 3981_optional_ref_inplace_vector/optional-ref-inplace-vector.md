@@ -16,7 +16,7 @@ status: progress
 
 # Revision History
 
-Since [@P3981R0]: discussion at a LEWG telecon lead to deciding to remove `try_append_range` instead of modifying it. See [@P4022R0]{.title}.
+Since [@P3981R0]: discussion at a [LEWG telecon](https://wiki.isocpp.org/2026-02-17_LEWG_Telecon) lead to deciding to remove `try_append_range` instead of modifying it. See [@P4022R0]{.title}.
 
 # Introduction
 

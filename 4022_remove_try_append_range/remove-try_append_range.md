@@ -26,7 +26,7 @@ In [@P3981R0]{.title}, one of the changes proposed in that paper was changing th
 ```
 :::
 
-During the discussion of this paper at a recent LEWG telecon, a few issues came up with this particular member function that lead us to conclude that we should remove it for C++26 so that we have more time to figure out how it should behave in C++29. This also addresses [PL-006](https://github.com/cplusplus/nbballot/issues/813).
+During the discussion of this paper at a recent [LEWG telecon](https://wiki.isocpp.org/2026-02-17_LEWG_Telecon), a few issues came up with this particular member function that lead us to conclude that we should remove it for C++26 so that we have more time to figure out how it should behave in C++29. This also addresses [PL-006](https://github.com/cplusplus/nbballot/issues/813).
 
 # Issues
 
