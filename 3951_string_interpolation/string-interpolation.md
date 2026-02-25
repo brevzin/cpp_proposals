@@ -600,7 +600,7 @@ auto with_printf(S&& s) -> void {
 One of the most famous SQL injection examples is, of course, [Little Bobby Tables](https://xkcd.com/327/). We can use template strings to make it easy to build up a statement properly. This example uses [SQLiteCpp](https://github.com/SRombauts/SQLiteCpp), but the same idea can be used for any other SQL library really. All you need to know about the library is that it works like. Assuming we have a `std::string name`:
 
 ::: cmptable
-### Actual Library Use
+### Current Library Usage
 ```cpp
 SQLite::Statement query(
     db,
