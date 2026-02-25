@@ -462,6 +462,10 @@ Why do we go through the trouble of proving `string(n)` and `interpolation(n)`? 
 
 ## Examples
 
+There are many things you can do with a template string, so let's just run through them.
+
+### Basic Formatting
+
 Consider again our example from earlier:
 
 ::: std
@@ -481,6 +485,23 @@ auto print(S&& s) -> void {
 }
 ```
 :::
+
+All of the regular formatting facilities (`std::format`, `std::format_to`, `spdlog::info`, etc.) can be implemented like this. But they could also be implemented a little bit differently — by doing the type-checking internally and calling, e.g.,  `vprint_unicode` directly. An abbreviated libc++ implementation of `println` might look like this:
+
+::: std
+```cpp
+template <TemplateString S>
+auto println(S&& s) -> void {
+    auto& [...exprs] = s;
+    [[maybe_unused]] constexpr auto check = std::format_string<decltype(exprs)...>(s.fmt());
+    std::__print::__vprint_unicode(stdout, s.fmt(), std::make_format_args(exprs...), true);
+}
+```
+:::
+
+
+
+### Highlighting
 
 But we could do a lot more with this object other than just print it. We could write a function to automatically highlight the interpolations green and bold, which is supported by the `fmt` library but not the standard. That's straightforward, since we're not tied into any particular library, and we have all the information we need:
 
@@ -507,7 +528,9 @@ auto highlight_print(S&& s) -> void {
 ```
 :::
 
-Or we could turn it into the JSON object `{"name": "Inigo Montoya", "relation": "father", "verb()": "die"}` for use as structured logging:
+### Structured Logging
+
+A completely different example would be to turn it into the JSON object `{"name": "Inigo Montoya", "relation": "father", "verb()": "die"}` for use as structured logging:
 
 ::: std
 ```cpp
@@ -524,6 +547,8 @@ auto into_json(S&& s) -> boost::json::object {
 }
 ```
 :::
+
+### printf
 
 Or we could use entirely different formatting mechanisms. We could make this work with `printf` too! This isn't a complete implementation, but should give a sense of what's possible:
 
@@ -570,9 +595,67 @@ auto with_printf(S&& s) -> void {
 ```
 :::
 
-The important thing is to expose all the relevant information to users to let them do whatever they want with it. Note that `highlighted_print` uses the `fmt`, `index`, and `count` fields of the interpolation, since it is formatting all of them, but not the `expression` field. Meanwhile, `into_json` uses only `expression` and `index` — it doesn't need any of the format specifier logic, since it isn't actually doing formatting. The `printf` example uses `string` to build up its own format specifier.
+### SQL Statements
 
-And of course, _all_ of these operations can be performed on the same object:
+One of the most famous SQL injection examples is, of course, [Little Bobby Tables](https://xkcd.com/327/). We can use template strings to make it easy to build up a statement properly. This example uses [SQLiteCpp](https://github.com/SRombauts/SQLiteCpp), but the same idea can be used for any other SQL library really. All you need to know about the library is that it works like. Assuming we have a `std::string name`:
+
+::: cmptable
+### Actual Library Use
+```cpp
+SQLite::Statement query(
+    db,
+    "SELECT * FROM test WHERE name = ?");
+query.bind(1, name);
+```
+
+### Using Template Strings
+```cpp
+auto query = SQLite::makeStatement(
+    db,
+    t"SELECT * FROM test WHERE name = {name}");
+```
+:::
+
+We can provide a nice API for it like this:
+
+::: std
+```cpp
+template <TemplateString S>
+auto makeStatement(Database& db, S&& s) -> Statement {
+    constexpr char const* sanitized_fmt = [&]() consteval {
+        std::string fmt = s.string(0);
+        for (size_t i = 0; i < num_interpolations(); ++i) {
+            // every interpolation is just turned into ?
+            fmt.push_back('?');
+
+            // ... while the string parts are preserved
+            fmt.append(s.string(i + 1));
+        }
+        return std::define_static_string(fmt);
+    }();
+
+    auto query = Statement(db, sanitized_fmt);
+
+    auto& [...exprs] = s;
+    template for (constexpr int I : std::views::indices(s.num_interpolations())) {
+        // could make different choices here: do we want to just use the value
+        // or do we want to format it with its provided specifiers? presumably the
+        // SQL library author would know what the right thing to do here is
+        query.bind(I + 1, exprs...[s.interpolation(I).index]);
+    }
+
+    return query;
+}
+```
+:::
+
+And now you get the same nice string formatting syntax for SQL queries as you do for strings.
+
+### Summary
+
+The important thing is to expose all the relevant information to users to let them do whatever they want with it. Note that `highlighted_print` uses the `fmt`, `index`, and `count` fields of the interpolation, since it is formatting all of them, but not the `expression` field. Meanwhile, `into_json` uses only `expression` and `index` — it doesn't need any of the format specifier logic, since it isn't actually doing formatting. The `printf` example uses `string` to build up its own format specifier. The SQL likewise builds up its own formatter, and binds arguments with a different API.
+
+And of course, _all_ of these operations can be performed on the same object (which is particularly useful in the case of wanting to do both regular and structured logging):
 
 ::: std
 ```cpp
