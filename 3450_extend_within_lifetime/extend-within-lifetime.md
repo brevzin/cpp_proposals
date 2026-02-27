@@ -2,7 +2,7 @@
 title: "Extend `std::is_within_lifetime`"
 document: P3450R0
 date: today
-audience: LEWG
+audience: LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -10,6 +10,10 @@ toc: true
 tag: constexpr
 status: progress
 ---
+
+# Revision History
+
+Since [@P3450R0], wording changes to account for `volatile` after LWG review.
 
 # Introduction
 
@@ -81,10 +85,10 @@ And change the specification of this function:
 ```
 
 ::: addu
-[*]{.pnum} *Mandates*: `static_cast<const U*>(p)` is well-formed.
+[*]{.pnum} *Mandates*: `static_cast<const volatile U*>(p)` is well-formed.
 :::
 
-[3]{.pnum} *Returns*: `true` if `p` is a pointer to an object that is within its lifetime ([basic.life]) [and `static_cast<const U*>(p)` is a core constant expression]{.addu}; otherwise, `false`.
+[3]{.pnum} *Returns*: `true` if `p` is a pointer to an object that is within its lifetime ([basic.life]) [and `static_cast<const volatile U*>(p)` is a constant subexpression]{.addu}; otherwise, `false`.
 
 [4]{.pnum} *Remarks*: During the evaluation of an expression `E` as a core constant expression, a call to this function is ill-formed unless `p` points to an object that is usable in constant expressions or whose complete object's lifetime began within `E`.
 :::
@@ -96,7 +100,7 @@ Bump the feature-test macro in [version.syn]{.sref}:
 ::: bq
 ```diff
 - #define __cpp_lib_within_lifetime 202306L // also in <type_traits>
-+ #define __cpp_lib_within_lifetime 2024XXL // also in <type_traits>
++ #define __cpp_lib_within_lifetime 2026XXL // also in <type_traits>
 ```
 :::
 
