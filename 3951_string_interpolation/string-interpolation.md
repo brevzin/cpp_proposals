@@ -10,13 +10,21 @@ toc: true
 status: progress
 ---
 
+# Revision History
+
+Since [@P3951R0]:
+
+* More detailed description of the difference between this paper and [@P3412R3], including a full section comparing [the object design to the expression-list design](#object-vs-expression-list).
+* Support for [user-defined literals](#support-for-user-defined-literals) and [`string` construction](#standard-library-design)
+* Added C# and Swift to other string interpolation languages, and a [SQL](#sql-statements) example.
+
 # Introduction
 
 The `std::format` approach to formatting offers many significant benefits over the prior `<iostream>`s approach that need not be revisited here. However, `<iostream>` does still have one significant advantage: ordering. It is easy to see at a glance with a long `std::cout` statement which pieces are to be formatted in which order. With `std::format`, as the amount of replacement fields increases, it becomes increasingly difficult to ensure that they are all correctly ordered.
 
 The solution to this problem is string interpolation: the ability to put the expression to be formatted inside of the format string. This lets us preserve all of the advantages of `std::format`, while also regaining ordering. String interpolation is a wildly popular language feature due to the ease with which it allows users to express complex ideas. It's not surprising that a huge number of modern languages support this to some degree or another. A non-exhaustive list includes: C#, D, Elixir, F#, Groovy, Kotlin, JavaScript, Perl, PHP, Python, Ruby, Rust, Scala, Swift, and VB.
 
-## Prior Work
+## Prior Work in C++
 
 There have been two prior WG21 papers pursuing string interpolation as a C++ language feature: [@P1819R0]{.title} and [@P3412R3]{.title}. The two proposals are quite different, so let's consider an example to work through the details:
 
@@ -42,7 +50,7 @@ auto interp = [&](auto&& f) -> decltype(auto) {
 ```
 :::
 
-So line `#1` does nothing. The call to `get_result()` does not happen yet. Instead, the library would provide new overloads of `std::print` and friends so that in line `#2`, the library would invoke `interp` with the appropriate function to do the printing. The call to `get_result()` happens at that point. Line `#3` does the same things as lines `#1` and `#2`, just together.
+So line `#1` does approximately nothing. The call to `get_result()` does not happen yet. Instead, the library would provide new overloads of `std::print` and friends so that in line `#2`, the library would invoke `interp` with the appropriate function to do the printing. The call to `get_result()` happens at that point. Line `#3` does the same things as lines `#1` and `#2`, just together.
 
 In P3412, the behavior is very different. `interp` is already a `std::string`, which is evaluated as:
 
@@ -109,9 +117,49 @@ Instead, this paper proposes an idea much closer to the P1819 model.
 
 ## Prior Art in Other Languages
 
-Python 3.6 introduced literal string interpolation (`f"..."`) in [@PEP-498], which was later extended in Python 3.14 by template strings (`t"..."`) in [@PEP-750]. The former directly produces a `string`, while the latter gives a template string — an object with enough information in it to be formatted later. This is similar to Rust's `format_args!`, which gives you a completely opaque object (unlike Python's which is completely specified). Both languages gives you a facility to take an interpolated string and produce an object for future work (similar to P1819).
+Python 3.6 introduced literal string interpolation (`f"..."`) in [@PEP-498], which was later extended in Python 3.14 by template strings (`t"..."`) in [@PEP-750]. The former directly produces a `string`, while the latter gives a template string — an object with enough information in it to be formatted later.
 
-JavaScript also has [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals), which support tagging. A tagged template literal is quite similar to what [@P3412R3] proposes: the expression `` myTag`That ${person} is a ${age}.` ``{.js} evaluates as `myTag(["That ", " is a ", "."], person, age)`, similar to the C++ proposal having `myTag(f"That {person} is a {age}")` evaluate the transformed call `myTag("That {} is a {}", person, age)`. Here, the literal is _not_ an object.
+Rust's `format_args!` is similar to Python's template string — it gives you a completely opaque object (unlike Python's which is completely specified). Both languages gives you a facility to take an interpolated string and produce an object for future work (similar to P1819).
+
+JavaScript also has [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals), which support tagging. A tagged template literal is quite similar to what [@P3412R3] proposes:
+
+::: cmptable
+### Code
+```js
+ myTag`That ${person} is a ${age}.`
+```
+
+### Evaluates as
+```js
+myTag(["That ", " is a ", "."], person, age)
+```
+:::
+
+This would be similar to P3412's having `myTag(f"That {person} is a {age}")` evaluate the transformed call `myTag("That {} is a {}", person, age)`. Here, the literal is _not_ an object.
+
+C#'s [interpolated strings](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) can produce a `string` directly, But if they are bound to a `FormattableString`, you can get the string parts and objects separately for future work. Similar to Python template strings and Rust's facility, except type erased. C# also has a more complicated facility on top of string interpolation called an [`InterpolatedStringHandler`](https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/performance/interpolated-string-handler), which allows for more efficient and even conditional (lazy) formatting.
+
+Swift's string interpolation, similar to C#, can also either directly produce a string or go through a separate, builder path: the protocol `ExpressibleByStringInterpolation`. That [allows](https://davedelong.com/blog/2021/03/04/exploiting-string-interpolation-for-fun-and-for-profit/) the expression:
+
+::: cmptable
+### Code
+```swift
+let value: MyType = "Hello, \(name)!"
+```
+
+### Evaluates as
+```swift
+var builder = MyType.StringInterpolation(
+    literalCapacity: 8, interpolationCount: 1)
+builder.appendLiteral("Hello, ")
+builder.appendInterpolation(name)
+builder.appendLiteral("!")
+let value = MyType(stringInterpolation: builder)
+```
+:::
+
+This paper's design is along the lines of Python's template strings, Rust's `format_args!`, and C#'s `FormattableString` idea. Just presented in a package that is more, well, C++.
+
 
 # Design
 
@@ -249,7 +297,7 @@ An alternative rule would: look for the character `:`, unless it's the token `::
 |`t"{a::b}"`|`"{}"`|`a::b`|
 |`t"{(a)::b}"`|`"{::b}"`|`(a)`|
 
-This raises the question of how to handle whitespace like `t"{(a) ::b}"`. It's a more complex rule, and it depends on how frequently we expect top-level `::` and how good the error recovery is. It might be worthwhile, since I would expect top-level scoping to be significantly more common than having a format specifier that starts with a colon. Note that expressions like `decltype(a)::b` exist, which would have to be top-level parenthesized too, but that's a rare construction.
+This raises the question of how to handle whitespace like `t"{(a) ::b}"`. It's a more complex rule, and it depends on how frequently we expect top-level `::` and how good the error recovery is. It might be worthwhile, since I would expect top-level scoping to be significantly more common than having a format specifier that starts with a colon. Note that expressions like `decltype(a)::b` exist, which would have to be top-level parenthesized too, but that's a rare construction, so requiring it to be parenthesized is at best a minor inconvenience.
 
 ## Handling Macro Expansion
 
@@ -737,9 +785,55 @@ I'd want to make sure this `R` here is also considered a template string for all
 * an annotation
 * structural conformance: simply check for the presence of `fmt`, `string`, `num_interpolations`, and `interpolation`?
 
+## Support for User-Defined Literals
+
+Consider the expression:
+
+::: std
+```cpp
+auto msg = t"The result is {get_result()}\n"s;
+```
+:::
+
+Does this make sense to support? It has obvious meaning — evaluate as the call `operator"" s(t"The result is {get_result()}\n")`. And that literal operator can be defined to call `std::format`. The rule in [over.literal]{.sref} would have to be extended to support this signature:
+
+::: std
+```cpp
+template <class T>
+auto operator"" $ud-suffix$(T ) -> R;
+```
+:::
+
+That actually gives people the terse string construction that they want, _without_ an additional language feature that needs to be customized.
+
+The rules of which user-defined literal operator is even looked for is based on the kind of the literal. So `t"x={x}"s` will never even attempt to look for the existing `operator"" s` and, similarly, adding a new one to the standard library will never affect code that currently does `"hello"s`, since the literal operator template would not even be a candidate.
+
+This extension is very narrow, and is effectively specific to template strings.
+
+## Standard Library Design
+
+For the standard library, we need several pieces:
+
+* a `std::template_string` concept, [of some sort](#the-templatestring-concept)
+* additional overloads of the formatting function templates (`std::format`, `std::format_to`, `std::format_to_n`, `std::print`, and `std::println`) that take a template string and do the right thing with it.
+* a [new UDL](#support-for-user-defined-literals) for making a string.
+
+The last piece that's potentially worth considering is adding a string constructor. Conceptually, these two declarations are equivalent:
+
+::: std
+```cpp
+auto msg1 = t"The result is {get_result()}\n"s;
+std::string msg2 = t"The result is {get_result()}\n";
+```
+:::
+
+And I think the existence of the UDL `s` implies to me the addition of a `string` constructor as well. Whether `explicit` or implicit is a separate question.
+
 ## Implementation Experience
 
-I implemented this in Clang, on top of the p2996 reflection branch. Code can be found in my fork in the `template-strings`{.op} branch [here](https://github.com/brevzin/llvm-project/tree/template-strings) (you can see the diff against p2996 [here](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:template-strings)) I'm sure there are better ways to do some of what I did. It can also be used on [compiler explorer](https://compiler-explorer.com/z/hKer7vE9r).
+I implemented this in Clang, on top of the p2996 reflection branch. Code can be found in my fork in the `template-strings`{.op} branch [here](https://github.com/brevzin/llvm-project/tree/template-strings) (you can see the diff against p2996 [here](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:template-strings)) I'm sure there are better ways to do some of what I did. The implementation includes the design laid out in this section, including UDL support, and also the library support — the concept, new overloads of formatting function templates, a new `s` literal operator for `string`, and a new `string` constructor (but only for `std::string` specifically).
+
+It can also be used on [compiler explorer](https://compiler-explorer.com/z/hKer7vE9r).
 
 The only difference between this paper and the implementation is that instead of introducing the type `std::interpolation`, I just made `_Interpolation` implicitly defined at global scope for convenience.
 
@@ -895,168 +989,7 @@ $template-string$
 
 # Alternate Approaches
 
-This proposal is definitely not the only way to do string interpolation in C++. I've [already discussed](#prior-work) two previous proposals in this space and why I think what I'm proposing is a better design. But it's worth talking about other approaches as well.
-
-## `f`-strings
-
-This paper _only_ proposes template strings, it does _not_ propose a convenient shorthand for creating a `std::string`. If a `std::string` is desired, the user will have to write:
-
-::: std
-```cpp
-auto a = std::format("My name is {} and my age next year is {}", name, age+1); // status quo
-auto b = std::format(t"My name is {name} and my age next year is {age+1}");    // proposed
-auto c = f"My name is {name} and my age next year is {age+1}";                 // not proposed
-```
-:::
-
-The reasoning here is that moving from `a` to `b` is a significant gain in readability (as well as other functionality, as illustrated in previous examples), but the gain from `b` to `c` is simply saving a few characters. It's _nice_, but it comes at a heavy cost that I'm simply not sure is actually worth it. Is `std::format` specifically the most common formatting facility? I think small programs will have more calls to `std::print` or `std::println` while larger programs will have more calls to `std::format_to` as well as use logging. I just don't think the trade-off is there.
-
-## Reduced Representation
-
-What should this template string literal evaluate to?
-
-::: std
-```cpp
-t"New connection on {ip:#x}:{port}"
-```
-:::
-
-This paper proposes the one on the left, but we could just do the one on the right:
-
-::: cmptable
-### Proposed
-```cpp
-struct S {
-  static consteval auto fmt() -> char const*;
-  static consteval auto num_interpolations() -> size_t;
-  static consteval auto string(size_t n) -> char const*;
-  static consteval auto interpolation(size_t n) -> interpolation;
-
-  u32 _0;
-  u16 _1;
-};
-```
-
-### Simpler
-```cpp
-struct S {
-  static consteval auto fmt() -> char const*;
-
-
-
-
-  u32 _0;
-  u16 _1;
-};
-```
-:::
-
-But the main motivation (and likely the most common use-case) is some version of formatting, for which all we need is `S::fmt()`. We wouldn't need `S::interpolation(n)` or `S::string(n)`. Should we still generate the extra functions?
-
-I would argue that we should. The implementation has to do all the work to get those pieces anyway (with the exception of the `index` and `count` members for each `interpolation`, which really isn't much work), so it's not like we're saving much in the way of computation by stripping the interface. The simpler interface is only simple in that it reduces the available functionality. Doesn't seem like a good idea.
-
-## Redundant Information
-
-Continuing with the previous example, what if instead of removing `S::string` and `S::interpolation`, we instead removed `S::fmt`?
-
-::: cmptable
-### Proposed
-```cpp
-struct S {
-  static consteval auto fmt() -> char const*;
-  static consteval auto num_interpolations() -> size_t;
-  static consteval auto string(size_t n) -> char const*;
-  static consteval auto interpolation(size_t n) -> interpolation;
-
-  u32 _0;
-  u16 _1;
-};
-```
-
-### Minimal
-```cpp
-struct S {
-
-  static consteval auto num_interpolations() -> size_t;
-  static consteval auto string(size_t n) -> char const*;
-  static consteval auto interpolation(size_t n) -> interpolation;
-
-  u32 _0;
-  u16 _1;
-};
-```
-:::
-
-Note that `S::fmt()` is exactly the result of concatenating `S::string(0)`, `S::interpolation(0).fmt`, `S:::string(1)`, `S::interpolation(1).fmt`, and `S::string(2)`. This is true by construction for all template strings, and is precisely how it is implemented as well. Given that `S::string(n)` and `S::interpolation(n)` will both exist (as being more fundamental), do we need to also provide `S::fmt()` — which can simply be derived from both arrays?
-
-One advantage of removing `S::fmt()` is to avoid having that string spill into the binary even if unused, if the implementation simply fails to detect its lack of use. However, I think we should. While formatting will not be the _only_ usage of these objects, it is both the main motivating and primary one, so it will both be more convenient for users and more efficient if the compiler simply does that little bit of extra work to produce the full format string as well.
-
-And regardless, the opposite problem would still exist anyway — if only `S::fmt()` were used, there is the potential that the string literals in `S::string(n)` and `S::interpolation(n)` spill into the binary unnecessary as well.
-
-## Static Data Members or Static Member Functions
-
-The proposal right now has 4 static member functions. But a simple alternative would be to instead provide three, with `strings()` and `interpolations()` returning `std::span`s instead of having a `string(n)` and `interpolation(n)` and `num_interpolations()`:
-
-::: std
-```cpp
-struct S {
-    static consteval auto fmt() -> char const*;
-    static consteval auto strings() -> std::span<char const* const>;
-    static consteval auto interpolations() -> std::span<std::interpolation const>;
-};
-```
-:::
-
-The advantage of approach is that it allows directly looping over the interpolations via:
-
-::: std
-```cpp
-template for (constexpr auto interp : s.interpolations()) {
-    // ...
-}
-```
-:::
-
-Which instead some of the [examples](#examples) work around via:
-
-::: std
-```cpp
-template for (constexpr auto I : std::views::indices(s.num_interpolations())) {
-    constexpr auto interp = s.interpolation(I);
-}
-```
-:::
-
-The disadvantage is that it brings in the `std::span` dependency. But if we're declaring `std::interpolation` anyway, that's probably not that big a deal.
-
-A very different shape might instead be to have static _data members_ instead of static functions, where:
-
-::: std
-```cpp
-struct S {
-    static constexpr char const* fmt = /* ... */;
-    static constexpr char const* strings[] = /* ... */;
-    static constexpr std::interpolation interpolations[] = /* ... */;
-};
-```
-:::
-
-This would avoid the `span` dependency and avoid a bunch of parentheses that you would have to write, as compared to the other function version. However, it has two problems. First, a template string can have no interpolations, and we still don't have zero-sized arrays in C++. We ran into this problem with specifying `std::meta::reflect_constant_array`, and it's very annoying that it doesn't just work (even as gcc and clang happily support them with expected semantics with no warnings). Neither the version where `interpolations()` returns a `std::span` nor the version where we have `interpolation(n)` which returns the `n`th interpolation have this problem.
-
-The second problem is that these types may have to be local types in some contexts, and local types cannot have static data members in C++. I do not know why local types have this restriction, given that local types are allowed to have static member functions and those member functions are allowed to have static local variables. But the restriction does currently exist.
-
-
-## Wait for Reflection
-
-The evergreen question with proposals like this is to wonder if we should wait for reflection. There even is a proposal, [@P3294R2]{.title}, that has walks through how a future macro could solve this problem. Concretely, we would need:
-
-* macros that can inject token sequences,
-* the ability to invoke such a macro with a string literal (or `string_view`), and
-* the ability to turn a `string_view` into a token sequence
-
-Given those pieces, the implementation of something like Rust's `format_args!` is basically the same as how you would implement it in a compiler. And the benefit of being able to do this in a library is pretty clear: it is much easier to experiment with different functionality. Plus, this would just be a very small taste of what code injections could do.
-
-So should we wait? It seems incredibly unlikely that we will land something as expansive as token sequence injection in C++29 (if ever?), and a dedicated language feature for template string objects is pretty small and self-contained.
+This proposal is definitely not the only way to do string interpolation in C++. I've [already discussed](#prior-work-in-c) two previous proposals in this space and why I think what I'm proposing is a better design. But it's worth talking about other approaches as well.
 
 ## Object vs Expression-List
 
@@ -1278,6 +1211,172 @@ So the comparison boils down to this:
 * any structured logging use-cases that might require the names of the expressions is impossible in the expression-list approach.
 
 It depends on how interested we are in all of those other use-cases. I can't promise that none of them will ever be useful, so it seems like a good forward-looking trade-off to me.
+
+## `f`-strings
+
+Given that this paper proposes [UDL support](#support-for-user-defined-literals) and [a `std::string` constructor](#standard-library-design), there doesn't seem to be any reason to add an additional language feature to directly produce a `std::string`:
+
+::: std
+```cpp
+       auto a = std::format("My name is {} and my age next year is {}", name, age+1); // status quo
+       auto b = std::format(t"My name is {name} and my age next year is {age+1}");    // proposed
+       auto c = f"My name is {name} and my age next year is {age+1}";                 // not proposed
+       auto d = t"My name is {name} and my age next year is {age+1}"s;                // proposed
+       auto e = std::string(t"My name is {name} and my age next year is {age+1}");    // proposed
+std::string f = t"My name is {name} and my age next year is {age+1}";                 // proposed
+```
+:::
+
+Sure, using `d` requires a `using namespace std::literals;` or a more specific one somewhere, but if that level of terseness is desired, it's worth it. Certainly doesn't seem worth it for me to have a dedicated language feature for this.
+
+## Reduced Representation
+
+What should this template string literal evaluate to?
+
+::: std
+```cpp
+t"New connection on {ip:#x}:{port}"
+```
+:::
+
+This paper proposes the one on the left, but we could just do the one on the right:
+
+::: cmptable
+### Proposed
+```cpp
+struct S {
+  static consteval auto fmt() -> char const*;
+  static consteval auto num_interpolations() -> size_t;
+  static consteval auto string(size_t n) -> char const*;
+  static consteval auto interpolation(size_t n) -> interpolation;
+
+  u32 _0;
+  u16 _1;
+};
+```
+
+### Simpler
+```cpp
+struct S {
+  static consteval auto fmt() -> char const*;
+
+
+
+
+  u32 _0;
+  u16 _1;
+};
+```
+:::
+
+But the main motivation (and likely the most common use-case) is some version of formatting, for which all we need is `S::fmt()`. We wouldn't need `S::interpolation(n)` or `S::string(n)`. Should we still generate the extra functions?
+
+I would argue that we should. The implementation has to do all the work to get those pieces anyway (with the exception of the `index` and `count` members for each `interpolation`, which really isn't much work), so it's not like we're saving much in the way of computation by stripping the interface. The simpler interface is only simple in that it reduces the available functionality. Doesn't seem like a good idea.
+
+## Redundant Information
+
+Continuing with the previous example, what if instead of removing `S::string` and `S::interpolation`, we instead removed `S::fmt`?
+
+::: cmptable
+### Proposed
+```cpp
+struct S {
+  static consteval auto fmt() -> char const*;
+  static consteval auto num_interpolations() -> size_t;
+  static consteval auto string(size_t n) -> char const*;
+  static consteval auto interpolation(size_t n) -> interpolation;
+
+  u32 _0;
+  u16 _1;
+};
+```
+
+### Minimal
+```cpp
+struct S {
+
+  static consteval auto num_interpolations() -> size_t;
+  static consteval auto string(size_t n) -> char const*;
+  static consteval auto interpolation(size_t n) -> interpolation;
+
+  u32 _0;
+  u16 _1;
+};
+```
+:::
+
+Note that `S::fmt()` is exactly the result of concatenating `S::string(0)`, `S::interpolation(0).fmt`, `S:::string(1)`, `S::interpolation(1).fmt`, and `S::string(2)`. This is true by construction for all template strings, and is precisely how it is implemented as well. Given that `S::string(n)` and `S::interpolation(n)` will both exist (as being more fundamental), do we need to also provide `S::fmt()` — which can simply be derived from both arrays?
+
+One advantage of removing `S::fmt()` is to avoid having that string spill into the binary even if unused, if the implementation simply fails to detect its lack of use. However, I think we should. While formatting will not be the _only_ usage of these objects, it is both the main motivating and primary one, so it will both be more convenient for users and more efficient if the compiler simply does that little bit of extra work to produce the full format string as well.
+
+And regardless, the opposite problem would still exist anyway — if only `S::fmt()` were used, there is the potential that the string literals in `S::string(n)` and `S::interpolation(n)` spill into the binary unnecessary as well.
+
+## Static Data Members or Static Member Functions
+
+The proposal right now has 4 static member functions. But a simple alternative would be to instead provide three, with `strings()` and `interpolations()` returning `std::span`s instead of having a `string(n)` and `interpolation(n)` and `num_interpolations()`:
+
+::: std
+```cpp
+struct S {
+    static consteval auto fmt() -> char const*;
+    static consteval auto strings() -> std::span<char const* const>;
+    static consteval auto interpolations() -> std::span<std::interpolation const>;
+};
+```
+:::
+
+The advantage of approach is that it allows directly looping over the interpolations via:
+
+::: std
+```cpp
+template for (constexpr auto interp : s.interpolations()) {
+    // ...
+}
+```
+:::
+
+Which instead some of the [examples](#examples) work around via:
+
+::: std
+```cpp
+template for (constexpr auto I : std::views::indices(s.num_interpolations())) {
+    constexpr auto interp = s.interpolation(I);
+}
+```
+:::
+
+The disadvantage is that it brings in the `std::span` dependency. But if we're declaring `std::interpolation` anyway, that's probably not that big a deal.
+
+A very different shape might instead be to have static _data members_ instead of static functions, where:
+
+::: std
+```cpp
+struct S {
+    static constexpr char const* fmt = /* ... */;
+    static constexpr char const* strings[] = /* ... */;
+    static constexpr std::interpolation interpolations[] = /* ... */;
+};
+```
+:::
+
+This would avoid the `span` dependency and avoid a bunch of parentheses that you would have to write, as compared to the other function version. However, it has two problems. First, a template string can have no interpolations, and we still don't have zero-sized arrays in C++. We ran into this problem with specifying `std::meta::reflect_constant_array`, and it's very annoying that it doesn't just work (even as gcc and clang happily support them with expected semantics with no warnings). Neither the version where `interpolations()` returns a `std::span` nor the version where we have `interpolation(n)` which returns the `n`th interpolation have this problem.
+
+The second problem is that these types may have to be local types in some contexts, and local types cannot have static data members in C++. I do not know why local types have this restriction, given that local types are allowed to have static member functions and those member functions are allowed to have static local variables. But the restriction does currently exist.
+
+
+## Wait for Reflection
+
+The evergreen question with proposals like this is to wonder if we should wait for reflection. There even is a proposal, [@P3294R2]{.title}, that has walks through how a future macro could solve this problem. Concretely, we would need:
+
+* macros that can inject token sequences,
+* the ability to invoke such a macro with a string literal (or `string_view`), and
+* the ability to turn a `string_view` into a token sequence
+
+Given those pieces, the implementation of something like Rust's `format_args!` is basically the same as how you would implement it in a compiler. And the benefit of being able to do this in a library is pretty clear: it is much easier to experiment with different functionality. Plus, this would just be a very small taste of what code injections could do.
+
+So should we wait? It seems incredibly unlikely that we will land something as expansive as token sequence injection in C++29 (if ever?), and a dedicated language feature for template string objects is pretty small and self-contained.
+
+
 
 ---
 references:
