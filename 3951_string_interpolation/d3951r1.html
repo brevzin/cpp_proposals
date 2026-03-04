@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-03-01" />
+  <meta name="dcterms.date" content="2026-03-03" />
   <title>String Interpolation with Template Strings</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ Template Strings</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-03-01</td>
+    <td>2026-03-03</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -676,9 +676,7 @@ Revision History<a href="#revision-history" class="self-link"></a></h1>
 <span class="citation" data-cites="P3412R3"><a href="https://wg21.link/p3412r3" role="doc-biblioref">[P3412R3]</a></span>, including a full section
 comparing <a href="#object-vs-expression-list">the object design to the
 expression-list design</a>.</li>
-<li>Support for <a href="#support-for-user-defined-literals">user-defined literals</a> and
-<a href="#standard-library-design"><code class="sourceCode cpp">string</code>
-construction</a></li>
+<li>Support for <a href="#support-for-user-defined-literals">user-defined literals</a></li>
 <li>Added C# and Swift to other string interpolation languages, and a <a href="#sql-statements">SQL</a> example.</li>
 </ul>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
@@ -2081,11 +2079,22 @@ equivalent:</p>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>string msg2 <span class="op">=</span> t<span class="st">&quot;The result is {get_result()}</span><span class="sc">\n</span><span class="st">&quot;</span>;</span></code></pre></div>
 </blockquote>
 </div>
-<p>And I think the existence of the UDL
-<code class="sourceCode cpp">s</code> implies to me the addition of a
-<code class="sourceCode cpp">string</code> constructor as well. Whether
-<code class="sourceCode cpp"><span class="kw">explicit</span></code> or
-implicit is a separate question.</p>
+<p>So is it worth touching
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>?
+I don’t think it actually is. In direct code,
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>
+and
+<code class="sourceCode cpp">std<span class="op">::</span>format</code>
+are the same length, so you don’t gain anything from having the
+constructor. The only potential advantage would be calling a function
+that takes a
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>
+like <code class="sourceCode cpp">f<span class="op">(</span>t<span class="st">&quot;x={x}&quot;</span><span class="op">)</span></code>
+(or similar initialization examples). On the one hand, it doesn’t seem
+completely wrong to add it (since having
+<code class="sourceCode cpp">s</code> is conceptually similar) and it’s
+easy enough to implement. On the other, once we add
+<code class="sourceCode cpp">s</code>, it hardly seems necessary.</p>
 <h2 data-number="3.12" id="implementation-experience"><span class="header-section-number">3.12</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>I implemented this in Clang, on top of the p2996 reflection branch.
 Code can be found in my fork in the

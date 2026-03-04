@@ -15,7 +15,7 @@ status: progress
 Since [@P3951R0]:
 
 * More detailed description of the difference between this paper and [@P3412R3], including a full section comparing [the object design to the expression-list design](#object-vs-expression-list).
-* Support for [user-defined literals](#support-for-user-defined-literals) and [`string` construction](#standard-library-design)
+* Support for [user-defined literals](#support-for-user-defined-literals)
 * Added C# and Swift to other string interpolation languages, and a [SQL](#sql-statements) example.
 
 # Introduction
@@ -827,7 +827,7 @@ std::string msg2 = t"The result is {get_result()}\n";
 ```
 :::
 
-And I think the existence of the UDL `s` implies to me the addition of a `string` constructor as well. Whether `explicit` or implicit is a separate question.
+So is it worth touching `std::string`? I don't think it actually is. In direct code, `std::string` and `std::format` are the same length, so you don't gain anything from having the constructor. The only potential advantage would be calling a function that takes a `std::string` like `f(t"x={x}")` (or similar initialization examples). On the one hand, it doesn't seem completely wrong to add it (since having `s` is conceptually similar) and it's easy enough to implement. On the other, once we add `s`, it hardly seems necessary.
 
 ## Implementation Experience
 
