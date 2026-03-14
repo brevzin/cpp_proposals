@@ -110,7 +110,7 @@ constexpr std::meta::info const* q = &r;
 
 The declaration of `q` is fine.
 
-But if `std::meta::info const*` is no longer a consteval-only type, what happens? The reasoning gets surprising complicated.
+But if `std::meta::info const*` is no longer a consteval-only type, what happens? The reasoning gets surprisingly complicated.
 
 For `p`, `&r` is an immediate-escalating expression (because `r` has consteval-only type), which means it has to be in an immediate function context, which means it has to be manifestly constant-evaluated, which means that the full-initialization has to be a constant expression. But now we violate what used to be called the "permitted result of a constant expression" rule in [expr.const]{.sref}/21:
 
@@ -152,7 +152,7 @@ Note for interest that the Zig programming language has consteval-only types in 
 
 There is a different approach to restricting certain values to not persist until runtime: enforce the rules at a _value_ level instead of a _type_ level. It's not objects of type `std::meta::info` that must live at compile-time, it's that reflection values must live at compile-time.
 
-C++ today already has a notion of a value that is only allowed to exist during compile time: consteval functions. We already used to the fact that our constant rules are value-based rather than type based:
+C++ today already has a notion of a value that is only allowed to exist during compile time: consteval functions. We are already used to the fact that our constant rules are value-based rather than type based:
 
 ::: std
 ```cpp
