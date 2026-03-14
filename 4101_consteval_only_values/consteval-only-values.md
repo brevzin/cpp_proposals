@@ -228,7 +228,7 @@ In TU `#2`, `s` is an immediate variable. It will not persist to runtime. Attemp
 But the value approach also means that we don't even have to think about the instantiation issue:
 
 ::: std
-```
+```cpp
 template <class T> struct S;
 void f(S<int>*);
 ```
