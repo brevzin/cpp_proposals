@@ -236,7 +236,7 @@ void f(S<int>*);
 
 If `S<int>` has a member of type `std::meta::info` and that member is initialized with `^^int`, then that object will necessarily have to live at compile-time, and you just won't be able to invoke a non-`constexpr` function with a pointer to it. It might be a bug to have not declared it `constexpr`, but that simply makes it useless — not problematic.
 
-## Differences in Treatment Between Consteval-only Types and Consteval-only Types
+## Differences in Treatment Between Consteval-only Types and Consteval-only Values
 
 If we transition to having our model be based on consteval-only _values_ rather than consteval-only _types_, mostly the same issues are diagnosed — if for different reasons. But there are a few notable instances where the consteval-only type rule does diagnose a misuse but the consteval-only value does not:
 
