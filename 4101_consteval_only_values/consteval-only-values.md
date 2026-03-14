@@ -98,7 +98,7 @@ constexpr std::meta::info const* q = &r;
 ```
 :::
 
-`r` does not exist to runtime, so the declaration of `p` needs to be ill-formed, while the declaration of `q` is fine. If `std::meta::info const*` is a consteval-only type, then the declaration of `p` is rejected by our consteval-only type rule in [basic.types.general]{.sref}/12:
+`r` does not exist at runtime, so the declaration of `p` needs to be ill-formed, while the declaration of `q` is fine. If `std::meta::info const*` is a consteval-only type, then the declaration of `p` is rejected by our consteval-only type rule in [basic.types.general]{.sref}/12:
 
 ::: std
 [12]{.pnum} [...] Every object of consteval-only type shall be
@@ -214,7 +214,7 @@ There are still some cases that would become IFNDR though:
 ```cpp
 // TU #1
 struct S;
-extern S s;
+extern S const s;
 S const* p = &s;
 
 // TU #2
