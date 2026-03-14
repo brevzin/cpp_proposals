@@ -6,6 +6,8 @@ audience: EWG, CWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
+    - name: Peter Dimov
+      email: <pdimov@gmail.com>
 toc: true
 status: progress
 tag: reflection
@@ -13,7 +15,7 @@ tag: reflection
 
 # Introduction
 
-The Reflection design from [@P2996R13] was based on a model of having consteval-only types to prevent reflections from leaking to runtime. But we've run into issues and limitations with that approach, so we propose that, for C++26, we change instead to a consteval-only value. This solves the same problems, but has additional benefits.
+The Reflection design from [@P2996R13] was based on a model of having consteval-only types to prevent reflections from leaking to runtime. But we've run into issues and limitations with that approach, so we propose that, for C++26, we change instead to a consteval-only value model. This solves the same problems, but has additional benefits.
 
 # Issues with Consteval-only Types
 
