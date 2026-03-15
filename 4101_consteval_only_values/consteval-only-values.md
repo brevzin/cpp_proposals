@@ -458,6 +458,8 @@ Leading into the definition of *constant expression*, introduce the concept of c
 * [a.#]{.pnum} an object where any constituent value is a consteval-only value or any constituent reference refers to an immediate function or immediate object.
 
 [b]{.pnum} An _immediate variable_ is a `constexpr` variable whose initialization results in an immediate constant expression that is not a constant expression. An _immediate object_ is an object declared by an immediate variable.
+
+[c]{.pnum} Each expression `$E$` that odr-uses an immediate variable `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, no diagnostic is required unless either `$D1$` or `$D2$` is reachable from the other.
 :::
 :::
 
@@ -465,11 +467,11 @@ And then we split the definition of _constant expression_ into a weaker form cal
 
 ::: std
 ::: addu
-[c]{.pnum} An _immediate constant expression_ is either a glvalue core constant expression that refers to an object or function, or a prvalue core constant expression whose value satisfies the following constraints:
+[d]{.pnum} An _immediate constant expression_ is either a glvalue core constant expression that refers to an object or function, or a prvalue core constant expression whose value satisfies the following constraints:
 
-* [c.1]{.pnum} each constituent reference refers to an object or a function,
-* [c.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), and
-* [c.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
+* [d.1]{.pnum} each constituent reference refers to an object or a function,
+* [d.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), and
+* [d.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
 :::
 
 [21]{.pnum} A _constant expression_ is either
