@@ -461,7 +461,7 @@ Leading into the definition of *constant expression*, introduce the concept of c
 :::
 :::
 
-And then we split the definition of _constant expression_ into a weaker form called an _immediate constant expression_, which allows consteval-only values in [expr.const]{.sref}:
+And then we split the definition of _constant expression_ into a weaker form called an _immediate constant expression_, which allows consteval-only values in [expr.const]{.sref} [The removed example declaring `b` is now well-formed — `d` is an immediate variable and `b` refers to it, making it also an immediate variable.]{.draftnote}:
 
 ::: std
 ::: addu
