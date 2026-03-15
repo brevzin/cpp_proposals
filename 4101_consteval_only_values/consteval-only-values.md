@@ -540,10 +540,10 @@ An aggregate initialization is an immediate [invocation]{.rm} [expression]{.addu
 :::
 
 
-Remove the allowance for `virtual` functions in [class.virtual]{.sref}/18 added by [@CWG3117] [This allowance was never used in `meta::exception`, its `what()` is still declared `constexpr`]{.draftnote}:
+Revert the allowance for `virtual` functions in [class.virtual]{.sref}/18 added by [@CWG3117] [This allowance was never used in `meta::exception`, its `what()` is still declared `constexpr` — that is [@LWG4513] which is on longer a defect]{.draftnote}:
 
 ::: std
-[18]{.pnum} [A class with a `consteval` virtual function that overrides a virtual function that is not `consteval` shall have consteval-only type ([basic.types.general]).]{.rm}
+[18]{.pnum} A [class with a]{.rm} `consteval` virtual function [shall not override]{.addu} [that overrides]{.rm} a virtual function that is not `consteval` [shall have consteval-only type ([basic.types.general])]{.rm}.
 A `consteval` virtual function shall not be overridden by a virtual function that is not `consteval`.
 :::
 

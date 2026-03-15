@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-03-14" />
+  <meta name="dcterms.date" content="2026-03-15" />
   <title>Consteval-only Values for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ C++26</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-03-14</td>
+    <td>2026-03-15</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1496,7 +1496,7 @@ An <em>immediate-escalating</em> function is […]</p>
 An <em>immediate function</em> is […]</p>
 </blockquote>
 </div>
-<p>Remove the allowance for
+<p>Revert the allowance for
 <code class="sourceCode cpp"><span class="kw">virtual</span></code>
 functions in <span>11.7.3 <a href="https://wg21.link/class.virtual">[class.virtual]</a></span>/18
 added by <span class="citation" data-cites="CWG3117"><a href="https://wg21.link/cwg3117" role="doc-biblioref">[CWG3117]</a></span> <span class="draftnote" style="color: #01796F">[ Drafting note: This allowance was never used in
@@ -1504,15 +1504,18 @@ added by <span class="citation" data-cites="CWG3117"><a href="https://wg21.link/
 its <code class="sourceCode cpp">what<span class="op">()</span></code>
 is still declared
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+— that is <span class="citation" data-cites="LWG4513"><a href="https://wg21.link/lwg4513" role="doc-biblioref">[LWG4513]</a></span> which is on longer a defect
 ]</span>:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">18</a></span>
-<span class="rm" style="color: #bf0303"><del>A class with a
-<span><code class="sourceCode default">consteval</code></span> virtual
-function that overrides a virtual function that is not
-<span><code class="sourceCode default">consteval</code></span> shall
-have consteval-only type ([basic.types.general]).</del></span> A
+A <span class="rm" style="color: #bf0303"><del>class with a</del></span>
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+virtual function <span class="addu">shall not override</span> <span class="rm" style="color: #bf0303"><del>that overrides</del></span> a
+virtual function that is not
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+<span class="rm" style="color: #bf0303"><del>shall have consteval-only
+type ([basic.types.general])</del></span>. A
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 virtual function shall not be overridden by a virtual function that is
 not
@@ -1729,6 +1732,10 @@ function. <a href="https://wg21.link/cwg3117"><div class="csl-block">https://wg2
 <div id="ref-CWG3150" class="csl-entry" role="doc-biblioentry">
 [CWG3150] Jakub Jelinek. 2026-01-19. Incomplete consteval-only class
 types. <a href="https://cplusplus.github.io/CWG/issues/3150.html"><div class="csl-block">https://cplusplus.github.io/CWG/issues/3150.html</div></a>
+</div>
+<div id="ref-LWG4513" class="csl-entry" role="doc-biblioentry">
+[LWG4513] Jonathan Wakely. meta::exception::what() should be consteval.
+<a href="https://wg21.link/lwg4513"><div class="csl-block">https://wg21.link/lwg4513</div></a>
 </div>
 <div id="ref-P0929R2" class="csl-entry" role="doc-biblioentry">
 [P0929R2] Jens Maurer. 2018-06-06. Checking for abstract class types. <a href="https://wg21.link/p0929r2"><div class="csl-block">https://wg21.link/p0929r2</div></a>
