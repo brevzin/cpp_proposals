@@ -168,6 +168,8 @@ constexpr auto q = sub; // ok
 ```
 :::
 
+`add` and `sub` have the same type, as would `p` and `q`, but one of those declarations is valid while the other is not.
+
 We already explored this idea in [@P3603R1]{.title}, but what if we generalized the notion we have today and combined it with reflections? Informally:
 
 ::: std
