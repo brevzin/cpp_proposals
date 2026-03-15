@@ -1350,7 +1350,7 @@ It depends on how interested we are in all of those other use-cases. I can't pro
 
 ## `f`-strings
 
-Given that this paper proposes [UDL support](#support-for-user-defined-literals) and [a `std::string` constructor](#standard-library-design), there doesn't seem to be any reason to add an additional language feature to directly produce a `std::string`:
+Given that this paper proposes [UDL support](#support-for-user-defined-literals), there doesn't seem to be any reason to add an additional language feature to directly produce a `std::string`:
 
 ::: std
 ```cpp
@@ -1358,8 +1358,8 @@ Given that this paper proposes [UDL support](#support-for-user-defined-literals)
        auto b = std::format(t"My name is {name} and my age next year is {age+1}");    // proposed
        auto c = f"My name is {name} and my age next year is {age+1}";                 // not proposed
        auto d = t"My name is {name} and my age next year is {age+1}"s;                // proposed
-       auto e = std::string(t"My name is {name} and my age next year is {age+1}");    // proposed
-std::string f = t"My name is {name} and my age next year is {age+1}";                 // proposed
+       auto e = std::string(t"My name is {name} and my age next year is {age+1}");    // not proposed
+std::string f = t"My name is {name} and my age next year is {age+1}";                 // not proposed
 ```
 :::
 
