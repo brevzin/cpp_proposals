@@ -244,19 +244,16 @@ If `S<int>` has a member of type `std::meta::info` and that member is initialize
 
 ## Differences in Treatment Between Consteval-only Types and Consteval-only Values
 
-If we transition to having our model be based on consteval-only _values_ rather than consteval-only _types_, mostly the same issues are diagnosed — if for different reasons. But there are a few notable instances where the consteval-only type rule does diagnose a misuse but the consteval-only value does not:
+If we transition to having our model be based on consteval-only _values_ rather than consteval-only _types_, mostly the same issues are diagnosed — if for different reasons. But there are a few instances where the consteval-only type rule does diagnose a misuse but the consteval-only value does not:
 
 ::: std
 ```cpp
 // consteval-only type: this is ill-formed
-// consteval-only value: ok: x is null, it doesn't actually hold a reflection value
+// consteval-only value: ok: x and y are null, they don't actually hold a reflection value
 std::meta::info x;
-
-// consteval-only type: this is ill-formed for several reasons: f needs to
-// be consteval and bit_cast mandates that neither the source nor destination
-// type is a consteval-only type.
-// consteval-only value: this is... simply useless
-auto f(std::meta::info r) -> u64 { return std::bit_cast<u64>(r); }
+auto f() -> void {
+  std::meta::info y;
+}
 ```
 :::
 
@@ -270,7 +267,7 @@ Some other examples might be potentially-useful:
 // consteval-only value: there is no actual reflection here, so this is fine
 auto v = std::variant<std::meta::info, int>(42);
 
-// similar
+// ditto
 struct C { std::meta::info const* p; };
 auto c = C{.p = nullptr};
 ```

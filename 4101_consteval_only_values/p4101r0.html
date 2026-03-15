@@ -995,19 +995,16 @@ Between Consteval-only Types and Consteval-only Values<a href="#differences-in-t
 <p>If we transition to having our model be based on consteval-only
 <em>values</em> rather than consteval-only <em>types</em>, mostly the
 same issues are diagnosed — if for different reasons. But there are a
-few notable instances where the consteval-only type rule does diagnose a
-misuse but the consteval-only value does not:</p>
+few instances where the consteval-only type rule does diagnose a misuse
+but the consteval-only value does not:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only type: this is ill-formed</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value: ok: x is null, it doesn&#39;t actually hold a reflection value</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value: ok: x and y are null, they don&#39;t actually hold a reflection value</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>info x;</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only type: this is ill-formed for several reasons: f needs to</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co">// be consteval and bit_cast mandates that neither the source nor destination</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co">// type is a consteval-only type.</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value: this is... simply useless</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> u64 <span class="op">{</span> <span class="cf">return</span> std<span class="op">::</span>bit_cast<span class="op">&lt;</span>u64<span class="op">&gt;(</span>r<span class="op">)</span>; <span class="op">}</span></span></code></pre></div>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  std<span class="op">::</span>meta<span class="op">::</span>info y;</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>There are other examples in this vein: the consteval-only type rule
@@ -1020,7 +1017,7 @@ well-formed but useless.</p>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value: there is no actual reflection here, so this is fine</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> v <span class="op">=</span> std<span class="op">::</span>variant<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info, <span class="dt">int</span><span class="op">&gt;(</span><span class="dv">42</span><span class="op">)</span>;</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co">// similar</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co">// ditto</span></span>
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> p; <span class="op">}</span>;</span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> C<span class="op">{.</span>p <span class="op">=</span> <span class="kw">nullptr</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
