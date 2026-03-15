@@ -272,7 +272,22 @@ Here are some examples of template string formatting calls and how they would be
 
 Two important things to note here. First, it is possible to lex an invalid expression due to finding a `:` first, as in the penultimate line. The lexing won't know about this though.
 
-Second, note that `"{a::b}"` lexes as simply the expression `a`, not `a::b`. If the latter is desired, it has to be parenthesized. That is, while lexing, we are not simply looking for the _token_ `:`, but the _character_ `:`. Which could be the token `:` but also includes not just two-character tokens like `::` and `:]`, and even the digraph `:<` (e.g. `"{a:<5}"` lexes as the expression `a` with the format specifier `<5` — left-aligned with width `5` — not as the incomplete expression `a[5`). This is a difference in the logic proposed in [@P3412R3], which looks specifically for the _token_ (not character) `:`. This is important because it allows for the most functionality:
+## Looking for `:`
+
+The first problem we run into, as evidenced in the above table, is deciding what it means to find the separator between the `$expression$` and the `$format-spec$` . How do we find the `:`? A this point, we will be lexing an `$expression$` — and there are multiple ways in which a colon can appear here:
+
+* `:`
+* `::`
+* `[:`
+* `:]`
+* `<:` (the digraph for `[`)
+* `:>` (the digraph for `]`)
+* `%:` (the digraph for `#`)
+* `\u003a` (the UCN for `:`)
+
+One consideration is what format specifiers exist today. Notably, `"{::x}"` is a valid format specifier (e.g. used to format a range of integers in hex) and `"{:>5}"` is a valid format specifier (e.g. used to right-align a field with width `5`). Indeed, any sequence of characters _can_ be a valid format specifier. I think it is important that any existing format specifier be usable with string interpolation, otherwise users would find it surprising when something they try to do randomly doesn't work.
+
+To this end, I think the right design is to look for the _character_ `:`, not the _token_ `:`. That is, `"{a::b}"` should lex as the expression `a`, not `a::b`. If the latter is desired, it has to be parenthesized. This is a difference in the logic proposed in [@P3412R3], which looks specifically for the _token_ (not character) `:`. This is important because it allows for the most functionality:
 
 ::: std
 ```cpp
@@ -298,6 +313,31 @@ An alternative rule would: look for the character `:`, unless it's the token `::
 |`t"{(a)::b}"`|`"{::b}"`|`(a)`|
 
 This raises the question of how to handle whitespace like `t"{(a) ::b}"`. It's a more complex rule, and it depends on how frequently we expect top-level `::` and how good the error recovery is. It might be worthwhile, since I would expect top-level scoping to be significantly more common than having a format specifier that starts with a colon. Note that expressions like `decltype(a)::b` exist, which would have to be top-level parenthesized too, but that's a rare construction, so requiring it to be parenthesized is at best a minor inconvenience.
+
+Lastly, there's the question of UCNs. I'll deal with that in its own section.
+
+## Looking for `{` and `}`
+
+As with the question of `:`, there are multiple different ways to spell `{` and `}`, because of course there is:
+
+|Character|Digraph|UCN|
+|-|-|-|
+|`{`|`<%`|`\u007b`|
+|`}`|`%>`|`\u007d`|
+
+Which of these spellings can start a reflection-field and which of these spellings can end one? Let's start with other languages. Given a variable `v` with value `42`, what happens in...
+
+|Language|Expression|Result|
+|-|-|-|
+|Python|`f"\u007bv\u007d"`|`"{v}"`|
+|Rust|`format!("\u{007b}v\u{007d}");`{.rust}|`"42"`|
+|Ruby|`"#\u007bv\u007d"`|`"#{v}"`|
+
+In Rust, interpolation only accepts _identifiers_. But in Python and Ruby, *any* expression can be interpolated, the same as I'm proposing here. This makes the question of looking for `}` more complicated, since what do you do when you see the `\`? In an expression context, UCNs _can_ appear — but not to name characters in the basic character set. Like `}`.
+
+To me, the `{` and `}` that start and end a replacement-field is more akin to the braces around a compound-statement (in which a UCN is not allowed) than braces within a string. Which I suppose is an argument for supporting the digraph spellings too. But why? What is the point of supporting this? The goal is to be legible.
+
+To that end, this paper proposes that only literally the characters `{` and `}` start and end a replacement-field. Not the digraphs `<%` and `%>` and not the UCNs `\u007b` and `\u007d`. It is certainly implementable to support a different option. But there isn't a benefit to doing it, and other languages don't either.
 
 ## Handling Macro Expansion
 
@@ -784,6 +824,102 @@ I'd want to make sure this `R` here is also considered a template string for all
 * an attribute
 * an annotation
 * structural conformance: simply check for the presence of `fmt`, `string`, `num_interpolations`, and `interpolation`?
+
+## Supporting `gettext`
+
+One question that comes up is the question of translation. How do we support `gettext`? This is a difficult one for me to answer given my complete lack of any familiarity with `gettext`, but my understanding is there are two aspects to support: the tooling to pull out strings from the source code and the runtime translation layer.
+
+On the tooling side, without interpolation, `_("Hello {}")` is easily toolable since the macro wraps a string literal and this can be pulled out. However, with interpolation, `_(t"Hello {name}")` now wraps an _object_ (or an [expression-list](#object-vs-expression-list)), and either way that is more difficult to deal with. The preprocessing step will have to produce something useful here — or the tooling itself will have to parse the interpolated string. Now, the parsing rules aren't very complicated, so that's not a huge problem — but there will have to be changes on that side no matter what.
+
+On the runtime translation side, it raises the question of how exactly to design this facility. This paper throughout assumes that a template string object, `t"..."`, is produced by the implementation, and thus has its format string as a constant (proposed specifically as a `static consteval` function returning a `char const*`). Of course, if we're doing runtime translation, we're not going to end up with a constant... anything. If we want to support this syntax:
+
+::: std
+```cpp
+std::println(_(t"You have {count} new messages."));
+```
+:::
+
+Then the result is that macro has to take in a template string object and produce a new object that `std::println` understands and can directly format. Note that this differs from the [gettext guidance](https://www.gnu.org/software/gettext/manual/gettext.html#How-Marks-Appear-in-Sources) which tells you to use `std::vformat` directly instead of `std::format`. I'd like to aim higher.
+
+Now, the implementation I showed for `std::print` earlier was:
+
+::: std
+```cpp
+template <TemplateString S>
+auto println(S&& s) -> void {
+    auto& [...exprs] = s;
+    std::println(s.fmt(), exprs...);
+}
+```
+:::
+
+This... doesn't actually _require_ `fmt()` to be a constant. It either has to be constant or be the result of a call to `std::runtime_format`. One option ([example](https://compiler-explorer.com/z/Kf47P3E4n)) is to have the gettext macro do something like this:
+
+::: std
+```cpp
+template <std::template_string S>
+auto translate(S ts, Language lang) {
+    struct Translated {
+        std::string_view translated_fmt;
+        S s;
+
+        auto fmt() const { return std::runtime_format(translated_fmt); }
+        auto exprs() const -> S const& { return s; }
+    };
+
+    return Translated{
+        .translated_fmt = lookup_translation(ts.fmt(), lang),
+        .s = std::move(ts),
+    };
+}
+```
+:::
+
+And thus have two layers of concept:
+
+<table>
+<tr><th>Dynamic Template String</th><th>Static Template String</th></tr>
+<tr><td>
+
+* `s.fmt()` returns either `char const*` or `std::runtime_format`
+* `s.exprs()` returns some destructurable object
+
+</td><td>
+
+* `S::fmt()` must be static and return a constant `char const*`
+* `S::string(n)` must be static and return a constant `char const*`
+* `S::num_interpolations()` must be static and return a constant `size_t`
+* `S::interpolation(n)` must be static and return a constant `interpolation`
+* `s.exprs()` returns some destructurable object
+
+</td></tr>
+</table>
+
+Note that the static template string concept would subsume the dynamic one. The formatting use-cases (like `std::format`, `std::print`, and `spdlog::info`) only require a dynamic template string. Some of the more complex ones (like SQL and printf) require a static template string.
+
+There is something nice about this model. We make the objects more opaque. Instead of talking about the non-static data members of template string objects, we instead just say there's an `exprs()` member function that gives them to you. And this approach does make the runtime support for `gettext` (and possibly similar kinds of transformations) fairly straightforward, as you can see here and on compiler explorer.
+
+But also it adds inherent complexity. Now we have two kinds of template string objects that users have to reason about. But as far as I can tell, the only way to support runtime translation like this is to either introduce two kinds of template string objects or simply weaken the only one. Which reduces functionality.
+
+I cannot answer this question without a better understanding of `gettext`, how important it is to support for string interpolation, and whether this approach I've come up with even supports it.
+
+For this problem, [@P3412R3] has an easier path to supporting `gettext`, since in that paper an f-literal is an expression-list, and so it should be possible to preprocess your way to wrapping just the format string part. Given a function `translate` which returns a call to `std::runtime_format`, this would work:
+
+::: cmptable
+### Example Preprocessing Implementation
+```cpp
+#define _2(fmt, ...) \
+    translate(fmt) __VA_OPT__(,) __VA_ARGS__
+#define _(...) _2(__VA_ARGS__)
+#define FSTRING "You have {} new messages.", count
+std::println(_(FSTRING));
+```
+
+### Preprocesses Into
+```cpp
+std::println(translate("You have {} new messages.") , count);
+```
+:::
 
 ## Support for User-Defined Literals
 
