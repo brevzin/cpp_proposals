@@ -661,7 +661,7 @@ And the same for `access_context` in [meta.reflection.access.context]{.sref}/3:
 And the same for `data_member_options` in [meta.reflection.define.aggregate]{.sref}/1:
 
 ::: std
-[1]{.pnum} The classes `data_member_options` and `data_member_options​::@*name-type*@` are [consteval-only types ([basic.types.general]), and]{.rm} are not structural types ([temp.param]). [Values of both types are consteval-only values.]{.addu}
+[1]{.pnum} The classes `data_member_options` and `data_member_options​::@*name-type*@` [are consteval-only types ([basic.types.general]), and]{.rm} are not structural types ([temp.param]). [Values of both types are consteval-only values.]{.addu}
 :::
 
 
