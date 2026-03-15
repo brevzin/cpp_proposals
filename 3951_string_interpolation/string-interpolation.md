@@ -17,6 +17,8 @@ Since [@P3951R0]:
 * More detailed description of the difference between this paper and [@P3412R3], including a full section comparing [the object design to the expression-list design](#object-vs-expression-list).
 * Support for [user-defined literals](#support-for-user-defined-literals)
 * Added C# and Swift to other string interpolation languages, and a [SQL](#sql-statements) example.
+* Clearer discussion of how to look for [the colon](#looking-for) and [the `{` and `}`](#looking-for-and).
+* Adding discussion of how to support [gettext](#supporting-gettext)
 
 # Introduction
 
