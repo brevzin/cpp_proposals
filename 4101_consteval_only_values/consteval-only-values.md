@@ -429,7 +429,7 @@ Change [expr.const]{.sref}/5 to allow a `constexpr` variable to be constant-init
 * [#.3]{.pnum} if `x` has static or thread storage duration, `x` is constexpr-representable at the nearest point whose immediate scope is a namespace scope that follows the initializing declaration of `v`.
 :::
 
-Change the [@CWG2765] definition of constexpr-unknown representation in [expr.const]/x:
+Change the [@CWG2765] definition of constexpr-unknown representation in [expr.const]{.sref}/x:
 
 ::: std
 [x]{.pnum} A type has *constexpr-unknown representation* if it
