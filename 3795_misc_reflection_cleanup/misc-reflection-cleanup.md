@@ -1,6 +1,6 @@
 ---
 title: "Miscellaneous Reflection Cleanup"
-document: P3795R1
+document: D3795R2
 date: today
 audience: CWG, LWG
 author:
@@ -12,6 +12,8 @@ status: progress
 ---
 
 # Revision History
+
+Since [@P3795R1], specified non-`void` type for function parameter annotations.
 
 Since [@P3795R0], fixing missing wording in `annotations_of` and `data_member_spec` (including annotations), rebasing the wording. No longer pursuing the `is_inline`, `is_constexpr`, `is_consteval` functions, those have been removed from this paper.
 
@@ -182,7 +184,7 @@ But one thing that `std::meta::exception` gives you is a `from()` accessor that 
 Extend what an annotation can represent in [dcl.attr.annotation]{.sref}:
 
 ::: std
-[1]{.pnum} An annotation may be applied to any declaration of a type, type alias, variable, function, [function parameter,]{.addu} namespace, enumerator, `$base-specifier$`, or non-static data member.
+[1]{.pnum} An annotation may be applied to any declaration of a type, type alias, variable, function, [function parameter of non-`void` type,]{.addu} namespace, enumerator, `$base-specifier$`, or non-static data member.
 
 ::: addu
 ::: note
