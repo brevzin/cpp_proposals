@@ -144,7 +144,7 @@ constexpr std::span<std::meta::info const> s = arr;
 
 Status quo: this is fine. And it is very important that this work because this is our workaround for the lack of non-transient constexpr allocation via `std::define_static_array()`, so approximately everybody who uses reflection will run into needing this.
 
-But if `std::info const*` is no longer a consteval-only type, then `std::span<std::meta::info const>` wouldn't be either, and again we violate the "permitted result" rule because we have a non-consteval-only type with a constituent value of pointer type that points to an object of consteval-only type.
+But if `std::meta::info const*` is no longer a consteval-only type, then `std::span<std::meta::info const>` wouldn't be either, and again we violate the "permitted result" rule because we have a non-consteval-only type with a constituent value of pointer type that points to an object of consteval-only type.
 
 ## What is the Conclusion?
 
@@ -548,7 +548,7 @@ An aggregate initialization is an immediate [invocation]{.rm} [expression]{.addu
 :::
 
 
-Revert the allowance for `virtual` functions in [class.virtual]{.sref}/18 added by [@CWG3117] [This allowance was never used in `meta::exception`, its `what()` is still declared `constexpr` — that is [@LWG4513] which is on longer a defect]{.draftnote}:
+Revert the allowance for `virtual` functions in [class.virtual]{.sref}/18 added by [@CWG3117] [This allowance was never used in `meta::exception`, its `what()` is still declared `constexpr` — that is [@LWG4513] which is no longer a defect]{.draftnote}:
 
 ::: std
 [18]{.pnum} A [class with a]{.rm} `consteval` virtual function [shall not override]{.addu} [that overrides]{.rm} a virtual function that is not `consteval` [shall have consteval-only type ([basic.types.general])]{.rm}.
