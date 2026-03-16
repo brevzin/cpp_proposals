@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-03-15" />
+  <meta name="dcterms.date" content="2026-03-16" />
   <title>Consteval-only Values for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ C++26</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-03-15</td>
+    <td>2026-03-16</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1474,28 +1474,52 @@ invocation of an immediate function or</span></li>
 <p>An aggregate initialization is an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">expression</span> if it evaluates a default member
 initializer that has a subexpression that is an immediate-escalating
 expression.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">25</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">24</a></span>
 A potentially-evaluated expression or conversion is
 <em>immediate-escalating</em> if it is neither initially in an immediate
 function context nor a subexpression of an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">expression</span>, and</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_66" id="pnum_66">(25.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_66" id="pnum_66">(24.1)</a></span>
 it is an <code class="sourceCode cpp"><em>id-expression</em></code> or
 <code class="sourceCode cpp"><em>splice-expression</em></code> that
 designates an immediate function<span class="addu">, immediate object,
 or immediate variable</span>,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_67" id="pnum_67">(25.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_67" id="pnum_67">(24.2)</a></span>
 it is an immediate <span class="rm" style="color: #bf0303"><del>invocation</del></span> <span class="addu">expression</span> that is not a constant expression,
 or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_68" id="pnum_68">(25.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_68" id="pnum_68">(24.3)</a></span>
 <span class="rm" style="color: #bf0303"><del>it is of consteval-only
 type ([basic.types.general])</del></span> <span class="addu">it has
 consteval-only value</span>.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_69" id="pnum_69">26</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_69" id="pnum_69">25</a></span>
 An <em>immediate-escalating</em> function is […]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">27</a></span>
-An <em>immediate function</em> is […]</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">26</a></span>
+An <em>immediate function</em> is a function that is <span class="addu">either</span></p>
+<ul>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">(26.1)</a></span>
+declared with the
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier, <span class="addu">or</span></p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_72" id="pnum_72">(26.2)</a></span>
+<span class="rm" style="color: #bf0303"><del>an immediate-escalating
+function whose type is consteval-only ([basic.types.general]),
+or</del></span></p></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_73" id="pnum_73">(26.3)</a></span>
+an immediate-escalating function
+<code class="sourceCode cpp"><em>F</em></code> whose function body
+contains <span class="rm" style="color: #bf0303"><del>either</del></span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_74" id="pnum_74">(26.3.1)</a></span>
+an immediate-escalating expression <span class="rm" style="color: #bf0303"><del>or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_75" id="pnum_75">(26.3.2)</a></span>
+<span class="rm" style="color: #bf0303"><del>a definition of a
+non-constexpr variable with consteval-only type</del></span></li>
+</ul>
+<p>whose innermost enclosing non-block scope is
+<code class="sourceCode cpp"><em>F</em></code>’s function parameter
+scope.</p></li>
+</ul>
 </blockquote>
 </div>
 <p>Revert the allowance for
@@ -1510,7 +1534,7 @@ is still declared
 ]</span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">18</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_76" id="pnum_76">18</a></span>
 A <span class="rm" style="color: #bf0303"><del>class with a</del></span>
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 virtual function <span class="addu">shall not override</span> <span class="rm" style="color: #bf0303"><del>that overrides</del></span> a
@@ -1659,7 +1683,7 @@ shall be a complete type or
 in <span>21.4.4 <a href="https://wg21.link/meta.reflection.exception">[meta.reflection.exception]</a></span>/1:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_72" id="pnum_72">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_77" id="pnum_77">1</a></span>
 Reflection functions throw exceptions of type <code class="sourceCode cpp">meta​<span class="op">::</span>​exception</code> to
 signal an error. <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">meta​::​exception</code></span>
 is a consteval-only type.</del></span> <span class="addu">Values of type
@@ -1671,7 +1695,7 @@ are consteval-only values.</span></p>
 in <span>21.4.8 <a href="https://wg21.link/meta.reflection.access.context">[meta.reflection.access.context]</a></span>/3:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_73" id="pnum_73">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_78" id="pnum_78">3</a></span>
 The type <code class="sourceCode cpp">access_context</code> is a
 structural, <span class="rm" style="color: #bf0303"><del>consteval-only,</del></span> non-aggregate
 type. <span class="addu">Values of type
@@ -1684,7 +1708,7 @@ values.</span></p>
 <a href="https://wg21.link/meta.reflection.define.aggregate">[meta.reflection.define.aggregate]</a></span>/1:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_74" id="pnum_74">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_79" id="pnum_79">1</a></span>
 The classes <code class="sourceCode cpp">data_member_options</code> and
 <code class="sourceCode cpp">data_member_options​<span class="op">::</span><em>name-type</em></code>
 <span class="rm" style="color: #bf0303"><del>are consteval-only types
@@ -1700,12 +1724,12 @@ now handled in [expr.const]:</p>
 <div class="std">
 <blockquote>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_75" id="pnum_75">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_80" id="pnum_80">2</a></span>
 <em>Mandates</em>: Neither <code class="sourceCode default">To</code>
 nor <code class="sourceCode default">From</code> are consteval-only
 types ([basic.types.general]).</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_76" id="pnum_76">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_81" id="pnum_81">3</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">To</code> and
 <code class="sourceCode cpp">From</code> do not have constexpr-unknown
 representation ([expr.const]).</p>

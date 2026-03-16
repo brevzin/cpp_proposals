@@ -527,15 +527,24 @@ An [invocation]{.rm} [expression]{.addu} is an [_immediate invocation_]{.rm} [_i
 
 An aggregate initialization is an immediate [invocation]{.rm} [expression]{.addu} if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
 
-[25]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate [invocation]{.rm} [expression]{.addu}, and
+[24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate [invocation]{.rm} [expression]{.addu}, and
 
 * [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function[, immediate object, or immediate variable]{.addu},
 * [#.2]{.pnum} it is an immediate [invocation]{.rm} [expression]{.addu} that is not a constant expression, or
 * [#.3]{.pnum} [it is of consteval-only type ([basic.types.general])]{.rm} [it has consteval-only value]{.addu}.
 
-[26]{.pnum} An *immediate-escalating* function is [...]
+[25]{.pnum} An *immediate-escalating* function is [...]
 
-[27]{.pnum} An *immediate function* is [...]
+[26]{.pnum} An *immediate function* is a function that is [either]{.addu}
+
+* [#.1]{.pnum} declared with the `consteval` specifier, [or]{.addu}
+* [#.#]{.pnum} [an immediate-escalating function whose type is consteval-only ([basic.types.general]), or]{.rm}
+* [#.#]{.pnum} an immediate-escalating function `$F$` whose function body contains [either]{.rm}
+
+  * [#.#.1]{.pnum}  an immediate-escalating expression [or]{.rm}
+  * [#.#.#]{.pnum}  [a definition of a non-constexpr variable with consteval-only type]{.rm}
+
+  whose innermost enclosing non-block scope is `$F$`'s function parameter scope.
 :::
 
 
