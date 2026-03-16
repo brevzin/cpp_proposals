@@ -56,7 +56,7 @@ void f(S<int>*);
 ```
 :::
 
-Consteval-only types include function types. Does the above need to instantiate `S` to determine whether `S` is consteval-only, because the completeness of `S<int>` affects the semantics of the problem? Currently, we do _not_ need to instantiate `S` there, and indeed lots of code relies on this lack of instantiation.
+Consteval-only types include function types. Does the above need to instantiate `S` to determine whether `S` is consteval-only, because the completeness of `S<int>` affects the semantics of the program? Currently, we do _not_ need to instantiate `S` there, and indeed lots of code relies on this lack of instantiation.
 
 ## Consteval-only Types are Abstract Types
 
@@ -131,7 +131,7 @@ For `p`, `&r` is an immediate-escalating expression (because `r` has consteval-o
     * [#.#.#.#]{.pnum} no constituent reference refers to an object whose complete object is of consteval-only type.
 :::
 
-Status quo, we don't go into 21.2.5 because `std::meta::info const*` is a consteval-only type. But it weren't, we do, and we violate 21.2.5.2 because `&r` points to an object whose complete type is consteval-only. Which, great, `p` is rejected.
+Status quo, we don't go into 21.2.5 because `std::meta::info const*` is a consteval-only type. But if it weren't, we do, and we violate 21.2.5.2 because `&r` points to an object whose complete type is consteval-only. Which, great, `p` is rejected.
 
 _However_, `q` is _also_ rejected for the exact same reason. The declaration of `q` is also ill-formed. And this is a real problem because:
 
