@@ -375,6 +375,23 @@ This internally constructs a `constexpr` variable of type `std::vector<std::meta
 
 The consteval-only value model gives us a clear path to simply accepting the above formulation, without having to either wait for a general solution or require the user to wrap every call in `define_static_array`. We are not proposing this for C++26 though.
 
+## Implementation Experience
+
+Barry implemented the consteval-only value approach in [his fork of the p2996 fork of clang](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:consteval-variable-2).
+
+This is not exactly the same design as in this paper. The only difference is that rather than having _implicit_ immediate variables, it supports/enforces _explicit_ immediate variables. That is:
+
+::: std
+```cpp
+// status quo: well-formed
+// this paper: well-formed (r is an implicit immediate variable)
+// implementation: error, r has to be a consteval variable because it has consteval-only value
+constexpr std::meta::info r = ^^int;
+```
+:::
+
+But that's it — and you can see that a lot of churn in the test cases is simply changing variables from being declared `constexpr` to being declared `consteval`, which this paper isn't proposing. This particular aspect is a pretty small part of the whole implementation though, as compared to enforcing all the other rules around consteval-only values and immediate variables.
+
 # Proposal
 
 We propose to _replace_ the existing consteval-only type model with a consteval-only value model, where a consteval-only value is defined as being:
