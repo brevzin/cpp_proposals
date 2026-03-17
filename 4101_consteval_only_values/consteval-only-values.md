@@ -9,7 +9,7 @@ author:
     - name: Peter Dimov
       email: <pdimov@gmail.com>
     - name: Daveed Vandevoorde
-      email: <daveed@edg.com>
+      email: <dvandevoorde@nvidia.com>
     - name: Dan Katz
       email: <katzdm@gmail.com>
 toc: true
@@ -379,7 +379,7 @@ The consteval-only value model gives us a clear path to simply accepting the abo
 
 Barry implemented the consteval-only value approach in [his fork of the p2996 fork of clang](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:consteval-variable-2).
 
-This is not exactly the same design as in this paper. The only difference is that rather than having _implicit_ immediate variables, it supports/enforces _explicit_ immediate variables. That is:
+This is not exactly the same design as in this paper: the difference is that rather than having _implicit_ immediate variables, it supports/enforces _explicit_ immediate variables. That is:
 
 ::: std
 ```cpp
@@ -676,7 +676,7 @@ Replace the reference to consteval-only type to consteval-only value in [meta.re
 
 ::: std
 [1]{.pnum} Reflection functions throw exceptions of type `meta​::​exception` to signal an error.
-[`meta​::​exception` is a consteval-only type.]{.rm} [Values of type `meta::exception` are consteval-only values.]{.addu}
+[`meta​::​exception` is a consteval-only type.]{.rm}
 :::
 
 And the same for `access_context` in [meta.reflection.access.context]{.sref}/3:
