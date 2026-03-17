@@ -473,7 +473,7 @@ Leading into the definition of *constant expression*, introduce the concept of c
 * [a.#]{.pnum} a pointer that designates an immediate object, or
 * [a.#]{.pnum} an object where any constituent value is a consteval-only value or any constituent reference refers to an immediate function or immediate object.
 
-[b]{.pnum} An _immediate variable_ is a `constexpr` variable whose initialization results in an immediate constant expression that is not a constant expression. An _immediate object_ is an object declared by an immediate variable.
+[b]{.pnum} An _immediate variable_ is a `constexpr` variable whose initialization results in an immediate constant expression that is not a constant expression. An _immediate object_ is an object whose complete object has consteval-only value.
 
 [c]{.pnum} Each expression `$E$` that odr-uses an immediate variable `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, no diagnostic is required unless either `$D1$` or `$D2$` is reachable from the other.
 :::
@@ -537,18 +537,19 @@ Lastly, still in [expr.const]{.sref}, reword immediate-escalation in terms of co
 * [#.#]{.pnum} it is a subexpression of a manifestly constant-evaluated expression or conversion, or
 * [#.#]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the `$compound-statement$` of a consteval if statement ([stmt.if]).
 
-An [invocation]{.rm} [expression]{.addu} is an [_immediate invocation_]{.rm} [_immediate expression_]{.addu} if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
+An [invocation]{.rm} [expression]{.addu} is [an _immediate invocation_]{.rm} [a _consteval demand_]{.addu} if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
 
-* [#.#]{.pnum} [it is a potentially-evaluated explicit or implicit invocation of an immediate function or]{.addu}
-* [#.#]{.pnum} [it has consteval-only value.]{.addu}
+* [#.#]{.pnum} [it is a potentially-evaluated explicit or implicit invocation of an immediate function,]{.addu}
+* [#.#]{.pnum} [it is a _reflect-expression_, or]{.addu}
+* [#.#]{.pnum} [it is a manifestly constant-evaluated expression whose result has consteval-only value.]{.addu}
 
-An aggregate initialization is an immediate [invocation]{.rm} [expression]{.addu} if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
+An aggregate initialization is [an immediate invocation]{.rm} [a consteval demand]{.addu} if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
 
-[24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate [invocation]{.rm} [expression]{.addu}, and
+[24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of [an immediate invocation]{.rm} [a consteval demand]{.addu}, and
 
-* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function[, immediate object, or immediate variable]{.addu},
-* [#.2]{.pnum} it is an immediate [invocation]{.rm} [expression]{.addu} that is not a constant expression, or
-* [#.3]{.pnum} [it is of consteval-only type ([basic.types.general])]{.rm} [it has consteval-only value]{.addu}.
+* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function[, immediate object, or immediate variable, or]{.addu}
+* [#.2]{.pnum} it is [an immediate invocation]{.rm} [a consteval demand]{.addu} that is not a constant expression[, or]{.rm} [.]{.addu}
+* [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm}
 
 [25]{.pnum} An *immediate-escalating* function is [...]
 
