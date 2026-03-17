@@ -537,9 +537,9 @@ Lastly, still in [expr.const]{.sref}, reword immediate-escalation in terms of co
 * [#.#]{.pnum} it is a subexpression of a manifestly constant-evaluated expression or conversion, or
 * [#.#]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the `$compound-statement$` of a consteval if statement ([stmt.if]).
 
-An [invocation]{.rm} [expression]{.addu} is [an _immediate invocation_]{.rm} [a _consteval demand_]{.addu} if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
+[An invocation is an _immediate invocation_]{.rm} [A potentially-evaluated expression is a _consteval demand_]{.addu} if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
 
-* [#.#]{.pnum} [it is a potentially-evaluated explicit or implicit invocation of an immediate function,]{.addu}
+* [#.#]{.pnum} [it is an explicit or implicit invocation of an immediate function,]{.addu}
 * [#.#]{.pnum} [it is a _reflect-expression_, or]{.addu}
 * [#.#]{.pnum} [it is a manifestly constant-evaluated expression whose result has consteval-only value.]{.addu}
 
