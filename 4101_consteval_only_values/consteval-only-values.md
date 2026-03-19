@@ -468,7 +468,7 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 ::: addu
 [a]{.pnum} A value is *consteval-only* if it is either
 
-* [a.1]{.pnum} a reflection value ([basic.fundamental]) that is not the null reflection or
+* [a.1]{.pnum} a reflection value ([basic.fundamental]) or
 * [a.#]{.pnum} a pointer or pointer-to-member that points to either an immediate object or an immediate function.
 
 [b]{.pnum} An object is an *immediate object* if its complete object has either
@@ -546,7 +546,9 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
 [24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and [either]{.addu}
 
 * [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [or an immediate object, or]{.addu}
-* [#.2]{.pnum} it is an immediate invocation that [either]{.addu} is not a constant expression[,]{.rm} or [is an immediate constant expression.]{.addu}
+* [#.2]{.pnum} it is an immediate invocation that [either]{.addu}
+  * [#.#.#]{.pnum} is not a constant expression, or
+  * [#.#.#]{.pnum} [is an immediate constant expression.]{.addu}
 * [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm}
 
 [25]{.pnum} An *immediate-escalating* function is [...]
