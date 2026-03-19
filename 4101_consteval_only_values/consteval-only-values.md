@@ -479,7 +479,7 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 :::
 [21]{.pnum} A _constant expression_ is either
 
-* [21.1]{.pnum} a glvalue core constant expression [`$E$` for which ]{.rm} [that refers to a an object or function]{.addu}, or
+* [21.1]{.pnum} a glvalue core constant expression [`$E$` for which ]{.rm} [that refers to an object or function]{.addu}, or
 
   ::: rm
     * [21.1.1]{.pnum} `$E$` refers to a non-immediate function,
