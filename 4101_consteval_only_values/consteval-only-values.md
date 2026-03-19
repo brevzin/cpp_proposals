@@ -524,7 +524,7 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 [d]{.pnum} For every immediate object `$O$` introduced by a variable `$V$`, one of the following shall hold:
 
 * [d.1]{.pnum} `$V$` is `constexpr`; or
-* [d.#]{.pnum} the lifetime of `$O$` begins and ends during the evaluation of a manifestly constant-evaluated expression.
+* [d.#]{.pnum} the lifetime of `$O$` begins and ends within an immediate function context.
 
 Letting `$V$` be a variable that declares or refers to an immediate object `$O$`, each expression `$E$` that odr-uses `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, a diagnostic is only required if either `$D1$` or `$D2$` is reachable from the other.
 :::
