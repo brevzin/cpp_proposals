@@ -430,12 +430,12 @@ Every function of consteval-only type shall be an immediate function ([expr.cons
 :::
 :::
 
-Change [expr.const]{.sref}/5 to allow a `constexpr` variable to be constant-initializeable even if it's just an immediate constant expression (to be introduced shortly):
+Do not change the definition of constant-initializable in [expr.const]{.sref}/5:
 
 ::: std
 [5]{.pnum} A variable `v` is *constant-initializable* if
 
-* [#.1]{.pnum}  the full-expression of its initialization is a[n immediate]{.addu} constant expression when interpreted as a *constant-expression* with all contract assertions using the ignore evaluation semantic ([basic.contract.eval]) [and is a constant expression if `v` is not declared `constexpr`]{.addu},
+* [#.1]{.pnum}  the full-expression of its initialization is a constant expression when interpreted as a *constant-expression* with all contract assertions using the ignore evaluation semantic ([basic.contract.eval]),
 
   [Within this evaluation, `std​::​is_constant_evaluated()` ([meta.const.eval]) returns `true`.]{.note2}
 
@@ -462,37 +462,24 @@ Change the [@CWG2765] definition of constexpr-unknown representation in [expr.co
 * [x.#]{.pnum} has a base class or a non-static member whose type has constexpr-unknown representation.
 :::
 
-Leading into the definition of *constant expression*, introduce the concept of consteval-only value in [expr.const]{.sref}:
+Introduce the concepts of consteval-only value, immediate object, and immediate constant expression around [expr.const]{.sref}/21:
 
 ::: std
 ::: addu
-[a]{.pnum} A *consteval-only value* is:
+[a]{.pnum} A value is *consteval-only* if it is either
 
-* [a.1]{.pnum} a reflection value ([basic.fundamental]),
-* [a.#]{.pnum} a pointer or pointer-to-member that designates an immediate function,
-* [a.#]{.pnum} a pointer that designates an immediate object, or
-* [a.#]{.pnum} an object where any constituent value is a consteval-only value or any constituent reference refers to an immediate function or immediate object.
+* [a.1]{.pnum} a reflection value ([basic.fundamental]) that is not the null reflection or
+* [a.#]{.pnum} a pointer or pointer-to-member that points to either an immediate object o an immediate function.
 
-[b]{.pnum} An _immediate variable_ is a `constexpr` variable whose initialization results in an immediate constant expression that is not a constant expression. An _immediate object_ is an object whose complete object has consteval-only value.
+[b]{.pnum} An object is an *immediate object* if its complete object hsa either
 
-[c]{.pnum} Each expression `$E$` that odr-uses an immediate variable `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, no diagnostic is required unless either `$D1$` or `$D2$` is reachable from the other.
+* [b.1]{.pnum} a constituent value that is consteval-only or
+* [b.2]{.pnum} a constituent reference that refers to either an immediate object or an immediate function.
+
 :::
-:::
-
-And then we split the definition of _constant expression_ into a weaker form called an _immediate constant expression_, which allows consteval-only values in [expr.const]{.sref} [The removed example declaring `b` is now well-formed — `d` is an immediate variable and `b` refers to it, making it also an immediate variable.]{.draftnote}:
-
-::: std
-::: addu
-[d]{.pnum} An _immediate constant expression_ is either a glvalue core constant expression that refers to an object or function, or a prvalue core constant expression whose value satisfies the following constraints:
-
-* [d.1]{.pnum} each constituent reference refers to an object or a function,
-* [d.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), and
-* [d.3]{.pnum} no constituent value of pointer type has an invalid pointer value ([basic.compound]).
-:::
-
 [21]{.pnum} A _constant expression_ is either
 
-* [21.1]{.pnum} a glvalue [core]{.rm} [immediate]{.addu} constant expression [`$E$` for which ]{.rm} [that refers to a non-immediate object or a non-immediate function]{.addu}, or
+* [21.1]{.pnum} a glvalue core constant expression [`$E$` for which ]{.rm} [that refers to a an object or function]{.addu}, or
 
   ::: rm
     * [21.1.1]{.pnum} `$E$` refers to a non-immediate function,
@@ -514,18 +501,34 @@ And then we split the definition of _constant expression_ into a weaker form cal
   :::
   :::
 
-* [21.2]{.pnum} a prvalue [core]{.rm} [immediate]{.addu} constant expression whose result object ([basic.lval]) [satisfies the following constraints]{.rm} [does not have consteval-only value.]{.addu}
+* [21.2]{.pnum} a prvalue core constant expression whose result object ([basic.lval]) satisfies the following constraints:
+
+    * [21.2.1]{.pnum} each constituent reference refers to an object or [a non-immediate]{.rm} function,
+    * [21.2.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), [and]{.addu}
+    * [21.2.3]{.pnum} no constituent value of pointer type is [a pointer to an immediate function or]{.rm} an invalid pointer value ([basic.compound])[.]{.addu} [, and]{.rm}
 
   ::: rm
-    * [21.2.1]{.pnum} each constituent reference refers to an object or a non-immediate function,
-    * [21.2.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]),
-    * [21.2.3]{.pnum} no constituent value of pointer type is a pointer to an immediate function or an invalid pointer value ([basic.compound]), and
     * [21.2.4]{.pnum} no constituent value of pointer-to-member type designates an immediate function.
     * [21.2.5]{.pnum} unless the value is of consteval-only type,
         - [#.#.#.#]{.pnum} no constituent value of pointer-to-member type points to a direct member of a consteval-only class type
         - [#.#.#.#]{.pnum} no constituent value of pointer type points to or past an object whose complete object is of consteval-only type, and
         - [#.#.#.#]{.pnum} no constituent reference refers to an object whose complete object is of consteval-only type.
   :::
+
+::: addu
+[c]{.pnum} A constant expression is an *immediate constant expression* if it is either
+
+* [c.1]{.pnum} a glvalue that refers to an immediate object or an immediate function, or
+* [c.#]{.pnum} a prvalue whose result object is an immediate object.
+
+[d]{.pnum} For every immediate object `$O$` introduced by a variable `$V$`, one of the following shall hold:
+
+* [d.1]{.pnum} `$V$` is `constexpr`; or
+* [d.#]{.pnum} the lifetime of `$O$` begins and ends during the evaluation of a manifestly constant-evaluated expression.
+
+Letting `$V$` be a variable that declares or refers to an immediate object `$O$`, each expression `$E$` that odr-uses `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, a diagnostic is only required if either `$D1$` or `$D2$` is reachable from the other.
+:::
+
 :::
 
 Lastly, still in [expr.const]{.sref}, reword immediate-escalation in terms of consteval-only values:
@@ -537,18 +540,12 @@ Lastly, still in [expr.const]{.sref}, reword immediate-escalation in terms of co
 * [#.#]{.pnum} it is a subexpression of a manifestly constant-evaluated expression or conversion, or
 * [#.#]{.pnum} its enclosing statement is enclosed ([stmt.pre]) by the `$compound-statement$` of a consteval if statement ([stmt.if]).
 
-[An invocation is an _immediate invocation_]{.rm} [A potentially-evaluated expression is a _consteval demand_]{.addu} if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and]{.rm} is not in an immediate function context [and either]{.addu}
+An invocation is an _immediate invocation_ if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An aggregate initialization is an immediate invocation if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
 
-* [#.#]{.pnum} [it is an explicit or implicit invocation of an immediate function,]{.addu}
-* [#.#]{.pnum} [it is a _reflect-expression_, or]{.addu}
-* [#.#]{.pnum} [it is a manifestly constant-evaluated expression whose result has consteval-only value.]{.addu}
+[24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and [either]{.addu}
 
-An aggregate initialization is [an immediate invocation]{.rm} [a consteval demand]{.addu} if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
-
-[24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of [an immediate invocation]{.rm} [a consteval demand]{.addu}, and
-
-* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function[, immediate object, or immediate variable, or]{.addu}
-* [#.2]{.pnum} it is [an immediate invocation]{.rm} [a consteval demand]{.addu} that is not a constant expression[, or]{.rm} [.]{.addu}
+* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [or an immediate object, or]{.addu}
+* [#.2]{.pnum} it is an immediate invocation that is not a constant expression[, or]{.rm} [.]{.addu}
 * [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm}
 
 [25]{.pnum} An *immediate-escalating* function is [...]
