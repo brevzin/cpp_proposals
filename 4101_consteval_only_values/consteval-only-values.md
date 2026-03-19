@@ -521,10 +521,11 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 * [c.1]{.pnum} a glvalue that refers to an immediate object or an immediate function, or
 * [c.#]{.pnum} a prvalue whose result object is an immediate object.
 
-[d]{.pnum} For every immediate object `$O$` introduced by a variable `$V$`, one of the following shall hold:
+[d]{.pnum} Every immediate object shall be
 
-* [d.1]{.pnum} `$V$` is `constexpr`; or
-* [d.#]{.pnum} the lifetime of `$O$` begins and ends within an immediate function context.
+* [d.1]{.pnum} the object associated with a constexpr variable or a subobject thereof,
+* [#.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
+* [#.#]{.pnum} an object whose lifetime begins and ends within an immediate function context.
 
 Letting `$V$` be a variable that declares or refers to an immediate object `$O$`, each expression `$E$` that odr-uses `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, a diagnostic is only required if either `$D1$` or `$D2$` is reachable from the other.
 :::
