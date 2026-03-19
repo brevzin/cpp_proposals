@@ -469,9 +469,9 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 [a]{.pnum} A value is *consteval-only* if it is either
 
 * [a.1]{.pnum} a reflection value ([basic.fundamental]) that is not the null reflection or
-* [a.#]{.pnum} a pointer or pointer-to-member that points to either an immediate object o an immediate function.
+* [a.#]{.pnum} a pointer or pointer-to-member that points to either an immediate object or an immediate function.
 
-[b]{.pnum} An object is an *immediate object* if its complete object hsa either
+[b]{.pnum} An object is an *immediate object* if its complete object has either
 
 * [b.1]{.pnum} a constituent value that is consteval-only or
 * [b.2]{.pnum} a constituent reference that refers to either an immediate object or an immediate function.
