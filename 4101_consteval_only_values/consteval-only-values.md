@@ -545,7 +545,7 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
 [24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and [either]{.addu}
 
 * [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [or an immediate object, or]{.addu}
-* [#.2]{.pnum} it is an immediate invocation that is not a constant expression[, or]{.rm} [.]{.addu}
+* [#.2]{.pnum} it is an immediate invocation that [either]{.addu} is not a constant expression[,]{.rm} or [is an immediate constant expression.]{.addu}
 * [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm}
 
 [25]{.pnum} An *immediate-escalating* function is [...]
