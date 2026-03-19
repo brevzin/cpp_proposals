@@ -430,21 +430,6 @@ Every function of consteval-only type shall be an immediate function ([expr.cons
 :::
 :::
 
-Do not change the definition of constant-initializable in [expr.const]{.sref}/5:
-
-::: std
-[5]{.pnum} A variable `v` is *constant-initializable* if
-
-* [#.1]{.pnum}  the full-expression of its initialization is a constant expression when interpreted as a *constant-expression* with all contract assertions using the ignore evaluation semantic ([basic.contract.eval]),
-
-  [Within this evaluation, `std​::​is_constant_evaluated()` ([meta.const.eval]) returns `true`.]{.note2}
-
-  [The initialization, when evaluated, can still evaluate contract assertions with other evaluation semantics, resulting in a diagnostic or ill-formed program if a contract violation occurs.]{.note3}
-
-* [#.2]{.pnum} immediately after the initializing declaration of `v`, the object or reference `x` declared by `v` is constexpr-representable, and
-* [#.3]{.pnum} if `x` has static or thread storage duration, `x` is constexpr-representable at the nearest point whose immediate scope is a namespace scope that follows the initializing declaration of `v`.
-:::
-
 Change the [@CWG2765] definition of constexpr-unknown representation in [expr.const]{.sref}/x:
 
 ::: std
@@ -475,6 +460,14 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 
 * [b.1]{.pnum} a constituent value that is consteval-only or
 * [b.2]{.pnum} a constituent reference that refers to either an immediate object or an immediate function.
+
+[c]{.pnum} Every immediate object shall be
+
+* [d.1]{.pnum} the object associated with a constexpr variable or a subobject thereof,
+* [#.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
+* [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a core constant expression.
+
+Letting `$V$` be a variable that declares or refers to an immediate object `$O$`, each expression `$E$` that odr-uses `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, a diagnostic is only required if either `$D1$` or `$D2$` is reachable from the other.
 
 :::
 [21]{.pnum} A _constant expression_ is either
@@ -516,18 +509,10 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
   :::
 
 ::: addu
-[c]{.pnum} A constant expression is an *immediate constant expression* if it is either
+[d]{.pnum} A constant expression is an *immediate constant expression* if it is either
 
-* [c.1]{.pnum} a glvalue that refers to an immediate object or an immediate function, or
-* [c.#]{.pnum} a prvalue whose result object is an immediate object.
-
-[d]{.pnum} Every immediate object shall be
-
-* [d.1]{.pnum} the object associated with a constexpr variable or a subobject thereof,
-* [#.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
-* [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a core constant expression.
-
-Letting `$V$` be a variable that declares or refers to an immediate object `$O$`, each expression `$E$` that odr-uses `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, a diagnostic is only required if either `$D1$` or `$D2$` is reachable from the other.
+* [d.1]{.pnum} a glvalue that refers to an immediate object or an immediate function, or
+* [d.#]{.pnum} a prvalue whose result object is an immediate object.
 :::
 
 :::
