@@ -528,13 +528,13 @@ Lastly, still in [expr.const]{.sref}, reword immediate-escalation in terms of co
 
 An invocation is an _immediate invocation_ if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An aggregate initialization is an immediate invocation if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
 
-[24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and [either]{.addu}
+[24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and
 
-* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [or an immediate object, or]{.addu}
+* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [,]{.rm} [or an immediate object;]{.addu}
 * [#.2]{.pnum} it is an immediate invocation that [either]{.addu}
   * [#.#.#]{.pnum} is not a constant expression, or
-  * [#.#.#]{.pnum} [is an immediate constant expression.]{.addu}
-* [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm}
+  * [#.#.#]{.pnum} [is an immediate constant expression; or]{.addu}
+* [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm} [it initializes an object of type `$cv$ std::meta::info`.]{.addu}
 
 [25]{.pnum} An *immediate-escalating* function is [...]
 
