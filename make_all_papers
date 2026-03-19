@@ -9,7 +9,6 @@ from typing import Any
 from bs4 import BeautifulSoup
 import jinja2
 import attrs
-from pathlib import Path
 
 def get_title(filename):
     with open(filename) as f:
@@ -105,8 +104,7 @@ initial_status = {
     1630: "accepted",
 }
 
-cur_path = Path(__file__).parent
-template = jinja2.Template(open(cur_path / "all_papers.tpl").read())
+template = jinja2.Template(open("all_papers.tpl").read())
 numbered_papers = []
 
 numbered_papers = {
@@ -149,7 +147,7 @@ for num in sorted(papers):
 
 print(
     template.render(numbered_papers),
-    file=open(cur_path / "all_papers.html", "w")
+    file=open("all_papers.html", "w")
 )
 
 # out = open('all_papers.md', 'w')
