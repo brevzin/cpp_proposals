@@ -463,9 +463,9 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 
 [c]{.pnum} Every immediate object shall be
 
-* [d.1]{.pnum} the object associated with a constexpr variable or a subobject thereof,
-* [#.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
-* [#.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a manifestly constant-evaluated expression.
+* [c.1]{.pnum} the object associated with a constexpr variable or a subobject thereof,
+* [c.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
+* [c.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a manifestly constant-evaluated expression.
 
 Letting `$V$` be a variable that declares or refers to an immediate object `$O$`, each expression `$E$` that odr-uses `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, a diagnostic is only required if either `$D1$` or `$D2$` is reachable from the other.
 
