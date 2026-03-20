@@ -205,7 +205,7 @@ The new way of thinking about these declarations is:
 * For `p`: `&r` is a consteval-only value (it is a pointer to an immediate variable), so this is an immediate constant expression. `p` is not declared `constexpr`, so its initializer is not allowed to have consteval-only value, so this is ill-formed.
 * For `q`: As above, `&r` is a consteval-only value, but because `q` is declared `constexpr`, it is allowed to be initialized with an immediate constant expression. It becomes an immediate variable.
 
-Similar reasoning shows that this other example, both `arr` and `s` are valid declarations and become immediate variables.
+Similar reasoning shows that in this other example, both `arr` and `s` are valid declarations and become immediate variables.
 
 ::: std
 ```cpp
