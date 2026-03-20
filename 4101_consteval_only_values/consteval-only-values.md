@@ -624,8 +624,8 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
     template <auto F>
     constexpr auto apply_to(int i) { return F(i); }
 
-    auto p = &apply_to<id>; // error: escalates because F(i) is
-                            // not a constant expression
+    auto p = &apply_to<id>; // error: immediate function because F(i)
+                            // is not a constant expression
     ```
     :::
     :::
@@ -641,13 +641,25 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
       auto x = F();
     }
 
-    auto p = &ex<refl>; // error: escalates because F() is
-                        // an immediate constant expression
+    auto p = &ex<refl>; // error: immediate function because F()
+                        // is an immediate constant expression
     ```
     :::
     :::
 
 * [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm} [it is a `$reflect-expression$`.]{.addu}
+
+  ::: addu
+  ::: example
+  ```
+  std::meta::info r;
+  void normal() {
+    r == r; // ok
+    r == ^^int; // error
+  }
+  ```
+  :::
+  :::
 
 [25]{.pnum} An *immediate-escalating* function is [...]
 
