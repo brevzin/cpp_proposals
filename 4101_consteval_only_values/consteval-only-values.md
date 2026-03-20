@@ -613,10 +613,40 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
 
 [24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and
 
-* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [,]{.rm} [or an immediate object;]{.addu}
+* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [or an immediate object;]{.addu} [,]{.rm}
 * [#.2]{.pnum} it is an immediate invocation that [either]{.addu}
   * [#.#.#]{.pnum} is not a constant expression, or
+
+    ::: addu
+    ::: example
+    ```
+    consteval int id(int x) { return x; }
+    template <auto F>
+    constexpr auto apply_to(int i) { return F(i); }
+
+    auto p = &apply_to<id>; // error: escalates because F(i) is
+                            // not a constant expression
+    ```
+    :::
+    :::
+
   * [#.#.#]{.pnum} [is an immediate constant expression; or]{.addu}
+
+    ::: addu
+    ::: example
+    ```
+    consteval std::meta::info refl() { return ^^int; }
+    template <auto F>
+    constexpr void ex() {
+      auto x = F();
+    }
+
+    auto p = &ex<refl>; // error: escalates because F() is
+                        // an immediate constant expression
+    ```
+    :::
+    :::
+
 * [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm} [it is a `$reflect-expression$`.]{.addu}
 
 [25]{.pnum} An *immediate-escalating* function is [...]
