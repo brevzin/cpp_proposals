@@ -336,11 +336,26 @@ auto normal_func() -> void {
 
 Calling the null reflection value non-consteval-only is really what the consteval-only value model is about.
 
+Also, notably, if the null reflection value is not consteval-only, then the implementation does not need any consteval-only type machinery — which is otherwise still necessary to ensure that all the appropriate initializations escalate. It's just simpler.
+
 ## Differences in Treatment Between Consteval-only Types and Consteval-only Values
 
 If we transition to having our model be based on consteval-only _values_ rather than consteval-only _types_, mostly the same issues are diagnosed — if for different reasons. But there are a few instances where the consteval-only type rule does diagnose a misuse but the consteval-only value does not.
 
-If the null reflection is _not_ consteval-only (see [previous section](#the-null-reflection-value)), then code using a default-initialized `std::meta::info` is just allowed. Some other examples might be diagnosed differently:
+Since the null reflection is _not_ consteval-only (see [previous section](#the-null-reflection-value)), code using a default-initialized `std::meta::info` is just allowed:
+
+::: std
+```cpp
+// consteval-only type model: this is ill-formed
+// consteval-only value model: this is fine
+std::meta::info null;
+
+// both models: this is ill-formed
+std::meta::info type = ^^int;
+```
+:::
+
+Some other examples might be diagnosed differently:
 
 ::: std
 ```cpp

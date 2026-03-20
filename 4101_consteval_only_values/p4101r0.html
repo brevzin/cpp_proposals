@@ -1114,6 +1114,10 @@ for immediate functions would be:</p>
 </div>
 <p>Calling the null reflection value non-consteval-only is really what
 the consteval-only value model is about.</p>
+<p>Also, notably, if the null reflection value is not consteval-only,
+then the implementation does not need any consteval-only type machinery
+— which is otherwise still necessary to ensure that all the appropriate
+initializations escalate. It’s just simpler.</p>
 <h2 data-number="3.3" id="differences-in-treatment-between-consteval-only-types-and-consteval-only-values"><span class="header-section-number">3.3</span> Differences in Treatment
 Between Consteval-only Types and Consteval-only Values<a href="#differences-in-treatment-between-consteval-only-types-and-consteval-only-values" class="self-link"></a></h2>
 <p>If we transition to having our model be based on consteval-only
@@ -1121,29 +1125,40 @@ Between Consteval-only Types and Consteval-only Values<a href="#differences-in-t
 same issues are diagnosed — if for different reasons. But there are a
 few instances where the consteval-only type rule does diagnose a misuse
 but the consteval-only value does not.</p>
-<p>If the null reflection is <em>not</em> consteval-only (see <a href="#the-null-reflection-value">previous section</a>), then code using
-a default-initialized <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
-is just allowed. Some other examples might be diagnosed differently:</p>
+<p>Since the null reflection is <em>not</em> consteval-only (see <a href="#the-null-reflection-value">previous section</a>), code using a
+default-initialized <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+is just allowed:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only type model: this is ill-formed because it is not declared consteval</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value model (regardless of null treatment): this is fine</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span> <span class="op">}</span></span>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only type model: this is ill-formed</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value model: this is fine</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>info null;</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">// null is not consteval-only, so this is valid in the value model</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span> <span class="cf">return</span> r; <span class="op">}</span></span></code></pre></div>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">// both models: this is ill-formed</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>info type <span class="op">=</span> <span class="op">^^</span><span class="dt">int</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Some other examples might be diagnosed differently:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only type model: this is ill-formed because it is not declared consteval</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value model (regardless of null treatment): this is fine</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co">// null is not consteval-only, so this is valid in the value model</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span> <span class="cf">return</span> r; <span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Some other examples might be potentially useful:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only type: this is ill-formed because v has consteval-only type</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value: there is no actual reflection here, so this is fine</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> v <span class="op">=</span> std<span class="op">::</span>variant<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info, <span class="dt">int</span><span class="op">&gt;(</span><span class="dv">42</span><span class="op">)</span>;</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co">// ditto</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> p; <span class="op">}</span>;</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> C<span class="op">{.</span>p <span class="op">=</span> <span class="kw">nullptr</span><span class="op">}</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only type: this is ill-formed because v has consteval-only type</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value: there is no actual reflection here, so this is fine</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> v <span class="op">=</span> std<span class="op">::</span>variant<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info, <span class="dt">int</span><span class="op">&gt;(</span><span class="dv">42</span><span class="op">)</span>;</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co">// ditto</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> p; <span class="op">}</span>;</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> C<span class="op">{.</span>p <span class="op">=</span> <span class="kw">nullptr</span><span class="op">}</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <h2 data-number="3.4" id="ancillary-benefits-of-consteval-only-values"><span class="header-section-number">3.4</span> Ancillary Benefits of
@@ -1158,62 +1173,62 @@ ancillary benefits.</p>
 visitation example</a>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;array&gt;</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Variant <span class="op">{</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>        T t;</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>        U u;</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> index;</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> Variant<span class="op">(</span>T t<span class="op">)</span> <span class="op">:</span> t<span class="op">(</span>t<span class="op">)</span>, index<span class="op">(</span><span class="dv">0</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> Variant<span class="op">(</span>U u<span class="op">)</span> <span class="op">:</span> u<span class="op">(</span>u<span class="op">)</span>, index<span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> I<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>I <span class="op">&lt;</span> <span class="dv">2</span><span class="op">)</span></span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
-<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>I <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> t;</span>
-<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>I <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="cf">return</span> u;</span>
-<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> F, <span class="kw">class</span> V0, <span class="kw">class</span> V1<span class="op">&gt;</span></span>
-<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> binary_vtable_impl <span class="op">{</span></span>
-<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> I, <span class="dt">int</span> J<span class="op">&gt;</span></span>
-<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> visit<span class="op">(</span>F<span class="op">&amp;&amp;</span> f, V0 <span class="kw">const</span><span class="op">&amp;</span> v0, V1 <span class="kw">const</span><span class="op">&amp;</span> v1<span class="op">)</span> <span class="op">-&gt;</span> R <span class="op">{</span></span>
-<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> f<span class="op">(</span>v0<span class="op">.</span><span class="kw">template</span> get<span class="op">&lt;</span>I<span class="op">&gt;()</span>, v1<span class="op">.</span><span class="kw">template</span> get<span class="op">&lt;</span>J<span class="op">&gt;())</span>;</span>
-<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> get_array<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> std<span class="op">::</span>array<span class="op">{</span></span>
-<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>array<span class="op">{</span></span>
-<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">0</span>, <span class="dv">0</span><span class="op">&gt;</span>,</span>
-<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">0</span>, <span class="dv">1</span><span class="op">&gt;</span></span>
-<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span>,</span>
-<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>array<span class="op">{</span></span>
-<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">1</span>, <span class="dv">0</span><span class="op">&gt;</span>,</span>
-<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">1</span>, <span class="dv">1</span><span class="op">&gt;</span></span>
-<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
-<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">// This constexpr variable will be initialized to</span></span>
-<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a>    <span class="co">// an array of pointers to consteval functions.</span></span>
-<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> std<span class="op">::</span>array fptrs <span class="op">=</span> get_array<span class="op">()</span>;</span>
-<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> F, <span class="kw">class</span> V0, <span class="kw">class</span> V1<span class="op">&gt;</span></span>
-<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> visit<span class="op">(</span>F<span class="op">&amp;&amp;</span> f, V0 <span class="kw">const</span><span class="op">&amp;</span> v0, V1 <span class="kw">const</span><span class="op">&amp;</span> v1<span class="op">)</span> <span class="op">-&gt;</span> R <span class="op">{</span></span>
-<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> Impl <span class="op">=</span> binary_vtable_impl<span class="op">&lt;</span>R, F, V0, V1<span class="op">&gt;</span>;</span>
-<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Impl<span class="op">::</span>fptrs<span class="op">[</span>v0<span class="op">.</span>index<span class="op">][</span>v1<span class="op">.</span>index<span class="op">]((</span>F<span class="op">&amp;&amp;)</span>f, v0, v1<span class="op">)</span>;</span>
-<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-52"><a href="#cb17-52" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> func<span class="op">(</span><span class="kw">const</span> Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;&amp;</span> v1, <span class="kw">const</span> Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;&amp;</span> v2<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb17-53"><a href="#cb17-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> visit<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;([](</span><span class="kw">auto</span> x, <span class="kw">auto</span> y<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">+</span> y; <span class="op">}</span>, v1, v2<span class="op">)</span>;</span>
-<span id="cb17-54"><a href="#cb17-54" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb17-55"><a href="#cb17-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-56"><a href="#cb17-56" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>func<span class="op">(</span>Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;{</span><span class="dv">42</span><span class="op">}</span>, Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;{</span><span class="dv">1729</span><span class="op">})</span> <span class="op">==</span> <span class="dv">1771</span><span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;array&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T, <span class="kw">class</span> U<span class="op">&gt;</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Variant <span class="op">{</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">union</span> <span class="op">{</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        T t;</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        U u;</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>;</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> index;</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> Variant<span class="op">(</span>T t<span class="op">)</span> <span class="op">:</span> t<span class="op">(</span>t<span class="op">)</span>, index<span class="op">(</span><span class="dv">0</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> Variant<span class="op">(</span>U u<span class="op">)</span> <span class="op">:</span> u<span class="op">(</span>u<span class="op">)</span>, index<span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> I<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>I <span class="op">&lt;</span> <span class="dv">2</span><span class="op">)</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> get<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>I <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> t;</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>I <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="cf">return</span> u;</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> F, <span class="kw">class</span> V0, <span class="kw">class</span> V1<span class="op">&gt;</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> binary_vtable_impl <span class="op">{</span></span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> I, <span class="dt">int</span> J<span class="op">&gt;</span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> visit<span class="op">(</span>F<span class="op">&amp;&amp;</span> f, V0 <span class="kw">const</span><span class="op">&amp;</span> v0, V1 <span class="kw">const</span><span class="op">&amp;</span> v1<span class="op">)</span> <span class="op">-&gt;</span> R <span class="op">{</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> f<span class="op">(</span>v0<span class="op">.</span><span class="kw">template</span> get<span class="op">&lt;</span>I<span class="op">&gt;()</span>, v1<span class="op">.</span><span class="kw">template</span> get<span class="op">&lt;</span>J<span class="op">&gt;())</span>;</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span> get_array<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> std<span class="op">::</span>array<span class="op">{</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>array<span class="op">{</span></span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">0</span>, <span class="dv">0</span><span class="op">&gt;</span>,</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">0</span>, <span class="dv">1</span><span class="op">&gt;</span></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span>,</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>array<span class="op">{</span></span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">1</span>, <span class="dv">0</span><span class="op">&gt;</span>,</span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>                <span class="op">&amp;</span>visit<span class="op">&lt;</span><span class="dv">1</span>, <span class="dv">1</span><span class="op">&gt;</span></span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span>;</span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">// This constexpr variable will be initialized to</span></span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>    <span class="co">// an array of pointers to consteval functions.</span></span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> std<span class="op">::</span>array fptrs <span class="op">=</span> get_array<span class="op">()</span>;</span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R, <span class="kw">class</span> F, <span class="kw">class</span> V0, <span class="kw">class</span> V1<span class="op">&gt;</span></span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> visit<span class="op">(</span>F<span class="op">&amp;&amp;</span> f, V0 <span class="kw">const</span><span class="op">&amp;</span> v0, V1 <span class="kw">const</span><span class="op">&amp;</span> v1<span class="op">)</span> <span class="op">-&gt;</span> R <span class="op">{</span></span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> Impl <span class="op">=</span> binary_vtable_impl<span class="op">&lt;</span>R, F, V0, V1<span class="op">&gt;</span>;</span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Impl<span class="op">::</span>fptrs<span class="op">[</span>v0<span class="op">.</span>index<span class="op">][</span>v1<span class="op">.</span>index<span class="op">]((</span>F<span class="op">&amp;&amp;)</span>f, v0, v1<span class="op">)</span>;</span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> func<span class="op">(</span><span class="kw">const</span> Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;&amp;</span> v1, <span class="kw">const</span> Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;&amp;</span> v2<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> visit<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;([](</span><span class="kw">auto</span> x, <span class="kw">auto</span> y<span class="op">)</span> <span class="kw">consteval</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">+</span> y; <span class="op">}</span>, v1, v2<span class="op">)</span>;</span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>func<span class="op">(</span>Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;{</span><span class="dv">42</span><span class="op">}</span>, Variant<span class="op">&lt;</span><span class="dt">int</span>, <span class="dt">long</span><span class="op">&gt;{</span><span class="dv">1729</span><span class="op">})</span> <span class="op">==</span> <span class="dv">1771</span><span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Note that there are no consteval-only types in this example, but it
@@ -1244,10 +1259,10 @@ one such use will be as constant template parameters. <a href="https://www.open-
 example</a> also was noted in P3603R1:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> always_false<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">false</span>; <span class="op">}</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>not_fn<span class="op">(</span>always_false<span class="op">)())</span>;   <span class="co">// OK</span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>not_fn<span class="op">&lt;</span>always_false<span class="op">&gt;()())</span>; <span class="co">// ill-formed</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> always_false<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">false</span>; <span class="op">}</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>not_fn<span class="op">(</span>always_false<span class="op">)())</span>;   <span class="co">// OK</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>not_fn<span class="op">&lt;</span>always_false<span class="op">&gt;()())</span>; <span class="co">// ill-formed</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Status quo is this is ill-formed (although gcc accepts). With this
@@ -1258,7 +1273,7 @@ no library code change necessary.</p>
 <p>Not proposed in this paper, but consider:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info m <span class="op">:</span> members_of<span class="op">(</span>type, ctx<span class="op">))</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="cf">for</span> <span class="op">(</span><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info m <span class="op">:</span> members_of<span class="op">(</span>type, ctx<span class="op">))</span> <span class="op">{</span> <span class="op">...</span> <span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>This internally constructs a
@@ -1467,15 +1482,15 @@ consteval-only type then so is
 </ul>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
-<div class="sourceCode" id="cb20"><pre class="sourceCode default cpp"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>struct Base { };</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>struct Derived : Base { std::meta::info r; };</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>consteval const Base&amp; fn(const Derived&amp; derived) { return derived; }</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>constexpr Derived obj{.r=^^::}; // OK</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>constexpr const Derived&amp; d = obj; // OK</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>constexpr const Base&amp; b = fn(obj); // error: not a constant expression</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  // because Derived is a consteval-only type but Base is not.</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode default cpp"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>struct Base { };</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>struct Derived : Base { std::meta::info r; };</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>consteval const Base&amp; fn(const Derived&amp; derived) { return derived; }</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>constexpr Derived obj{.r=^^::}; // OK</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>constexpr const Derived&amp; d = obj; // OK</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>constexpr const Base&amp; b = fn(obj); // error: not a constant expression</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  // because Derived is a consteval-only type but Base is not.</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 
@@ -1574,12 +1589,12 @@ is not a constant expression, or</p>
 <div class="addu">
 <div class="example">
 <span>[ <em>Example 2:</em> </span>
-<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>consteval int id(int x) { return x; }</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>template &lt;auto F&gt;</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>constexpr auto apply_to(int i) { return F(i); }</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>auto p = &amp;apply_to&lt;id&gt;; // error: immediate function because F(i)</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>                        // is not a constant expression</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>consteval int id(int x) { return x; }</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>template &lt;auto F&gt;</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>constexpr auto apply_to(int i) { return F(i); }</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>auto p = &amp;apply_to&lt;id&gt;; // error: immediate function because F(i)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>                        // is not a constant expression</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div></li>
@@ -1588,14 +1603,14 @@ is not a constant expression, or</p>
 <div class="addu">
 <div class="example">
 <span>[ <em>Example 3:</em> </span>
-<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>consteval std::meta::info refl() { return ^^int; }</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>template &lt;auto F&gt;</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>constexpr void ex() {</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  auto x = F();</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>auto p = &amp;ex&lt;refl&gt;; // error: immediate function because F()</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>                    // is an immediate constant expression</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>consteval std::meta::info refl() { return ^^int; }</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>template &lt;auto F&gt;</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>constexpr void ex() {</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  auto x = F();</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>auto p = &amp;ex&lt;refl&gt;; // error: immediate function because F()</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>                    // is an immediate constant expression</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div></li>
@@ -1607,11 +1622,11 @@ type ([basic.types.general]).</del></span> <span class="addu">it is a
 <div class="addu">
 <div class="example">
 <span>[ <em>Example 4:</em> </span>
-<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>std::meta::info r;</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>void normal() {</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  r == r; // ok</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  r == ^^int; // error</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>std::meta::info r;</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>void normal() {</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  r == r; // ok</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  r == ^^int; // error</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div></li>
@@ -1676,43 +1691,43 @@ not
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  // [meta.unary.prop], type properties</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_const;</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_volatile;</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_trivially_copyable;</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_standard_layout;</span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_empty;</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_polymorphic;</span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_abstract;</span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_final;</span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_aggregate;</span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class T&gt; struct is_consteval_only;</span></span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>  // ...</span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>  // [meta.unary.prop], type properties</span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_const_v = is_const&lt;T&gt;::value;</span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_volatile_v = is_volatile&lt;T&gt;::value;</span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_trivially_copyable_v = is_trivially_copyable&lt;T&gt;::value;</span>
-<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_standard_layout_v = is_standard_layout&lt;T&gt;::value;</span>
-<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_empty_v = is_empty&lt;T&gt;::value;</span>
-<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_polymorphic_v = is_polymorphic&lt;T&gt;::value;</span>
-<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_abstract_v = is_abstract&lt;T&gt;::value;</span>
-<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_final_v = is_final&lt;T&gt;::value;</span>
-<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_aggregate_v = is_aggregate&lt;T&gt;::value;</span>
-<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class T&gt;</span></span>
-<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a><span class="st">-   constexpr bool is_consteval_only_v = is_consteval_only&lt;T&gt;::value;</span></span>
-<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  // [meta.unary.prop], type properties</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_const;</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_volatile;</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_trivially_copyable;</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_standard_layout;</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_empty;</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_polymorphic;</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_abstract;</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_final;</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; struct is_aggregate;</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class T&gt; struct is_consteval_only;</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>  // [meta.unary.prop], type properties</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_const_v = is_const&lt;T&gt;::value;</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_volatile_v = is_volatile&lt;T&gt;::value;</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_trivially_copyable_v = is_trivially_copyable&lt;T&gt;::value;</span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_standard_layout_v = is_standard_layout&lt;T&gt;::value;</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_empty_v = is_empty&lt;T&gt;::value;</span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_polymorphic_v = is_polymorphic&lt;T&gt;::value;</span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_abstract_v = is_abstract&lt;T&gt;::value;</span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_final_v = is_final&lt;T&gt;::value;</span>
+<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a>    constexpr bool is_aggregate_v = is_aggregate&lt;T&gt;::value;</span>
+<span id="cb25-35"><a href="#cb25-35" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb25-36"><a href="#cb25-36" aria-hidden="true" tabindex="-1"></a><span class="st">-   constexpr bool is_consteval_only_v = is_consteval_only&lt;T&gt;::value;</span></span>
+<span id="cb25-37"><a href="#cb25-37" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1734,8 +1749,8 @@ Preconditions
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> is_const;</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> is_const;</span></code></pre></div>
 </td>
 <td style="text-align:center; vertical-align: middle">
 <code class="sourceCode cpp">T</code> is const-qualified
@@ -1782,24 +1797,24 @@ shall be a complete type or
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  // associated with [meta.unary.prop], type properties</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  consteval bool is_const_type(info type);</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  consteval bool is_volatile_type(info type);</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_copyable_type(info type);</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  consteval bool is_standard_layout_type(info type);</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  consteval bool is_empty_type(info type);</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  consteval bool is_polymorphic_type(info type);</span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  consteval bool is_abstract_type(info type);</span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  consteval bool is_final_type(info type);</span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  consteval bool is_aggregate_type(info type);</span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="st">- consteval bool is_consteval_only_type(info type);</span></span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>  consteval bool is_signed_type(info type);</span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>  consteval bool is_unsigned_type(info type);</span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>  consteval bool is_bounded_array_type(info type);</span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>  consteval bool is_unbounded_array_type(info type);</span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>  consteval bool is_scoped_enum_type(info type);</span>
-<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>namespace std::meta {</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  // associated with [meta.unary.prop], type properties</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  consteval bool is_const_type(info type);</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  consteval bool is_volatile_type(info type);</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  consteval bool is_trivially_copyable_type(info type);</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  consteval bool is_standard_layout_type(info type);</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>  consteval bool is_empty_type(info type);</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>  consteval bool is_polymorphic_type(info type);</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>  consteval bool is_abstract_type(info type);</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>  consteval bool is_final_type(info type);</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>  consteval bool is_aggregate_type(info type);</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a><span class="st">- consteval bool is_consteval_only_type(info type);</span></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>  consteval bool is_signed_type(info type);</span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>  consteval bool is_unsigned_type(info type);</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>  consteval bool is_bounded_array_type(info type);</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>  consteval bool is_unbounded_array_type(info type);</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>  consteval bool is_scoped_enum_type(info type);</span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1862,8 +1877,8 @@ representation ([expr.const]).</p>
 <span>15.12 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <blockquote>
 <div>
-<div class="sourceCode" id="cb27"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="st">- __cpp_­consteval <span class="diffdel">202406L</span></span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_­consteval <span class="diffins">20XXXXL</span></span></span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
