@@ -288,10 +288,17 @@ Unlike other reflection values, these are not produced during constant-evaluatio
 ::: std
 ```cpp
 std::meta::info a;
+constexpr std::meta::info r = ^^int;
+
 auto normal() -> void {
     a = std::meta::info(); // ok
     a = ^^int; // error
-    a == a; // error
+    a = r; // error
+
+    a == a; // ok, actually
+    a == ^^int; // error
+    a == r; // error
+
     new (&a) std::meta::info(); // ok
     new (&a) std::meta::info(^^int); // error
 
@@ -307,10 +314,27 @@ In this case, all the reflection values that we need to be consteval-only are pr
 </td></tr>
 </table>
 
-If the null reflection is consteval-only, we have to immediate-escalate *any* initialization of a `std::meta::info` object. This leads to the interesting consequence that reflections being consteval-only _implies_ the existence of a consteval-only type, but a different form than what is in the standard today. This form does not follow pointer, reference, function, or even union edges.
+If the null reflection is consteval-only, we have to immediate-escalate *any* initialization of a `std::meta::info` object. This leads to the interesting consequence that reflections being consteval-only _implies_ the existence of a consteval-only type, but a different form than what is in the standard today. This form does not follow pointer, reference, function, or even union edges. But you probably need type-checking in order to reject all the initializations you nee dto.
 
-If the null reflection is _not_ consteval-only, we have to immediate-escalate any creation of a reflection (e.g. a `$reflect-expression$`) or a use that requires the value of a reflection (e.g. `==`, but not copy construction). We would have to make sure that we enumerate all the cases — which we would have to make sure we catch 'em all.
+If the null reflection is _not_ consteval-only, we have to immediate-escalate any creation of a reflection (e.g. a `$reflect-expression$`) — which is analogous in treatment to how we handle immediate functions today. Indeed, a null reflection value is to a reflection value what a null pointer is to a pointer to an immediate function. The analogous example for immediate functions would be:
 
+::: std
+```cpp
+consteval auto f() -> void { }
+auto g() -> void { }
+
+void (*p)();
+auto normal_func() -> void {
+  p == p; // ok
+  p == &f; // error (escalates because of f)
+
+  p = &g; // ok
+  p = &f; // error (escalates because of f)
+}
+```
+:::
+
+Calling the null reflection value non-consteval-only is really what the consteval-only value model is about.
 
 ## Differences in Treatment Between Consteval-only Types and Consteval-only Values
 
@@ -324,7 +348,7 @@ If the null reflection is _not_ consteval-only (see [previous section](#the-null
 // consteval-only value model (regardless of null treatment): this is fine
 auto f(std::meta::info) -> void { }
 
-// if null is not consteval-only, this is valid in the value model
+// null is not consteval-only, so this is valid in the value model
 auto g(std::meta::info r) -> std::meta::info { return r; }
 ```
 :::
@@ -512,7 +536,7 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 ::: addu
 [a]{.pnum} A value is *consteval-only* if it is either
 
-* [a.1]{.pnum} a reflection value ([basic.fundamental]) or
+* [a.1]{.pnum} a reflection value ([basic.fundamental]) that is not the null reflection value or
 * [a.#]{.pnum} a pointer or pointer-to-member that points to either an immediate object or an immediate function.
 
 [b]{.pnum} An object is an *immediate object* if its complete object has either
@@ -593,7 +617,7 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
 * [#.2]{.pnum} it is an immediate invocation that [either]{.addu}
   * [#.#.#]{.pnum} is not a constant expression, or
   * [#.#.#]{.pnum} [is an immediate constant expression; or]{.addu}
-* [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm} [it initializes an object of type `$cv$ std::meta::info`.]{.addu}
+* [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm} [it is a `$reflect-expression$`.]{.addu}
 
 [25]{.pnum} An *immediate-escalating* function is [...]
 
