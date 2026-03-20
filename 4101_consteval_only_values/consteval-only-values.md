@@ -494,11 +494,11 @@ This is not exactly the same design as in this paper: it also supports _explicit
 
 We propose to _replace_ the existing consteval-only type model with a consteval-only value model, where a consteval-only value is defined as being:
 
-1. a reflection,
+1. a non-null reflection,
 2. a constituent pointer or reference to an immediate function, or
-3. a constituent pointer or reference to an immediate variable
+3. a constituent pointer or reference to an immediate object
 
-where an immediate variable is a `constexpr` variable whose initialization produces a consteval-value. Note that unlike [@P3603R1], this paper does not propose the ability to _explicitly_ declare an immediate variable. Explicit `consteval` variables will be a C++29 feature.
+where an immediate object is an object that has consteval-only value somewhere and and an immediate variable is a `constexpr` variable whose initialization produces a consteval-only value. Note that unlike [@P3603R1], this paper does not propose the ability to _explicitly_ declare an immediate variable. Explicit `consteval` variables will be a C++29 feature.
 
 All of the relevant rules in [expr.const]{.sref} around escalation will change to consider consteval-only values and immediate variables instead of consteval-only types. The type trait `is_consteval_only` will be removed. The other use of consteval-only type is the mandates on `bit_cast`, which can change to add `std::meta::info` to the category of types with constexpr-unknown representation — [@CWG2765]{.title} — since pointers and references are already rejected, there likewise isn't any issue here with incompleteness.
 
