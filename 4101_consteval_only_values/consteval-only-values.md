@@ -257,7 +257,14 @@ There exists a unique *null reflection*; every other reflection is a representat
 
 Is the null reflection value equivalent to a null pointer (i.e. not a consteval-only value) or is it a reflection value (i.e. consteval-only)? If the null reflection value is not consteval-only, then you can have a runtime value of type `std::meta::info` — as long as it is null.
 
-This choice affects how we formulate the rules for immediate-escalation. The following examples assume a `struct S { std::meta::info r; };`:
+This choice affects how we formulate the rules for immediate-escalation. The following examples assume a:
+
+::: std
+```cpp
+struct S { std::meta::info r; };
+```
+:::
+
 
 <table>
 <tr><th>Null is consteval-only</th><th>Null is not consteval-only</th></tr>
