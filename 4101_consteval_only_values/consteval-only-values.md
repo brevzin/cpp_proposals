@@ -173,16 +173,20 @@ constexpr auto q = sub; // ok
 We already explored this idea in [@P3603R1]{.title}, but what if we generalized the notion we have today and combined it with reflections? Informally:
 
 ::: std
-An expression has _consteval-only value_ if:
+A value is *consteval-only* if it is either
 
-1. it is a reflection,
-2. it has a constituent pointer/reference to an immediate function, or
-3. it has a constituent pointer/reference to an immediate variable.
+1. a reflection value or
+2. a pointer or pointer-to-member that points to either an immediate object or an immediate function.
 
-An _immediate variable_ is a `constexpr` variable whose initialization produces a consteval-only value.
+An object is an *immediate object* if its complete object has either
+
+1. a constituent value that is consteval-only or
+2. a constituent reference that refers to either an immediate object or an immediate function.
+
+A variable is an *immediate variable* if the object it declares is an immediate object.
 :::
 
-And then we split our term "constant expression" into two because a `constexpr` variable can be initialized with consteval-only value (this escalates it to an immediate variable) but a regular variable cannot be (because otherwise our consteval-only value would not be very consteval-only).
+And then we split our term "constant expression" into two: we say a constant expression is allowed to have consteval-only value (it cannot right now) and add a refinement called an _immediate constant expression_ which does have consteval-only value. We then say that a `constexpr` variable can be initialized with an immediate constant expression (this escalates it to an immediate variable) but a regular variable cannot be (because otherwise our consteval-only value would not be very consteval-only).
 
 Going back to our earlier example:
 
@@ -197,9 +201,9 @@ constexpr std::meta::info const* q = &r;
 
 The new way of thinking about these declarations is:
 
-* For `r`: `^^int` is a consteval-only value (it is a reflection), so it must be part of a constant expression. `r` is declared `constexpr`, so it is allowed to have consteval-only value. It becomes an immediate variable.
-* For `p`: `&r` is a consteval-only value (it is a pointer to an immediate variable), so it must be a part of a constant expression. `p` is not declared `constexpr`, so its initializer is not allowed to have consteval-only value, so this is ill-formed.
-* For `q`: As above, `&r` is a consteval-only value, but because `q` is declared `constexpr`, it is allowed to have consteval-only value. It becomes an immediate variable.
+* For `r`: `^^int` is a consteval-only value (it is a reflection), so this is an immediate constant expression. `r` is declared `constexpr`, so it is allowed to have consteval-only value. It becomes an immediate variable.
+* For `p`: `&r` is a consteval-only value (it is a pointer to an immediate variable), so this is an immediate constant expression. `p` is not declared `constexpr`, so its initializer is not allowed to have consteval-only value, so this is ill-formed.
+* For `q`: As above, `&r` is a consteval-only value, but because `q` is declared `constexpr`, it is allowed to be initialized with an immediate constant expression. It becomes an immediate variable.
 
 Similar reasoning shows that this other example, both `arr` and `s` are valid declarations and become immediate variables.
 
@@ -242,22 +246,81 @@ void f(S<int>*);
 
 If `S<int>` has a member of type `std::meta::info` and that member is initialized with `^^int`, then that object will necessarily have to live at compile-time, and you just won't be able to invoke a non-`constexpr` function with a pointer to it. It might be a bug to have not declared it `constexpr`, but that simply makes it useless — not problematic.
 
-## Differences in Treatment Between Consteval-only Types and Consteval-only Values
+## The Null Reflection Value
 
-If we transition to having our model be based on consteval-only _values_ rather than consteval-only _types_, mostly the same issues are diagnosed — if for different reasons. But there are a few instances where the consteval-only type rule does diagnose a misuse but the consteval-only value does not:
+One question that comes up with this approach is what we do about the null reflection value. Currently, that is considered a reflection value:
+
+::: std
+[17]{.pnum} A value of type `std​::​meta​::​info` is called a *reflection*.
+There exists a unique *null reflection*; every other reflection is a representation of [...]
+:::
+
+Is the null reflection value equivalent to a null pointer (i.e. not a consteval-only value) or is it a reflection value (i.e. consteval-only)? If the null reflection value is not consteval-only, then you can have a runtime value of type `std::meta::info` — as long as it is null.
+
+This choice affects how we formulate the rules for immediate-escalation. The following examples assume a `struct S { std::meta::info r; };`:
+
+<table>
+<tr><th>Null is consteval-only</th><th>Null is not consteval-only</th></tr>
+<tr><td>We have to be able to reject all of
 
 ::: std
 ```cpp
-// consteval-only type: this is ill-formed
-// consteval-only value: ok: x and y are null, they don't actually hold a reflection value
-std::meta::info x;
-auto f() -> void {
-  std::meta::info y;
+std::meta::info a;
+S b;
+auto normal() -> void {
+  std::meta::info c;
+  S d;
 }
 ```
 :::
 
-There are other examples in this vein: the consteval-only type rule rejects some code that the consteval-only value rule allows to be well-formed but useless.
+Unlike other reflection values, these are not produced during constant-evaluation, so this would have to be a type-based check.
+
+</td><td>We have to _allow_ all the code at the left, but also be able to disallow the following:
+
+::: std
+```cpp
+std::meta::info a;
+auto normal() -> void {
+    a = std::meta::info(); // ok
+    a = ^^int; // error
+    a == a; // error
+    new (&a) std::meta::info(); // ok
+    new (&a) std::meta::info(^^int); // error
+
+    S{}; // ok
+    S{.r={}}; // ok
+    S{.r=^^int}; // error
+}
+```
+::::
+
+In this case, all the reflection values that we need to be consteval-only are produced by during constant evaluation — so we can hook entirely in there.
+
+</td></tr>
+</table>
+
+If the null reflection is consteval-only, we have to immediate-escalate *any* initialization of a `std::meta::info` object. This leads to the interesting consequence that reflections being consteval-only _implies_ the existence of a consteval-only type, but a different form than what is in the standard today. This form does not follow pointer, reference, function, or even union edges.
+
+If the null reflection is _not_ consteval-only, we have to immediate-escalate any creation of a reflection (e.g. a `$reflect-expression$`) or a use that requires the value of a reflection (e.g. `==`, but not copy construction). We would have to make sure that we enumerate all the cases — which we would have to make sure we catch 'em all.
+
+
+## Differences in Treatment Between Consteval-only Types and Consteval-only Values
+
+If we transition to having our model be based on consteval-only _values_ rather than consteval-only _types_, mostly the same issues are diagnosed — if for different reasons. But there are a few instances where the consteval-only type rule does diagnose a misuse but the consteval-only value does not.
+
+If the null reflection is _not_ consteval-only (see [previous section](#the-null-reflection-value)), then code using a default-initialized `std::meta::info` is just allowed. Some other examples might be diagnosed differently:
+
+::: std
+```cpp
+// consteval-only type model: this is ill-formed because it is not declared consteval
+// consteval-only value model (regardless of null treatment): this is fine
+auto f(std::meta::info) -> void { }
+
+// if null is not consteval-only, this is valid in the value model
+auto g(std::meta::info r) -> std::meta::info { return r; }
+```
+:::
 
 Some other examples might be potentially-useful:
 
@@ -379,18 +442,7 @@ The consteval-only value model gives us a clear path to simply accepting the abo
 
 Barry implemented the consteval-only value approach in [his fork of the p2996 fork of clang](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:consteval-variable-2).
 
-This is not exactly the same design as in this paper: the difference is that rather than having _implicit_ immediate variables, it supports/enforces _explicit_ immediate variables. That is:
-
-::: std
-```cpp
-// status quo: well-formed
-// this paper: well-formed (r is an implicit immediate variable)
-// implementation: error, r has to be a consteval variable because it has consteval-only value
-constexpr std::meta::info r = ^^int;
-```
-:::
-
-But that's it — and you can see that a lot of churn in the test cases is simply changing variables from being declared `constexpr` to being declared `consteval`, which this paper isn't proposing. This particular aspect is a pretty small part of the whole implementation though, as compared to enforcing all the other rules around consteval-only values and immediate variables.
+This is not exactly the same design as in this paper: it also supports _explicit_ immediate variables, so you'll see some test cases that declare `consteval` variables. But otherwise, the implementation has been updated to implicitly escalate `constexpr` variables initialized with an immediate constant expression to `consteval`, so it just ends up being an extension.
 
 # Proposal
 
