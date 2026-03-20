@@ -314,7 +314,7 @@ In this case, all the reflection values that we need to be consteval-only are pr
 </td></tr>
 </table>
 
-If the null reflection is consteval-only, we have to immediate-escalate *any* initialization of a `std::meta::info` object. This leads to the interesting consequence that reflections being consteval-only _implies_ the existence of a consteval-only type, but a different form than what is in the standard today. This form does not follow pointer, reference, function, or even union edges. But you probably need type-checking in order to reject all the initializations you nee dto.
+If the null reflection is consteval-only, we have to immediate-escalate *any* initialization of a `std::meta::info` object. This leads to the interesting consequence that reflections being consteval-only _implies_ the existence of a consteval-only type, but a different form than what is in the standard today. This form does not follow pointer, reference, function, or even union edges. But you probably need type-checking in order to reject all the initializations you need to.
 
 If the null reflection is _not_ consteval-only, we have to immediate-escalate any creation of a reflection (e.g. a `$reflect-expression$`) — which is analogous in treatment to how we handle immediate functions today. Indeed, a null reflection value is to a reflection value what a null pointer is to a pointer to an immediate function. The analogous example for immediate functions would be:
 
@@ -353,7 +353,7 @@ auto g(std::meta::info r) -> std::meta::info { return r; }
 ```
 :::
 
-Some other examples might be potentially-useful:
+Some other examples might be potentially useful:
 
 ::: std
 ```cpp
