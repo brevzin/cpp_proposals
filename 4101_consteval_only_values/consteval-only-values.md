@@ -170,7 +170,33 @@ constexpr auto q = sub; // ok
 
 `add` and `sub` have the same type, as would `p` and `q`, but one of those declarations is valid while the other is not.
 
-We already explored this idea in [@P3603R1]{.title}, but what if we generalized the notion we have today and combined it with reflections? Informally:
+And we also have a notion of consteval-only value to specifically close the holes left by the consteval-only type model:
+
+::: std
+```cpp
+constexpr std::meta::info r = ^^int;
+void const* p = (void const*)&r; // error
+```
+:::
+
+C++26 already rejects the declaration of `p` (as it must), but it cannot do so on the basis of types — because `void const*` is of course not consteval-only. Instead, we already do it today on the basis of the expression `(void const*)&r` having consteval-only value. From the rule cited earlier
+
+::: std
+[21]{.pnum} A _constant expression_ is either
+
+* [21.1]{.pnum} a glvalue core constant expression [...]
+  or
+* [21.2]{.pnum} a prvalue core constant expression whose result object ([basic.lval]) satisfies the following constraints:
+  * [#.#.1]{.pnum} [...]
+  * [#.#.5]{.pnum} unless the value is of consteval-only type,
+    * [#.#.#.1]{.pnum} no constituent value of pointer-to-member type points to a direct member of a consteval-only class type,
+    * [#.#.#.#]{.pnum} no constituent value of pointer type points to or past an object whose complete object is of consteval-only type, and
+    * [#.#.#.#]{.pnum} no constituent reference refers to an object whose complete object is of consteval-only type.
+:::
+
+The rules we have today escalate `&r` because it has consteval-only type, but rejects `(void const*)&r` because it has consteval-only value. Just not in those specific words. In other words, the consteval-only type model is already incomplete unless it accounts for consteval-only values.
+
+We already explored this idea of consteval-only values in [@P3603R1]{.title}, but what if we generalized the notion we have today and combined it with reflections? Informally:
 
 ::: std
 A value is *consteval-only* if it is either
