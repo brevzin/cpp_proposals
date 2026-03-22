@@ -359,12 +359,18 @@ Some other examples might be diagnosed differently:
 
 ::: std
 ```cpp
-// consteval-only type model: this is ill-formed because it is not declared consteval
-// consteval-only value model (regardless of null treatment): this is fine
+// type model: this is ill-formed because it is not declared consteval
+// value model (regardless of null treatment): this is fine
 auto f(std::meta::info) -> void { }
 
 // null is not consteval-only, so this is valid in the value model
 auto g(std::meta::info r) -> std::meta::info { return r; }
+
+constexpr std::meta::info r = ^^int;
+
+// type model: p has consteval-only type so must be declared constexpr
+// value model: &r has consteval-only value, so the resulting object must be constexpr
+std::meta::info const* p = &r;
 ```
 :::
 
@@ -483,6 +489,38 @@ template for (constexpr std::meta::info m : members_of(type, ctx)) { ... }
 This internally constructs a `constexpr` variable of type `std::vector<std::meta::info>`, which requires allocation (unless `type` happens to have no members — which again, not to belabor the point, but this rule is based on the _value_ of the range, not its type). Now, non-transient `constexpr` allocation is a problem that we're trying to solve anyway — but in this case, the values we're talking about are consteval-only values. That allocation _cannot_ persist to runtime anyway. And if it cannot persist to runtime, then there's no actual non-transient allocation problem to be solved.
 
 The consteval-only value model gives us a clear path to simply accepting the above formulation, without having to either wait for a general solution or require the user to wrap every call in `define_static_array`. We are not proposing this for C++26 though.
+
+### Consteval Variables (Future Work)
+
+Not proposed in this paper, but consider the desire to have _variables_ that do not persist to runtime — `consteval` variables. An important benefit of `consteval` variables is that they are _guaranteed_ to not occupy space at runtime. You just don't hit issues [like this](https://www.reddit.com/r/cpp/comments/1i36ahd/is_this_an_msvc_bug_or_am_i_doing_something_wrong/). In the consteval-only value model, adopting `consteval` variables is trivial since it already fits cleanly into the model:
+
+* allow declaring variables `consteval` in [dcl.constexpr]{.sref},
+* change the definitions of _potentially-constant_ and _usable in constant expressions_ to include variables declared `consteval` as well as `constexpr` in [expr.const]{.sref} (and possibly in some other places), and lastly
+* extend the definition of _immediate object_ (diff against the proposing [wording below](#wording)):
+
+  ::: std
+  [a]{.pnum} A value is *consteval-only* if it is either
+
+  * [a.1]{.pnum} a reflection value ([basic.fundamental]) that is not the null reflection value or
+  * [a.#]{.pnum} a pointer or pointer-to-member that points to either an immediate object or an immediate function.
+
+  [b]{.pnum} An object is an *immediate object* if its complete object [has either]{.rm}
+
+  * [b.1]{.pnum} [has]{.addu} a constituent value that is consteval-only[,]{.addu} [or]{.rm}
+  * [b.2]{.pnum} [has]{.addu} a constituent reference that refers to either an immediate object or an immediate function[.]{.rm} [, or]{.addu}
+  * [b.3]{.pnum} [is the object declared by a `consteval` variable.]{.addu}
+
+  [c]{.pnum} Every immediate object shall be
+
+  * [c.1]{.pnum} the object associated with a constexpr [or consteval]{.addu} variable or a subobject thereof,
+  * [c.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
+  * [c.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a manifestly constant-evaluated expression.
+  :::
+
+That's it.
+
+Given that the type of `i` in `consteval int i = 42;` will be either `int` or `int const` (depending on what spelling we want to pursue for mutability), and very likely not either `consteval int` or `consteval int const`, the consteval-only type model has no solution for this problem and would require either introducing the consteval-only value model anyway or requiring the user to first produce a consteval-only type.
+
 
 ## Implementation Experience
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-03-20" />
+  <meta name="dcterms.date" content="2026-03-22" />
   <title>Consteval-only Values for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ C++26</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-03-20</td>
+    <td>2026-03-22</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -633,6 +633,8 @@ Visitation<span></span></a></li>
 Template Arguments<span></span></a></li>
 <li><a href="#consteval-only-allocation-future-work" id="toc-consteval-only-allocation-future-work"><span class="toc-section-number">3.4.3</span> Consteval-only Allocation
 (Future Work)<span></span></a></li>
+<li><a href="#consteval-variables-future-work" id="toc-consteval-variables-future-work"><span class="toc-section-number">3.4.4</span> Consteval Variables (Future
+Work)<span></span></a></li>
 </ul></li>
 <li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">3.5</span> Implementation
 Experience<span></span></a></li>
@@ -1141,12 +1143,18 @@ is just allowed:</p>
 <p>Some other examples might be diagnosed differently:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only type model: this is ill-formed because it is not declared consteval</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">// consteval-only value model (regardless of null treatment): this is fine</span></span>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">// type model: this is ill-formed because it is not declared consteval</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">// value model (regardless of null treatment): this is fine</span></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span> <span class="op">}</span></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co">// null is not consteval-only, so this is valid in the value model</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span> <span class="cf">return</span> r; <span class="op">}</span></span></code></pre></div>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>info r<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span> <span class="cf">return</span> r; <span class="op">}</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>meta<span class="op">::</span>info r <span class="op">=</span> <span class="op">^^</span><span class="dt">int</span>;</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co">// type model: p has consteval-only type so must be declared constexpr</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co">// value model: &amp;r has consteval-only value, so the resulting object must be constexpr</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>meta<span class="op">::</span>info <span class="kw">const</span><span class="op">*</span> p <span class="op">=</span> <span class="op">&amp;</span>r;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Some other examples might be potentially useful:</p>
@@ -1294,6 +1302,84 @@ accepting the above formulation, without having to either wait for a
 general solution or require the user to wrap every call in
 <code class="sourceCode cpp">define_static_array</code>. We are not
 proposing this for C++26 though.</p>
+<h3 data-number="3.4.4" id="consteval-variables-future-work"><span class="header-section-number">3.4.4</span> Consteval Variables (Future
+Work)<a href="#consteval-variables-future-work" class="self-link"></a></h3>
+<p>Not proposed in this paper, but consider the desire to have
+<em>variables</em> that do not persist to runtime
+— <code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables. An important benefit of
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables is that they are <em>guaranteed</em> to not occupy space at
+runtime. You just don’t hit issues <a href="https://www.reddit.com/r/cpp/comments/1i36ahd/is_this_an_msvc_bug_or_am_i_doing_something_wrong/">like
+this</a>. In the consteval-only value model, adopting
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variables is trivial since it already fits cleanly into the model:</p>
+<ul>
+<li><p>allow declaring variables
+<code class="sourceCode cpp"><span class="kw">consteval</span></code> in
+<span>9.2.6 <a href="https://wg21.link/dcl.constexpr">[dcl.constexpr]</a></span>,</p></li>
+<li><p>change the definitions of <em>potentially-constant</em> and
+<em>usable in constant expressions</em> to include variables declared
+<code class="sourceCode cpp"><span class="kw">consteval</span></code> as
+well as
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code> in
+<span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>
+(and possibly in some other places), and lastly</p></li>
+<li><p>extend the definition of <em>immediate object</em> (diff against
+the proposing <a href="#wording">wording below</a>):</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">a</a></span>
+A value is <em>consteval-only</em> if it is either</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(a.1)</a></span>
+a reflection value ([basic.fundamental]) that is not the null reflection
+value or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(a.2)</a></span>
+a pointer or pointer-to-member that points to either an immediate object
+or an immediate function.</li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">b</a></span>
+An object is an <em>immediate object</em> if its complete object <span class="rm" style="color: #bf0303"><del>has either</del></span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(b.1)</a></span>
+<span class="addu">has</span> a constituent value that is
+consteval-only<span class="addu">,</span> <span class="rm" style="color: #bf0303"><del>or</del></span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(b.2)</a></span>
+<span class="addu">has</span> a constituent reference that refers to
+either an immediate object or an immediate function<span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">,
+or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(b.3)</a></span>
+<span class="addu">is the object declared by a
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+variable.</span></li>
+</ul>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">c</a></span>
+Every immediate object shall be</p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(c.1)</a></span>
+the object associated with a constexpr <span class="addu">or
+consteval</span> variable or a subobject thereof,</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(c.2)</a></span>
+a template parameter object ([temp.param]) or a subobject thereof,
+or</li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(c.3)</a></span>
+an object whose lifetime begins and ends during the evaluation of a
+manifestly constant-evaluated expression.</li>
+</ul>
+</blockquote>
+</div></li>
+</ul>
+<p>That’s it.</p>
+<p>Given that the type of <code class="sourceCode cpp">i</code> in <code class="sourceCode cpp"><span class="kw">consteval</span> <span class="dt">int</span> i <span class="op">=</span> <span class="dv">42</span>;</code>
+will be either
+<code class="sourceCode cpp"><span class="dt">int</span></code> or <code class="sourceCode cpp"><span class="dt">int</span> <span class="kw">const</span></code>
+(depending on what spelling we want to pursue for mutability), and very
+likely not either <code class="sourceCode cpp"><span class="kw">consteval</span> <span class="dt">int</span></code>
+or <code class="sourceCode cpp"><span class="kw">consteval</span> <span class="dt">int</span> <span class="kw">const</span></code>,
+the consteval-only type model has no solution for this problem and would
+require either introducing the consteval-only value model anyway or
+requiring the user to first produce a consteval-only type.</p>
 <h2 data-number="3.5" id="implementation-experience"><span class="header-section-number">3.5</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>Barry implemented the consteval-only value approach in <a href="https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:consteval-variable-2">his
 fork of the p2996 fork of clang</a>.</p>
@@ -1341,36 +1427,36 @@ issue here with incompleteness.</p>
 <div class="std">
 <blockquote>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">12</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">12</a></span>
 A type is <em>consteval-only</em> if it is</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">(12.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(12.1)</a></span>
 std​::​meta​::​info,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(12.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(12.2)</a></span>
 cv T, where T is a consteval-only type,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(12.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(12.3)</a></span>
 a pointer or reference to a consteval-only type,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(12.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(12.4)</a></span>
 an array of consteval-only type,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(12.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(12.5)</a></span>
 a function type having a return type or any parameter type that is
 consteval-only,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(12.6)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(12.6)</a></span>
 a class type with any non-static data member having consteval-only type,
 or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(12.7)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(12.7)</a></span>
 a type “pointer to member of class C of type T”, where at least one of C
 or T is a consteval-only type.</li>
 </ul>
 <p>Every object of consteval-only type shall be</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(12.8)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(12.8)</a></span>
 the object associated with a constexpr variable or a subobject
 thereof,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(12.9)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(12.9)</a></span>
 a template parameter object ([temp.param]) or a subobject thereof,
 or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(12.10)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(12.10)</a></span>
 an object whose lifetime begins and ends during the evaluation of a core
 constant expression.</li>
 </ul>
@@ -1383,26 +1469,26 @@ constant expression.</li>
 constexpr-unknown representation in <span>7.7 <a href="https://wg21.link/expr.const">[expr.const]</a></span>/x:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">x</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">x</a></span>
 A type has <em>constexpr-unknown representation</em> if it</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(x.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(x.1)</a></span>
 is a union,</li>
 </ul>
 <div class="addu">
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(x.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">(x.2)</a></span>
 is <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>,</li>
 </ul>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(x.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(x.3)</a></span>
 is a pointer or pointer-to-member type,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(x.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(x.4)</a></span>
 is volatile-qualified,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(x.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(x.5)</a></span>
 is a class type with a non-static data member of reference type, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(x.6)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(x.6)</a></span>
 has a base class or a non-static member whose type has constexpr-unknown
 representation.</li>
 </ul>
@@ -1413,36 +1499,36 @@ immediate constant expression around <span>7.7 <a href="https://wg21.link/expr.c
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">a</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">a</a></span>
 A value is <em>consteval-only</em> if it is either</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(a.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">(a.1)</a></span>
 a reflection value ([basic.fundamental]) that is not the null reflection
 value or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(a.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">(a.2)</a></span>
 a pointer or pointer-to-member that points to either an immediate object
 or an immediate function.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">b</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">b</a></span>
 An object is an <em>immediate object</em> if its complete object has
 either</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(b.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">(b.1)</a></span>
 a constituent value that is consteval-only or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">(b.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">(b.2)</a></span>
 a constituent reference that refers to either an immediate object or an
 immediate function.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">c</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">c</a></span>
 Every immediate object shall be</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(c.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">(c.1)</a></span>
 the object associated with a constexpr variable or a subobject
 thereof,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(c.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">(c.2)</a></span>
 a template parameter object ([temp.param]) or a subobject thereof,
 or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(c.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">(c.3)</a></span>
 an object whose lifetime begins and ends during the evaluation of a
 manifestly constant-evaluated expression.</li>
 </ul>
@@ -1461,20 +1547,20 @@ diagnostic is only required if either
 <code class="sourceCode cpp"><em>D2</em></code> is reachable from the
 other.</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">21</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">21</a></span>
 A <em>constant expression</em> is either</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">(21.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">(21.1)</a></span>
 a glvalue core constant expression <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default"><em>E</em></code></span>
 for which</del></span> <span class="addu">that refers to an object or
 function</span>, or</p>
 <div class="rm" style="color: #bf0303">
 
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">(21.1.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">(21.1.1)</a></span>
 <code class="sourceCode default"><em>E</em></code> refers to a
 non-immediate function,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">(21.1.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">(21.1.2)</a></span>
 <code class="sourceCode default"><em>E</em></code> designates an object
 <code class="sourceCode default"><em>o</em></code>, and if the complete
 object of <code class="sourceCode default"><em>o</em></code> is of
@@ -1496,16 +1582,16 @@ consteval-only type then so is
 </div>
 
 </div></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">(21.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">(21.2)</a></span>
 a prvalue core constant expression whose result object ([basic.lval])
 satisfies the following constraints:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">(21.2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">(21.2.1)</a></span>
 each constituent reference refers to an object or <span class="rm" style="color: #bf0303"><del>a non-immediate</del></span> function,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">(21.2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">(21.2.2)</a></span>
 no constituent value of scalar type is an indeterminate or erroneous
 value ([basic.indet]), <span class="addu">and</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">(21.2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">(21.2.3)</a></span>
 no constituent value of pointer type is <span class="rm" style="color: #bf0303"><del>a pointer to an immediate function
 or</del></span> an invalid pointer value ([basic.compound])<span class="addu">.</span> <span class="rm" style="color: #bf0303"><del>,
 and</del></span></li>
@@ -1513,19 +1599,19 @@ and</del></span></li>
 <div class="rm" style="color: #bf0303">
 
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">(21.2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_61" id="pnum_61">(21.2.4)</a></span>
 no constituent value of pointer-to-member type designates an immediate
 function.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">(21.2.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_62" id="pnum_62">(21.2.5)</a></span>
 unless the value is of consteval-only type,
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">(21.2.5.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_63" id="pnum_63">(21.2.5.1)</a></span>
 no constituent value of pointer-to-member type points to a direct member
 of a consteval-only class type</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">(21.2.5.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_64" id="pnum_64">(21.2.5.2)</a></span>
 no constituent value of pointer type points to or past an object whose
 complete object is of consteval-only type, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">(21.2.5.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">(21.2.5.3)</a></span>
 no constituent reference refers to an object whose complete object is of
 consteval-only type.</li>
 </ul></li>
@@ -1534,14 +1620,14 @@ consteval-only type.</li>
 </div></li>
 </ul>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">d</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_66" id="pnum_66">d</a></span>
 A constant expression is an <em>immediate constant expression</em> if it
 is either</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">(d.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_67" id="pnum_67">(d.1)</a></span>
 a glvalue that refers to an immediate object or an immediate function,
 or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">(d.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_68" id="pnum_68">(d.2)</a></span>
 a prvalue whose result object is an immediate object.</li>
 </ul>
 </div>
@@ -1551,17 +1637,17 @@ a prvalue whose result object is an immediate object.</li>
 immediate-escalation in terms of consteval-only values:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">23</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_69" id="pnum_69">23</a></span>
 An expression or conversion is in an <em>immediate function context</em>
 if it is potentially evaluated and either:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">(23.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">(23.1)</a></span>
 its innermost enclosing non-block scope is a function parameter scope of
 an immediate function,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">(23.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">(23.2)</a></span>
 it is a subexpression of a manifestly constant-evaluated expression or
 conversion, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_61" id="pnum_61">(23.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_72" id="pnum_72">(23.3)</a></span>
 its enclosing statement is enclosed ([stmt.pre]) by the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 consteval if statement ([stmt.if]).</li>
@@ -1572,20 +1658,20 @@ function and is not in an immediate function context. An aggregate
 initialization is an immediate invocation if it evaluates a default
 member initializer that has a subexpression that is an
 immediate-escalating expression.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_62" id="pnum_62">24</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_73" id="pnum_73">24</a></span>
 A potentially-evaluated expression or conversion is
 <em>immediate-escalating</em> if it is neither initially in an immediate
 function context nor a subexpression of an immediate invocation, and</p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_63" id="pnum_63">(24.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_74" id="pnum_74">(24.1)</a></span>
 it is an <code class="sourceCode cpp"><em>id-expression</em></code> or
 <code class="sourceCode cpp"><em>splice-expression</em></code> that
 designates an immediate function <span class="addu">or an immediate
 object;</span> <span class="rm" style="color: #bf0303"><del>,</del></span></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_64" id="pnum_64">(24.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_75" id="pnum_75">(24.2)</a></span>
 it is an immediate invocation that <span class="addu">either</span></p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">(24.2.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_76" id="pnum_76">(24.2.1)</a></span>
 is not a constant expression, or</p>
 <div class="addu">
 <div class="example">
@@ -1599,7 +1685,7 @@ is not a constant expression, or</p>
 <span> — <em>end example</em> ]</span>
 </div>
 </div></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_66" id="pnum_66">(24.2.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_77" id="pnum_77">(24.2.2)</a></span>
 <span class="addu">is an immediate constant expression; or</span></p>
 <div class="addu">
 <div class="example">
@@ -1616,7 +1702,7 @@ is not a constant expression, or</p>
 </div>
 </div></li>
 </ul></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_67" id="pnum_67">(24.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_78" id="pnum_78">(24.3)</a></span>
 <span class="rm" style="color: #bf0303"><del>it is of consteval-only
 type ([basic.types.general]).</del></span> <span class="addu">it is a
 <code class="sourceCode cpp"><em>reflect-expression</em></code>.</span></p>
@@ -1632,27 +1718,27 @@ type ([basic.types.general]).</del></span> <span class="addu">it is a
 </div>
 </div></li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_68" id="pnum_68">25</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_79" id="pnum_79">25</a></span>
 An <em>immediate-escalating</em> function is […]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_69" id="pnum_69">26</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_80" id="pnum_80">26</a></span>
 An <em>immediate function</em> is a function that is <span class="addu">either</span></p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_70" id="pnum_70">(26.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_81" id="pnum_81">(26.1)</a></span>
 declared with the
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 specifier, <span class="addu">or</span></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_71" id="pnum_71">(26.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_82" id="pnum_82">(26.2)</a></span>
 <span class="rm" style="color: #bf0303"><del>an immediate-escalating
 function whose type is consteval-only ([basic.types.general]),
 or</del></span></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_72" id="pnum_72">(26.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_83" id="pnum_83">(26.3)</a></span>
 an immediate-escalating function
 <code class="sourceCode cpp"><em>F</em></code> whose function body
 contains <span class="rm" style="color: #bf0303"><del>either</del></span></p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_73" id="pnum_73">(26.3.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_84" id="pnum_84">(26.3.1)</a></span>
 an immediate-escalating expression <span class="rm" style="color: #bf0303"><del>or</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_74" id="pnum_74">(26.3.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_85" id="pnum_85">(26.3.2)</a></span>
 <span class="rm" style="color: #bf0303"><del>a definition of a
 non-constexpr variable with consteval-only type</del></span></li>
 </ul>
@@ -1674,7 +1760,7 @@ is still declared
 ]</span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_75" id="pnum_75">18</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_86" id="pnum_86">18</a></span>
 A <span class="rm" style="color: #bf0303"><del>class with a</del></span>
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 virtual function <span class="addu">shall not override</span> <span class="rm" style="color: #bf0303"><del>that overrides</del></span> a
@@ -1823,7 +1909,7 @@ shall be a complete type or
 in <span>21.4.4 <a href="https://wg21.link/meta.reflection.exception">[meta.reflection.exception]</a></span>/1:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_76" id="pnum_76">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_87" id="pnum_87">1</a></span>
 Reflection functions throw exceptions of type <code class="sourceCode cpp">meta​<span class="op">::</span>​exception</code> to
 signal an error. <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">meta​::​exception</code></span>
 is a consteval-only type.</del></span></p>
@@ -1833,7 +1919,7 @@ is a consteval-only type.</del></span></p>
 in <span>21.4.8 <a href="https://wg21.link/meta.reflection.access.context">[meta.reflection.access.context]</a></span>/3:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_77" id="pnum_77">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_88" id="pnum_88">3</a></span>
 The type <code class="sourceCode cpp">access_context</code> is a
 structural, <span class="rm" style="color: #bf0303"><del>consteval-only,</del></span> non-aggregate
 type. <span class="addu">Values of type
@@ -1846,7 +1932,7 @@ values.</span></p>
 <a href="https://wg21.link/meta.reflection.define.aggregate">[meta.reflection.define.aggregate]</a></span>/1:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_78" id="pnum_78">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_89" id="pnum_89">1</a></span>
 The classes <code class="sourceCode cpp">data_member_options</code> and
 <code class="sourceCode cpp">data_member_options​<span class="op">::</span><em>name-type</em></code>
 <span class="rm" style="color: #bf0303"><del>are consteval-only types
@@ -1862,12 +1948,12 @@ now handled in [expr.const]:</p>
 <div class="std">
 <blockquote>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_79" id="pnum_79">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_90" id="pnum_90">2</a></span>
 <em>Mandates</em>: Neither <code class="sourceCode default">To</code>
 nor <code class="sourceCode default">From</code> are consteval-only
 types ([basic.types.general]).</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_80" id="pnum_80">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_91" id="pnum_91">3</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">To</code> and
 <code class="sourceCode cpp">From</code> do not have constexpr-unknown
 representation ([expr.const]).</p>
