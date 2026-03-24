@@ -1,6 +1,6 @@
 ---
 title: "Consteval-only Values for C++26"
-document: P4101R0
+document: D4101R0
 date: today
 audience: EWG, CWG
 author:
@@ -629,6 +629,20 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 * [c.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
 * [c.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a manifestly constant-evaluated expression.
 
+::: example
+```
+consteval int plus1(int x) { return x + 1; }
+template <auto V> struct C { };
+
+auto a = plus1; // error: immediate object not associated with constexpr variable
+constexpr auto b = plus1; // ok
+auto c = C<a>(); // ok
+
+auto d = ^^int; // error: immediate object not associated with constexpr variable
+auto e = C<^^char>(); // ok
+```
+:::
+
 Letting `$V$` be a variable that declares or refers to an immediate object `$O$`, each expression `$E$` that odr-uses `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, a diagnostic is only required if either `$D1$` or `$D2$` is reachable from the other.
 
 :::
@@ -692,7 +706,10 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
 
 [24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and
 
-* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that designates an immediate function [or an immediate object;]{.addu} [,]{.rm}
+* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that [either]{.addu}
+  * [#.#.1]{.pnum} designates an immediate function [or an immediate object]{.addu}, [or]{.addu}
+  * [#.#.2]{.pnum} [is a prvalue that computes a consteval-only value;]{.addu}
+
 * [#.2]{.pnum} it is an immediate invocation that [either]{.addu}
   * [#.#.#]{.pnum} is not a constant expression, or
 
