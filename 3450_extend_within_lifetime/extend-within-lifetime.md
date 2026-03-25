@@ -1,7 +1,7 @@
 ---
 title: "Extend `std::is_within_lifetime`"
-document: P3450R0
-date: today
+document: P3450R1
+date: 2026-02-27
 audience: LWG
 author:
     - name: Barry Revzin
