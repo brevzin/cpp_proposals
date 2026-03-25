@@ -605,14 +605,14 @@ consteval void fn() {
   - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier that is not a keyword when interpreted with the ordinary literal encoding;
 
   [The name corresponds to the spelling of an identifier token after phase 6 of translation ([lex.phases]). Lexical constructs like `$universal-character-name$`s [lex.universal.char] are not processed and will cause evaluation to fail. For example, `R"(\u03B1)"` is an invalid identifier and is not interpreted as `"α"`.]{.note}
-- [#.#]{.pnum} if `options.name` does not contain a value, then `options.bit_width` contains a value;
+- [#.#]{.pnum} if `options.name` does not contain a value, then `options.bit_width` contains a value [and `options.annotations` is empty]{.addu};
 - [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
   - [#.#.#]{.pnum} `is_integral_type(@[options.]{.addu}@type) || is_enumeration_type(@[options.]{.addu}@type)` is `true`,
   - [#.#.#]{.pnum} `options.alignment` does not contain a value,
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
   - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value; [and]{.rm}
 - [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(@[options.]{.addu}@type)`[.]{.rm} [; and]{.addu}
-- [#.#]{.pnum} [for every reflection `r` in `options.annotations`, `type_of(r)` represents a non-array object type, and evaluation of `constant_of(r)` does not exit via an exception.]{.addu}
+- [#.#]{.pnum} [for every reflection `r` in `options.annotations`, `$has-type$(r)` is `true`, `type_of(r)` represents a non-array object type, and evaluation of `constant_of(r)` does not exit via an exception.]{.addu}
 
 ```cpp
 template<reflection_range R = initializer_list<info>>
