@@ -1,8 +1,8 @@
 ---
 title: "Better return types in `std::inplace_vector` <br /> and `std::exception_ptr_cast`"
-document: P3981R0
+document: P3981R2
 date: today
-audience: LEWG
+audience: LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -15,6 +15,8 @@ status: progress
 ---
 
 # Revision History
+
+Since [@P3981R1]: Wording update.
 
 Since [@P3981R0]: discussion at a [LEWG telecon](https://wiki.isocpp.org/2026-02-17_LEWG_Telecon) lead to deciding to remove `try_append_range` instead of modifying it. See [@P4022R0]{.title}.
 
@@ -186,7 +188,7 @@ Change [inplace.vector.modifiers]{.sref}/8-11:
 
 [10]{.pnum} *Effects*: [...]
 
-[11]{.pnum} *Returns*: [`nullptr`]{.rm} [`nullopt`]{.addu} if `size() == capacity()` is `true`, otherwise [`addressof(back())`]{.rm} [`back()`]{.addu}.
+[11]{.pnum} *Returns*: [`nullptr`]{.rm} [`nullopt`]{.addu} if `size() == capacity()` is `true`, otherwise [`addressof(back())`]{.rm} [`optional<reference>(in_place, back())`]{.addu}.
 :::
 
 ## Feature-Test Macros
