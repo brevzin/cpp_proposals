@@ -95,7 +95,7 @@ consteval {
 
 As such, it looks a little odd to have the type off by itself like that. It's true that you _always_ need to provide a type, but why is it special? Let's face it, approximately nobody is going to be creating unnamed bit-fields, so the name is practically always present too.
 
-Let's just make the API more uniform:
+A previous revision of this paper suggested making this change to the API:
 
 ::: std
 ```diff
@@ -116,9 +116,19 @@ Let's just make the API more uniform:
 ```
 :::
 
-Additionally, while adding _attributes_ is a difficult question, adding _annotations_ is actually much simpler. With the adoption of [@P3394R4], we should also allow you to add annotations to your generated members.
+However, Jakub Jelinek pointed out to me during the Croydon meeting that by moving the `type` option within `data_member_options`, we no longer have a top-level argument of reflection type, and thus argument-dependent lookup doesn't kick in. As a result, the impact of the above change for typical uses would be:
 
-So the full change is really:
+::: std
+```diff
+- data_member_spec(type, {.name=name})
++ std::meta::data_member_spec({.type=type, .name=name})
+```
+:::
+
+We thought the benefits of keeping the options altogether wasn't as high as the benefit of not having to qualify the call, so this revision doesn't make a change in this area.
+
+
+However, while adding _attributes_ is a difficult question, adding _annotations_ is actually much simpler. With the adoption of [@P3394R4], we definitely should allow you to add annotations to your generated members. The proposed change as a result (partially reverted from [@P3795R1]) is:
 
 ::: std
 ```diff
@@ -127,7 +137,6 @@ So the full change is really:
       // ...
     };
 
-+   info type;
     optional<$name-type$> name;
     optional<int> alignment;
     optional<int> bit_width;
@@ -135,8 +144,7 @@ So the full change is really:
 +   vector<info> annotations = {};
   };
 
-- consteval info data_member_spec(info type, data_member_options options);
-+ consteval info data_member_spec(data_member_options options);
+consteval info data_member_spec(info type, data_member_options options);
 ```
 :::
 
@@ -200,6 +208,7 @@ void f([[=2]] int y) {
 
   static_assert(annotations_of(rp).size() == 2); // both [1, 2]
   static_assert(annotations_of(ry).size() == 1); // just [2]
+  static_assert(annotations_of(rp)[1] == annotations_of(ry)[0]); // the same 2
 }
 ```
 :::
@@ -254,8 +263,7 @@ namespace std::meta {
 
   // [meta.reflection.define.aggregate], class definition generation
   struct data_member_options;
-- consteval info data_member_spec(info type, data_member_options options);
-+ consteval info data_member_spec(data_member_options options);
+  consteval info data_member_spec(info type, data_member_options options);
   consteval bool is_data_member_spec(info r);
   template<reflection_range R = initializer_list<info>>
     consteval info define_aggregate(info type_class, R&&);
@@ -542,7 +550,6 @@ struct data_member_options {
     variant<u8string, string> $contents$;    // exposition only
   };
 
-+ info type;
   optional<$name-type$> name;
   optional<int> alignment;
   optional<int> bit_width;
@@ -571,24 +578,21 @@ The class `$name-type$` allows the function `data_member_spec` to accept an ordi
 :::
 
 ::: example
-```diff
+```cpp
 consteval void fn() {
-- data_member_options o1 = {.name="ordinary_literal_encoding"};
-- data_member_options o2 = {.name=u8"utf8_encoding"};
-+ data_member_options o1 = {.type=^^int, .name="ordinary_literal_encoding"};
-+ data_member_options o2 = {.type=^^char, .name=u8"utf8_encoding"};
+  data_member_options o1 = {.name="ordinary_literal_encoding"};
+  data_member_options o2 = {.name=u8"utf8_encoding"};
 }
 ```
 :::
 
-```diff
-- consteval info data_member_spec(info type,
--                                 data_member_options options);
-+ consteval info data_member_spec(data_member_options options);
+```cpp
+consteval info data_member_spec(info type,
+                                data_member_options options);
 ```
 [#]{.pnum} *Returns*: A reflection of a data member description (`$T$`, `$N$`, `$A$`, `$W$`, `$NUA$`[, `$ANN$`]{.addu}) ([class.mem.general]) where
 
-- [#.#]{.pnum} `$T$` is the type represented by `dealias(@[options.]{.addu}@type)`,
+- [#.#]{.pnum} `$T$` is the type represented by `dealias(type)`,
 - [#.#]{.pnum} `$N$` is either the identifier encoded by `options.name` or ⊥ if `options.name` does not contain a value,
 - [#.#]{.pnum} `$A$` is either the alignment value held by `options.alignment` or ⊥ if `options.alignment` does not contain a value,
 - [#.#]{.pnum} `$W$` is either the value held by `options.bit_width` or ⊥ if `options.bit_width` does not contain a value, [and]{.rm}
@@ -599,7 +603,7 @@ consteval void fn() {
 
 [#]{.pnum} *Throws*: `meta::exception` unless the following conditions are met:
 
-- [#.#]{.pnum} `dealias(@[options.]{.addu}@type)` represents either an object type or a reference type;
+- [#.#]{.pnum} `dealias(type)` represents either an object type or a reference type;
 - [#.#]{.pnum} if `options.name` contains a value, then:
   - [#.#.#]{.pnum} `holds_alternative<u8string>(options.name->$contents$)` is `true` and `get<u8string>(options.name->$contents$)` contains a valid identifier ([lex.name]) that is not a keyword ([lex.key]) when interpreted with UTF-8, or
   - [#.#.#]{.pnum} `holds_alternative<string>(options.name->$contents$)` is `true` and `get<string>(options.name->$contents$)` contains a valid identifier that is not a keyword when interpreted with the ordinary literal encoding;
@@ -607,11 +611,11 @@ consteval void fn() {
   [The name corresponds to the spelling of an identifier token after phase 6 of translation ([lex.phases]). Lexical constructs like `$universal-character-name$`s [lex.universal.char] are not processed and will cause evaluation to fail. For example, `R"(\u03B1)"` is an invalid identifier and is not interpreted as `"α"`.]{.note}
 - [#.#]{.pnum} if `options.name` does not contain a value, then `options.bit_width` contains a value [and `options.annotations` is empty]{.addu};
 - [#.#]{.pnum} if `options.bit_width` contains a value `$V$`, then
-  - [#.#.#]{.pnum} `is_integral_type(@[options.]{.addu}@type) || is_enumeration_type(@[options.]{.addu}@type)` is `true`,
+  - [#.#.#]{.pnum} `is_integral_type(type) || is_enumeration_type(type)` is `true`,
   - [#.#.#]{.pnum} `options.alignment` does not contain a value,
   - [#.#.#]{.pnum} `options.no_unique_address` is `false`, and
   - [#.#.#]{.pnum} if `$V$` equals `0` then `options.name` does not contain a value; [and]{.rm}
-- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(@[options.]{.addu}@type)`[.]{.rm} [; and]{.addu}
+- [#.#]{.pnum} if `options.alignment` contains a value, it is an alignment value ([basic.align]) not less than `alignment_of(type)`[.]{.rm} [; and]{.addu}
 - [#.#]{.pnum} [for every reflection `r` in `options.annotations`, `$has-type$(r)` is `true`, `type_of(r)` represents a non-array object type, and evaluation of `constant_of(r)` does not exit via an exception.]{.addu}
 
 ```cpp
