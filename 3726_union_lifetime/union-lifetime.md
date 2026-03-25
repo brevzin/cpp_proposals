@@ -1,6 +1,6 @@
 ---
 title: "Adjustments to Union Lifetime Rules"
-document: P3726R1
+document: D3726R2
 date: today
 audience: EWG, LEWG
 author:
@@ -14,6 +14,8 @@ status: progress
 ---
 
 # Revision History
+
+Since [@P3726R1], added feature-test macro and some wording improvements.
 
 [@P3726R0] proposed several things:
 
@@ -223,7 +225,7 @@ The *constituent references* of an object `$o$` are
 * [2.4]{.pnum} the constituent references of any direct subobjects of `$o$` other than inactive union  [members]{.rm} [subobjects (see below)]{.addu}.
 
 ::: addu
-An *inactive union subobject* is either:
+An *inactive union subobject* is either
 
 * [2.5]{.pnum} an inactive union member or
 * [2.6]{.pnum} an element `$E$` of an array member of a union where `$E$` is not within its lifetime.
@@ -256,10 +258,18 @@ Put differently, supporting the array case is necessary, useful, consistent, and
 Change to [expr.const]{.sref}:
 
 ::: std
+::: addu
+[*]{.pnum} An *inactive union subobject* is either
+
+* [*.1]{.pnum} an inactive union member,
+* [*.2]{.pnum} an element `$E$` of an array member of a union where `$E$` is not within its lifetime, or
+* [*.3]{.pnum} an element `$E$` of an active union member `$U$` where `$U$` has array type and `$E$` is not within its lifetime.
+:::
+
 [2]{.pnum} The *constituent values* of an object `$o$` are
 
 * [2.1]{.pnum} if `$o$` has scalar type, the value of `$o$`;
-* [2.2]{.pnum} otherwise, the constituent values of any direct subobjects of `$o$` other than inactive union [members]{.rm} [subobjects (see below)]{.addu}.
+* [2.2]{.pnum} otherwise, the constituent values of any direct subobjects of `$o$` other than inactive union [members]{.rm} [subobjects]{.addu}.
 
 The *constituent references* of an object `$o$` are
 
@@ -267,10 +277,6 @@ The *constituent references* of an object `$o$` are
 * [2.4]{.pnum} the constituent references of any direct subobjects of `$o$` other than inactive union [members]{.rm} [subobjects]{.addu}.
 
 ::: addu
-An *inactive union subobject* is either:
-
-* [2.5]{.pnum} an inactive union member or
-* [2.6]{.pnum} an element `$E$` of an array member of a union where `$E$` is not within its lifetime.
 
 ::: example
 ```cpp
@@ -298,7 +304,7 @@ constexpr A v3 = []{
     A a;
     std::start_lifetime(a.arr); // ok, arr is now the active element of the union
     new (&a.arr[1]) int(1);
-    new (&a.arr[2]) int(2);
+    a.arr[2] = 2;
     return a;
 }();                 // ok, the constituent values are {v3.arr[1], v3.arr[2]}
 constexpr A v4 = []{
@@ -320,13 +326,13 @@ Revert the change in [class.default.ctor]{.sref}/4:
 
 :::
 
-Extend the template-argument-equivalent rules to understand incomplete arrays, in [temp.type]{.sref}:
+Extend the template-argument-equivalent rules to understand not-within-lifetime arrays, in [temp.type]{.sref}:
 
 ::: std
 [2]{.pnum} Two values are *template-argument-equivalent* if they are of the same type and
 
 * [2.1]{.pnum} [...]
-* [2.8]{.pnum} they are of array type and their corresponding elements are [either both within lifetime and]{.addu} template-argument-equivalent [or both not within their lifetime]{.addu}, or
+* [2.8]{.pnum} they are of array type and their corresponding elements are [either both within their lifetimes and]{.addu} template-argument-equivalent [or both not within their lifetimes]{.addu}, or
 * [2.9]{.pnum} [...]
 :::
 
@@ -360,7 +366,7 @@ namespace std {
 ```
 :::
 
-With corresponding wording in [obj.lifetime]{.sref}:
+With corresponding wording in [obj.lifetime]{.sref} [We specifically want to allow implicit-lifetime _aggregate_ types only. Implicit-lifetime types are still allowed to have constructors, and the combination of implicit-lifetime and aggregate means that there is neither a user-provided constructor nor a user-provided destructor — which means that starting lifetime in this manner is reasonable, we are not side-stepping any functionality.]{.draftnote}:
 
 ::: std
 ::: addu
@@ -371,18 +377,26 @@ template<class T>
 
 [1]{.pnum} *Mandates*: `T` is a complete type and an implicit-lifetime ([basic.type]) aggregate ([dcl.init.aggr]) type.
 
-[#]{.pnum} *Effects*: If the object referenced by `r` is already within its lifetime ([basic.life]), no effects. Otherwise, begins the lifetime of the object referenced by `r`. [No initialization is performed and no subobject has its lifetime started. If `r` denotes a member of a union `$U$`, it is the active member of `$U$` ([class.union]).]{.note}
+[#]{.pnum} *Effects*: If the object referenced by `r` is already within its lifetime ([basic.life]), no effects. Otherwise, begins the lifetime of the object referenced by `r`. [No initialization is performed and no subobject has its lifetime started. If `r` denotes a member of a union `$U$`, it becomes the active member of `$U$` ([class.union]).]{.note}
 :::
 :::
 
 ## Feature-Test Macro
 
-And bump the feature-test macro added by [@P3074R7]:
+Bump the feature-test macro added by [@P3074R7]:
 
 ::: std
 ```diff
 - __cpp_trivial_union 202502L
 + __cpp_trivial_union 2026XXL
+```
+:::
+
+And add a new library macro in [version.syn]{.sref}
+
+::: std
+```diff
++ #define __cpp_lib_start_lifetime 2026XXL // also in <memory>
 ```
 :::
 
