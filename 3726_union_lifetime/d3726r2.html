@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-03-25" />
+  <meta name="dcterms.date" content="2026-03-26" />
   <title>Adjustments to Union Lifetime Rules</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ Lifetime Rules</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-03-25</td>
+    <td>2026-03-26</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -1046,30 +1046,19 @@ sufficient motivation is presented.</p>
 <blockquote>
 <div class="addu">
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">*</a></span>
-An <em>inactive union subobject</em> is either</p>
-<ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">(*.1)</a></span>
-an inactive union member,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(*.2)</a></span>
-an element <code class="sourceCode cpp"><em>E</em></code> of an array
-member of a union where <code class="sourceCode cpp"><em>E</em></code>
-is not within its lifetime, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(*.3)</a></span>
-an element <code class="sourceCode cpp"><em>E</em></code> of an active
-union member <code class="sourceCode cpp"><em>U</em></code> where
-<code class="sourceCode cpp"><em>U</em></code> has array type and
-<code class="sourceCode cpp"><em>E</em></code> is not within its
-lifetime.</li>
-</ul>
+A <em>union elemental subobject</em> is a direct member of a union or an
+element of an array that is a union elemental subobject. An <em>inactive
+union subobject</em> is a union elemental subobject that is not within
+its lifetime.</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">2</a></span>
 The <em>constituent values</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">(2.1)</a></span>
 if <code class="sourceCode cpp"><em>o</em></code> has scalar type, the
 value of <code class="sourceCode cpp"><em>o</em></code>;</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">(2.2)</a></span>
 otherwise, the constituent values of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 <span class="rm" style="color: #bf0303"><del>members</del></span> <span class="addu">subobjects</span>.</li>
@@ -1077,10 +1066,10 @@ otherwise, the constituent values of any direct subobjects of
 <p>The <em>constituent references</em> of an object
 <code class="sourceCode cpp"><em>o</em></code> are</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">(2.3)</a></span>
 any direct members of <code class="sourceCode cpp"><em>o</em></code>
 that have reference type, and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">(2.4)</a></span>
 the constituent references of any direct subobjects of
 <code class="sourceCode cpp"><em>o</em></code> other than inactive union
 <span class="rm" style="color: #bf0303"><del>members</del></span> <span class="addu">subobjects</span>.</li>
@@ -1130,7 +1119,7 @@ the constituent references of any direct subobjects of
 <p>Revert the change in <span>11.4.5.2 <a href="https://wg21.link/class.default.ctor">[class.default.ctor]</a></span>/4:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">4</a></span>
 <span class="rm" style="color: #bf0303"><del>If a default constructor of
 a union-like class
 <span><code class="sourceCode default">X</code></span> is trivial, then
@@ -1158,17 +1147,17 @@ user-written default constructor for that class with no ctor-initializer
 not-within-lifetime arrays, in <span>13.6 <a href="https://wg21.link/temp.type">[temp.type]</a></span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">2</a></span>
 Two values are <em>template-argument-equivalent</em> if they are of the
 same type and</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(2.1)</a></span>
 […]</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(2.8)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(2.8)</a></span>
 they are of array type and their corresponding elements are <span class="addu">either both within their lifetimes and</span>
 template-argument-equivalent <span class="addu">or both not within their
 lifetimes</span>, or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(2.9)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(2.9)</a></span>
 […]</li>
 </ul>
 </blockquote>
@@ -1215,11 +1204,11 @@ not side-stepping any functionality. ]</span>:</p>
 <div class="addu">
 <div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constexpr</span> <span class="dt">void</span> start_lifetime<span class="op">(</span>T<span class="op">&amp;</span> r<span class="op">)</span> <span class="kw">noexcept</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">1</a></span>
 <em>Mandates</em>: <code class="sourceCode cpp">T</code> is a complete
 type and an implicit-lifetime ([basic.type]) aggregate ([dcl.init.aggr])
 type.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">2</a></span>
 <em>Effects</em>: If the object referenced by
 <code class="sourceCode cpp">r</code> is already within its lifetime
 ([basic.life]), no effects. Otherwise, begins the lifetime of the object

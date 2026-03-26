@@ -259,11 +259,7 @@ Change to [expr.const]{.sref}:
 
 ::: std
 ::: addu
-[*]{.pnum} An *inactive union subobject* is either
-
-* [*.1]{.pnum} an inactive union member,
-* [*.2]{.pnum} an element `$E$` of an array member of a union where `$E$` is not within its lifetime, or
-* [*.3]{.pnum} an element `$E$` of an active union member `$U$` where `$U$` has array type and `$E$` is not within its lifetime.
+[*]{.pnum} A *union elemental subobject* is a direct member of a union or an element of an array that is a union elemental subobject. An *inactive union subobject* is a union elemental subobject that is not within its lifetime.
 :::
 
 [2]{.pnum} The *constituent values* of an object `$o$` are
