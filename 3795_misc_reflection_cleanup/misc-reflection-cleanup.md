@@ -202,13 +202,13 @@ Extend what an annotation can represent in [dcl.attr.annotation]{.sref}:
 ```cpp
 void f([[=1]] int x);
 void f([[=2]] int y) {
-  constexpr info rp = parameters_of(^^f)[0];
-  constexpr info ry = variable_of(rp);
+  constexpr auto rp = parameters_of(^^f)[0];
+  constexpr auto ry = variable_of(rp);
   static_assert(ry == ^^y);
 
   static_assert(annotations_of(rp).size() == 2); // both [1, 2]
   static_assert(annotations_of(ry).size() == 1); // just [2]
-  static_assert(annotations_of(rp)[1] == annotations_of(ry)[0]); // the same 2
+  static_assert(annotations_of(rp)[1] == annotations_of(ry)[0]);
 }
 ```
 :::
