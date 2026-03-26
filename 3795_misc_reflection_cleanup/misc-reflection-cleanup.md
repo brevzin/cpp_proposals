@@ -640,7 +640,7 @@ template<reflection_range R = initializer_list<info>>
   - [#.#.#]{.pnum} `@$M$~$K$~@` is declared with the attribute `[[no_unique_address]]` if and only if `@$NUA$~$K$~@` is `true`.
   - [#.#.#]{.pnum} If `@$W$~$K$~@` is not ⊥, `@$M$~$K$~@` is a bit-field whose width is that value. Otherwise, `@$M$~$K$~@` is not a bit-field.
   - [#.#.#]{.pnum} If `@$A$~$K$~@` is not ⊥, `@$M$~$K$~@` has the `$alignment-specifier$` `alignas(@$A$~$K$~@)`. Otherwise, `@$M$~$K$~@` has no `$alignment-specifier$`.
-  - [#.#.#]{.pnum} [`@$M$~$K$~@` has an annotation whose underlying constant ([dcl.attr.annotation]) is `r` for every reflection `r` in `@$ANN$~$K$~@`.]{.addu}
+  - [#.#.#]{.pnum} [For every reflection `r` in `@$ANN$~$K$~@`, `@$M$~$K$~@` has an annotation whose underlying constant ([dcl.attr.annotation]) is `r`.]{.addu}
 * [9.6]{.pnum} For every `@$r$~$L$~@` in `mdescrs` such that `$K$ < $L$` [...]
 :::
 
