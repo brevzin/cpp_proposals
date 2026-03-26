@@ -1,8 +1,8 @@
 ---
 title: "Adjustments to Union Lifetime Rules"
-document: D3726R2
+document: P3726R2
 date: today
-audience: EWG, LEWG
+audience: CWG, LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -259,18 +259,18 @@ Change to [expr.const]{.sref}:
 
 ::: std
 ::: addu
-[*]{.pnum} A *union elemental subobject* is a direct member of a union or an element of an array that is a union elemental subobject. An *inactive union subobject* is a union elemental subobject that is not within its lifetime.
+[*]{.pnum} A *union elemental subobject* is a direct member of a union or an element of an array that is a union elemental subobject. An *inactive union elemental subobject* is a union elemental subobject that is not within its lifetime.
 :::
 
 [2]{.pnum} The *constituent values* of an object `$o$` are
 
 * [2.1]{.pnum} if `$o$` has scalar type, the value of `$o$`;
-* [2.2]{.pnum} otherwise, the constituent values of any direct subobjects of `$o$` other than inactive union [members]{.rm} [subobjects]{.addu}.
+* [2.2]{.pnum} otherwise, the constituent values of any direct subobjects of `$o$` other than inactive union [members]{.rm} [elemental subobjects]{.addu}.
 
 The *constituent references* of an object `$o$` are
 
 * [2.3]{.pnum} any direct members of `$o$` that have reference type, and
-* [2.4]{.pnum} the constituent references of any direct subobjects of `$o$` other than inactive union [members]{.rm} [subobjects]{.addu}.
+* [2.4]{.pnum} the constituent references of any direct subobjects of `$o$` other than inactive union [members]{.rm} [elemental subobjects]{.addu}.
 
 ::: addu
 
@@ -309,7 +309,7 @@ constexpr A v4 = []{
     a.y.x2.j = 2;
     return a;
 }();                 // error: the constituent values include v4.y.x1.j and v4.y.x2.i
-//                   // which have erroneous value
+                     // which have erroneous value
 ```
 :::
 :::
