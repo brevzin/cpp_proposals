@@ -131,7 +131,7 @@ Change [propagation]{.sref}/14-15:
 
 [14]{.pnum} *Mandates*: [...]
 
-[15]{.pnum} *Returns*: [A pointer to the]{.rm} [The]{.addu} exception object referred to by `p`, if `p` is not null and a handler of type `const E&` would be a match ([except.handle]) for that exception object. Otherwise, [`nullptr`]{.rm} [`nullopt`]{.addu}.
+[15]{.pnum} *Returns*: [A pointer to the]{.rm} [An `optional` containing a reference to the]{.addu} exception object referred to by `p`, if `p` is not null and a handler of type `const E&` would be a match ([except.handle]) for that exception object. Otherwise, [`nullptr`]{.rm} [`nullopt`]{.addu}.
 :::
 
 Change the synopsis in [inplace.vector.overview]{.sref}:
