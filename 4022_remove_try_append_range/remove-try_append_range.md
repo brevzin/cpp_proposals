@@ -11,7 +11,7 @@ author:
     - name: Tomasz Kamiński
       email: <tomaszkam@gmail.com>
 toc: true
-status: progress
+status: accepted
 ---
 
 # Introduction
