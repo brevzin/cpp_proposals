@@ -1,7 +1,7 @@
 ---
 title: "Consteval-only Values for C++26"
-document: D4101R0
-date: today
+document: P4101R0
+date: 2026-03-24
 audience: EWG, CWG
 author:
     - name: Barry Revzin
@@ -148,7 +148,7 @@ But if `std::meta::info const*` is no longer a consteval-only type, then `std::s
 
 ## What is the Conclusion?
 
-The conclusion here is that in the consteval-only type model, we simply have to follow all the type edges. Pointers, references, functions, class subobjects, etc. But once we do that, we simply do not know if we have a way to properly reject invalid uses in the presence of incomplete types. I don't think we even know how to solve this problem.
+The conclusion here is that in the consteval-only type model, we simply have to follow all the type edges. Pointers, references, functions, class subobjects, etc. But once we do that, we end up with a significantly more complex rule for handling incomplete types — see [@P4132R0]{.title} and [@P4135R0]{.title}. Is that rule carrying its weight?
 
 Note for interest that the Zig programming language has consteval-only types in the exact way that we want to define here (comptime-only in their parlance), but they don't have incomplete types in the same way, so they don't run into this issue.
 
@@ -616,7 +616,7 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 [a]{.pnum} A value is *consteval-only* if it is either
 
 * [a.1]{.pnum} a reflection value ([basic.fundamental]) that is not the null reflection value or
-* [a.#]{.pnum} a pointer or pointer-to-member that points to either an immediate object or an immediate function.
+* [a.#]{.pnum} a pointer or pointer-to-member that points to either an immediate function or either to past the end of an immediate object.
 
 [b]{.pnum} An object is an *immediate object* if its complete object has either
 
@@ -943,4 +943,25 @@ references:
           month: 01
           day: 19
       URL: https://cplusplus.github.io/CWG/issues/3150.html
+    - id: P4132R0
+      citation-label: P4132R0
+      title: Addressing incomplete consteval-only types
+      author:
+        - family: Dan Katz
+        - family: Wyatt Childers
+      issued:
+        - year: 2026
+          month: 03
+          day: 23
+      URL: https://isocpp.org/files/papers/D4132R0.html
+    - id: P4135R0
+      citation-label: P4135R0
+      title: "Consteval-only Types: A design space overview"
+      author:
+        - family: Wyatt Childers
+      issued:
+        - year: 2026
+          month: 03
+          day: 23
+      URL: https://isocpp.org/files/papers/P4135R0.pdf
 ---

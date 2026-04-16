@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-03-23" />
+  <meta name="dcterms.date" content="2026-03-24" />
   <title>Consteval-only Values for C++26</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ C++26</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-03-23</td>
+    <td>2026-03-24</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -856,10 +856,11 @@ pointer type that points to an object of consteval-only type.</p>
 <h2 data-number="2.3" id="what-is-the-conclusion"><span class="header-section-number">2.3</span> What is the Conclusion?<a href="#what-is-the-conclusion" class="self-link"></a></h2>
 <p>The conclusion here is that in the consteval-only type model, we
 simply have to follow all the type edges. Pointers, references,
-functions, class subobjects, etc. But once we do that, we simply do not
-know if we have a way to properly reject invalid uses in the presence of
-incomplete types. I don’t think we even know how to solve this
-problem.</p>
+functions, class subobjects, etc. But once we do that, we end up with a
+significantly more complex rule for handling incomplete types — see
+<span class="title"><span class="citation" data-cites="P4132R0"><a href="https://isocpp.org/files/papers/D4132R0.html" role="doc-biblioref">[P4132R0] (Addressing incomplete consteval-only
+types)</a></span></span> and <span class="title"><span class="citation" data-cites="P4135R0"><a href="https://isocpp.org/files/papers/P4135R0.pdf" role="doc-biblioref">[P4135R0] (Consteval-only Types: A design space
+overview)</a></span></span>. Is that rule carrying its weight?</p>
 <p>Note for interest that the Zig programming language has
 consteval-only types in the exact way that we want to define here
 (comptime-only in their parlance), but they don’t have incomplete types
@@ -1556,8 +1557,8 @@ A value is <em>consteval-only</em> if it is either</p>
 a reflection value ([basic.fundamental]) that is not the null reflection
 value or</li>
 <li><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">(a.2)</a></span>
-a pointer or pointer-to-member that points to either an immediate object
-or an immediate function.</li>
+a pointer or pointer-to-member that points to either an immediate
+function or either to past the end of an immediate object.</li>
 </ul>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">b</a></span>
 An object is an <em>immediate object</em> if its complete object has
@@ -1729,12 +1730,19 @@ function context nor a subexpression of an immediate invocation, and</p>
 <li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_82" id="pnum_82">(24.1)</a></span>
 it is an <code class="sourceCode cpp"><em>id-expression</em></code> or
 <code class="sourceCode cpp"><em>splice-expression</em></code> that
+<span class="addu">either</span></p>
+<ul>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_83" id="pnum_83">(24.1.1)</a></span>
 designates an immediate function <span class="addu">or an immediate
-object;</span> <span class="rm" style="color: #bf0303"><del>,</del></span></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_83" id="pnum_83">(24.2)</a></span>
+object</span>, <span class="addu">or</span></li>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_84" id="pnum_84">(24.1.2)</a></span>
+<span class="addu">is a prvalue that computes a consteval-only
+value;</span></li>
+</ul></li>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_85" id="pnum_85">(24.2)</a></span>
 it is an immediate invocation that <span class="addu">either</span></p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_84" id="pnum_84">(24.2.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_86" id="pnum_86">(24.2.1)</a></span>
 is not a constant expression, or</p>
 <div class="addu">
 <div class="example">
@@ -1748,7 +1756,7 @@ is not a constant expression, or</p>
 <span> — <em>end example</em> ]</span>
 </div>
 </div></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_85" id="pnum_85">(24.2.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_87" id="pnum_87">(24.2.2)</a></span>
 <span class="addu">is an immediate constant expression; or</span></p>
 <div class="addu">
 <div class="example">
@@ -1765,7 +1773,7 @@ is not a constant expression, or</p>
 </div>
 </div></li>
 </ul></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_86" id="pnum_86">(24.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_88" id="pnum_88">(24.3)</a></span>
 <span class="rm" style="color: #bf0303"><del>it is of consteval-only
 type ([basic.types.general]).</del></span> <span class="addu">it is a
 <code class="sourceCode cpp"><em>reflect-expression</em></code>.</span></p>
@@ -1781,27 +1789,27 @@ type ([basic.types.general]).</del></span> <span class="addu">it is a
 </div>
 </div></li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_87" id="pnum_87">25</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_89" id="pnum_89">25</a></span>
 An <em>immediate-escalating</em> function is […]</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_88" id="pnum_88">26</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_90" id="pnum_90">26</a></span>
 An <em>immediate function</em> is a function that is <span class="addu">either</span></p>
 <ul>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_89" id="pnum_89">(26.1)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_91" id="pnum_91">(26.1)</a></span>
 declared with the
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 specifier, <span class="addu">or</span></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_90" id="pnum_90">(26.2)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_92" id="pnum_92">(26.2)</a></span>
 <span class="rm" style="color: #bf0303"><del>an immediate-escalating
 function whose type is consteval-only ([basic.types.general]),
 or</del></span></p></li>
-<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_91" id="pnum_91">(26.3)</a></span>
+<li><p><span class="marginalizedparent"><a class="marginalized" href="#pnum_93" id="pnum_93">(26.3)</a></span>
 an immediate-escalating function
 <code class="sourceCode cpp"><em>F</em></code> whose function body
 contains <span class="rm" style="color: #bf0303"><del>either</del></span></p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_92" id="pnum_92">(26.3.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_94" id="pnum_94">(26.3.1)</a></span>
 an immediate-escalating expression <span class="rm" style="color: #bf0303"><del>or</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_93" id="pnum_93">(26.3.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_95" id="pnum_95">(26.3.2)</a></span>
 <span class="rm" style="color: #bf0303"><del>a definition of a
 non-constexpr variable with consteval-only type</del></span></li>
 </ul>
@@ -1823,7 +1831,7 @@ is still declared
 ]</span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_94" id="pnum_94">18</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_96" id="pnum_96">18</a></span>
 A <span class="rm" style="color: #bf0303"><del>class with a</del></span>
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 virtual function <span class="addu">shall not override</span> <span class="rm" style="color: #bf0303"><del>that overrides</del></span> a
@@ -1972,7 +1980,7 @@ shall be a complete type or
 in <span>21.4.4 <a href="https://wg21.link/meta.reflection.exception">[meta.reflection.exception]</a></span>/1:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_95" id="pnum_95">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_97" id="pnum_97">1</a></span>
 Reflection functions throw exceptions of type <code class="sourceCode cpp">meta​<span class="op">::</span>​exception</code> to
 signal an error. <span class="rm" style="color: #bf0303"><del><span><code class="sourceCode default">meta​::​exception</code></span>
 is a consteval-only type.</del></span></p>
@@ -1982,7 +1990,7 @@ is a consteval-only type.</del></span></p>
 in <span>21.4.8 <a href="https://wg21.link/meta.reflection.access.context">[meta.reflection.access.context]</a></span>/3:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_96" id="pnum_96">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_98" id="pnum_98">3</a></span>
 The type <code class="sourceCode cpp">access_context</code> is a
 structural, <span class="rm" style="color: #bf0303"><del>consteval-only,</del></span> non-aggregate
 type. <span class="addu">Values of type
@@ -1995,7 +2003,7 @@ values.</span></p>
 <a href="https://wg21.link/meta.reflection.define.aggregate">[meta.reflection.define.aggregate]</a></span>/1:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_97" id="pnum_97">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_99" id="pnum_99">1</a></span>
 The classes <code class="sourceCode cpp">data_member_options</code> and
 <code class="sourceCode cpp">data_member_options​<span class="op">::</span><em>name-type</em></code>
 <span class="rm" style="color: #bf0303"><del>are consteval-only types
@@ -2011,12 +2019,12 @@ now handled in [expr.const]:</p>
 <div class="std">
 <blockquote>
 <div class="rm" style="color: #bf0303">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_98" id="pnum_98">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_100" id="pnum_100">2</a></span>
 <em>Mandates</em>: Neither <code class="sourceCode default">To</code>
 nor <code class="sourceCode default">From</code> are consteval-only
 types ([basic.types.general]).</p>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_99" id="pnum_99">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_101" id="pnum_101">3</a></span>
 <em>Constant When</em>: <code class="sourceCode cpp">To</code> and
 <code class="sourceCode cpp">From</code> do not have constexpr-unknown
 representation ([expr.const]).</p>
@@ -2061,6 +2069,14 @@ for C++26. <a href="https://wg21.link/p2996r13"><div class="csl-block">https://w
 <div id="ref-P3603R1" class="csl-entry" role="doc-biblioentry">
 [P3603R1] Barry Revzin, Peter Dimov. 2025-10-06. Consteval-only Values
 and Consteval Variables. <a href="https://wg21.link/p3603r1"><div class="csl-block">https://wg21.link/p3603r1</div></a>
+</div>
+<div id="ref-P4132R0" class="csl-entry" role="doc-biblioentry">
+[P4132R0] Dan Katz and Wyatt Childers. 2026-03-23. Addressing incomplete
+consteval-only types. <a href="https://isocpp.org/files/papers/D4132R0.html"><div class="csl-block">https://isocpp.org/files/papers/D4132R0.html</div></a>
+</div>
+<div id="ref-P4135R0" class="csl-entry" role="doc-biblioentry">
+[P4135R0] Wyatt Childers. 2026-03-23. Consteval-only Types: A design
+space overview. <a href="https://isocpp.org/files/papers/P4135R0.pdf"><div class="csl-block">https://isocpp.org/files/papers/P4135R0.pdf</div></a>
 </div>
 </div>
 </div>
