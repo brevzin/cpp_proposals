@@ -1,7 +1,7 @@
 ---
 title: "String Interpolation with Template Strings"
-document: D3951R1
-date: today
+document: P3951R1
+date: 2026-03-15
 audience: EWG
 author:
     - name: Barry Revzin
