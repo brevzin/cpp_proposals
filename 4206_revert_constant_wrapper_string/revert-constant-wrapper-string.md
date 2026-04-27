@@ -314,7 +314,23 @@ struct constant_wrapper {
 ```
 :::
 
-Then for scalar types, `X` is a prvalue, which means that `value` is a reference to lifetime-extended temporary. The consequence of that would be that `constant_wrapper<42::value` is not usable as a constant template argument for a template parameter of reference type. That would be pretty surprising also, so instead we specify it this way:
+Then for scalar types, `X` is a prvalue, which means that `value` is a reference to lifetime-extended temporary. The consequence of that would be that `constant_wrapper<42>::value` is not usable as a constant template argument for a template parameter of reference type:
+
+::: std
+```cpp
+template <auto X>
+struct constant_wrapper {
+    static constexpr const auto& value = X;
+};
+
+template <int const& R>
+auto f() -> int;
+
+int r = f<constant_wrapper<42>::value>(); // error
+```
+:::
+
+That would be pretty surprising also, so instead we specify it this way:
 
 ::: std
 ```cpp
