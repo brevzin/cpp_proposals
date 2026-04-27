@@ -419,9 +419,21 @@ namespace std {
 ```
 :::
 
-And remove the constructor in [const.wrap.class]{.sref}/4 and replace it with a Mandates that ensures that you can't do `constant_wrapper<42, float>()`.
+Remove the constructor in [const.wrap.class]{.sref}/4, and add a requirement that you can't do `constant_wrapper<42, float>()`.
 
 ::: std
+[1]{.pnum} The class template `constant_wrapper` aids in metaprogramming by ensuring that the evaluation of expressions comprised entirely of `constant_wrapper` are core constant expressions ([expr.const.core]), regardless of the context in which they appear. In particular, this enables use of `constant_wrapper` values that are passed as arguments to constexpr functions to be used in constant expressions.
+
+[2]{.pnum} [If a specialization of `constant_wrapper` is instantiated with a type `T` such that `is_same_v<T, value_type>` is `false`, the program is ill-formed.]{.addu} [The [unnamed]{.rm} second template parameter to `constant_wrapper` is present to aid argument-dependent lookup ([basic.lookup.argdep]) in finding overloads for which `constant_wrapper`'s wrapped value is a suitable argument, but for which the constant_wrapper itself is not.]{.note}
+
+[3]{.pnum}
+
+::: example
+```cpp
+// ...
+```
+:::
+
 ::: rm
 ```
 constexpr $cw-fixed-value$(T (&arr)[Extent]) noexcept;
@@ -429,15 +441,6 @@ constexpr $cw-fixed-value$(T (&arr)[Extent]) noexcept;
 
 [4]{.pnum} *Effects*: Initialize elements of `data` with corresponding elements of `arr`.
 :::
-
-::: addu
-[4]{.pnum} *Mandates*: `is_same_v<T, value_type>` is `true`.
-:::
-```cpp
-template<class... Args>
-  static constexpr decltype(auto) operator()(Args&&... args) noexcept($see below$);
-```
-[5]{.pnum} Let `$call-expr$` be [...].
 :::
 
 ## Feature-Test Macro

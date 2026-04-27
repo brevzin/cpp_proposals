@@ -1105,27 +1105,47 @@ everything continues to work.</p>
 </div>
 </blockquote>
 </div>
-<p>And remove the constructor in <span>21.3.5 <a href="https://wg21.link/const.wrap.class">[const.wrap.class]</a></span>/4
-and replace it with a Mandates that ensures that you can’t do <code class="sourceCode cpp">constant_wrapper<span class="op">&lt;</span><span class="dv">42</span>, <span class="dt">float</span><span class="op">&gt;()</span></code>.</p>
+<p>Remove the constructor in <span>21.3.5 <a href="https://wg21.link/const.wrap.class">[const.wrap.class]</a></span>/4,
+and add a requirement that you can’t do <code class="sourceCode cpp">constant_wrapper<span class="op">&lt;</span><span class="dv">42</span>, <span class="dt">float</span><span class="op">&gt;()</span></code>.</p>
 <div class="std">
 <blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">1</a></span>
+The class template <code class="sourceCode cpp">constant_wrapper</code>
+aids in metaprogramming by ensuring that the evaluation of expressions
+comprised entirely of
+<code class="sourceCode cpp">constant_wrapper</code> are core constant
+expressions ([expr.const.core]), regardless of the context in which they
+appear. In particular, this enables use of
+<code class="sourceCode cpp">constant_wrapper</code> values that are
+passed as arguments to constexpr functions to be used in constant
+expressions.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">2</a></span>
+<span class="addu">If a specialization of
+<code class="sourceCode cpp">constant_wrapper</code> is instantiated
+with a type <code class="sourceCode cpp">T</code> such that <code class="sourceCode cpp">is_same_v<span class="op">&lt;</span>T, value_type<span class="op">&gt;</span></code>
+is <code class="sourceCode cpp"><span class="kw">false</span></code>,
+the program is ill-formed.</span> <span class="note"><span>[ <em>Note
+1:</em> </span>The <span class="rm" style="color: #bf0303"><del>unnamed</del></span> second template
+parameter to <code class="sourceCode cpp">constant_wrapper</code> is
+present to aid argument-dependent lookup ([basic.lookup.argdep]) in
+finding overloads for which
+<code class="sourceCode cpp">constant_wrapper</code>’s wrapped value is
+a suitable argument, but for which the constant_wrapper itself is
+not.<span> — <em>end note</em> ]</span></span></p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">3</a></span></p>
+<div class="example">
+<span>[ <em>Example 1:</em> </span>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">// ...</span></span></code></pre></div>
+<span> — <em>end example</em> ]</span>
+</div>
 <div class="rm" style="color: #bf0303">
 
-<div class="sourceCode" id="cb22"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>constexpr <em>cw-fixed-value</em>(T (&amp;arr)[Extent]) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">4</a></span>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>constexpr <em>cw-fixed-value</em>(T (&amp;arr)[Extent]) noexcept;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_4" id="pnum_4">4</a></span>
 <em>Effects</em>: Initialize elements of
 <code class="sourceCode default">data</code> with corresponding elements
 of <code class="sourceCode default">arr</code>.</p>
 </div>
-<div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">4</a></span>
-<em>Mandates</em>: <code class="sourceCode cpp">is_same_v<span class="op">&lt;</span>T, value_type<span class="op">&gt;</span></code>
-is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
-</div>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="kw">operator</span><span class="op">()(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="kw">noexcept</span><span class="op">(</span><em>see below</em><span class="op">)</span>;</span></code></pre></div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">5</a></span>
-Let <code class="sourceCode cpp"><em>call-expr</em></code> be […].</p>
 </blockquote>
 </div>
 <h2 data-number="5.4" id="feature-test-macro"><span class="header-section-number">5.4</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
