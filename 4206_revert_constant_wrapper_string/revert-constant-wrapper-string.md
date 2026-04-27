@@ -396,7 +396,7 @@ namespace std {
   };
 
 - template<$cw-fixed-value$ X, class>
-+ template<auto X, class>
++ template<auto X, class T>
   struct constant_wrapper : $cw-operators$ {
 -   static constexpr const auto & value = X.data;
 +   static constexpr decltype(auto) value = (X);
@@ -419,7 +419,7 @@ namespace std {
 ```
 :::
 
-And remove the constructor in [const.wrap.class]{.sref}/4:
+And remove the constructor in [const.wrap.class]{.sref}/4 and replace it with a Mandates that ensures that you can't do `constant_wrapper<42, float>()`.
 
 ::: std
 ::: rm
@@ -429,6 +429,15 @@ constexpr $cw-fixed-value$(T (&arr)[Extent]) noexcept;
 
 [4]{.pnum} *Effects*: Initialize elements of `data` with corresponding elements of `arr`.
 :::
+
+::: addu
+[4]{.pnum} *Mandates*: `is_same_v<T, value_type>` is `true`.
+:::
+```cpp
+template<class... Args>
+  static constexpr decltype(auto) operator()(Args&&... args) noexcept($see below$);
+```
+[5]{.pnum} Let `$call-expr$` be [...].
 :::
 
 ## Feature-Test Macro

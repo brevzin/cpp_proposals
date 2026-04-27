@@ -1082,7 +1082,7 @@ everything continues to work.</p>
 <span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>  };</span>
 <span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;<em>cw-fixed-value</em> X, class&gt;</span></span>
-<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;auto X, class&gt;</span></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;auto X, class T&gt;</span></span>
 <span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  struct constant_wrapper : <em>cw-operators</em> {</span>
 <span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a><span class="st">-   static constexpr const auto &amp; value = X.data;</span></span>
 <span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a><span class="va">+   static constexpr decltype(auto) value = (X);</span></span>
@@ -1105,7 +1105,8 @@ everything continues to work.</p>
 </div>
 </blockquote>
 </div>
-<p>And remove the constructor in <span>21.3.5 <a href="https://wg21.link/const.wrap.class">[const.wrap.class]</a></span>/4:</p>
+<p>And remove the constructor in <span>21.3.5 <a href="https://wg21.link/const.wrap.class">[const.wrap.class]</a></span>/4
+and replace it with a Mandates that ensures that you can’t do <code class="sourceCode cpp">constant_wrapper<span class="op">&lt;</span><span class="dv">42</span>, <span class="dt">float</span><span class="op">&gt;()</span></code>.</p>
 <div class="std">
 <blockquote>
 <div class="rm" style="color: #bf0303">
@@ -1116,6 +1117,15 @@ everything continues to work.</p>
 <code class="sourceCode default">data</code> with corresponding elements
 of <code class="sourceCode default">arr</code>.</p>
 </div>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_2" id="pnum_2">4</a></span>
+<em>Mandates</em>: <code class="sourceCode cpp">is_same_v<span class="op">&lt;</span>T, value_type<span class="op">&gt;</span></code>
+is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
+</div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="kw">operator</span><span class="op">()(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="kw">noexcept</span><span class="op">(</span><em>see below</em><span class="op">)</span>;</span></code></pre></div>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_3" id="pnum_3">5</a></span>
+Let <code class="sourceCode cpp"><em>call-expr</em></code> be […].</p>
 </blockquote>
 </div>
 <h2 data-number="5.4" id="feature-test-macro"><span class="header-section-number">5.4</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
@@ -1125,8 +1135,8 @@ of <code class="sourceCode default">arr</code>.</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb23"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_constant_wrapper 202603L // freestanding, also in &lt;utility&gt;</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_constant_wrapper 2026XXL // freestanding, also in &lt;utility&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_constant_wrapper 202603L // freestanding, also in &lt;utility&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_constant_wrapper 2026XXL // freestanding, also in &lt;utility&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
