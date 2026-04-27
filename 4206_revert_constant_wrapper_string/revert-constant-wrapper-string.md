@@ -178,6 +178,17 @@ The mangled name of the function being invoked here is:
 
 That's a change from 36 characters to 61.
 
+Another issue is the question of address uniqueness. Consider:
+
+::: std
+```cpp
+template <auto V> auto foo() -> void const* { return &V; }
+template <auto V> auto bar(std::constant_wrapper<V> cw) -> void const& { return &cw.value; }
+```
+:::
+
+For an object `o` of class type, `foo<o>()` and `bar(std::cw<o>)` do not return the same address — because the former returns the address of the template parameter object, but the latter returns the address of a subobject of a template parameter object of different kind.
+
 # String Support
 
 This raises the question: what benefit do we get from this less convenient interface? The stated motivation for the change was to support strings. What does that support look like?
@@ -279,6 +290,43 @@ As a DR against C++26: Revert the `std::constant_wrapper` and `std::cw` design t
 
 Both libstdc++ and libc++ have already implemented the `std::constant_wrapper` design that we shipped in C++26, and will ship a release with that utility. Nevertheless, both implementations support making the change proposed here as a C++26 DR.
 
+## Design Note
+
+The status quo is that we have:
+
+::: std
+```cpp
+template <$cw-fixed-value$ X>
+struct constant_wrapper {
+    static constexpr const auto& value = X.data;
+};
+```
+:::
+
+In this scenario, `X.data` is always an lvalue, so `constant_wrapper<V>::value` is always a reference to a static storage duration object. Specifically, it is not a reference to a temporary object. However, if we change the design to:
+
+::: std
+```cpp
+template <auto X>
+struct constant_wrapper {
+    static constexpr const auto& value = X;
+};
+```
+:::
+
+Then for scalar types, `X` is a prvalue, which means that `value` is a reference to lifetime-extended temporary. The consequence of that would be that `constant_wrapper<42::value` is not usable as a constant template argument for a template parameter of reference type. That would be pretty surprising also, so instead we specify it this way:
+
+::: std
+```cpp
+template <auto X>
+struct constant_wrapper {
+    static constexpr decltype(auto) value = (X);
+};
+```
+:::
+
+When `X` is a class type, `value` is the same lvalue reference to constant object that it was before. But for prvalues, `value` is now simply a value, so everything continues to work.
+
 ## Wording
 
 Change [utility.syn]{.sref}:
@@ -307,7 +355,7 @@ namespace std {
 ```
 :::
 
-Change [const.wrap.class]{.sref}:
+Change [const.wrap.class]{.sref}.
 
 ::: std
 ```diff
@@ -333,9 +381,9 @@ namespace std {
 
 - template<$cw-fixed-value$ X, class>
 + template<auto X, class>
-  struct constant_wrapper : cw-operators {
+  struct constant_wrapper : $cw-operators$ {
 -   static constexpr const auto & value = X.data;
-+   static constexpr const auto & value = X;
++   static constexpr decltype(auto) value = (X);
     using type = constant_wrapper;
 -   using value_type = decltype(X)::type;
 +   using value_type = decltype(X);

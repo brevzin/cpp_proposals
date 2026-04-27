@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-04-26" />
+  <meta name="dcterms.date" content="2026-04-27" />
   <title>Revert string support in std::constant_wrapper</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ background-color: #ffff00;
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-04-26</td>
+    <td>2026-04-27</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -614,8 +614,9 @@ Evolution<span></span></a></li>
 <ul>
 <li><a href="#implementation-status" id="toc-implementation-status"><span class="toc-section-number">5.1</span> Implementation
 Status<span></span></a></li>
-<li><a href="#wording" id="toc-wording"><span class="toc-section-number">5.2</span> Wording<span></span></a></li>
-<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">5.3</span> Feature-Test
+<li><a href="#design-note" id="toc-design-note"><span class="toc-section-number">5.2</span> Design Note<span></span></a></li>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">5.3</span> Wording<span></span></a></li>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">5.4</span> Feature-Test
 Macro<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References<span></span></a></li>
@@ -826,6 +827,19 @@ another is increased symbol sizes. For instance:</p>
 </tbody>
 </table>
 <p>That’s a change from 36 characters to 61.</p>
+<p>Another issue is the question of address uniqueness. Consider:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">auto</span> foo<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="kw">const</span><span class="op">*</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">&amp;</span>V; <span class="op">}</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">auto</span> bar<span class="op">(</span>std<span class="op">::</span>constant_wrapper<span class="op">&lt;</span>V<span class="op">&gt;</span> cw<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">&amp;</span>cw<span class="op">.</span>value; <span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>For an object <code class="sourceCode cpp">o</code> of class type,
+<code class="sourceCode cpp">foo<span class="op">&lt;</span>o<span class="op">&gt;()</span></code>
+and <code class="sourceCode cpp">bar<span class="op">(</span>std<span class="op">::</span>cw<span class="op">&lt;</span>o<span class="op">&gt;)</span></code>
+do not return the same address — because the former returns the address
+of the template parameter object, but the latter returns the address of
+a subobject of a template parameter object of different kind.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="string-support"><span class="header-section-number">3</span> String
 Support<a href="#string-support" class="self-link"></a></h1>
 <p>This raises the question: what benefit do we get from this less
@@ -844,30 +858,30 @@ what string operations can you do?</p>
 <p>You cannot do comparisons:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> a <span class="op">=</span> std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;foo&quot;</span><span class="op">&gt;</span>;</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> b <span class="op">=</span> std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;bar&quot;</span><span class="op">&gt;</span>;</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>a <span class="op">==</span> b; <span class="co">// error</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> a <span class="op">=</span> std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;foo&quot;</span><span class="op">&gt;</span>;</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> b <span class="op">=</span> std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;bar&quot;</span><span class="op">&gt;</span>;</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>a <span class="op">==</span> b; <span class="co">// error</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>You cannot use non-literal strings:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> msg <span class="op">=</span> <span class="st">&quot;amount&quot;</span>;</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> std<span class="op">::</span>cw<span class="op">&lt;</span>msg<span class="op">&gt;</span>; <span class="co">// error</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> msg <span class="op">=</span> <span class="st">&quot;amount&quot;</span>;</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> std<span class="op">::</span>cw<span class="op">&lt;</span>msg<span class="op">&gt;</span>; <span class="co">// error</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>And on the receiver side, as in the previous section, you can’t do
 anything with the template argument until you wrap it locally:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span>std<span class="op">::</span>constant_wrapper<span class="op">&lt;</span>V, <span class="dt">char</span> <span class="kw">const</span><span class="op">[</span>N<span class="op">]&gt;)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> S <span class="op">=</span> std<span class="op">::</span>string_view<span class="op">(</span>std<span class="op">::</span>cw<span class="op">&lt;</span>V<span class="op">&gt;.</span>value<span class="op">)</span>;</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> main<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    f<span class="op">(</span>std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;amount&quot;</span><span class="op">&gt;)</span>;</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span>std<span class="op">::</span>constant_wrapper<span class="op">&lt;</span>V, <span class="dt">char</span> <span class="kw">const</span><span class="op">[</span>N<span class="op">]&gt;)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> S <span class="op">=</span> std<span class="op">::</span>string_view<span class="op">(</span>std<span class="op">::</span>cw<span class="op">&lt;</span>V<span class="op">&gt;.</span>value<span class="op">)</span>;</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> main<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    f<span class="op">(</span>std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;amount&quot;</span><span class="op">&gt;)</span>;</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Now, it is true that string support in C++26 template arguments is
@@ -882,16 +896,16 @@ illustrated in <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024
 additional work:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>strlit S<span class="op">&gt;</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> string_constant <span class="op">:</span> constant_wrapper<span class="op">&lt;</span>S<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// possibly some string specific operations here</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// like a conversion to string_view.</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// but even if string_constant&lt;S&gt; were an alias</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// to constant_wrapper&lt;S&gt;, that&#39;s a big improvement</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>strlit S<span class="op">&gt;</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> cstr <span class="op">=</span> string_constant<span class="op">&lt;</span>S<span class="op">&gt;()</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>strlit S<span class="op">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> string_constant <span class="op">:</span> constant_wrapper<span class="op">&lt;</span>S<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// possibly some string specific operations here</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// like a conversion to string_view.</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// but even if string_constant&lt;S&gt; were an alias</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// to constant_wrapper&lt;S&gt;, that&#39;s a big improvement</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>strlit S<span class="op">&gt;</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> cstr <span class="op">=</span> string_constant<span class="op">&lt;</span>S<span class="op">&gt;()</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>For example, <a href="https://github.com/mattkretz/vir-reflect-light/blob/main/vir/fixed_string.h">here</a>
@@ -901,16 +915,16 @@ and <code class="sourceCode cpp">constexpr_string</code>.</p>
 benefit that more string operations work directly:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>cstr<span class="op">&lt;</span><span class="st">&quot;bob&quot;</span><span class="op">&gt;</span> <span class="op">==</span> cstr<span class="op">&lt;</span><span class="st">&quot;bob&quot;</span><span class="op">&gt;)</span>; <span class="co">// ok</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>strlit S<span class="op">&gt;</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span>string_constant<span class="op">&lt;</span>S<span class="op">&gt;)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>S <span class="op">==</span> <span class="st">&quot;alice&quot;</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ...</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>S <span class="op">==</span> <span class="st">&quot;bob&quot;</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ...</span></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>cstr<span class="op">&lt;</span><span class="st">&quot;bob&quot;</span><span class="op">&gt;</span> <span class="op">==</span> cstr<span class="op">&lt;</span><span class="st">&quot;bob&quot;</span><span class="op">&gt;)</span>; <span class="co">// ok</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>strlit S<span class="op">&gt;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span>string_constant<span class="op">&lt;</span>S<span class="op">&gt;)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>S <span class="op">==</span> <span class="st">&quot;alice&quot;</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ...</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>S <span class="op">==</span> <span class="st">&quot;bob&quot;</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ...</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="future-language-evolution"><span class="header-section-number">4</span> Future Language Evolution<a href="#future-language-evolution" class="self-link"></a></h1>
@@ -958,78 +972,122 @@ parameter, and remove <code class="sourceCode cpp">std<span class="op">::</span>
 design that we shipped in C++26, and will ship a release with that
 utility. Nevertheless, both implementations support making the change
 proposed here as a C++26 DR.</p>
-<h2 data-number="5.2" id="wording"><span class="header-section-number">5.2</span> Wording<a href="#wording" class="self-link"></a></h2>
+<h2 data-number="5.2" id="design-note"><span class="header-section-number">5.2</span> Design Note<a href="#design-note" class="self-link"></a></h2>
+<p>The status quo is that we have:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><em>cw-fixed-value</em> X<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> constant_wrapper <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">const</span> <span class="kw">auto</span><span class="op">&amp;</span> value <span class="op">=</span> X<span class="op">.</span>data;</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>In this scenario,
+<code class="sourceCode cpp">X<span class="op">.</span>data</code> is
+always an lvalue, so <code class="sourceCode cpp">constant_wrapper<span class="op">&lt;</span>V<span class="op">&gt;::</span>value</code>
+is always a reference to a static storage duration object. Specifically,
+it is not a reference to a temporary object. However, if we change the
+design to:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> X<span class="op">&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> constant_wrapper <span class="op">{</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">const</span> <span class="kw">auto</span><span class="op">&amp;</span> value <span class="op">=</span> X;</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Then for scalar types, <code class="sourceCode cpp">X</code> is a
+prvalue, which means that <code class="sourceCode cpp">value</code> is a
+reference to lifetime-extended temporary. The consequence of that would
+be that <code class="sourceCode cpp">constant_wrapper<span class="op">&lt;</span><span class="dv">42</span><span class="op">::</span>value</code>
+is not usable as a constant template argument for a template parameter
+of reference type. That would be pretty surprising also, so instead we
+specify it this way:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> X<span class="op">&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> constant_wrapper <span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> value <span class="op">=</span> <span class="op">(</span>X<span class="op">)</span>;</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>When <code class="sourceCode cpp">X</code> is a class type,
+<code class="sourceCode cpp">value</code> is the same lvalue reference
+to constant object that it was before. But for prvalues,
+<code class="sourceCode cpp">value</code> is now simply a value, so
+everything continues to work.</p>
+<h2 data-number="5.3" id="wording"><span class="header-section-number">5.3</span> Wording<a href="#wording" class="self-link"></a></h2>
 <p>Change <span>22.2.1 <a href="https://wg21.link/utility.syn">[utility.syn]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  // [const.wrap.class], class template constant_wrapper</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class T&gt;</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="st">-   struct <em>cw-fixed-value</em>;              // exposition only</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;<em>cw-fixed-value</em> X, class = typename decltype(X)::type&gt;</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;auto X, class = decltype(X)&gt;</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    struct constant_wrapper;</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    concept <em>constexpr-param</em> =           // exposition only</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>      requires { typename constant_wrapper&lt;T::value&gt;; };</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  struct <em>cw-operators</em>;                  // exposition only</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;<em>cw-fixed-value</em> X&gt;</span></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;auto X&gt;</span></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    constexpr auto cw = constant_wrapper&lt;X&gt;{};</span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  // [const.wrap.class], class template constant_wrapper</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="st">-   struct <em>cw-fixed-value</em>;              // exposition only</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;<em>cw-fixed-value</em> X, class = typename decltype(X)::type&gt;</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;auto X, class = decltype(X)&gt;</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    struct constant_wrapper;</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt;</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    concept <em>constexpr-param</em> =           // exposition only</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>      requires { typename constant_wrapper&lt;T::value&gt;; };</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>  struct <em>cw-operators</em>;                  // exposition only</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;<em>cw-fixed-value</em> X&gt;</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;auto X&gt;</span></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    constexpr auto cw = constant_wrapper&lt;X&gt;{};</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
-<p>Change <span>21.3.5 <a href="https://wg21.link/const.wrap.class">[const.wrap.class]</a></span>:</p>
+<p>Change <span>21.3.5 <a href="https://wg21.link/const.wrap.class">[const.wrap.class]</a></span>.</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb16"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class T&gt;</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="st">- struct <em>cw-fixed-value</em> {                                               // exposition only</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="st">-   using type = T;                                                     // exposition only</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="st">-   constexpr <em>cw-fixed-value</em>(type v) noexcept : data(v) {}</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="st">-   T data;                                                             // exposition only</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="st">- };</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="st">-- template&lt;class T, size_t Extent&gt;</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="st">- struct <em>cw-fixed-value</em>&lt;T[Extent]&gt; {                                    // exposition only</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="st">-   using type = T[Extent];                                             // exposition only</span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="st">-   constexpr <em>cw-fixed-value</em>(T (&amp;arr)[Extent]) noexcept;</span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="st">-   T data[Extent];                                                     // exposition only</span></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="st">- };</span></span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="st">-- template&lt;class T, size_t Extent&gt;</span></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>cw-fixed-value</em>(T (&amp;)[Extent]) -&gt; <em>cw-fixed-value</em>&lt;T[Extent]&gt;;         // exposition only</span></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>  struct <em>cw-operators</em> {                                                 // exposition only</span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    // ...</span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>  };</span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;<em>cw-fixed-value</em> X, class&gt;</span></span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;auto X, class&gt;</span></span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>  struct constant_wrapper : cw-operators {</span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="st">-   static constexpr const auto &amp; value = X.data;</span></span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="va">+   static constexpr const auto &amp; value = X;</span></span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    using type = constant_wrapper;</span>
-<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a><span class="st">-   using value_type = decltype(X)::type;</span></span>
-<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="va">+   using value_type = decltype(X);</span></span>
-<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    template&lt;<em>constexpr-param</em> R&gt;</span>
-<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>      constexpr auto operator=(R) const noexcept</span>
-<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>        -&gt; constant_wrapper&lt;(value = R::value)&gt; { return {}; }</span>
-<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>    constexpr operator decltype(value)() const noexcept { return value; }</span>
-<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>    template&lt;class... Args&gt;</span>
-<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>      static constexpr decltype(auto) operator()(Args&amp;&amp;... args) noexcept(<em>see below</em>);</span>
-<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>    template&lt;class... Args&gt;</span>
-<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>      static constexpr decltype(auto) operator[](Args&amp;&amp;... args) noexcept(<em>see below</em>);</span>
-<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>  };</span>
-<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;class T&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="st">- struct <em>cw-fixed-value</em> {                                               // exposition only</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="st">-   using type = T;                                                     // exposition only</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="st">-   constexpr <em>cw-fixed-value</em>(type v) noexcept : data(v) {}</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="st">-   T data;                                                             // exposition only</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="st">- };</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="st">-- template&lt;class T, size_t Extent&gt;</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="st">- struct <em>cw-fixed-value</em>&lt;T[Extent]&gt; {                                    // exposition only</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="st">-   using type = T[Extent];                                             // exposition only</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="st">-   constexpr <em>cw-fixed-value</em>(T (&amp;arr)[Extent]) noexcept;</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="st">-   T data[Extent];                                                     // exposition only</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="st">- };</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="st">-- template&lt;class T, size_t Extent&gt;</span></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="st">-   <em>cw-fixed-value</em>(T (&amp;)[Extent]) -&gt; <em>cw-fixed-value</em>&lt;T[Extent]&gt;;         // exposition only</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>  struct <em>cw-operators</em> {                                                 // exposition only</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    // ...</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a><span class="st">- template&lt;<em>cw-fixed-value</em> X, class&gt;</span></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a><span class="va">+ template&lt;auto X, class&gt;</span></span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>  struct constant_wrapper : <em>cw-operators</em> {</span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a><span class="st">-   static constexpr const auto &amp; value = X.data;</span></span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a><span class="va">+   static constexpr decltype(auto) value = (X);</span></span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>    using type = constant_wrapper;</span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a><span class="st">-   using value_type = decltype(X)::type;</span></span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a><span class="va">+   using value_type = decltype(X);</span></span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>    template&lt;<em>constexpr-param</em> R&gt;</span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>      constexpr auto operator=(R) const noexcept</span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>        -&gt; constant_wrapper&lt;(value = R::value)&gt; { return {}; }</span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a>    constexpr operator decltype(value)() const noexcept { return value; }</span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a>    template&lt;class... Args&gt;</span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a>      static constexpr decltype(auto) operator()(Args&amp;&amp;... args) noexcept(<em>see below</em>);</span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>    template&lt;class... Args&gt;</span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a>      static constexpr decltype(auto) operator[](Args&amp;&amp;... args) noexcept(<em>see below</em>);</span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1038,7 +1096,7 @@ proposed here as a C++26 DR.</p>
 <blockquote>
 <div class="rm" style="color: #bf0303">
 
-<div class="sourceCode" id="cb17"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>constexpr <em>cw-fixed-value</em>(T (&amp;arr)[Extent]) noexcept;</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode default default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>constexpr <em>cw-fixed-value</em>(T (&amp;arr)[Extent]) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">4</a></span>
 <em>Effects</em>: Initialize elements of
 <code class="sourceCode default">data</code> with corresponding elements
@@ -1046,15 +1104,15 @@ of <code class="sourceCode default">arr</code>.</p>
 </div>
 </blockquote>
 </div>
-<h2 data-number="5.3" id="feature-test-macro"><span class="header-section-number">5.3</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<h2 data-number="5.4" id="feature-test-macro"><span class="header-section-number">5.4</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Bump the value of
 <code class="sourceCode cpp">__cpp_lib_constant_wrapper</code> in
 <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb18"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_constant_wrapper 202603L // freestanding, also in &lt;utility&gt;</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_constant_wrapper 2026XXL // freestanding, also in &lt;utility&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="st">- #define __cpp_lib_constant_wrapper 202603L // freestanding, also in &lt;utility&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ #define __cpp_lib_constant_wrapper 2026XXL // freestanding, also in &lt;utility&gt;</span></span></code></pre></div>
 </div>
 </blockquote>
 </div>
