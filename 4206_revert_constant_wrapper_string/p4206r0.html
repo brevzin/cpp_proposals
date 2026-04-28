@@ -708,7 +708,7 @@ The error you get is:</p>
 <span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>                |     ~^~~~~~~~~~~~</span></code></pre></div>
 </blockquote>
 </div>
-<p>It is fairly surprising that this doesn’t work. A fairly typical way
+<p>It is fairly surprising that this doesn’t work. A pretty typical way
 of providing a simple constant wrapper since C++17 is:</p>
 <div class="std">
 <blockquote>
@@ -722,8 +722,8 @@ this formulation.</p>
 <p>But it doesn’t work with C++26’s <code class="sourceCode cpp">std<span class="op">::</span>constant_wrapper</code>
 because <code class="sourceCode cpp">std<span class="op">::</span>cw<span class="op">&lt;</span><span class="dv">5</span><span class="op">&gt;</span></code>
 does not give you a <code class="sourceCode cpp">constant_wrapper<span class="op">&lt;</span><span class="dt">int</span><span class="op">(</span><span class="dv">5</span><span class="op">)&gt;</span></code>,
-it yields a <code class="sourceCode cpp">constant_wrapper<span class="op">&lt;</span>cw_fixed_value<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">5</span><span class="op">)&gt;</span></code>.
-And <code class="sourceCode cpp">cw_fixed_value<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">5</span><span class="op">)</span></code>
+it yields a <code class="sourceCode cpp">constant_wrapper<span class="op">&lt;</span><em>cw-fixed-value</em><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">5</span><span class="op">)&gt;</span></code>.
+And <code class="sourceCode cpp"><em>cw-fixed-value</em><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">5</span><span class="op">)</span></code>
 is not some kind of
 <code class="sourceCode cpp"><span class="dt">int</span></code>, hence
 deduction fails.</p>
@@ -759,7 +759,8 @@ go through the wrapper:</p>
 </div>
 <p>This means that the template parameter itself is somewhat useless,
 you might as well just use <code class="sourceCode cpp">c</code>.</p>
-<p>Now, the original formulation also <em>required</em> that the
+<p>Now, the original formulation of
+<code class="sourceCode cpp">f</code> also <em>required</em> that the
 constant be an
 <code class="sourceCode cpp"><span class="dt">int</span></code>. How do
 we do that with <code class="sourceCode cpp">std<span class="op">::</span>constant_wrapper</code>?
@@ -831,7 +832,7 @@ another is increased symbol sizes. For instance:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">auto</span> foo<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="kw">const</span><span class="op">*</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">&amp;</span>V; <span class="op">}</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">auto</span> bar<span class="op">(</span>std<span class="op">::</span>constant_wrapper<span class="op">&lt;</span>V<span class="op">&gt;</span> cw<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">&amp;</span>cw<span class="op">.</span>value; <span class="op">}</span></span></code></pre></div>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">auto</span> bar<span class="op">(</span>std<span class="op">::</span>constant_wrapper<span class="op">&lt;</span>V<span class="op">&gt;</span> cw<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="kw">const</span><span class="op">*</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">&amp;</span>cw<span class="op">.</span>value; <span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>For an object <code class="sourceCode cpp">o</code> of class type,
@@ -851,9 +852,9 @@ support strings. What does that support look like?</p>
 was ill-formed because we’re not allowed to pass a pointer to a string
 literal as a constant template argument. Now, it is valid — by virtue of
 wrapping the string literal in an array. And the other DSL stuff just
-works too, so <code class="sourceCode cpp">std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;foo&quot;</span><span class="op">&gt;[</span><span class="dv">0</span><span class="op">]</span></code>
+works too, so <code class="sourceCode cpp">std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;foo&quot;</span><span class="op">&gt;[</span>std<span class="op">::</span>cw<span class="op">&lt;</span><span class="dv">0</span><span class="op">&gt;]</span></code>
 yields <code class="sourceCode cpp">std<span class="op">::</span>cw<span class="op">&lt;</span><span class="ch">&#39;f&#39;</span><span class="op">&gt;</span></code>.
-And these are null terminated, so <code class="sourceCode cpp">std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;foo&quot;</span><span class="op">&gt;[</span><span class="dv">3</span><span class="op">]</span></code>
+And these are null terminated, so <code class="sourceCode cpp">std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;foo&quot;</span><span class="op">&gt;[</span>std<span class="op">::</span>cw<span class="op">&lt;</span><span class="dv">3</span><span class="op">&gt;]</span></code>
 yields <code class="sourceCode cpp">std<span class="op">::</span>cw<span class="op">&lt;</span><span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">&gt;</span></code>.</p>
 <p>But, outside of being able to write <code class="sourceCode cpp">std<span class="op">::</span>cw<span class="op">&lt;</span><span class="st">&quot;foo&quot;</span><span class="op">&gt;</span></code>,
 what string operations can you do?</p>
@@ -873,7 +874,9 @@ what string operations can you do?</p>
 </blockquote>
 </div>
 <p>And on the receiver side, as in the previous section, you can’t do
-anything with the template argument until you wrap it locally:</p>
+anything with the template argument until you wrap it locally into
+something like a <code class="sourceCode cpp">std<span class="op">::</span>string_view</code>,
+after also ensuring that we do get something like a string:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V, <span class="dt">size_t</span> N<span class="op">&gt;</span></span>

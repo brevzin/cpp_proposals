@@ -95,7 +95,7 @@ But, as /u/Massive-Bottle-5394 pointed out on [r/cpp](https://old.reddit.com/r/c
 ```
 :::
 
-It is fairly surprising that this doesn't work. A fairly typical way of providing a simple constant wrapper since C++17 is:
+It is fairly surprising that this doesn't work. A pretty typical way of providing a simple constant wrapper since C++17 is:
 
 ::: std
 ```cpp
@@ -106,7 +106,7 @@ using constant = integral_constant<decltype(V), V>;
 
 For instance, Boost.Mp11's [mp_value](https://github.com/boostorg/mp11/blob/48019a04608c09f09f5baf4b63133f8c54df3758/include/boost/mp11/detail/mp_value.hpp#L18) is implemented like this. And the above example _does_ work with this formulation.
 
-But it doesn't work with C++26's `std::constant_wrapper` because `std::cw<5>` does not give you a `constant_wrapper<int(5)>`, it yields a `constant_wrapper<cw_fixed_value<int>(5)>`. And `cw_fixed_value<int>(5)` is not some kind of `int`, hence deduction fails.
+But it doesn't work with C++26's `std::constant_wrapper` because `std::cw<5>` does not give you a `constant_wrapper<int(5)>`, it yields a `constant_wrapper<$cw-fixed-value$<int>(5)>`. And `$cw-fixed-value$<int>(5)` is not some kind of `int`, hence deduction fails.
 
 You could instead do this:
 
@@ -139,7 +139,7 @@ auto f(std::constant_wrapper<I> c) -> void {
 
 This means that the template parameter itself is somewhat useless, you might as well just use `c`.
 
-Now, the original formulation also _required_ that the constant be an `int`. How do we do that with `std::constant_wrapper`? The easiest way is recognizing that there actually is a second template parameter:
+Now, the original formulation of `f` also _required_ that the constant be an `int`. How do we do that with `std::constant_wrapper`? The easiest way is recognizing that there actually is a second template parameter:
 
 ::: std
 ```cpp
@@ -183,7 +183,7 @@ Another issue is the question of address uniqueness. Consider:
 ::: std
 ```cpp
 template <auto V> auto foo() -> void const* { return &V; }
-template <auto V> auto bar(std::constant_wrapper<V> cw) -> void const& { return &cw.value; }
+template <auto V> auto bar(std::constant_wrapper<V> cw) -> void const* { return &cw.value; }
 ```
 :::
 
@@ -193,7 +193,7 @@ For an object `o` of class type, `foo<o>()` and `bar(std::cw<o>)` do not return 
 
 This raises the question: what benefit do we get from this less convenient interface? The stated motivation for the change was to support strings. What does that support look like?
 
-In the original design, `std::cw<"foo">` was ill-formed because we're not allowed to pass a pointer to a string literal as a constant template argument. Now, it is valid — by virtue of wrapping the string literal in an array. And the other DSL stuff just works too, so `std::cw<"foo">[0]` yields `std::cw<'f'>`. And these are null terminated, so `std::cw<"foo">[3]` yields `std::cw<'\0'>`.
+In the original design, `std::cw<"foo">` was ill-formed because we're not allowed to pass a pointer to a string literal as a constant template argument. Now, it is valid — by virtue of wrapping the string literal in an array. And the other DSL stuff just works too, so `std::cw<"foo">[std::cw<0>]` yields `std::cw<'f'>`. And these are null terminated, so `std::cw<"foo">[std::cw<3>]` yields `std::cw<'\0'>`.
 
 But, outside of being able to write `std::cw<"foo">`, what string operations can you do?
 
@@ -216,7 +216,7 @@ auto c = std::cw<msg>; // error
 ```
 :::
 
-And on the receiver side, as in the previous section, you can't do anything with the template argument until you wrap it locally:
+And on the receiver side, as in the previous section, you can't do anything with the template argument until you wrap it locally into something like a `std::string_view`, after also ensuring that we do get something like a string:
 
 ::: std
 ```cpp
