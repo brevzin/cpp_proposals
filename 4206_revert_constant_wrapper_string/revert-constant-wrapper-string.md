@@ -187,7 +187,7 @@ template <auto V> auto bar(std::constant_wrapper<V> cw) -> void const& { return 
 ```
 :::
 
-For an object `o` of class type, `foo<o>()` and `bar(std::cw<o>)` do not return the same address — because the former returns the address of the template parameter object, but the latter returns the address of a subobject of a template parameter object of different kind.
+For an object `o` of class type, `foo<o>()` and `bar(std::cw<o>)` do not return the same address — because the former returns the address of the template parameter object, but the latter returns the address of a subobject of a template parameter object of different type. If your program happens to depend on both formulations returning the same address, this can be a difficult bug to track down.
 
 # String Support
 
