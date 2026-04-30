@@ -12,6 +12,8 @@ author:
       email: <m.kretz@gsi.de>
     - name: Jonathan Wakely
       email: <cxx@kayari.org>
+    - name: Tomasz Kamiński
+      email: <tomaszkam@gmail.com>
 toc: true
 status: progress
 ---
