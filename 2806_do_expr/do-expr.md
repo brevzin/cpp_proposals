@@ -1,6 +1,6 @@
 ---
 title: "`do` expressions"
-document: P2806R3
+document: P2806R4
 date: today
 audience: EWG
 author:
@@ -823,26 +823,31 @@ In short: `do` expressions should be usable in any expression context.
 
 # Wording
 
-This wording definitely imperfect, but is intended at this point to simply be a sketch to help understand the contour of the proposal.
+## Intro
 
 Add a note to [intro.execution]{.sref}:
 
 ::: std
 [5]{.pnum} A *full-expression* is
 
-* [5.1]{.pnum} an unevaluated operand,
-* [5.2]{.pnum} a constant-expression ([expr.const]),
+* [5.1]{.pnum} an unevaluated operand ([expr.context]),
+* [5.2]{.pnum} a `$constant-expression$` ([expr.const]),
 * [5.3]{.pnum} an immediate invocation ([expr.const]),
-* [5.4]{.pnum} an init-declarator ([dcl.decl]) (including such introduced by a structured binding ([dcl.struct.bind])) or a mem-initializer ([class.base.init]), including the constituent expressions of the initializer,
-* [5.5]{.pnum} an invocation of a destructor generated at the end of the lifetime of an object other than a temporary object ([class.temporary]) whose lifetime has not been extended, or
-* [5.6]{.pnum} an expression that is not a subexpression of another expression and that is not otherwise part of a full-expression.
+* [5.4]{.pnum} an `$init-declarator$` ([dcl.decl]) (including such introduced by a structured binding ([dcl.struct.bind])) or a `$mem-initializer$` ([class.base.init]), including the constituent expressions of the initializer,
+* [5.5]{.pnum} an invocation of a destructor generated at the end of the lifetime of an object other than a temporary object ([class.temporary]) whose lifetime has not been extended,
+* [5.6]{.pnum} the predicate of a contract assertion ([basic.contract]), or
+* [5.7]{.pnum} an expression that is not a subexpression of another expression and that is not otherwise part of a full-expression.
+
+[...]
 
 ::: {.note .addu}
-An expression `E` within a `$do-expression$` `D` ([expr.do]) can still be a full-expression even though the `$do-expression$` itself is an expression because `E` is not a subexpression of `D`.
+An expression `E` within a `$do-expression$` `D` ([expr.prim.do]) can still be a full-expression even though the `$do-expression$` itself is an expression because `E` is not a subexpression of `D`.
 :::
 :::
 
-Add to [expr.prim]{.sref}:
+## Expressions
+
+Add `$do-expression$` to the grammar in [expr.prim.grammar]{.sref}:
 
 ::: std
 ```diff
@@ -855,23 +860,36 @@ $primary-expression$:
   $fold-expression$
   $requires-expression$
 + $do-expression$
+  $splice-expression$
 ```
 :::
 
-Add a new clause [expr.prim.do]:
+Extend the rule for move-eligible expressions in [expr.prim.id.unqual]{.sref}:
+
+::: std
+[15]{.pnum} An *implicitly movable entity* is a variable with automatic storage duration that is either a non-volatile object or an rvalue reference to a non-volatile object type. An `$id-expression$` or `$splice-expression$` ([expr.prim.splice]) is *move-eligible* if
+
+* [15.1]{.pnum} it designates an implicitly movable entity,
+* [15.2]{.pnum} it is the (possibly parenthesized) operand of a `return` ([stmt.return]) or `co_return` ([stmt.return.coroutine]) statement [or a `do_return` statement ([stmt.do.return])]{.addu}, or of a `$throw-expression$` ([expr.throw]), and
+* [15.3]{.pnum} each intervening scope between the declaration of the entity and the innermost enclosing scope of the expression is a block scope and, for a `$throw-expression$`, is not the block scope of a `$try-block$` or `$function-try-block$`.
+:::
+
+Add a new clause [expr.prim.do] after [expr.prim.req.nested]{.sref}:
 
 ::: std
 ::: addu
-[1]{.pnum} A *do-expression* provides a way to combine multiple statements into a single expression without introducing a new function scope. Jump statements can transfer control out of a `$do-expression$` without producing a value.
+**Do expressions [expr.prim.do]**
+
+[1]{.pnum} A *do-expression* provides a way to combine multiple statements into a single expression without introducing a new function scope. A `do_return` statement ([stmt.do.return]) produces the result of the `$do-expression$`. Other jump statements can transfer control out of a `$do-expression$` without producing a value.
 
 ::: example
 ```cpp
 constexpr int f(int i) {
     int half = do {
         if (i % 2 != 0) {
-            return -1;
+            return -1;              // returns from f
         }
-        do_return i / 2;
+        do_return i / 2;            // produces the value of the do-expression
     };
     return half;
 }
@@ -883,73 +901,100 @@ static_assert(f(4) == 2);
 
 ```
 $do-expression$:
-  do $trailing-return-type$@~opt~@ $compound-statement$
+    do $trailing-return-type$@~opt~@ { $do-compound-statement$ }
+
+$do-compound-statement$:
+    $statement-seq$@~opt~@ $label-seq$@~opt~@ $do-result-expression$@~opt~@
+
+$do-result-expression$:
+    $expression$
 ```
 
-[#]{.pnum} The `$compound-statement$` of a *do-expression* is a control-flow-limited statement ([stmt.label]).
-
-[#]{.pnum} The type `$DO-TYPE$` is computed as follows
-
-* [#.#]{.pnum} If there is a `$trailing-return-type$` provided that does not contain a placeholder type, then `$DO-TYPE$` is that type.
-* [#.#]{.pnum} Otherwise, a type is deduced from each non-discarded `do_return` statement, if any, in the body of the `$do-expression$`.
-    * [#.#.#]{.pnum} If there is no such `do_return` statement, then `$DO-TYPE$` is `void`.
-    * [#.#.#]{.pnum} If the type is not deduced the same in each deduction, the program is ill-formed.
-    * [#.#.#]{.pnum} Otherwise, `$DO-TYPE$` is that deduced type.
-
-[#]{.pnum} The type and value category of the `$do-expression$` are determined from `$DO-TYPE$` as follows:
-
-* [#.#]{.pnum} If `$DO-TYPE$` is an lvalue reference type `$T$&`, then the `$do-expression$` is an lvalue of type `$T$`.
-* [#.#]{.pnum} Otherwise, if `$DO-TYPE$` is an lvalue reference type `$T$&&`, then the `$do-expression$` is an xvalue of type `$T$`.
-* [#.#]{.pnum} Otherwise, the `$do-expression$` is an prvalue of type `$DO-TYPE$`.
-
-[#]{.pnum} If the `$do-expression$`'s type is not `$cv$ void`, it contains a non-discarded `do_return` statement, and the last `$statement$` in the `$compound-statement$` of the `$do-expression$` is neither a diverging statement nor a `do_return` statement, the program is ill-formed. [See [@P3549R0] for more details.]{.draftnote} [Flowing off the end of a `$do-expression$` whose type is not `$cv$ void` is ill-formed.]{.note}
+A `$do-result-expression$` is treated as a `do_return` statement with an operand that is the `$expression$`.
 
 ::: example
 ```cpp
-void f(bool cond) {
-    auto a = do {           // OK, a is an int whose value is either 1 or 2
-        if (cond) {
-            do_return 1;
-        } else {
-            do_return 2;
-        }
+int a = do { 42 };               // OK, equivalent to do { do_return 42; }
+int b = do { int x = 2; x + 3 }; // OK, equivalent to do { int x = 2; do_return x + 3; }
+```
+:::
+
+[#]{.pnum} The `$do-compound-statement$` of a `$do-expression$` is a control-flow-limited statement ([stmt.label]).
+
+[#]{.pnum} A `return` statement ([stmt.return]) appearing in a `$do-expression$` transfers control to the caller of the function that lexically contains the `$do-expression$`.
+A `co_return`, `co_await`, or `co_yield` statement or expression appearing in a `$do-expression$` acts on the coroutine that lexically contains the `$do-expression$`. [That is, a `$do-expression$` is transparent to the enclosing function or coroutine.]{.note}
+
+[#]{.pnum} A `break` or `continue` statement appearing in a `$do-expression$` refers to an enclosing `$iteration-statement$` or `switch` statement that contains the `$do-expression$`. [A `break` or `continue` statement cannot be used to exit a `$do-expression$` itself.]{.note}
+
+[#]{.pnum} A `$do-expression$` that is not within a function shall not contain a `return` statement, a `co_return` statement, a `co_await` expression, or a `co_yield` expression.
+
+[#]{.pnum} A `goto` statement ([stmt.goto]) shall not transfer control into a `$do-expression$` from outside that `$do-expression$`.
+
+[#]{.pnum} The type `$DO-TYPE$` of a `$do-expression$` is determined as follows:
+
+* [#.#]{.pnum} If there is a `$trailing-return-type$` that does not contain a placeholder type ([dcl.spec.auto]), then `$DO-TYPE$` is the type specified by that `$trailing-return-type$`.
+* [#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced from the `do_return` statements in the body:
+    * [#.#.#]{.pnum} If there is no `do_return` statement (including no `$do-result-expression$`), or every `do_return` statement has no operand, `$DO-TYPE$` is `void`.
+    * [#.#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced as if from a `return` statement using the rules in [dcl.spec.auto.general]. All `do_return` statements shall deduce to the same type; otherwise, the program is ill-formed.
+
+::: example
+```cpp
+auto a = do { do_return 1; };           // OK, deduces int
+auto b = do -> long { do_return 1; };   // OK, explicit type is long
+auto c = do {                           // error: inconsistent deduction
+    if (cond) do_return 1;
+    do_return 2.0;
+};
+```
+:::
+
+[#]{.pnum} The type and value category of the `$do-expression$` are determined from `$DO-TYPE$` as follows:
+
+* [#.#]{.pnum} If `$DO-TYPE$` is `T&`, the `$do-expression$` is an lvalue of type `T`.
+* [#.#]{.pnum} Otherwise, if `$DO-TYPE$` is `T&&`, the `$do-expression$` is an xvalue of type `T`.
+* [#.#]{.pnum} Otherwise, the `$do-expression$` is a prvalue of type `$DO-TYPE$`.
+
+[#]{.pnum} If control might flow off the end of the `$do-compound-statement$` of a `$do-expression$` whose type is not `$cv$ void`, the program is ill-formed.
+[Control flows off the end if there exists any path through the compound statement that does not terminate with a `do_return` statement, a `throw` expression, a call to a `[[noreturn]]` function, or a jump statement that exits the `$do-expression$`.]{.note}
+
+::: example
+```cpp
+extern bool cond;
+void f() {
+    auto a = do {                       // error: control may flow off the end
+        if (cond) do_return 1;
     };
 
-    auto b = do {           // error: inconsistent type deduction
-        if (cond) {
-            do_return 1;
-        } else {
-            do_return 2.0;
-        }
+    auto b = do {                       // OK, all paths yield or exit
+        if (cond) do_return 1;
+        throw 2;
     };
 
-    auto c = do {           // error: the type is int, but the last statement is
-        if (cond) {         // not a diverging statement. execution might flow off the end.
-            do_return 1;
-        }
+    auto c = do {                       // OK, return exits the do-expression
+        if (cond) do_return 1;
+        return;
     };
 
-    auto d = do {           // OK, last statement diverges. Either d is initialized to 1
-        if (cond) {         // or the expression throws.
-            do_return 1;
-        }
-        throw -1;
-    };
-
-    (do {                   // OK, falling off the end but the type is void
-        if (cond) {
-            do_return;
-        }
+    (do -> void {                       // OK, void type allows flow off the end
+        if (cond) do_return;
     });
 }
 ```
 :::
 
-[#]{.pnum} The value of a `$do-expression$` whose type is not `$cv$ void` is the operand of the executed `do_return` statement, if any.
+[#]{.pnum} The value of a `$do-expression$` of type `$cv$ void` is the value produced by the executed `do_return` statement.
+
+[#]{.pnum} The copy-initialization of the result of a `$do-expression$` is sequenced before the destruction of local variables declared within the `$do-compound-statement$`.
+[A copy or move operation associated with a `do_return` statement can be elided or converted to a move operation the same as for a `return` statement ([class.copy.elision]).]{.note}
+
+[#]{.pnum} A `$do-expression$` can appear in any context where an expression is permitted, including at namespace scope.
+[At namespace scope or in a default member initializer, there is no enclosing function, so `return`, `break`, `continue`, and coroutine statements/expressions cannot be used.]{.note}
 :::
 :::
 
-Change [stmt.expr]{.sref} to disambugate a `do` expression from a `do`-`while` loop:
+## Statements
+
+Change [stmt.expr]{.sref} to disambiguate a `$do-expression$` from a `do`-`while` loop:
 
 ::: std
 [1]{.pnum} Expression statements have the form
@@ -957,68 +1002,130 @@ Change [stmt.expr]{.sref} to disambugate a `do` expression from a `do`-`while` l
 $expression-statement$:
   $expression$@~opt~@;
 ```
-The expression is a *discarded-value* expression. All side effects from an expression statement are completed before the next statement is executed. An expression statement with the expression missing is called a *null statement*. [The expression shall not be a *do-expression*.]{.addu}
+The expression is a *discarded-value expression* ([expr.context]). All side effects from an expression statement are completed before the next statement is executed. An expression statement with the expression missing is called a *null statement*. [The `$expression$` shall not be a `$do-expression$`.]{.addu}
 
-[Note 1: Most statements are expression statements — usually assignments or function calls. A null statement is useful to supply a null body to an iteration statement such as a while statement ([stmt.while]). — end note]
+[A statement beginning with the keyword `do` is always parsed as a `do`-`while` statement ([stmt.do]). A `$do-expression$` used as a statement must be parenthesized.]{.note .addu}
 :::
 
-Add to [stmt.jump.general]{.sref}:
+Add to the grammar in [stmt.jump.general]{.sref}:
 
 ::: std
 [1]{.pnum} Jump statements unconditionally transfer control.
 
 ```diff
 $jump-statement$:
-  break ;
-  continue ;
-  return $expr-or-braced-init-list$@~opt~@ ;
-+ do_return $expr-or-braced-init-list$@~opt~@ ;
-  $coroutine-return-statement$
-  goto $identifier$ ;
+    break ;
+    continue ;
+    return $expr-or-braced-init-list$@~opt~@ ;
++   do_return $expr-or-braced-init-list$@~opt~@ ;
+    $coroutine-return-statement$
+    goto $identifier$ ;
 ```
+
+[2]{.pnum} [...]
 :::
 
-Change [stmt.break]{.sref} to prohibit its use in `do` expressions in confusing places:
+Change [stmt.break]{.sref} to prohibit its use in `$do-expression$`s in confusing places:
 
 ::: std
-[1]{.pnum} A `break` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]) or a `switch` statement ([stmt.switch]).
-The `break` statement causes termination of the smallest such enclosing statement; control passes to the statement following the terminated statement, if any.
+[1]{.pnum} A `break` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]), an `$expansion-statement$` ([stmt.expand]), or a `switch` statement ([stmt.switch]).
+The `break` statement causes termination of the innermost such enclosing statement; control passes to the statement following the terminated statement, if any.
 
 ::: addu
-[2]{.pnum} A `break` statement shall not appear in a `$do-expression$` ([expr.do]) that is a subexpression of:
+[2]{.pnum} A `break` statement shall not appear in a `$do-expression$` ([expr.prim.do]) that is a subexpression of:
 
-* [2.#]{.pnum} the `$init-statement$`, `$condition$`, or `$expression$` of a `for` loop,
-* [2.#]{.pnum} the `$condition$` of a `while` loop,
-* [2.#]{.pnum} the `$init-statement$`, `$for-range-declaration$`, or `$for-range-initializer$` of a range-based for loop, or
-* [2.#]{.pnum} the `$init-statement$` or `$condition$` of a `switch` statement
+* [2.#]{.pnum} the `$init-statement$`, `$condition$`, or `$expression$` of a `for` statement ([stmt.for]),
+* [2.#]{.pnum} the `$condition$` of a `while` statement ([stmt.while]),
+* [2.#]{.pnum} the `$init-statement$`, `$for-range-declaration$`, or `$for-range-initializer$` of a range-based `for` statement ([stmt.ranged]),
+* [2.#]{.pnum} the `$expression$` of a `do` statement ([stmt.do]), or
+* [2.#]{.pnum} the `$init-statement$` or `$condition$` of a `switch` statement ([stmt.switch])
 
 unless the enclosing `$iteration-statement$` or `switch` statement of that `break` statement is also within the same `$do-expression$`.
 :::
+
+::: example
+```cpp
+for (int i = do { if (done) break; do_return start; }; // error: break targets the for loop
+     i < n; ++i) { }
+
+for (int i = 0; i < n; ++i) {
+    int x = do {
+        if (done) break;        // OK, exits the for loop
+        do_return compute(i);
+    };
+}
+
+int x = do {
+    for (;;) {
+        if (done) break;        // OK, break targets loop within the do-expression
+    }
+    do_return 0;
+};
+```
+:::
 :::
 
-Change [stmt.cont]{.sref} to prohibit the same:
+Change [stmt.cont]{.sref} similarly:
 
 ::: std
-[1]{.pnum} A `continue` statement shall be enclosed by ([stmt.pre]) an iteration-statement ([stmt.iter]). [...]
+[1]{.pnum} A `continue` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]) or an `$expansion-statement$` ([stmt.expand]). [...]
 
 ::: addu
-[2]{.pnum} A `continue` statement shall not appear in a `$do-expression$` ([expr.do]) that is a subexpression of:
+[2]{.pnum} A `continue` statement shall not appear in a `$do-expression$` ([expr.prim.do]) that is a subexpression of:
 
-* [2.#]{.pnum} the `$init-statement$`, `$condition$`, or `$expression$` of a `for` loop,
-* [2.#]{.pnum} the `$condition$` of a `while` loop, or
-* [2.#]{.pnum} the `$init-statement$`, `$for-range-declaration$`, or `$for-range-initializer$` of a range-based for loop
+* [2.#]{.pnum} the `$init-statement$`, `$condition$`, or `$expression$` of a `for` statement ([stmt.for]),
+* [2.#]{.pnum} the `$condition$` of a `while` statement ([stmt.while]),
+* [2.#]{.pnum} the `$init-statement$`, `$for-range-declaration$`, or `$for-range-initializer$` of a range-based `for` statement ([stmt.ranged]), or
+* [2.#]{.pnum} the `$expression$` of a `do` statement ([stmt.do])
 
 unless the enclosing `$iteration-statement$` of that `continue` statement is also within the same `$do-expression$`.
 :::
 :::
 
-Add a new clause introducing a `do_return` statement after [stmt.return]{.sref}:
+Add a new subclause [stmt.do.return] "The `do_return` statement" after [stmt.return.coroutine]{.sref}:
 
 ::: std
 ::: addu
-[1]{.pnum} The `do` expression's value is produced by the `do_return` statement.
+**The `do_return` statement [stmt.do.return]**
 
-[#]{.pnum} A `do_return` statement shall appear only within the `$compound-statement$` of a `do` expression.
+[#]{.pnum} A `do_return` statement shall appear only within the `$do-compound-statement$` of a `$do-expression$` ([expr.prim.do]), and not within an intervening `$lambda-expression$` or function body.
+
+::: example
+```cpp
+int f() {
+    return do {
+        auto g = []() {
+            do_return 1;        // error: crosses lambda boundary
+        };
+        do_return 2;            // OK
+    };
+}
+```
+:::
+
+[#]{.pnum} The `$expr-or-braced-init-list$` of a `do_return` statement is called its operand. A `do_return` statement with no operand shall be used only in a `$do-expression$` whose type is `$cv$ void`. A `do_return` statement with an operand of type `void` shall be used only in a `$do-expression$` whose type is `$cv$ void`. A `do_return` statement with any other operand shall be used only in a `$do-expression$` whose type is not `$cv$ void`; the `do_return` statement initializes the result object of the `$do-expression$` by copy-initialization ([dcl.init]) from the operand.
+
+[#]{.pnum} A `do_return` statement that binds
+
+* [#.#]{.pnum} a returned reference or
+* [#.#]{.pnum} a constituent reference ([intro.object]) of a returned object
+
+to a temporary expression ([class.temporary]) is ill-formed.
+
+::: example
+```cpp
+struct S { int& r; };
+int& f();
+
+auto a = do -> int const& { do_return f(); };     // OK
+auto b = do -> int const& { do_return 42; };      // error: binds reference to temporary
+auto c = do -> S { do_return {f()}; };            // OK
+auto d = do -> S {
+    int x = 1;
+    do_return {x};                                // error: binds constituent reference to local
+};
+```
+:::
 :::
 :::
 
