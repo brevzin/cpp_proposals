@@ -625,7 +625,9 @@ do {
 ```
 :::
 
-A new primary expression of the form `($init-statement$, $expr$)` where any temporaries in the declaration last until the end of their full-expression — which is just the usual rule for when temporaries last. Except in this case, the temporary `get_data()` will not be inside of a new full-expression (the `do`-expression), it will be in the place where it needs to be. We think this is the right approach to addressing lifetime issues, in a way that likely scales better.
+A new primary expression, a `$paren-init-expression$`, of the form `($init-statement$ $expr$)` (an `$init-statement$` terminates with a `;`) where any temporaries in the declaration last until the end of their full-expression — which is just the usual rule for when temporaries last. Which means that in this case, the temporary `get_data()` will not be inside of a new full-expression (the `do`-expression), it will be in the place where it needs to be. We think this is the right approach to addressing lifetime issues, in a way that likely scales better. The proposed form [works](https://compiler-explorer.com/z/j9jc6bcaj).
+
+This presents no new parsing difficulties, since we already have `if ($condition$)` vs `if ($init-statement$ $condition$)`.
 
 ### Conditional Lifetime Extension
 
@@ -1081,27 +1083,7 @@ The `break` statement causes termination of the innermost such enclosing stateme
 * [2.#]{.pnum} the `$init-statement$` or `$condition$` of a `switch` statement ([stmt.switch])
 
 unless the enclosing `$iteration-statement$` or `switch` statement of that `break` statement is also within the same `$do-expression$`.
-:::
 
-::: example
-```cpp
-for (int i = do { if (done) break; do_return start; }; // error: break targets the for loop
-     i < n; ++i) { }
-
-for (int i = 0; i < n; ++i) {
-    int x = do {
-        if (done) break;        // OK, exits the for loop
-        do_return compute(i);
-    };
-}
-
-int x = do {
-    for (;;) {
-        if (done) break;        // OK, break targets loop within the do-expression
-    }
-    do_return 0;
-};
-```
 :::
 :::
 
