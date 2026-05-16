@@ -18,6 +18,8 @@ status: progress
 
 # Revision History
 
+Since [@P2806R3], implementation, wording, and introducing implicit last value.
+
 Since [@P2806R2], wording and referencing a longer discussion on divergence in [@P3549R0]{.title}.
 
 Since [@P2806R1], switched syntax from `do return` to `do_return` to avoid ambiguity. Added section on [lifetime](#lifetime).
@@ -77,6 +79,7 @@ In its simplest form:
 ::: std
 ```cpp
 int x = do { do_return 42; };
+int y = do { 42 }; // the last expression can omit the semicolon, equivalent to above
 ```
 :::
 
@@ -99,6 +102,55 @@ Other alternative spellings we've considered:
 * `do yield`
 * `do break` (similarly to `return`, we are breaking out of this expression, but is less likely to conflict since `break` is less likely to be used than `return` and also the corresponding `break $value$;` is invalid today)
 * `=>` (or some other arrow, like `<-` or `<=`)
+
+## Implicit Last Value
+
+Let's take the example motivating case from [@P2561R2]{.title} and compare implicit last expression to explicit return:
+
+::: cmptable
+### Implicit Last Value
+```cpp
+auto foo(int i) -> std::expected<int, E>
+
+auto bar(int i) -> std::expected<int, E> {
+    int j = do {
+        auto r = foo(i);
+        if (not r) {
+            return std::unexpected(r.error());
+        }
+        *r // <== NB: no semicolon
+    };
+
+    return j * j;
+}
+```
+
+### Explicit Return
+```cpp
+auto foo(int i) -> std::expected<int, E>
+
+auto bar(int i) -> std::expected<int, E> {
+    int j = do {
+        auto r = foo(i);
+        if (not r) {
+            return std::unexpected(r.error());
+        }
+        do_return *r;
+    };
+
+    return j * j;
+}
+```
+:::
+
+In the simple cases, explicit last value (on the left) will be shorter than an explicit return (on the right). But implicit last value is more limited. We cannot do early return (by design), which means that a `do` expression would not be able to return from a loop either. We would have to extend the language to support `if` expressions, so that at the very least the first example above could be made easier - which would add more complexity to the design.
+
+Which is to say — the `do_return` statement is still a valuable and necessary addition, given that we do not have `if` or loop expressions, and we are unlikely to add them.
+
+However, for many common uses of `do` expressions, we don't actually need early return, so paying the syntactic cost seems unnecessary. Which is why we're proposing both.
+
+Note that Rust also allows both (you can label a block expression and then `break` out of it).
+
 
 ## Type and Value Category
 
@@ -476,77 +528,7 @@ It would make for a simpler design if we adopted undefined behavior here, but we
 
 One important question is: when are local variables declared within a `do` expression destroyed?
 
-Consider the following:
-
-::: std
-```cpp
-auto f() -> std::expected<T, E>;
-auto g(T) -> U;
-
-auto h() -> std::expected<U, E> {
-    auto u = g(do -> $TYPE$ {
-        auto result = f();
-        if (not result) {
-            return std::unexpected(std::move(result).error());
-        }
-        do_return *std::move(result);
-    });
-    return u;
-}
-```
-:::
-
-The use of `$TYPE$` above is meant as a placeholder for either `T` or `T&&`, as we'll explain shortly.
-
-What is the lifetime of the local variable `result`? There are three possible choices to this question:
-
-1. It is destroyed at the next `}`. This is the most consistent choice with everything else in the language.
-2. It is destroyed at the end of the statement in which it is appears (i.e. at the end of the full initialization of `u`). In other words, at the end of the *full-expression* (the _real_ full-expression, not the nested *full-expression*s inside of the `do` expression).
-3. It behaves as if it has local scope of the surrounding scope and is destroyed at the end of that outer scope, which in this case would be the end of `h()`.
-
-The consequence of (1) is that `result` is destroyed before we enter the call to `g`. This means that if the `do` expression returned a reference (i.e. `$TYPE$` was `T&&`), that reference would immediately dangle. We would have to yield a `T`. This loses us some efficiency, since ideally both the `do` expression and `g` could just take a `T` - but now we have to incur a move.
-
-The consequence of (2) is that we *can* yield a `T&&` because `result` isn't going to be destroyed yet, and we don't have a dangling reference. Unless we rewrite it this way:
-
-::: std
-```cpp
-auto f() -> std::expected<T, E>;
-auto g(T&&) -> U;
-
-auto h() -> std::expected<U, E> {
-    T&& t = do -> T&& {
-        auto result = f();
-        if (not result) {
-            return std::unexpected(std::move(result).error());
-        }
-        do_return *std::move(result);
-    };
-    return g(std::move(t));
-}
-```
-:::
-
-With (1), in order to avoid dangling, the `do` expression must return a `T` (`t` can still be an rvalue reference, it would just bind to a temporary). With (2), we can allow the `do` expression to return `T&&`, but `t` would to be a `T` and not a `T&&`, since `result` is going to be destroyed at the end of the statement. We still incur a move, just slightly later.
-
-Only with (3) - delaying destroying `result` until the closing of the innermost non-`do`-expression scope - is the above valid code that does not lead to any dangling reference.
-
-Note that the above example is specifically mentioned in [@P2561R2]{.title}'s section on lifetimes, where it is quite valuable that the equivalent sugared version does not dangle:
-
-::: std
-```cpp
-auto f() -> std::expected<T, E>;
-auto g(T&&) -> U;
-
-auto h() -> std::expected<U, E> {
-    T&& t = f().try?;
-    return g(std::move(t));
-}
-```
-:::
-
-Choosing (3) allows the control flow operator proposal to be simply a lowering into a `do` expression.
-
-On the other hand, consider this example:
+Let's start with this example:
 
 ::: std
 ```cpp
@@ -560,34 +542,90 @@ int i = do {
 ```
 :::
 
-Each `do` expression is locking the same mutex, `mtx`. With (1), the two `lock_guard`s are each destroyed at their nearest `}`, so the result of this code is that we lock the mutex, call `get(0)`, unlock the mutex, then lock the mutex, call `get(1)`, and unlock the mutex (or possibly the second `do` expression is evaluated first, doesn't matter). Following the usual C++ lifetime rules, most people would expect this to be valid code.
+Each `do` expression is locking the same mutex, `mtx`. We believe that it is the overwhelming presumption of C++ that both `lock_guard`s will be destroyed at their nearest `}` (i.e. this will not deadlock). There really is no other reasonable alternative.
 
-With either of the two approaches to extending lifetime, either (2) or (3), this deadlocks. The two `lock_guard`s aren't destroyed until after the initialization of `i`, or even later, and so whichever one is locked first is still alive when the second one is locked.
-
-That means the choice is between extending the lifetime of variables to avoid dangling references and keeping the lifetime of variables the same to maintain the usual C++ destructor rules. The familiarity and expectation of the latter is so strong that (1) is likely the only option. After all, scoped lifetimes is one of the fundamental rules of C++.
-
-This does suggest that there needs to be some way to explicitly extend a variable to the outer scope. After all, a `do` expression's control flow behaves as if its in that outer scope (we `return` from the enclosing function, `continue` the enclosing loop, etc.), so there is definitely a compelling argument to me made that variables belong in that scope as well. But they probably need some sort of annotation - something like a reverse lambda capture:
+However, consider this example, courtesy of Lauri Vasama in the context of discussing lifetime questions in control flow operator ([@P2561R2]). Consider this set of functions, where `find_interesting` returns some `span` into the given `vector` (or returns an `unexpected`):
 
 ::: std
 ```cpp
-auto f() -> std::expected<T, E>;
-auto g(T&&) -> U;
+auto get_data() -> std::vector<int>;
+auto find_interesting(std::vector<int> const&) -> std::expected<std::span<int const>, std::string>;
+auto best_of(std::span<int const>) -> int;
+```
+:::
 
-auto h() -> std::expected<U, E> {
-    // The "anti-capture" of result means that it's actually declared in the
-    // outer scope, as if before the variable t. If no such variable result in
-    // the do expression's scope, the expression is ill-formed.
-    T&& t = do [result] -> T&& {
-        auto result = f();
-        if (not result) {
-            return std::unexpected(std::move(result).error());
-        }
-        do_return *std::move(result);
-    };
-    return g(std::move(t));
+With `do` expressions, it would be tempting to implement a `TRY` macro similar to Rust's `try!` macro. In this case, we could try to do it this way (note that in this case decaying is irrelevant, so we just return everything by value):
+
+::: std
+```cpp
+#define TRY(expr) do {                          \
+    auto __r = expr;                            \
+    if (not r) {                                \
+        return std::unexpected(__r.error());    \
+    }                                           \
+    do_return *__r;                             \
+}
+
+auto do_something() -> std::expected<int, std::string> {
+    int value = best_of(TRY(find_interesting(get_data())));
+    return value;
 }
 ```
 :::
+
+This _looks_ reasonable. Sure, `get_data()` is a temporary `vector`, but it _looks_ like it persists until the `;`. But that's not what would actually happen. If we expand the macro, and add the explicit return type for clarity, this evaluates as:
+
+::: std
+```cpp
+auto do_something() -> std::expected<int, std::string> {
+    int value = best_of(do -> std::span<int const> {
+        auto __r = find_interesting(get_data());
+        //                                     ^
+        //                              vector destroyed here
+        if (not __r) {
+            return std::unexpected(__r.error());
+        }
+        do_return *__r;
+    });
+    return value;
+}
+```
+:::
+
+The temporary `std::vector<int>` doesn't persist through the whole `do` expression, it gets destroyed too soon — so our `__r` would be holding a dangling `span` (in the non-error case). That's... bad.
+
+So we need some way to "persist" that temporary through the end of the outer expression. And it definitely cannot happen automatically, as just pointed out, so it has to be explicit in some way. We can think of three approaches to doing this:
+
+1. We can annotate the local variable `__r` somehow, such that any temporaries in its initializer persist through the outer full-expression.
+2. We can annotate the `do` expression with some kind of anti-capture list, as in `do [__r] { ... }`
+3. We can introduce a new kind of expression expressly for this purpose.
+
+For the latter, we mean something like this:
+
+::: cmptable
+### Current
+```cpp
+do {
+    auto __r = expr;
+    if (not r) {
+        return std::unexpected(__r.error());
+    }
+    do_return *__r;
+}
+```
+
+### Proposed
+```cpp
+(auto __r = expr; do {
+    if (not r) {
+        return std::unexpected(__r.error());
+    }
+    do_return *__r;
+})
+```
+:::
+
+A new expression fo the form `($decl$, $expr$)` where any temporaries in the declaration last until the end of their full-expression — which is just the usual rule for when temporaries last. Except in this case, the temporary `get_data()` will not be inside of a new full-expression (the `do`-expression), it will be in the place where it needs to be. We think this is the right approach to addressing lifetime issues, in a way that likely scales better.
 
 ### Conditional Lifetime Extension
 
@@ -720,77 +758,7 @@ The reason we're not simply proposing to standardize the existing extension is t
 
 For (1), there is simply no obvious place to put the `$trailing-return-type$`. For (2), you can't turn `if`s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.
 
-Let's also take the example motivating case from [@P2561R2]{.title} and compare implicit last expression to explicit return:
-
-::: cmptable
-### Implicit Last Value
-```cpp
-auto foo(int i) -> std::expected<int, E>
-
-auto bar(int i) -> std::expected<int, E> {
-    int j = do {
-        auto r = foo(i);
-        if (not r) {
-            return std::unexpected(r.error());
-        }
-        *r // <== NB: no semicolon
-    };
-
-    return j * j;
-}
-```
-
-### Explicit Return
-```cpp
-auto foo(int i) -> std::expected<int, E>
-
-auto bar(int i) -> std::expected<int, E> {
-    int j = do {
-        auto r = foo(i);
-        if (not r) {
-            return std::unexpected(r.error());
-        }
-        do_return *r;
-    };
-
-    return j * j;
-}
-```
-:::
-
-In the simple cases, explicit last value (on the left) will be shorter than an explicit return (on the right). But implicit last value is more limited. We cannot do early return (by design), which means that a `do` expression would not be able to return from a loop either. We would have to extend the language to support `if` expressions, so that at the very least the first example above could be made easier - which would add more complexity to the design.
-
-There's also the question of `void` expressions - which are where many of the pattern matching examples come from. In Rust, for instance, there is a differentiation based on the presence of a semicolon:
-
-::: std
-```rust
-let a: i32 = { 1; 2 };
-let b: () = { 1; 2; };
-```
-:::
-
-This is a simple (if silly) example of a block expression in Rust. The value of the block is the value of the last expression of the block (Rust has both `if` expressions and `loop` expressions) - in the first case the last example is `2`, so `a` is an `i32`, while in the second example `2;` is a statement, so the last value is the... nothing... after the `;`, which is `()` (Rust's unit type). This seems like too subtle a distinction, and one that's very easy to get wrong (although typically the types are far enough apart such that if you get it wrong it's a compiler error, rather than a runtime one):
-
-::: std
-```cpp
-auto a = do { 1; 2 };   // ok, a is an int
-auto b = do { 1; 2; };  // ill-formed, b would be void (unless Regular Void is adopted)
-```
-:::
-
-But this would mean that our original example would work, just for a very different reason (rather than being `void` expressions due to the lack of `do_return`, they become `void` expressions due to not having a final expression):
-
-::: std
-```cpp
-x match {
-    0 => do { cout << "got zero"; };
-    1 => do { cout << "got one"; };
-    _ => do { cout << "don't care"; };
-}
-```
-:::
-
-Ultimately, we feel that the simplicity of the proposed design and its consistency and uniformity with other parts of the language outweigh the added verbosity in the simple (though typical) cases.
+With allowing [implicit last value](#implicit-last-value), the simple translation from gcc statement-expression to `do` expression is just a matter of swapping parentheses for a leading `do`. We're just generalizing to make the feature more flexible.
 
 ## What About Reflection?
 
