@@ -823,7 +823,32 @@ In short: `do` expressions should be usable in any expression context.
 
 # Wording
 
-## Intro
+## Lex / Intro
+
+Add the keyword `do_return` to the table of keywords in [lex.key]{.sref}:
+
+::: std
+```diff
+  constinit
+  const_cast
+  continue
+  contract_assert
+  co_await
+  co_return
+  co_yield
+  decltype
+  default
+  delete
+  do
++ do_return
+  double
+  dynamic_cast
+  else
+  enum
+  explicit
+  export
+```
+:::
 
 Add a note to [intro.execution]{.sref}:
 
@@ -870,7 +895,7 @@ Extend the rule for move-eligible expressions in [expr.prim.id.unqual]{.sref}:
 [15]{.pnum} An *implicitly movable entity* is a variable with automatic storage duration that is either a non-volatile object or an rvalue reference to a non-volatile object type. An `$id-expression$` or `$splice-expression$` ([expr.prim.splice]) is *move-eligible* if
 
 * [15.1]{.pnum} it designates an implicitly movable entity,
-* [15.2]{.pnum} it is the (possibly parenthesized) operand of a `return` ([stmt.return]) or `co_return` ([stmt.return.coroutine]) statement [or a `do_return` statement ([stmt.do.return])]{.addu}, or of a `$throw-expression$` ([expr.throw]), and
+* [15.2]{.pnum} it is the (possibly parenthesized) operand of a `return` ([stmt.return]) [or]{.rm} [,]{.addu} `co_return` ([stmt.return.coroutine])[, or `do_return` ([stmt.do.return])]{.addu} statement, or of a `$throw-expression$` ([expr.throw]), and
 * [15.3]{.pnum} each intervening scope between the declaration of the entity and the innermost enclosing scope of the expression is a block scope and, for a `$throw-expression$`, is not the block scope of a `$try-block$` or `$function-try-block$`.
 :::
 
@@ -954,7 +979,7 @@ auto c = do {                           // error: inconsistent deduction
 * [#.#]{.pnum} Otherwise, if `$DO-TYPE$` is `T&&`, the `$do-expression$` is an xvalue of type `T`.
 * [#.#]{.pnum} Otherwise, the `$do-expression$` is a prvalue of type `$DO-TYPE$`.
 
-[#]{.pnum} If control might flow off the end of the `$do-compound-statement$` of a `$do-expression$` whose type is not `$cv$ void`, the program is ill-formed.
+[#]{.pnum} If control can flow off the end of the `$do-compound-statement$` of a `$do-expression$` whose type is not `$cv$ void`, the program is ill-formed.
 [Control flows off the end if there exists any path through the compound statement that does not terminate with a `do_return` statement, a `throw` expression, a call to a `[[noreturn]]` function, or a jump statement that exits the `$do-expression$`.]{.note}
 
 ::: example
@@ -1127,6 +1152,16 @@ auto d = do -> S {
 ```
 :::
 :::
+:::
+
+## Feature-Test Macro
+
+Add to [cpp.predefined]{.sref}:
+
+::: std
+```diff
++ __cpp_do_expressions 20XXXXL
+```
 :::
 
 ---
