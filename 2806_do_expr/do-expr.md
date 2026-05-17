@@ -18,7 +18,7 @@ status: progress
 
 # Revision History
 
-Since [@P2806R3], implementation, wording, introducing implicit last value, and adding a `$paren-init-expression$` to address [lifetime issues](#lifetime).
+Since [@P2806R3], implementation, wording, introducing implicit last value, and extending parenthesized expressions to address [lifetime issues](#lifetime).
 
 Since [@P2806R2], wording and referencing a longer discussion on divergence in [@P3549R0]{.title}.
 
@@ -625,7 +625,7 @@ do {
 ```
 :::
 
-A new primary expression, a `$paren-init-expression$`, of the form `($init-statement$ $expr$)` (an `$init-statement$` terminates with a `;`) where any temporaries in the declaration last until the end of their full-expression — which is just the usual rule for when temporaries last. Which means that in this case, the temporary `get_data()` will not be inside of a new full-expression (the `do`-expression), it will be in the place where it needs to be. We think this is the right approach to addressing lifetime issues, in a way that likely scales better. The proposed form [works](https://compiler-explorer.com/z/j9jc6bcaj).
+Extending parenthesized expressions, of the form `($init-statement$ $expr$)` (an `$init-statement$` terminates with a `;`) where any temporaries in the declaration last until the end of their full-expression — which is just the usual rule for when temporaries last. Which means that in this case, the temporary `get_data()` will not be inside of a new full-expression (the `do`-expression), it will be in the place where it needs to be. We think this is the right approach to addressing lifetime issues, in a way that likely scales better. The proposed form [works](https://compiler-explorer.com/z/j9jc6bcaj).
 
 This presents no new parsing difficulties, since we already have `if ($condition$)` vs `if ($init-statement$ $condition$)`.
 
@@ -793,7 +793,7 @@ In short: `do` expressions should be usable in any expression context.
 
 ## Implementation Experience
 
-This is implemented in clang and can be seen on [compiler explorer](https://compiler-explorer.com/z/j9jc6bcaj). This example shows the combination of the paren-init expression and `TRY` macro with the correct lifetime semantics.
+This is implemented in clang and can be seen on [compiler explorer](https://compiler-explorer.com/z/j9jc6bcaj). This example shows the combination of the extended parenthesized expression and `TRY` macro with the correct lifetime semantics.
 
 # Wording
 
@@ -853,15 +853,58 @@ Add `$do-expression$` to the grammar in [expr.prim.grammar]{.sref}:
 $primary-expression$:
   $literal$
   this
-  ( $expression$ )
+- ( $expression$ )
++ ( $init-statement-seq$ $expression$ )
   $id-expression$
   $lambda-expression$
   $fold-expression$
   $requires-expression$
   $splice-expression$
 + $do-expression$
-+ $paren-init-expression$
 ```
+:::
+
+Extend [expr.prim.paren]{.sref}:
+
+::: std
+**Parentheses**
+
+::: addu
+```
+$init-statement-seq$:
+    $init-statement$
+    $init-statement-seq$ $init-statement$
+```
+:::
+
+[1]{.pnum} A parenthesized expression `(@[*init-statement-seq*]{.addu}@ $E$)` is a primary expression whose type, result, and value category are identical to those of `$E$`. The parenthesized expression can be used in exactly the same contexts as those where `$E$` can be used, and with the same meaning, except as otherwise indicated.
+
+::: addu
+[#]{.pnum} The *init-statement-seq*  of a parenthesized expression allows declarations to be introduced within an expression, with the declared variables persisting until the end of the enclosing full-expression.
+
+[#]{.pnum} A parenthesized expression introduces a block scope ([basic.scope.block]) that includes the `$init-statement-seq$` and the `$expression$`. Each `$init-statement$` in the `$init-statement-seq$` is executed in order.
+
+[#]{.pnum} Variables declared in the `$init-statement-seq$` are destroyed, in reverse order of their construction, after evaluating the `$expression$` but before the end of the full-expression containing the parenthesized expression.
+
+[#]{.pnum} [Temporaries created during initialization of a variable declared in the `$init-statement-seq$` are destroyed at the end of the full-expression containing the parenthesized expression, following the usual rules for temporary destruction.]{.note}
+
+::: example
+```cpp
+constexpr int f() {
+    return (int x = 1; int y = 2; x + y);
+}
+static_assert(f() == 3); // OK
+
+constexpr int const& id(int const& r) { return r; }
+constexpr int const* ptr(int const& r) { return &r; }
+
+constexpr int h() {
+    return (int const* p = ptr(id(42)); *p);
+}
+static_assert(h() == 42); // OK, no dangling
+```
+:::
+:::
 :::
 
 Extend the rule for move-eligible expressions in [expr.prim.id.unqual]{.sref}:
@@ -992,47 +1035,6 @@ void f() {
 :::
 :::
 
-Add a new clause [expr.prim.paren.init] after [expr.prim.paren]{.sref}:
-
-::: std
-::: addu
-**Parenthesized init expression [expr.prim.paren.init]**
-
-[1]{.pnum} A *paren-init-expression* allows declarations to be introduced within an expression, with the declared variables persisting until the end of the enclosing full-expression.
-
-```
-$paren-init-expression$:
-    ( $init-statement-seq$ $expression$ )
-
-$init-statement-seq$:
-    $init-statement$
-    $init-statement-seq$ $init-statement$
-```
-
-[#]{.pnum} A `$paren-init-expression$` introduces a block scope ([basic.scope.block]) that includes the `$init-statement-seq$` and the `$expression$`. Each `$init-statement$` in the `$init-statement-seq$` is executed in order. The type and value category of the `$paren-init-expression$` are those of the `$expression$`.
-
-[#]{.pnum} Variables declared in the `$init-statement-seq$` are destroyed, in reverse order of their construction, after evaluating the `$expression$` but before the end of the full-expression containing the `$paren-init-expression$`.
-
-[#]{.pnum} [Temporaries created during initialization of a variable declared in the `$init-statement-seq$` are destroyed at the end of the full-expression containing the `$paren-init-expression$`, following the usual rules for temporary destruction.]{.note}
-
-::: example
-```cpp
-constexpr int f() {
-    return (int x = 1; int y = 2; x + y);
-}
-static_assert(f() == 3); // OK
-
-constexpr int const& id(int const& r) { return r; }
-constexpr int const* ptr(int const& r) { return &r; }
-
-constexpr int h() {
-    return (int const* p = ptr(id(42)); *p);
-}
-static_assert(h() == 42); // OK, no dangling
-```
-:::
-:::
-:::
 
 ## Statements
 
