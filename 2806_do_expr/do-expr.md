@@ -854,7 +854,7 @@ $primary-expression$:
   $literal$
   this
 - ( $expression$ )
-+ ( $init-statement-seq$ $expression$ )
++ ( $init-statement-seq$@~opt~@ $expression$ )
   $id-expression$
   $lambda-expression$
   $fold-expression$
@@ -877,12 +877,12 @@ $init-statement-seq$:
 ```
 :::
 
-[1]{.pnum} A parenthesized expression `(@[*init-statement-seq*]{.addu}@ $E$)` is a primary expression whose type, result, and value category are identical to those of `$E$`. The parenthesized expression can be used in exactly the same contexts as those where `$E$` can be used, and with the same meaning, except as otherwise indicated.
+[1]{.pnum} A parenthesized expression `(@[*init-statement-seq*~opt~]{.addu}@ $E$)` is a primary expression whose type, result, and value category are identical to those of `$E$`. The parenthesized expression can be used in exactly the same contexts as those where `$E$` can be used, and with the same meaning, except as otherwise indicated.
 
 ::: addu
-[#]{.pnum} The *init-statement-seq*  of a parenthesized expression allows declarations to be introduced within an expression, with the declared variables persisting until the end of the enclosing full-expression.
+[#]{.pnum} The *init-statement-seq*, if any, of a parenthesized expression allows declarations to be introduced within an expression.
 
-[#]{.pnum} A parenthesized expression introduces a block scope ([basic.scope.block]) that includes the `$init-statement-seq$` and the `$expression$`. Each `$init-statement$` in the `$init-statement-seq$` is executed in order.
+[#]{.pnum} A parenthesized expression with an `$init-statement-seq$` introduces a block scope ([basic.scope.block]) that includes the `$init-statement-seq$` and the `$expression$`. Each `$init-statement$` in the `$init-statement-seq$` is executed in order.
 
 [#]{.pnum} Variables declared in the `$init-statement-seq$` are destroyed, in reverse order of their construction, after evaluating the `$expression$` but before the end of the full-expression containing the parenthesized expression.
 
@@ -914,7 +914,8 @@ Extend the rule for move-eligible expressions in [expr.prim.id.unqual]{.sref}:
 
 * [15.1]{.pnum} it designates an implicitly movable entity,
 * [15.2]{.pnum} it is the (possibly parenthesized) operand of a `return` ([stmt.return]) [or]{.rm} [,]{.addu} `co_return` ([stmt.return.coroutine])[, or `do_return` ([stmt.do.return])]{.addu} statement, or of a `$throw-expression$` ([expr.throw]), and
-* [15.3]{.pnum} each intervening scope between the declaration of the entity and the innermost enclosing scope of the expression is a block scope and, for a `$throw-expression$`, is not the block scope of a `$try-block$` or `$function-try-block$`.
+* [15.3]{.pnum} each intervening scope between the declaration of the entity and the innermost enclosing scope of the expression is a block scope and, for a `$throw-expression$`, is not the block scope of a `$try-block$` or `$function-try-block$`[, and]{.addu}
+* [15.4]{.pnum} [for a `do_return` statement, the entity belongs to the block scope of the `$compound-statement$` of the `$do-expression$` enclosing the `do_return` statement, or to a block scope contained by that block scope.]{.addu}
 :::
 
 Add a new clause [expr.prim.do] after [expr.prim.req.nested]{.sref}:
@@ -944,16 +945,10 @@ static_assert(f(4) == 2);
 
 ```
 $do-expression$:
-    do $trailing-return-type$@~opt~@ { $do-compound-statement$ }
-
-$do-compound-statement$:
-    $statement-seq$@~opt~@ $label-seq$@~opt~@ $do-result-expression$@~opt~@
-
-$do-result-expression$:
-    $expression$
+    do $trailing-return-type$@~opt~@ $compound-statement$
 ```
 
-A `$do-result-expression$` is treated as a `do_return` statement with an operand that is the `$expression$`.
+A `$do-result-expression$` in the `$compound-statement$` of a `$do-expression$` is treated as a `do_return` statement with an operand that is the `$expression$`.
 
 ::: example
 ```cpp
@@ -962,7 +957,7 @@ int b = do { int x = 2; x + 3 }; // OK, equivalent to do { int x = 2; do_return 
 ```
 :::
 
-[#]{.pnum} The `$do-compound-statement$` of a `$do-expression$` is a control-flow-limited statement ([stmt.label]).
+[#]{.pnum} The `$compound-statement$` of a `$do-expression$` is a control-flow-limited statement ([stmt.label]).
 
 [#]{.pnum} A `return` statement ([stmt.return]) appearing in a `$do-expression$` transfers control to the caller of the function that lexically contains the `$do-expression$`.
 A `co_return`, `co_await`, or `co_yield` statement or expression appearing in a `$do-expression$` acts on the coroutine that lexically contains the `$do-expression$`. [That is, a `$do-expression$` is transparent to the enclosing function or coroutine.]{.note}
@@ -976,9 +971,9 @@ A `co_return`, `co_await`, or `co_yield` statement or expression appearing in a 
 [#]{.pnum} The type `$DO-TYPE$` of a `$do-expression$` is determined as follows:
 
 * [#.#]{.pnum} If there is a `$trailing-return-type$` that does not contain a placeholder type ([dcl.spec.auto]), then `$DO-TYPE$` is the type specified by that `$trailing-return-type$`.
-* [#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced from the `do_return` statements in the body:
-    * [#.#.#]{.pnum} If there is no `do_return` statement (including no `$do-result-expression$`), or every `do_return` statement has no operand, `$DO-TYPE$` is `void`.
-    * [#.#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced as if from a `return` statement using the rules in [dcl.spec.auto.general]. All `do_return` statements shall deduce to the same type; otherwise, the program is ill-formed.
+* [#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced from the non-discarded `do_return` statements in the body:
+    * [#.#.#]{.pnum} If there is no non-discarded `do_return` statement (including no `$do-result-expression$`), or every non-discarded `do_return` statement has no operand, `$DO-TYPE$` is `void`.
+    * [#.#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced as if from a `return` statement using the rules in [dcl.spec.auto.general]. All non-discarded `do_return` statements shall deduce to the same type; otherwise, the program is ill-formed.
 
 ::: example
 ```cpp
@@ -997,7 +992,7 @@ auto c = do {                           // error: inconsistent deduction
 * [#.#]{.pnum} Otherwise, if `$DO-TYPE$` is `T&&`, the `$do-expression$` is an xvalue of type `T`.
 * [#.#]{.pnum} Otherwise, the `$do-expression$` is a prvalue of type `$DO-TYPE$`.
 
-[#]{.pnum} If control can flow off the end of the `$do-compound-statement$` of a `$do-expression$` whose type is not `$cv$ void`, the program is ill-formed.
+[#]{.pnum} If control can flow off the end of the `$compound-statement$` of a `$do-expression$` whose type is not `$cv$ void`, the program is ill-formed.
 [Control flows off the end if there exists any path through the compound statement that does not terminate with a `do_return` statement, a `throw` expression, a call to a `[[noreturn]]` function, or a jump statement that exits the `$do-expression$`.]{.note}
 
 ::: example
@@ -1025,9 +1020,7 @@ void f() {
 ```
 :::
 
-[#]{.pnum} The value of a `$do-expression$` of type `$cv$ void` is the value produced by the executed `do_return` statement.
-
-[#]{.pnum} The copy-initialization of the result of a `$do-expression$` is sequenced before the destruction of local variables declared within the `$do-compound-statement$`.
+[#]{.pnum} The copy-initialization of the result of a `$do-expression$` is sequenced before the destruction of local variables declared within the `$compound-statement$`.
 [A copy or move operation associated with a `do_return` statement can be elided or converted to a move operation the same as for a `return` statement ([class.copy.elision]).]{.note}
 
 [#]{.pnum} A `$do-expression$` can appear in any context where an expression is permitted, including at namespace scope.
@@ -1037,6 +1030,18 @@ void f() {
 
 
 ## Statements
+
+Change [stmt.pre]{.sref} to make the `$compound-statement$` of a `$do-expression$` transparent to the enclosing statement:
+
+::: std
+[3]{.pnum} A `$statement$` `S1` encloses a `$statement$` `S2` if
+
+* [3.1]{.pnum} `S2` is a substatement of `S1`,
+* [3.2]{.pnum} `S1` is a `$selection-statement$`, `$iteration-statement$`, or `$expansion-statement$`, and `S2` is the `$init-statement$` of `S1`,
+* [3.3]{.pnum} `S1` is a `$try-block$` and `S2` is its `$compound-statement$` or any of the `$compound-statement$`s of its `$handler$`s, [or]{.rm}
+* [3.4]{.pnum} `S1` encloses a statement `S3` and `S3` encloses `S2`[.]{.rm} [, or]{.addu}
+* [3.5]{.pnum} [`S2` is the `$compound-statement$` of a `$do-expression$` `E` ([expr.prim.do]), `E` appears within `S1`, and `E` does not appear within an intervening `$lambda-expression$` or function body.]{.addu}
+:::
 
 Change [stmt.expr]{.sref} to disambiguate a `$do-expression$` from a `do`-`while` loop:
 
@@ -1049,6 +1054,23 @@ $expression-statement$:
 The expression is a *discarded-value expression* ([expr.context]). All side effects from an expression statement are completed before the next statement is executed. An expression statement with the expression missing is called a *null statement*. [The `$expression$` shall not be a `$do-expression$`.]{.addu}
 
 [A statement beginning with the keyword `do` is always parsed as a `do`-`while` statement ([stmt.do]). A `$do-expression$` used as a statement must be parenthesized.]{.note .addu}
+:::
+
+Change [stmt.block]{.sref} to allow a `$compound-statement$` to end in an expression in the context of a `$do-expression$`:
+
+::: std
+```diff
+ $compound-statement$:
+     { $statement-seq$@~opt~@ $label-seq$@~opt~@ }
++    { $statement-seq$@~opt~@ $do-result-expression$ }
+
++$do-result-expression$:
++    $expression$
+```
+
+::: addu
+[#]{.pnum} A `$do-result-expression$` shall appear only in the `$compound-statement$` of a `$do-expression$` ([expr.prim.do]).
+:::
 :::
 
 Add to the grammar in [stmt.jump.general]{.sref}:
@@ -1112,7 +1134,7 @@ Add a new subclause [stmt.do.return] "The `do_return` statement" after [stmt.ret
 ::: addu
 **The `do_return` statement [stmt.do.return]**
 
-[#]{.pnum} A `do_return` statement shall appear only within the `$do-compound-statement$` of a `$do-expression$` ([expr.prim.do]), and not within an intervening `$lambda-expression$` or function body.
+[#]{.pnum} A `do_return` statement shall appear only within the `$compound-statement$` of a `$do-expression$` ([expr.prim.do]), and not within an intervening `$lambda-expression$` or function body.
 
 ::: example
 ```cpp
@@ -1138,16 +1160,9 @@ to a temporary expression ([class.temporary]) is ill-formed.
 
 ::: example
 ```cpp
-struct S { int& r; };
 int& f();
-
 auto a = do -> int const& { do_return f(); };     // OK
 auto b = do -> int const& { do_return 42; };      // error: binds reference to temporary
-auto c = do -> S { do_return {f()}; };            // OK
-auto d = do -> S {
-    int x = 1;
-    do_return {x};                                // error: binds constituent reference to local
-};
 ```
 :::
 :::
