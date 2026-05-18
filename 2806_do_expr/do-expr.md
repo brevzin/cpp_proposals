@@ -1076,6 +1076,8 @@ The expression is a *discarded-value expression* ([expr.context]). All side effe
 Change [stmt.block]{.sref} to allow a `$compound-statement$` to end in an expression in the context of a `$do-expression$`:
 
 ::: std
+[1]{.pnum} A *compound statement* (also known as a block) groups a sequence of statements into a single statement.
+
 ```diff
  $compound-statement$:
      { $statement-seq$@~opt~@ $label-seq$@~opt~@ }
@@ -1085,9 +1087,13 @@ Change [stmt.block]{.sref} to allow a `$compound-statement$` to end in an expres
 +    $expression$
 ```
 
+A label at the end of a compound-statement is treated as if it were followed by a null statement.
+
 ::: addu
-[#]{.pnum} A `$do-result-expression$` shall appear only in the `$compound-statement$` of a `$do-expression$` ([expr.prim.do]).
+[*]{.pnum} A `$do-result-expression$` shall appear only in the `$compound-statement$` of a `$do-expression$` ([expr.prim.do]).
 :::
+
+[2]{.pnum} [A compound statement defines a block scope ([basic.scope]).]{.note}
 :::
 
 Add to the grammar in [stmt.jump.general]{.sref}:
@@ -1151,7 +1157,7 @@ Add a new subclause [stmt.do.return] "The `do_return` statement" after [stmt.ret
 ::: addu
 **The `do_return` statement [stmt.do.return]**
 
-[#]{.pnum} A `do_return` statement shall appear only within the `$compound-statement$` of a `$do-expression$` ([expr.prim.do]), and not within an intervening `$lambda-expression$` or function body.
+[1]{.pnum} A `do_return` statement shall appear only within the `$compound-statement$` of a `$do-expression$` ([expr.prim.do]), and not within an intervening `$lambda-expression$` or function body.
 The innermost such `$do-expression$` is the `do_return` statement's *associated* `$do-expression$`.
 
 ::: example
