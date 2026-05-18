@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-05-17" />
+  <meta name="dcterms.date" content="2026-05-18" />
   <title>do expressions</title>
   <style>
       code{white-space: pre-wrap;}
@@ -577,7 +577,7 @@ expressions</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-05-17</td>
+    <td>2026-05-18</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -653,9 +653,10 @@ Experience<span></span></a></li>
 <li><a href="#wording" id="toc-wording"><span class="toc-section-number">4</span> Wording<span></span></a>
 <ul>
 <li><a href="#lex-intro" id="toc-lex-intro"><span class="toc-section-number">4.1</span> Lex / Intro<span></span></a></li>
-<li><a href="#expressions" id="toc-expressions"><span class="toc-section-number">4.2</span> Expressions<span></span></a></li>
-<li><a href="#statements" id="toc-statements"><span class="toc-section-number">4.3</span> Statements<span></span></a></li>
-<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">4.4</span> Feature-Test
+<li><a href="#basic" id="toc-basic"><span class="toc-section-number">4.2</span> Basic<span></span></a></li>
+<li><a href="#expressions" id="toc-expressions"><span class="toc-section-number">4.3</span> Expressions<span></span></a></li>
+<li><a href="#statements" id="toc-statements"><span class="toc-section-number">4.4</span> Statements<span></span></a></li>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">4.5</span> Feature-Test
 Macro<span></span></a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References<span></span></a></li>
@@ -910,7 +911,7 @@ out of it).</p>
 <p>The expression <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> <span class="kw">do_return</span> <span class="dv">42</span>; <span class="op">}</span></code>
 is a prvalue of type
 <code class="sourceCode cpp"><span class="dt">int</span></code>. We
-deduce the type from all of the
+deduce the type from all of the (non-discarded)
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statements, in the same way that
 <code class="sourceCode cpp"><span class="kw">auto</span></code> return
@@ -923,11 +924,11 @@ provided to override this:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">long</span> <span class="op">{</span> <span class="kw">do_return</span> <span class="dv">42</span>; <span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>If no
+<p>If no (non-discard)
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement appears in the body of the
 <code class="sourceCode cpp"><span class="cf">do</span></code>
-expression, or every
+expression, or every (non-discarded)
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement is of the form
 <code class="sourceCode cpp"><span class="kw">do_return</span>;</code>,
@@ -1112,7 +1113,7 @@ the user provides more information themselves.</p>
 flow graph of the
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression and consider each one of the six escaping kinds described
-above. All
+above. All (non-discarded)
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statements (including the implicit
 <code class="sourceCode cpp"><span class="kw">do_return</span>;</code>
@@ -2051,7 +2052,27 @@ note</em> ]</span></p>
 </div>
 </blockquote>
 </div>
-<h2 data-number="4.2" id="expressions"><span class="header-section-number">4.2</span> Expressions<a href="#expressions" class="self-link"></a></h2>
+<h2 data-number="4.2" id="basic"><span class="header-section-number">4.2</span> Basic<a href="#basic" class="self-link"></a></h2>
+<p>Add another temporary context to <span>6.8.7 <a href="https://wg21.link/class.temporary">[class.temporary]</a></span>:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">10</a></span>
+The seventh context is when […]</p>
+<div class="addu">
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">*</a></span>
+The eighth context is when a temporary object is created during the
+initialization of a variable declared by an
+<code class="sourceCode cpp"><em>init-statement</em></code> in the
+<code class="sourceCode cpp"><em>init-statement-seq</em></code> of a
+parenthesized expression ([expr.prim.paren]). If such a temporary object
+would otherwise be destroyed at the end of the
+<code class="sourceCode cpp"><em>init-declarator</em></code>
+full-expression, the object persists until the completion of the
+full-expression containing the parenthesized expression.</p>
+</div>
+</blockquote>
+</div>
+<h2 data-number="4.3" id="expressions"><span class="header-section-number">4.3</span> Expressions<a href="#expressions" class="self-link"></a></h2>
 <p>Add <code class="sourceCode cpp"><em>do-expression</em></code> to the
 grammar in <span>7.5.1 <a href="https://wg21.link/expr.prim.grammar">[expr.prim.grammar]</a></span>:</p>
 <div class="std">
@@ -2080,7 +2101,7 @@ grammar in <span>7.5.1 <a href="https://wg21.link/expr.prim.grammar">[expr.prim.
 <span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    <em>init-statement</em></span>
 <span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    <em>init-statement-seq</em> <em>init-statement</em></span></code></pre></div>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_10" id="pnum_10">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">1</a></span>
 A parenthesized expression <code class="sourceCode cpp"><span class="op">(</span><span class="addu"><em>init-statement-seq</em><sub>opt</sub></span> <em>E</em><span class="op">)</span></code>
 is a primary expression whose type, result, and value category are
 identical to those of <code class="sourceCode cpp"><em>E</em></code>.
@@ -2088,10 +2109,10 @@ The parenthesized expression can be used in exactly the same contexts as
 those where <code class="sourceCode cpp"><em>E</em></code> can be used,
 and with the same meaning, except as otherwise indicated.</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">2</a></span>
 The <em>init-statement-seq</em>, if any, of a parenthesized expression
 allows declarations to be introduced within an expression.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_12" id="pnum_12">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">3</a></span>
 A parenthesized expression with an
 <code class="sourceCode cpp"><em>init-statement-seq</em></code>
 introduces a block scope ([basic.scope.block]) that includes the
@@ -2100,19 +2121,20 @@ introduces a block scope ([basic.scope.block]) that includes the
 <code class="sourceCode cpp"><em>init-statement</em></code> in the
 <code class="sourceCode cpp"><em>init-statement-seq</em></code> is
 executed in order.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">4</a></span>
 Variables declared in the
 <code class="sourceCode cpp"><em>init-statement-seq</em></code> are
 destroyed, in reverse order of their construction, after evaluating the
-<code class="sourceCode cpp"><em>expression</em></code> but before the
-end of the full-expression containing the parenthesized expression.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_14" id="pnum_14">5</a></span>
+<code class="sourceCode cpp"><em>expression</em></code> and before any
+value computation or side effect associated with any expression that
+contains the parenthesized expression.</p>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">5</a></span>
 <span class="note"><span>[ <em>Note 1:</em> </span>Temporaries created
 during initialization of a variable declared in the
 <code class="sourceCode cpp"><em>init-statement-seq</em></code> are
 destroyed at the end of the full-expression containing the parenthesized
-expression, following the usual rules for temporary destruction.<span>
-— <em>end note</em> ]</span></span></p>
+expression ([class.temporary]).<span> — <em>end
+note</em> ]</span></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
@@ -2135,7 +2157,7 @@ expression, following the usual rules for temporary destruction.<span>
 <p>Extend the rule for move-eligible expressions in <span>7.5.5.2 <a href="https://wg21.link/expr.prim.id.unqual">[expr.prim.id.unqual]</a></span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_15" id="pnum_15">15</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">15</a></span>
 An <em>implicitly movable entity</em> is a variable with automatic
 storage duration that is either a non-volatile object or an rvalue
 reference to a non-volatile object type. An
@@ -2143,9 +2165,9 @@ reference to a non-volatile object type. An
 <code class="sourceCode cpp"><em>splice-expression</em></code>
 ([expr.prim.splice]) is <em>move-eligible</em> if</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">(15.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(15.1)</a></span>
 it designates an implicitly movable entity,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_17" id="pnum_17">(15.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(15.2)</a></span>
 it is the (possibly parenthesized) operand of a
 <code class="sourceCode cpp"><span class="cf">return</span></code>
 ([stmt.return]) <span class="rm" style="color: #bf0303"><del>or</del></span> <span class="addu">,</span>
@@ -2155,21 +2177,20 @@ it is the (possibly parenthesized) operand of a
 ([stmt.do.return])</span> statement, or of a
 <code class="sourceCode cpp"><em>throw-expression</em></code>
 ([expr.throw]), and</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">(15.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">(15.3)</a></span>
 each intervening scope between the declaration of the entity and the
 innermost enclosing scope of the expression is a block scope and, for a
 <code class="sourceCode cpp"><em>throw-expression</em></code>, is not
 the block scope of a
 <code class="sourceCode cpp"><em>try-block</em></code> or
 <code class="sourceCode cpp"><em>function-try-block</em></code><span class="addu">, and</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_19" id="pnum_19">(15.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">(15.4)</a></span>
 <span class="addu">for a
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement, the entity belongs to the block scope of the
-<code class="sourceCode cpp"><em>compound-statement</em></code> of the
-<code class="sourceCode cpp"><em>do-expression</em></code> enclosing the
-<code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statement, or to a block scope contained by that block
+<code class="sourceCode cpp"><em>compound-statement</em></code> of its
+associated <code class="sourceCode cpp"><em>do-expression</em></code>
+([stmt.do.return]), or to a block scope contained by that block
 scope.</span></li>
 </ul>
 </blockquote>
@@ -2179,7 +2200,7 @@ scope.</span></li>
 <blockquote>
 <div class="addu">
 <p><strong>Do expressions [expr.prim.do]</strong></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">1</a></span>
 A <em>do-expression</em> provides a way to combine multiple statements
 into a single expression without introducing a new function scope. A
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
@@ -2211,7 +2232,9 @@ in the <code class="sourceCode cpp"><em>compound-statement</em></code>
 of a <code class="sourceCode cpp"><em>do-expression</em></code> is
 treated as a
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statement with an operand that is the
+statement associated with that
+<code class="sourceCode cpp"><em>do-expression</em></code>
+([stmt.do.return]) and with an operand that is the
 <code class="sourceCode cpp"><em>expression</em></code>.</p>
 <div class="example">
 <span>[ <em>Example 3:</em> </span>
@@ -2219,11 +2242,11 @@ statement with an operand that is the
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dt">int</span> x <span class="op">=</span> <span class="dv">2</span>; x <span class="op">+</span> <span class="dv">3</span> <span class="op">}</span>; <span class="co">// OK, equivalent to do { int x = 2; do_return x + 3; }</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_21" id="pnum_21">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">2</a></span>
 The <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code> is a
 control-flow-limited statement ([stmt.label]).</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_22" id="pnum_22">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">3</a></span>
 A <code class="sourceCode cpp"><span class="cf">return</span></code>
 statement ([stmt.return]) appearing in a
 <code class="sourceCode cpp"><em>do-expression</em></code> transfers
@@ -2239,7 +2262,7 @@ coroutine that lexically contains the
 <code class="sourceCode cpp"><em>do-expression</em></code> is
 transparent to the enclosing function or coroutine.<span> — <em>end
 note</em> ]</span></span></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_23" id="pnum_23">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">4</a></span>
 A <code class="sourceCode cpp"><span class="cf">break</span></code> or
 <code class="sourceCode cpp"><span class="cf">continue</span></code>
 statement appearing in a
@@ -2254,7 +2277,7 @@ statement that contains the
 statement cannot be used to exit a
 <code class="sourceCode cpp"><em>do-expression</em></code> itself.<span>
 — <em>end note</em> ]</span></span></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_24" id="pnum_24">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">5</a></span>
 A <code class="sourceCode cpp"><em>do-expression</em></code> that is not
 within a function shall not contain a
 <code class="sourceCode cpp"><span class="cf">return</span></code>
@@ -2265,47 +2288,51 @@ statement, a
 expression, or a
 <code class="sourceCode cpp"><span class="kw">co_yield</span></code>
 expression.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_25" id="pnum_25">6</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">6</a></span>
 A <code class="sourceCode cpp"><span class="cf">goto</span></code>
 statement ([stmt.goto]) shall not transfer control into a
 <code class="sourceCode cpp"><em>do-expression</em></code> from outside
 that <code class="sourceCode cpp"><em>do-expression</em></code>.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_26" id="pnum_26">7</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">7</a></span>
 The type <code class="sourceCode cpp"><em>DO-TYPE</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code> is determined
 as follows:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_27" id="pnum_27">(7.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(7.1)</a></span>
 If there is a
 <code class="sourceCode cpp"><em>trailing-return-type</em></code> that
 does not contain a placeholder type ([dcl.spec.auto]), then
 <code class="sourceCode cpp"><em>DO-TYPE</em></code> is the type
 specified by that
 <code class="sourceCode cpp"><em>trailing-return-type</em></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_28" id="pnum_28">(7.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(7.2)</a></span>
 Otherwise, <code class="sourceCode cpp"><em>DO-TYPE</em></code> is
 deduced from the non-discarded
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statements in the body:
+statements associated with the
+<code class="sourceCode cpp"><em>do-expression</em></code>:
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_29" id="pnum_29">(7.2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">(7.2.1)</a></span>
 If there is no non-discarded
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statement (including no
+statement associated with the
+<code class="sourceCode cpp"><em>do-expression</em></code> (including no
 <code class="sourceCode cpp"><em>do-result-expression</em></code>), or
 every non-discarded
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statement has no operand,
-<code class="sourceCode cpp"><em>DO-TYPE</em></code> is
+statement associated with the
+<code class="sourceCode cpp"><em>do-expression</em></code> has no
+operand, <code class="sourceCode cpp"><em>DO-TYPE</em></code> is
 <code class="sourceCode cpp"><span class="dt">void</span></code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_30" id="pnum_30">(7.2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(7.2.2)</a></span>
 Otherwise, <code class="sourceCode cpp"><em>DO-TYPE</em></code> is
 deduced as if from a
 <code class="sourceCode cpp"><span class="cf">return</span></code>
 statement using the rules in [dcl.spec.auto.general]. All non-discarded
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statements shall deduce to the same type; otherwise, the program is
-ill-formed.</li>
+statements associated with the
+<code class="sourceCode cpp"><em>do-expression</em></code> shall deduce
+to the same type; otherwise, the program is ill-formed.</li>
 </ul></li>
 </ul>
 <div class="example">
@@ -2318,28 +2345,28 @@ ill-formed.</li>
 <span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_31" id="pnum_31">8</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">8</a></span>
 The type and value category of the
 <code class="sourceCode cpp"><em>do-expression</em></code> are
 determined from <code class="sourceCode cpp"><em>DO-TYPE</em></code> as
 follows:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_32" id="pnum_32">(8.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(8.1)</a></span>
 If <code class="sourceCode cpp"><em>DO-TYPE</em></code> is
 <code class="sourceCode cpp">T<span class="op">&amp;</span></code>, the
 <code class="sourceCode cpp"><em>do-expression</em></code> is an lvalue
 of type <code class="sourceCode cpp">T</code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_33" id="pnum_33">(8.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">(8.2)</a></span>
 Otherwise, if <code class="sourceCode cpp"><em>DO-TYPE</em></code> is
 <code class="sourceCode cpp">T<span class="op">&amp;&amp;</span></code>,
 the <code class="sourceCode cpp"><em>do-expression</em></code> is an
 xvalue of type <code class="sourceCode cpp">T</code>.</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_34" id="pnum_34">(8.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">(8.3)</a></span>
 Otherwise, the
 <code class="sourceCode cpp"><em>do-expression</em></code> is a prvalue
 of type <code class="sourceCode cpp"><em>DO-TYPE</em></code>.</li>
 </ul>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_35" id="pnum_35">9</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">9</a></span>
 If control can flow off the end of the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code> whose type is
@@ -2379,18 +2406,23 @@ function, or a jump statement that exits the
 <span id="cb49-20"><a href="#cb49-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_36" id="pnum_36">10</a></span>
-The copy-initialization of the result of a
-<code class="sourceCode cpp"><em>do-expression</em></code> is sequenced
-before the destruction of local variables declared within the
-<code class="sourceCode cpp"><em>compound-statement</em></code>. <span class="note"><span>[ <em>Note 5:</em> </span>A copy or move operation
-associated with a
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">10</a></span>
+The initialization of the returned reference or prvalue result object of
+a <code class="sourceCode cpp"><em>do-expression</em></code> is
+sequenced before the destruction of temporaries at the end of the
+full-expression established by the operand of the executed
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statement, which, in turn, is sequenced before the destruction of local
+variables ([stmt.jump]) whose scope is exited by the
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statement. <span class="note"><span>[ <em>Note 5:</em> </span>A copy or
+move operation associated with a
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement can be elided or converted to a move operation the same as for
 a <code class="sourceCode cpp"><span class="cf">return</span></code>
 statement ([class.copy.elision]).<span> — <em>end
 note</em> ]</span></span></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_37" id="pnum_37">11</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">11</a></span>
 A <code class="sourceCode cpp"><em>do-expression</em></code> can appear
 in any context where an expression is permitted, including at namespace
 scope. <span class="note"><span>[ <em>Note 6:</em> </span>At namespace
@@ -2404,23 +2436,23 @@ note</em> ]</span></span></p>
 </div>
 </blockquote>
 </div>
-<h2 data-number="4.3" id="statements"><span class="header-section-number">4.3</span> Statements<a href="#statements" class="self-link"></a></h2>
+<h2 data-number="4.4" id="statements"><span class="header-section-number">4.4</span> Statements<a href="#statements" class="self-link"></a></h2>
 <p>Change <span>8.1 <a href="https://wg21.link/stmt.pre">[stmt.pre]</a></span> to make the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code> transparent
 to the enclosing statement:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_38" id="pnum_38">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">3</a></span>
 A <code class="sourceCode cpp"><em>statement</em></code>
 <code class="sourceCode cpp">S1</code> encloses a
 <code class="sourceCode cpp"><em>statement</em></code>
 <code class="sourceCode cpp">S2</code> if</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_39" id="pnum_39">(3.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(3.1)</a></span>
 <code class="sourceCode cpp">S2</code> is a substatement of
 <code class="sourceCode cpp">S1</code>,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_40" id="pnum_40">(3.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(3.2)</a></span>
 <code class="sourceCode cpp">S1</code> is a
 <code class="sourceCode cpp"><em>selection-statement</em></code>,
 <code class="sourceCode cpp"><em>iteration-statement</em></code>, or
@@ -2428,20 +2460,20 @@ A <code class="sourceCode cpp"><em>statement</em></code>
 <code class="sourceCode cpp">S2</code> is the
 <code class="sourceCode cpp"><em>init-statement</em></code> of
 <code class="sourceCode cpp">S1</code>,</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_41" id="pnum_41">(3.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">(3.3)</a></span>
 <code class="sourceCode cpp">S1</code> is a
 <code class="sourceCode cpp"><em>try-block</em></code> and
 <code class="sourceCode cpp">S2</code> is its
 <code class="sourceCode cpp"><em>compound-statement</em></code> or any
 of the <code class="sourceCode cpp"><em>compound-statement</em></code>s
 of its <code class="sourceCode cpp"><em>handler</em></code>s, <span class="rm" style="color: #bf0303"><del>or</del></span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_42" id="pnum_42">(3.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">(3.4)</a></span>
 <code class="sourceCode cpp">S1</code> encloses a statement
 <code class="sourceCode cpp">S3</code> and
 <code class="sourceCode cpp">S3</code> encloses
 <code class="sourceCode cpp">S2</code><span class="rm" style="color: #bf0303"><del>.</del></span> <span class="addu">,
 or</span></li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_43" id="pnum_43">(3.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">(3.5)</a></span>
 <span class="addu"><code class="sourceCode cpp">S2</code> is the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code>
@@ -2462,7 +2494,7 @@ disambiguate a
 loop:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_44" id="pnum_44">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">1</a></span>
 Expression statements have the form</p>
 <div class="sourceCode" id="cb50"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><em>expression-statement</em>:</span>
 <span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <em>expression</em><sub>opt</sub>;</span></code></pre></div>
@@ -2498,7 +2530,7 @@ in an expression in the context of a
 <span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a><span class="va">+    <em>expression</em></span></span></code></pre></div>
 </div>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_45" id="pnum_45">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">2</a></span>
 A <code class="sourceCode cpp"><em>do-result-expression</em></code>
 shall appear only in the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
@@ -2510,7 +2542,7 @@ shall appear only in the
 <p>Add to the grammar in <span>8.8.1 <a href="https://wg21.link/stmt.jump.general">[stmt.jump.general]</a></span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_46" id="pnum_46">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">1</a></span>
 Jump statements unconditionally transfer control.</p>
 <div>
 <div class="sourceCode" id="cb52"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><em>jump-statement</em>:</span>
@@ -2521,7 +2553,7 @@ Jump statements unconditionally transfer control.</p>
 <span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>    <em>coroutine-return-statement</em></span>
 <span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>    goto <em>identifier</em> ;</span></code></pre></div>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_47" id="pnum_47">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">2</a></span>
 […]</p>
 </blockquote>
 </div>
@@ -2530,7 +2562,7 @@ its use in <code class="sourceCode cpp"><em>do-expression</em></code>s
 in confusing places:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_48" id="pnum_48">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">1</a></span>
 A <code class="sourceCode cpp"><span class="cf">break</span></code>
 statement shall be enclosed by ([stmt.pre]) an
 <code class="sourceCode cpp"><em>iteration-statement</em></code>
@@ -2544,34 +2576,34 @@ statement causes termination of the innermost such enclosing statement;
 control passes to the statement following the terminated statement, if
 any.</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_49" id="pnum_49">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">2</a></span>
 A <code class="sourceCode cpp"><span class="cf">break</span></code>
 statement shall not appear in a
 <code class="sourceCode cpp"><em>do-expression</em></code>
 ([expr.prim.do]) that is a subexpression of:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_50" id="pnum_50">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">(2.1)</a></span>
 the <code class="sourceCode cpp"><em>init-statement</em></code>,
 <code class="sourceCode cpp"><em>condition</em></code>, or
 <code class="sourceCode cpp"><em>expression</em></code> of a
 <code class="sourceCode cpp"><span class="cf">for</span></code>
 statement ([stmt.for]),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_51" id="pnum_51">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">(2.2)</a></span>
 the <code class="sourceCode cpp"><em>condition</em></code> of a
 <code class="sourceCode cpp"><span class="cf">while</span></code>
 statement ([stmt.while]),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_52" id="pnum_52">(2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">(2.3)</a></span>
 the <code class="sourceCode cpp"><em>init-statement</em></code>,
 <code class="sourceCode cpp"><em>for-range-declaration</em></code>, or
 <code class="sourceCode cpp"><em>for-range-initializer</em></code> of a
 range-based
 <code class="sourceCode cpp"><span class="cf">for</span></code>
 statement ([stmt.ranged]),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_53" id="pnum_53">(2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">(2.4)</a></span>
 the <code class="sourceCode cpp"><em>expression</em></code> of a
 <code class="sourceCode cpp"><span class="cf">do</span></code> statement
 ([stmt.do]), or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_54" id="pnum_54">(2.5)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">(2.5)</a></span>
 the <code class="sourceCode cpp"><em>init-statement</em></code> or
 <code class="sourceCode cpp"><em>condition</em></code> of a
 <code class="sourceCode cpp"><span class="cf">switch</span></code>
@@ -2590,7 +2622,7 @@ statement is also within the same
 <p>Change <span>8.8.3 <a href="https://wg21.link/stmt.cont">[stmt.cont]</a></span> similarly:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_55" id="pnum_55">1</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">1</a></span>
 A <code class="sourceCode cpp"><span class="cf">continue</span></code>
 statement shall be enclosed by ([stmt.pre]) an
 <code class="sourceCode cpp"><em>iteration-statement</em></code>
@@ -2598,30 +2630,30 @@ statement shall be enclosed by ([stmt.pre]) an
 <code class="sourceCode cpp"><em>expansion-statement</em></code>
 ([stmt.expand]). […]</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_56" id="pnum_56">2</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">2</a></span>
 A <code class="sourceCode cpp"><span class="cf">continue</span></code>
 statement shall not appear in a
 <code class="sourceCode cpp"><em>do-expression</em></code>
 ([expr.prim.do]) that is a subexpression of:</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_57" id="pnum_57">(2.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">(2.1)</a></span>
 the <code class="sourceCode cpp"><em>init-statement</em></code>,
 <code class="sourceCode cpp"><em>condition</em></code>, or
 <code class="sourceCode cpp"><em>expression</em></code> of a
 <code class="sourceCode cpp"><span class="cf">for</span></code>
 statement ([stmt.for]),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_58" id="pnum_58">(2.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">(2.2)</a></span>
 the <code class="sourceCode cpp"><em>condition</em></code> of a
 <code class="sourceCode cpp"><span class="cf">while</span></code>
 statement ([stmt.while]),</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_59" id="pnum_59">(2.3)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_61" id="pnum_61">(2.3)</a></span>
 the <code class="sourceCode cpp"><em>init-statement</em></code>,
 <code class="sourceCode cpp"><em>for-range-declaration</em></code>, or
 <code class="sourceCode cpp"><em>for-range-initializer</em></code> of a
 range-based
 <code class="sourceCode cpp"><span class="cf">for</span></code>
 statement ([stmt.ranged]), or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_60" id="pnum_60">(2.4)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_62" id="pnum_62">(2.4)</a></span>
 the <code class="sourceCode cpp"><em>expression</em></code> of a
 <code class="sourceCode cpp"><span class="cf">do</span></code> statement
 ([stmt.do])</li>
@@ -2643,14 +2675,18 @@ statement” after <span>8.8.5 <a href="https://wg21.link/stmt.return.coroutine"
 <p><strong>The
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement [stmt.do.return]</strong></p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_61" id="pnum_61">3</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_63" id="pnum_63">3</a></span>
 A <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement shall appear only within the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code>
 ([expr.prim.do]), and not within an intervening
 <code class="sourceCode cpp"><em>lambda-expression</em></code> or
-function body.</p>
+function body. The innermost such
+<code class="sourceCode cpp"><em>do-expression</em></code> is the
+<code class="sourceCode cpp"><span class="kw">do_return</span></code>
+statement’s <em>associated</em>
+<code class="sourceCode cpp"><em>do-expression</em></code>.</p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
 <div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
@@ -2663,38 +2699,39 @@ function body.</p>
 <span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_62" id="pnum_62">4</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_64" id="pnum_64">4</a></span>
 The
 <code class="sourceCode cpp"><em>expr-or-braced-init-list</em></code> of
 a <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement is called its operand. A
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statement with no operand shall be used only in a
-<code class="sourceCode cpp"><em>do-expression</em></code> whose type is
+statement with no operand shall be used only if its associated
+<code class="sourceCode cpp"><em>do-expression</em></code> has type
 <code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span></code>.
 A <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement with an operand of type
 <code class="sourceCode cpp"><span class="dt">void</span></code> shall
-be used only in a
-<code class="sourceCode cpp"><em>do-expression</em></code> whose type is
+be used only if its associated
+<code class="sourceCode cpp"><em>do-expression</em></code> has type
 <code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span></code>.
 A <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statement with any other operand shall be used only in a
-<code class="sourceCode cpp"><em>do-expression</em></code> whose type is
-not
+statement with any other operand shall be used only if its associated
+<code class="sourceCode cpp"><em>do-expression</em></code> has type
+other than
 <code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span></code>;
 the
 <code class="sourceCode cpp"><span class="kw">do_return</span></code>
-statement initializes the result object of the
+statement initializes the returned reference or prvalue result object of
+its associated
 <code class="sourceCode cpp"><em>do-expression</em></code> by
 copy-initialization ([dcl.init]) from the operand.</p>
-<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_63" id="pnum_63">5</a></span>
+<p><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">5</a></span>
 A <code class="sourceCode cpp"><span class="kw">do_return</span></code>
 statement that binds</p>
 <ul>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_64" id="pnum_64">(5.1)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_66" id="pnum_66">(5.1)</a></span>
 a returned reference or</li>
-<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_65" id="pnum_65">(5.2)</a></span>
+<li><span class="marginalizedparent"><a class="marginalized" href="#pnum_67" id="pnum_67">(5.2)</a></span>
 a constituent reference ([intro.object]) of a returned object</li>
 </ul>
 <p>to a temporary expression ([class.temporary]) is ill-formed.</p>
@@ -2708,7 +2745,7 @@ a constituent reference ([intro.object]) of a returned object</li>
 </div>
 </blockquote>
 </div>
-<h2 data-number="4.4" id="feature-test-macro"><span class="header-section-number">4.4</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<h2 data-number="4.5" id="feature-test-macro"><span class="header-section-number">4.5</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Add to <span>15.12 <a href="https://wg21.link/cpp.predefined">[cpp.predefined]</a></span>:</p>
 <div class="std">
 <blockquote>

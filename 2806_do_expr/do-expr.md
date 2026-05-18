@@ -154,7 +154,7 @@ Note that Rust also allows both (you can label a block expression and then `brea
 
 ## Type and Value Category
 
-The expression `do { do_return 42; }` is a prvalue of type `int`. We deduce the type from all of the `do_return` statements, in the same way that `auto` return type deduction works for functions and lambdas.
+The expression `do { do_return 42; }` is a prvalue of type `int`. We deduce the type from all of the (non-discarded) `do_return` statements, in the same way that `auto` return type deduction works for functions and lambdas.
 
 An explicit `$trailing-return-type$` can be provided to override this:
 
@@ -164,7 +164,7 @@ do -> long { do_return 42; }
 ```
 :::
 
-If no `do_return` statement appears in the body of the `do` expression, or every `do_return` statement is of the form `do_return;`, then the expression is a prvalue of type `void`.
+If no (non-discard) `do_return` statement appears in the body of the `do` expression, or every (non-discarded) `do_return` statement is of the form `do_return;`, then the expression is a prvalue of type `void`.
 
 Falling off the end of a `do` expression behaves like an implicit `do_return;` - if this is incompatible with the type of the `do` expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.
 
@@ -252,7 +252,7 @@ For a `do` expression, we have two different directions where we can escape (in 
 
 Additionally, for point (4) while we could simply (for consistency) propagate the same rules for falling-off-the-end as functions, then lambdas (C++11), then coroutines (C++20), we would like to consider not introducing another case for undefined behavior here and enforcing that the user provides more information themselves.
 
-That is, the rule we propose that the implementation form a control flow graph of the `do` expression and consider each one of the six escaping kinds described above. All `do_return` statements (including the implicit `do_return;` introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no `$trailing-return-type$`) or be compatible with the provided return type (if provided). Anything else is ill-formed.
+That is, the rule we propose that the implementation form a control flow graph of the `do` expression and consider each one of the six escaping kinds described above. All (non-discarded) `do_return` statements (including the implicit `do_return;` introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no `$trailing-return-type$`) or be compatible with the provided return type (if provided). Anything else is ill-formed.
 
 Let's go through some examples.
 
@@ -844,6 +844,22 @@ An expression `E` within a `$do-expression$` `D` ([expr.prim.do]) can still be a
 :::
 :::
 
+## Basic
+
+Add another temporary context to [class.temporary]{.sref}:
+
+::: std
+[10]{.pnum} The seventh context is when [...]
+
+::: addu
+[*]{.pnum} The eighth context is when a temporary object is created during the initialization
+of a variable declared by an `$init-statement$` in the `$init-statement-seq$`
+of a parenthesized expression ([expr.prim.paren]). If such a temporary object would otherwise be destroyed at the end of the
+`$init-declarator$` full-expression, the object persists until the completion
+of the full-expression containing the parenthesized expression.
+:::
+:::
+
 ## Expressions
 
 Add `$do-expression$` to the grammar in [expr.prim.grammar]{.sref}:
@@ -884,9 +900,10 @@ $init-statement-seq$:
 
 [#]{.pnum} A parenthesized expression with an `$init-statement-seq$` introduces a block scope ([basic.scope.block]) that includes the `$init-statement-seq$` and the `$expression$`. Each `$init-statement$` in the `$init-statement-seq$` is executed in order.
 
-[#]{.pnum} Variables declared in the `$init-statement-seq$` are destroyed, in reverse order of their construction, after evaluating the `$expression$` but before the end of the full-expression containing the parenthesized expression.
+[#]{.pnum} Variables declared in the `$init-statement-seq$` are destroyed, in reverse order of their construction, after evaluating the `$expression$` and before any value computation or side effect associated with any expression that contains the parenthesized
+expression.
 
-[#]{.pnum} [Temporaries created during initialization of a variable declared in the `$init-statement-seq$` are destroyed at the end of the full-expression containing the parenthesized expression, following the usual rules for temporary destruction.]{.note}
+[#]{.pnum} [Temporaries created during initialization of a variable declared in the `$init-statement-seq$` are destroyed at the end of the full-expression containing the parenthesized expression ([class.temporary]).]{.note}
 
 ::: example
 ```cpp
@@ -915,7 +932,7 @@ Extend the rule for move-eligible expressions in [expr.prim.id.unqual]{.sref}:
 * [15.1]{.pnum} it designates an implicitly movable entity,
 * [15.2]{.pnum} it is the (possibly parenthesized) operand of a `return` ([stmt.return]) [or]{.rm} [,]{.addu} `co_return` ([stmt.return.coroutine])[, or `do_return` ([stmt.do.return])]{.addu} statement, or of a `$throw-expression$` ([expr.throw]), and
 * [15.3]{.pnum} each intervening scope between the declaration of the entity and the innermost enclosing scope of the expression is a block scope and, for a `$throw-expression$`, is not the block scope of a `$try-block$` or `$function-try-block$`[, and]{.addu}
-* [15.4]{.pnum} [for a `do_return` statement, the entity belongs to the block scope of the `$compound-statement$` of the `$do-expression$` enclosing the `do_return` statement, or to a block scope contained by that block scope.]{.addu}
+* [15.4]{.pnum} [for a `do_return` statement, the entity belongs to the block scope of the `$compound-statement$` of its associated `$do-expression$` ([stmt.do.return]), or to a block scope contained by that block scope.]{.addu}
 :::
 
 Add a new clause [expr.prim.do] after [expr.prim.req.nested]{.sref}:
@@ -948,7 +965,7 @@ $do-expression$:
     do $trailing-return-type$@~opt~@ $compound-statement$
 ```
 
-A `$do-result-expression$` in the `$compound-statement$` of a `$do-expression$` is treated as a `do_return` statement with an operand that is the `$expression$`.
+A `$do-result-expression$` in the `$compound-statement$` of a `$do-expression$` is treated as a `do_return` statement associated with that `$do-expression$` ([stmt.do.return]) and with an operand that is the `$expression$`.
 
 ::: example
 ```cpp
@@ -971,9 +988,9 @@ A `co_return`, `co_await`, or `co_yield` statement or expression appearing in a 
 [#]{.pnum} The type `$DO-TYPE$` of a `$do-expression$` is determined as follows:
 
 * [#.#]{.pnum} If there is a `$trailing-return-type$` that does not contain a placeholder type ([dcl.spec.auto]), then `$DO-TYPE$` is the type specified by that `$trailing-return-type$`.
-* [#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced from the non-discarded `do_return` statements in the body:
-    * [#.#.#]{.pnum} If there is no non-discarded `do_return` statement (including no `$do-result-expression$`), or every non-discarded `do_return` statement has no operand, `$DO-TYPE$` is `void`.
-    * [#.#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced as if from a `return` statement using the rules in [dcl.spec.auto.general]. All non-discarded `do_return` statements shall deduce to the same type; otherwise, the program is ill-formed.
+* [#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced from the non-discarded `do_return` statements associated with the `$do-expression$`:
+    * [#.#.#]{.pnum} If there is no non-discarded `do_return` statement associated with the `$do-expression$` (including no `$do-result-expression$`), or every non-discarded `do_return` statement associated with the `$do-expression$` has no operand, `$DO-TYPE$` is `void`.
+    * [#.#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced as if from a `return` statement using the rules in [dcl.spec.auto.general]. All non-discarded `do_return` statements associated with the `$do-expression$` shall deduce to the same type; otherwise, the program is ill-formed.
 
 ::: example
 ```cpp
@@ -1020,7 +1037,7 @@ void f() {
 ```
 :::
 
-[#]{.pnum} The copy-initialization of the result of a `$do-expression$` is sequenced before the destruction of local variables declared within the `$compound-statement$`.
+[#]{.pnum} The initialization of the returned reference or prvalue result object of a `$do-expression$` is sequenced before the destruction of temporaries at the end of the full-expression established by the operand of the executed `do_return` statement, which, in turn, is sequenced before the destruction of local variables ([stmt.jump]) whose scope is exited by the `do_return` statement.
 [A copy or move operation associated with a `do_return` statement can be elided or converted to a move operation the same as for a `return` statement ([class.copy.elision]).]{.note}
 
 [#]{.pnum} A `$do-expression$` can appear in any context where an expression is permitted, including at namespace scope.
@@ -1135,6 +1152,7 @@ Add a new subclause [stmt.do.return] "The `do_return` statement" after [stmt.ret
 **The `do_return` statement [stmt.do.return]**
 
 [#]{.pnum} A `do_return` statement shall appear only within the `$compound-statement$` of a `$do-expression$` ([expr.prim.do]), and not within an intervening `$lambda-expression$` or function body.
+The innermost such `$do-expression$` is the `do_return` statement's *associated* `$do-expression$`.
 
 ::: example
 ```cpp
@@ -1149,7 +1167,7 @@ int f() {
 ```
 :::
 
-[#]{.pnum} The `$expr-or-braced-init-list$` of a `do_return` statement is called its operand. A `do_return` statement with no operand shall be used only in a `$do-expression$` whose type is `$cv$ void`. A `do_return` statement with an operand of type `void` shall be used only in a `$do-expression$` whose type is `$cv$ void`. A `do_return` statement with any other operand shall be used only in a `$do-expression$` whose type is not `$cv$ void`; the `do_return` statement initializes the result object of the `$do-expression$` by copy-initialization ([dcl.init]) from the operand.
+[#]{.pnum} The `$expr-or-braced-init-list$` of a `do_return` statement is called its operand. A `do_return` statement with no operand shall be used only if its associated `$do-expression$` has type `$cv$ void`. A `do_return` statement with an operand of type `void` shall be used only if its associated `$do-expression$` has type `$cv$ void`. A `do_return` statement with any other operand shall be used only if its associated `$do-expression$` has type other than `$cv$ void`; the `do_return` statement initializes the returned reference or prvalue result object of its associated `$do-expression$` by copy-initialization ([dcl.init]) from the operand.
 
 [#]{.pnum} A `do_return` statement that binds
 
