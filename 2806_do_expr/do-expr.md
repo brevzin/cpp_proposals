@@ -18,7 +18,7 @@ status: progress
 
 # Revision History
 
-Since [@P2806R3], implementation, wording, introducing implicit last value, and extending parenthesized expressions to address [lifetime issues](#lifetime).
+Since [@P2806R3], implementation, wording, introducing implicit last value, and adding an optional init-statement sequence to `do` expressions to address [lifetime issues](#lifetime).
 
 Since [@P2806R2], wording and referencing a longer discussion on divergence in [@P3549R0]{.title}.
 
@@ -598,7 +598,7 @@ So we need some way to "persist" that temporary through the end of the outer exp
 
 1. We can annotate the local variable `__r` somehow, such that any temporaries in its initializer persist through the outer full-expression.
 2. We can annotate the `do` expression with some kind of anti-capture list, as in `do [__r] { ... }`
-3. We can introduce a new kind of expression expressly for this purpose.
+3. We can allow the `do` expression itself to carry a sequence of init-statements expressly for this purpose.
 
 For the latter, we mean something like this:
 
@@ -616,18 +616,18 @@ do {
 
 ### Proposed
 ```cpp
-(auto __r = expr; do {
+do (auto __r = expr;) {
     if (not r) {
         return std::unexpected(__r.error());
     }
     do_return *__r;
-})
+}
 ```
 :::
 
-Extending parenthesized expressions, of the form `($init-statement$ $expr$)` (an `$init-statement$` terminates with a `;`) where any temporaries in the declaration last until the end of their full-expression — which is just the usual rule for when temporaries last. Which means that in this case, the temporary `get_data()` will not be inside of a new full-expression (the `do`-expression), it will be in the place where it needs to be. We think this is the right approach to addressing lifetime issues, in a way that likely scales better. The proposed form [works](https://compiler-explorer.com/z/j9jc6bcaj).
+The init-statement sequence after `do` provides declarations whose lifetime extends to the end of the full-expression containing the `do` expression. Any temporaries in those declarations' initializers are likewise extended to that full-expression. Which means that in this case, the temporary `get_data()` will not be inside of a new full-expression (the body of the `do` expression), it will be in the place where it needs to be. We think this is the right approach to addressing lifetime issues, in a way that likely scales better. The proposed form [works](https://compiler-explorer.com/z/5cb3aa8n9).
 
-This presents no new parsing difficulties, since we already have `if ($condition$)` vs `if ($init-statement$ $condition$)`.
+This presents no new parsing difficulties. If the token after `do` is `(`, we parse a sequence of init-statements. Otherwise, we don't.
 
 ### Conditional Lifetime Extension
 
@@ -793,7 +793,7 @@ In short: `do` expressions should be usable in any expression context.
 
 ## Implementation Experience
 
-This is implemented in clang and can be seen on [compiler explorer](https://compiler-explorer.com/z/j9jc6bcaj). This example shows the combination of the extended parenthesized expression and `TRY` macro with the correct lifetime semantics.
+This is implemented in clang and can be seen on [compiler explorer](https://compiler-explorer.com/z/5cb3aa8n9). This example shows the combination of a `do` expression with an init-statement sequence and `TRY` macro with the correct lifetime semantics.
 
 # Wording
 
@@ -854,9 +854,9 @@ Add another temporary context to [class.temporary]{.sref}:
 ::: addu
 [*]{.pnum} The eighth context is when a temporary object is created during the initialization
 of a variable declared by an `$init-statement$` in the `$init-statement-seq$`
-of a parenthesized expression ([expr.prim.paren]). If such a temporary object would otherwise be destroyed at the end of the
+of a `$do-expression$` ([expr.prim.do]). If such a temporary object would otherwise be destroyed at the end of the
 `$init-declarator$` full-expression, the object persists until the completion
-of the full-expression containing the parenthesized expression.
+of the full-expression containing the `$do-expression$`.
 :::
 :::
 
@@ -869,8 +869,7 @@ Add `$do-expression$` to the grammar in [expr.prim.grammar]{.sref}:
 $primary-expression$:
   $literal$
   this
-- ( $expression$ )
-+ ( $init-statement-seq$@~opt~@ $expression$ )
+  ( $expression$ )
   $id-expression$
   $lambda-expression$
   $fold-expression$
@@ -878,50 +877,6 @@ $primary-expression$:
   $splice-expression$
 + $do-expression$
 ```
-:::
-
-Extend [expr.prim.paren]{.sref}:
-
-::: std
-**Parentheses**
-
-::: addu
-```
-$init-statement-seq$:
-    $init-statement$
-    $init-statement-seq$ $init-statement$
-```
-:::
-
-[1]{.pnum} A parenthesized expression `(@[*init-statement-seq*~opt~]{.addu}@ $E$)` is a primary expression whose type, result, and value category are identical to those of `$E$`. The parenthesized expression can be used in exactly the same contexts as those where `$E$` can be used, and with the same meaning, except as otherwise indicated.
-
-::: addu
-[#]{.pnum} The *init-statement-seq*, if any, of a parenthesized expression allows declarations to be introduced within an expression.
-
-[#]{.pnum} A parenthesized expression with an `$init-statement-seq$` introduces a block scope ([basic.scope.block]) that includes the `$init-statement-seq$` and the `$expression$`. Each `$init-statement$` in the `$init-statement-seq$` is executed in order.
-
-[#]{.pnum} Variables declared in the `$init-statement-seq$` are destroyed, in reverse order of their construction, after evaluating the `$expression$` and before any value computation or side effect associated with any expression that contains the parenthesized
-expression.
-
-[#]{.pnum} [Temporaries created during initialization of a variable declared in the `$init-statement-seq$` are destroyed at the end of the full-expression containing the parenthesized expression ([class.temporary]).]{.note}
-
-::: example
-```cpp
-constexpr int f() {
-    return (int x = 1; int y = 2; x + y);
-}
-static_assert(f() == 3); // OK
-
-constexpr int const& id(int const& r) { return r; }
-constexpr int const* ptr(int const& r) { return &r; }
-
-constexpr int h() {
-    return (int const* p = ptr(id(42)); *p);
-}
-static_assert(h() == 42); // OK, no dangling
-```
-:::
-:::
 :::
 
 Extend the rule for move-eligible expressions in [expr.prim.id.unqual]{.sref}:
@@ -962,15 +917,46 @@ static_assert(f(4) == 2);
 
 ```
 $do-expression$:
-    do $trailing-return-type$@~opt~@ $compound-statement$
+    do $paren-init-statement-seq$@~opt~@ $trailing-return-type$@~opt~@ $compound-statement$
+
+$paren-init-statement-seq$:
+    ( $init-statement-seq$ )
+
+$init-statement-seq$:
+    $init-statement$
+    $init-statement-seq$ $init-statement$
 ```
 
 A `$do-result-expression$` in the `$compound-statement$` of a `$do-expression$` is treated as a `do_return` statement associated with that `$do-expression$` ([stmt.do.return]) and with an operand that is the `$expression$`.
 
 ::: example
 ```cpp
-int a = do { 42 };               // OK, equivalent to do { do_return 42; }
-int b = do { int x = 2; x + 3 }; // OK, equivalent to do { int x = 2; do_return x + 3; }
+int a = do { 42 };                 // OK, equivalent to do { do_return 42; }
+int b = do { int x = 2; x + 3 };   // OK, equivalent to do { int x = 2; do_return x + 3; }
+int c = do (int x = 2;) { x + 3 }; // OK, init-statement followed by implicit do_return
+```
+:::
+
+[#]{.pnum} The *init-statement-seq*, if any, of a `$do-expression$` allows declarations to be introduced within an expression. The `$init-statement-seq$` is executed in order before the `$compound-statement$`. A `$do-expression$` with a `$paren-init-statement-seq$` introduces a block scope ([basic.scope.block]) that includes the `$init-statement-seq$` and the `$compound-statement$`.
+
+[#]{.pnum} If evaluation of the `$compound-statement$` completes by an associated `do_return` statement, that `do_return` statement does not exit the block scope introduced by the `$paren-init-statement-seq$`; variables declared in the `$init-statement-seq$` are destroyed, in reverse order of their construction, at the end of the full-expression containing the `$do-expression$`.
+
+[#]{.pnum} [Temporaries created during initialization of a variable declared in the `$init-statement-seq$` are destroyed at the end of the full-expression containing the `$do-expression$` ([class.temporary]).]{.note}
+
+::: example
+```cpp
+constexpr int f() {
+    return do (int x = 1; int y = 2;) { x + y };
+}
+static_assert(f() == 3); // OK
+
+constexpr int const& id(int const& r) { return r; }
+constexpr int const* ptr(int const& r) { return &r; }
+
+constexpr int h() {
+    return do (int const* p = ptr(id(42));) { *p };
+}
+static_assert(h() == 42); // OK, no dangling
 ```
 :::
 
@@ -1204,17 +1190,5 @@ Add to [cpp.predefined]{.sref}:
 
 ---
 references:
-  - id: P3549R0
-    citation-label: P3549R0
-    title: "Diverging Expressions"
-    author:
-      - family: Bruno Cardoso Lopes
-      - family: Zach Laine
-      - family: Michael Park
-      - family: Barry Revzin
-    issued:
-      - year: 2025
-        month: 01
-        day: 09
-    URL: https://wg21.link/p3549r0
+
 ---
