@@ -1,7 +1,7 @@
 ---
 title: "Consteval-only Values for C++26"
-document: P4101R0
-date: 2026-03-24
+document: D4101R1
+date: today
 audience: EWG, CWG
 author:
     - name: Barry Revzin
@@ -16,6 +16,10 @@ toc: true
 status: progress
 tag: reflection
 ---
+
+# Revision History
+
+Since [@P4101R0], adding a little color, linked to implementation on compiler explorer.
 
 # Introduction
 
@@ -148,9 +152,11 @@ But if `std::meta::info const*` is no longer a consteval-only type, then `std::s
 
 ## What is the Conclusion?
 
-The conclusion here is that in the consteval-only type model, we simply have to follow all the type edges. Pointers, references, functions, class subobjects, etc. But once we do that, we end up with a significantly more complex rule for handling incomplete types — see [@P4132R0]{.title} and [@P4135R0]{.title}. Is that rule carrying its weight?
+The conclusion here is that in the consteval-only type model, we simply have to follow all the type edges. Pointers, references, functions, class subobjects, etc. But once we do that, we end up with a significantly more complex rule for handling incomplete types — see [@P4132R0]{.title} and [@P4135R0]{.title}. Additionally, early experience from GCC ([#124925](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=124925), [#125179](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=125179)) indicate quite a bit of compile-time cost to having consteval-only types to begin with — although the GCC developers believe this can be significantly improved.
 
-Note for interest that the Zig programming language has consteval-only types in the exact way that we want to define here (comptime-only in their parlance), but they don't have incomplete types in the same way, so they don't run into this issue.
+The question is: is it actually worth improving the implementation of the consteval-only type model, given the added complexity that needs to be added? What do we gain from this model? Can we solve these same problems a different, simpler way?
+
+Note for interest that the Zig programming language has consteval-only types in the exact way that we want to define here (comptime-only in their parlance), but they don't have incomplete types in the same way, nor do they have a notion of consteval function, so they don't run into these sorts of issues.
 
 # Consteval-only Values
 
@@ -179,7 +185,7 @@ void const* p = (void const*)&r; // error
 ```
 :::
 
-C++26 already rejects the declaration of `p` (as it must), but it cannot do so on the basis of types — because `void const*` is of course not consteval-only. Instead, we already do it today on the basis of the expression `(void const*)&r` having consteval-only value. From the rule cited earlier
+C++26 already rejects the declaration of `p` (as it must), but it cannot do so on the basis of types — because `void const*` is, of course, not consteval-only. Instead, we already do it today on the basis of the expression `(void const*)&r` having consteval-only value. From the rule cited earlier
 
 ::: std
 [21]{.pnum} A _constant expression_ is either
@@ -194,7 +200,9 @@ C++26 already rejects the declaration of `p` (as it must), but it cannot do so o
     * [#.#.#.#]{.pnum} no constituent reference refers to an object whose complete object is of consteval-only type.
 :::
 
-The rules we have today escalate `&r` because it has consteval-only type, but rejects `(void const*)&r` because it has consteval-only value. Just not in those specific words. In other words, the consteval-only type model is already incomplete unless it accounts for consteval-only values.
+The rules we have today escalate `&r` because it has consteval-only type, but rejects `(void const*)&r` because it has consteval-only value. Just not in those specific words.
+
+In other words: the consteval-only type model is already incomplete unless it also accounts for consteval-only values.
 
 We already explored this idea of consteval-only values in [@P3603R1]{.title}, but what if we generalized the notion we have today and combined it with reflections? Informally:
 
@@ -373,7 +381,7 @@ Since the null reflection is _not_ consteval-only (see [previous section](#the-n
 ::: std
 ```cpp
 // consteval-only type model: this is ill-formed
-// consteval-only value model: this is fine
+// consteval-only value model if the null reflection is not consteval-only: this is fine
 std::meta::info null;
 
 // both models: this is ill-formed
@@ -550,9 +558,28 @@ Given that the type of `i` in `consteval int i = 42;` will be either `int` or `i
 
 ## Implementation Experience
 
-Barry implemented the consteval-only value approach in [his fork of the p2996 fork of clang](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:consteval-variable-2).
+Barry implemented the consteval-only value approach in [his fork of the p2996 fork of clang](https://github.com/brevzin/llvm-project/commit/bb8ddc4050333bbc22e6646820062a4788fb70d8).
 
 This is not exactly the same design as in this paper: it also supports _explicit_ immediate variables, so you'll see some test cases that declare `consteval` variables. But otherwise, the implementation has been updated to implicitly escalate `constexpr` variables initialized with an immediate constant expression to `consteval`, so it just ends up being an extension.
+
+The implementation is on Compiler Explorer. For instance, [here](https://compiler-explorer.com/z/147aYPajz) is the [variant visitation](#variant-visitation) example from earlier, which compiles in the value model but otherwise not in GCC or Clang.
+
+# Options for C++26
+
+This is a problem we have to resolve for C++26. In the Croydon meeting, people felt like they needed more time to consider the situation, but the status quo needs to be fixed. We do not currently have an answer to [@CWG3150]. Similarly, [@CWG3117]/[@LWG4513] needs to be resolved. On top of that, `std::vector<std::meta::info>` is actually technically ill-formed — in the consteval-only type model, the `std::vector`'s destructor will of course want to deallocate its memory, which in the type model causes escalation because those members will be `std::meta::info*`s, but destructors are not allowed to escalate ([@CWG3105]).
+
+We believe that there are four options:
+
+1. Stick with the consteval-only type model, adding the complex incompleteness fix to address [@CWG3150], and allow destructors to escalate for consteval-only types.
+2. Switch to the consteval-only value model, where the null reflection is not consteval-only (i.e. reflection values are consteval-only).
+3. Switch to the consteval-only value model, where the null reflection is consteval-only (i.e. reflection objects are consteval-only).
+4. A hybrid approach, where we still have consteval-only types but only of the form implied by (3) where we follow subobject edges (i.e. acquiring store for a reflection object is consteval-only). We still diagnose functions that have a parameter or return type that is consteval-only, but `info*` is not a consteval-only type — we also have consteval-only values.
+
+The hybrid approach was initially suggested due to implementation concerns of allowing `meta::info` to persist to runtime, but those concerns are no longer strongly held. The option is provided for completeness.
+
+We think the right approach is (2). We already have the notion of consteval-only values in the language today, a consteval-only type rule would be incomplete without them. Additionally, proper treatment of consteval-only values solves [other problems too](#ancillary-benefits-of-consteval-only-values). The value model is also quite a bit simpler than the type model, and is likely better for both implementer development time and user compile time.
+
+If not (2), we think (3) is the next best option here.
 
 # Proposal
 
