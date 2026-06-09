@@ -101,7 +101,7 @@ Regardless whether the functions end up called `std::div_floor` or `std::div_to_
 
 Indeed, the use of names like floor and ceil is common. Not just common, but all but ubiquitous, to the point where people will naturally look for these functions under those names. As in: "What is C++'s integer floor division function?"
 
-The answer to what `div_floor` does for negative numbers is of course the same as it is for positive numbers: it gives the largest integer less than or equal to the quotient. It is difficult to accept the claim that this is hard for a non-mathematician to understand, while `div_to_neg_inf` is somehow easier, especially given the landscape that we find ourselves in.
+The answer to what `div_floor` does for negative numbers is of course the same as it is for positive numbers: it gives the largest integer less than or equal to the quotient. It is difficult to accept the claim that this is hard for a non-mathematician to understand, while `div_to_neg_inf` is somehow easier, especially given the landscape that we find ourselves in. And that `to_neg_inf` is appreciably more mathematically-oriented than `floor` (or `down`).
 
 That there is no established term for rounding away from zero (indeed as far as I know only Julia and Swift provide this sort of rounding, and both provide it in the ternary form where the rounding mode is an operand) does not mean that we should ignore the fact that there _is_ an established term for floor and ceiling division. And even for rounding away from zero, the paper's choice of naming is too terse. Both Swift and Julia call this this rounding _from_ zero, whereas the proposed name is just "away zero":
 
@@ -120,10 +120,9 @@ And I don't find a hypothetical `div_round` all that perplexing either. Arguably
 |`round`|`div_round`|
 |`trunc`|`div_trunc`|
 
+Although the last of these, `div_trunc(x, y)` — which in the paper is proposed as `div_to_zero(x, y)` — is probably the least interesting and unlikely to be used, since it is simply `x / y`.
 
-# Proposal
-
-The names `std::div_to_pos_inf` and `std::div_to_neg_inf` are very poor names. There is broadly established precedent for referring to these operations are ceiling and floor division, respectively, and the names should reflect that.
+## The Other Rounding Modes
 
 For the less ubiquitous rounding modes, the names should prioritize clarity over minimizing the number of characters. To compare the names of the other functions proposed here to the rounding modes provided in Julia and Swift, I think the proposed names are the worst of the three:
 
@@ -133,3 +132,82 @@ For the less ubiquitous rounding modes, the names should prioritize clarity over
 |`div(x, y, RoundNearestTiesUp)`|`x.divided(by: y, rounding: toNearestOrUp)`|`div_ties_to_pos_inf(x, y)`|
 |`div(x, y, RoundToZero)`|`x.divided(by: y, rounding: towardZero)`|`div_to_zero(x, y)`|
 |`div(x, y, RoundFromZero)`|`x.divided(by: y, rounding: awayFromZero)`|`div_away_zero(x, y)`|
+
+There's probably a good argument that the common rounding modes (floor, ceiling) and Euclidean division merit their own named functions, while the rest can be handled via a rounding mode enumeration as in Julia (7 options), Swift (11 options), and Matlab (4 options).
+
+The paper's argument _against_ such a rounding mode function argument is:
+
+::: quote
+In virtually every case, the rounding mode for an integer division is a fixed choice. This is evidenced by the ten trillion existing uses of the / operator which always truncate. Also, the implementation of the proposed functions does not lend itself to a runtime parameter:
+
+[...]
+
+As can be seen, these implementations are substantially different.
+
+[...]
+
+If we now provided a runtime `std::rounding`, the obvious implementation would look like:
+
+::: std
+```cpp
+enum struct rounding { to_zero, to_neg_inf, away_zero, /* ... */ };
+
+int divide(int x, int y, rounding_mode mode) {
+  switch (mode) {
+  case rounding::to_zero: return __div_to_zero(x);
+  case rounding::to_neg_inf: return __div_to_neg_inf(x);
+  case rounding::away_zero:  return __div_away_zero(x);
+  // ...
+  }
+  std::unreachable();
+}
+```
+:::
+
+The user can trivially make such an enum class and switch themselves, if they actually need to. If they don't (which is likely), all we accomplish is making the user write `std::divide(std::rounding::to_neg_inf, x, y)` instead of `std::div_to_neg_inf(x, y)`.
+:::
+
+To start with, there are many claims here that I think are just obviously true: that the rounding mode is almost always a fixed choice, that the implementations of the different modes are substantively different, and that the likely implementation will certainly be the `switch` presented here.
+
+But it's worth pointing out that in that case — that the rounding mode is just passed in as a constant — that switch will [reliably optimize out](https://compiler-explorer.com/z/1xEdj9Gs3).
+
+And the spelling of the mode allows for more straightforwardly readable spellings of the rarer rounding modes, which is I think a good win. Let's go through a few rounding modes, using Swift's naming approach.
+
+Towards zero:
+
+::: std
+```cpp
+x / y                                  // just the language operator
+div_trunc(x, y)                        // following trunc()
+div_to_zero(x, y)                      // P3724
+div(x, y, rounding::towards_zero)      // with mode
+```
+:::
+
+Away from zero:
+
+::: std
+```cpp
+div_away_zero(x, y)                    // P3724
+div(x, y, rounding::away_from_zero)    // with mode
+```
+:::
+
+To the nearest integer, rounding ties up
+
+::: std
+```cpp
+div_ties_to_pos_inf(x, y)              // P3724
+div(x, y, rounding::to_nearest_or_up)  // with mode
+```
+:::
+
+Of course, the ones that explicitly provide a rounding more are longer than the other options — although the relative margin of difference goes down if the variable names are longer than a single character. But the enum allows for, and arguably even forces, clearer names.
+
+I think clearer names are more valuable than terser names for these functions — especially for these rarer used rounding modes.
+
+# Proposal
+
+The names `std::div_to_pos_inf` and `std::div_to_neg_inf` are very poor names. There is broadly established precedent for referring to these operations are ceiling and floor division, respectively, and the names should reflect that.
+
+The less common rounding modes, I think we should seriously consider simply passing the rounding mode as a function argument. At the very least, the names of several of the rounding modes should be reconsidered to read better. The proposed `div_away_zero` is worst of the names since it's just missing a preposition, but the family of nearest rounding rules aren't very well named either since they omit the "nearest" part in the name — you just have to know that what `div_ties_to_even` has an implicit `to_nearest` in the name (e.g. Swift names this mode `toNearestOrEven`).

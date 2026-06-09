@@ -950,7 +950,10 @@ numbers: it gives the largest integer less than or equal to the
 quotient. It is difficult to accept the claim that this is hard for a
 non-mathematician to understand, while
 <code class="sourceCode cpp">div_to_neg_inf</code> is somehow easier,
-especially given the landscape that we find ourselves in.</p>
+especially given the landscape that we find ourselves in. And that
+<code class="sourceCode cpp">to_neg_inf</code> is appreciably more
+mathematically-oriented than <code class="sourceCode cpp">floor</code>
+(or <code class="sourceCode cpp">down</code>).</p>
 <p>That there is no established term for rounding away from zero (indeed
 as far as I know only Julia and Swift provide this sort of rounding, and
 both provide it in the ternary form where the rounding mode is an
@@ -1019,12 +1022,12 @@ function we already have, which makes it easily discoverable:</p>
 </tr>
 </tbody>
 </table>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
-<p>The names <code class="sourceCode cpp">std<span class="op">::</span>div_to_pos_inf</code>
-and <code class="sourceCode cpp">std<span class="op">::</span>div_to_neg_inf</code>
-are very poor names. There is broadly established precedent for
-referring to these operations are ceiling and floor division,
-respectively, and the names should reflect that.</p>
+<p>Although the last of these, <code class="sourceCode cpp">div_trunc<span class="op">(</span>x, y<span class="op">)</span></code>
+— which in the paper is proposed as <code class="sourceCode cpp">div_to_zero<span class="op">(</span>x, y<span class="op">)</span></code>
+— is probably the least interesting and unlikely to be used, since it is
+simply
+<code class="sourceCode cpp">x <span class="op">/</span> y</code>.</p>
+<h2 data-number="1.3" id="the-other-rounding-modes"><span class="header-section-number">1.3</span> The Other Rounding Modes<a href="#the-other-rounding-modes" class="self-link"></a></h2>
 <p>For the less ubiquitous rounding modes, the names should prioritize
 clarity over minimizing the number of characters. To compare the names
 of the other functions proposed here to the rounding modes provided in
@@ -1072,6 +1075,104 @@ three:</p>
 </tr>
 </tbody>
 </table>
+<p>There’s probably a good argument that the common rounding modes
+(floor, ceiling) and Euclidean division merit their own named functions,
+while the rest can be handled via a rounding mode enumeration as in
+Julia (7 options), Swift (11 options), and Matlab (4 options).</p>
+<p>The paper’s argument <em>against</em> such a rounding mode function
+argument is:</p>
+<div class="quote">
+<p>In virtually every case, the rounding mode for an integer division is
+a fixed choice. This is evidenced by the ten trillion existing uses of
+the / operator which always truncate. Also, the implementation of the
+proposed functions does not lend itself to a runtime parameter:</p>
+<p>[…]</p>
+<p>As can be seen, these implementations are substantially
+different.</p>
+<p>[…]</p>
+<p>If we now provided a runtime <code class="sourceCode cpp">std<span class="op">::</span>rounding</code>, the
+obvious implementation would look like:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> <span class="kw">struct</span> rounding <span class="op">{</span> to_zero, to_neg_inf, away_zero, <span class="co">/* ... */</span> <span class="op">}</span>;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> divide<span class="op">(</span><span class="dt">int</span> x, <span class="dt">int</span> y, rounding_mode mode<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">switch</span> <span class="op">(</span>mode<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">case</span> rounding<span class="op">::</span>to_zero<span class="op">:</span> <span class="cf">return</span> __div_to_zero<span class="op">(</span>x<span class="op">)</span>;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">case</span> rounding<span class="op">::</span>to_neg_inf<span class="op">:</span> <span class="cf">return</span> __div_to_neg_inf<span class="op">(</span>x<span class="op">)</span>;</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">case</span> rounding<span class="op">::</span>away_zero<span class="op">:</span>  <span class="cf">return</span> __div_away_zero<span class="op">(</span>x<span class="op">)</span>;</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ...</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  std<span class="op">::</span>unreachable<span class="op">()</span>;</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>The user can trivially make such an enum class and switch themselves,
+if they actually need to. If they don’t (which is likely), all we
+accomplish is making the user write <code class="sourceCode cpp">std<span class="op">::</span>divide<span class="op">(</span>std<span class="op">::</span>rounding<span class="op">::</span>to_neg_inf, x, y<span class="op">)</span></code>
+instead of <code class="sourceCode cpp">std<span class="op">::</span>div_to_neg_inf<span class="op">(</span>x, y<span class="op">)</span></code>.</p>
+</div>
+<p>To start with, there are many claims here that I think are just
+obviously true: that the rounding mode is almost always a fixed choice,
+that the implementations of the different modes are substantively
+different, and that the likely implementation will certainly be the
+<code class="sourceCode cpp"><span class="cf">switch</span></code>
+presented here.</p>
+<p>But it’s worth pointing out that in that case — that the rounding
+mode is just passed in as a constant — that switch will <a href="https://compiler-explorer.com/z/1xEdj9Gs3">reliably optimize
+out</a>.</p>
+<p>And the spelling of the mode allows for more straightforwardly
+readable spellings of the rarer rounding modes, which is I think a good
+win. Let’s go through a few rounding modes, using Swift’s naming
+approach.</p>
+<p>Towards zero:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>x <span class="op">/</span> y                                  <span class="co">// just the language operator</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>div_trunc<span class="op">(</span>x, y<span class="op">)</span>                        <span class="co">// following trunc()</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>div_to_zero<span class="op">(</span>x, y<span class="op">)</span>                      <span class="co">// P3724</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>div<span class="op">(</span>x, y, rounding<span class="op">::</span>towards_zero<span class="op">)</span>      <span class="co">// with mode</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Away from zero:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>div_away_zero<span class="op">(</span>x, y<span class="op">)</span>                    <span class="co">// P3724</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>div<span class="op">(</span>x, y, rounding<span class="op">::</span>away_from_zero<span class="op">)</span>    <span class="co">// with mode</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>To the nearest integer, rounding ties up</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>div_ties_to_pos_inf<span class="op">(</span>x, y<span class="op">)</span>              <span class="co">// P3724</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>div<span class="op">(</span>x, y, rounding<span class="op">::</span>to_nearest_or_up<span class="op">)</span>  <span class="co">// with mode</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Of course, the ones that explicitly provide a rounding more are
+longer than the other options — although the relative margin of
+difference goes down if the variable names are longer than a single
+character. But the enum allows for, and arguably even forces, clearer
+names.</p>
+<p>I think clearer names are more valuable than terser names for these
+functions — especially for these rarer used rounding modes.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
+<p>The names <code class="sourceCode cpp">std<span class="op">::</span>div_to_pos_inf</code>
+and <code class="sourceCode cpp">std<span class="op">::</span>div_to_neg_inf</code>
+are very poor names. There is broadly established precedent for
+referring to these operations are ceiling and floor division,
+respectively, and the names should reflect that.</p>
+<p>The less common rounding modes, I think we should seriously consider
+simply passing the rounding mode as a function argument. At the very
+least, the names of several of the rounding modes should be reconsidered
+to read better. The proposed
+<code class="sourceCode cpp">div_away_zero</code> is worst of the names
+since it’s just missing a preposition, but the family of nearest
+rounding rules aren’t very well named either since they omit the
+“nearest” part in the name — you just have to know that what
+<code class="sourceCode cpp">div_ties_to_even</code> has an implicit
+<code class="sourceCode cpp">to_nearest</code> in the name (e.g. Swift
+names this mode
+<code class="sourceCode cpp">toNearestOrEven</code>).</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
