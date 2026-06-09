@@ -571,8 +571,8 @@ This is a problem we have to resolve for C++26. In the Croydon meeting, people f
 We believe that there are four options:
 
 1. Stick with the consteval-only type model, adding the complex incompleteness fix to address [@CWG3150], and allow destructors to escalate for consteval-only types.
-2. Switch to the consteval-only value model, where the null reflection is not consteval-only (i.e. reflection values are consteval-only).
-3. Switch to the consteval-only value model, where the null reflection is consteval-only (i.e. reflection objects are consteval-only).
+2. Switch to the consteval-only value model, where the null reflection is not consteval-only (i.e. reflections are consteval-only).
+3. Switch to the consteval-only value model, where the null reflection is consteval-only (i.e. `meta::info` values are consteval-only).
 4. A hybrid approach, where we still have consteval-only types but only of the form implied by (3) where we follow subobject edges (i.e. acquiring store for a reflection object is consteval-only). We still diagnose functions that have a parameter or return type that is consteval-only, but `info*` is not a consteval-only type — we also have consteval-only values.
 
 The hybrid approach was initially suggested due to implementation concerns of allowing `meta::info` to persist to runtime, but those concerns are no longer strongly held. The option is provided for completeness.
