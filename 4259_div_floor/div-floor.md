@@ -76,7 +76,7 @@ Meanwhile, [@P3724R4]{.title} introduces a number of integer division functions 
 |-|--|--|
 | P3724 | `std::div_to_neg_inf(x, y)` | `std::div_to_pos_inf(x, y)` |
 
-That is extremely different from established practice.
+That is extremely different from established practice. It doesn't match any existing programming language that I've found, including the names of the rounding modes in IEEE 754 (`roundTowardNegative` and `roundTowardPositive`, respectively) or the `fesetround` constants (`FE_DOWNWARD` and `FE_UPWARD`, respectively).
 
 The proposal's justification for these names is:
 
