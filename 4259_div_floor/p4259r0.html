@@ -1091,7 +1091,7 @@ three:</p>
 <p>There’s probably a good argument that the common rounding modes
 (floor, ceiling) and Euclidean division merit their own named functions,
 while the rest can be handled via a rounding mode enumeration as in
-Julia (<a href="https://docs.julialang.org/en/v1/base/math/#Base.div-Tuple%7BAny,%20Any,%20RoundingMode%7D">7
+Julia (<a href="https://docs.julialang.org/en/v1/base/math/#Base.Rounding.RoundingMode">7
 options</a>), Swift (<a href="https://deepwiki.com/apple/swift-numerics/4.3-division-with-rounding">11
 options</a>), and Matlab (<a href="https://www.mathworks.com/help/matlab/ref/idivide.html">4
 options</a>).</p>
@@ -1204,6 +1204,38 @@ rounding rules aren’t very well named either since they omit the
 <code class="sourceCode cpp">to_nearest</code> in the name (e.g. Swift
 names this mode
 <code class="sourceCode cpp">toNearestOrEven</code>).</p>
+<p>Concretely, something like:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">constexpr</span> T div_floor<span class="op">(</span>T x, T y<span class="op">)</span>;</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">constexpr</span> T div_ceil<span class="op">(</span>T x, T y<span class="op">)</span>;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> <span class="kw">class</span> rounding <span class="op">:</span> u8 <span class="op">{</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// directed rules</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    up,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    down,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    toward_zero,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    away_from_zero,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// nearest rules</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    to_nearest_or_down,</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    to_nearest_or_up,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    to_nearest_or_zero,</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    to_nearest_or_away,</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    to_nearest_or_even,</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    to_nearest_or_odd,</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">constexpr</span> T div<span class="op">(</span>T x, T y, rounding mode<span class="op">)</span>;</span></code></pre></div>
+</blockquote>
+</div>
+<p>Since <code class="sourceCode cpp">rounding</code> is just an
+<code class="sourceCode cpp"><span class="kw">enum</span></code>, we
+could potentially provide aliases too, like <code class="sourceCode cpp">rounding<span class="op">::</span>ceil</code>
+just being another spelling for
+<code class="sourceCode cpp">rounding<span class="op">::</span>up</code>.
+That’s basically free, it’s just that in this context,
+<code class="sourceCode cpp">rounding<span class="op">::</span>up</code>
+reads better than <code class="sourceCode cpp">rounding<span class="op">::</span>ceil</code>.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
