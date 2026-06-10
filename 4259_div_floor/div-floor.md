@@ -66,7 +66,7 @@ There simply is not a lot of diversity in the names of these functions. But that
 
 Not all languages provide integer division functions of this form, some simply rely on their regular integer division operation for doing floor division (since in C++, `-5 / 2` is `-2` but in some languages it is `-3`). Nevertheless, there is still a great deal of uniformity in the API space here.
 
-There are only two languages I've found which provide both operations and also do not use the word floor or ceiling in them, which I deliberately put last in the above table: both [Julia](https://docs.julialang.org/en/v1/base/math/#Base.div-Tuple{Any,%20Any,%20RoundingMode}) and [Swift Numerics](https://deepwiki.com/apple/swift-numerics/4.3-division-with-rounding?utm_source=chatgpt.com) provide integer division as ternary functions that take a rounding mode, and in both cases the rounding mode for floor is spelled "down" while the rounding mode for ceiling is spelled "up." Nevertheless, Julia still provides a terser form that is simply `fld` and `cld`. Which makes Swift unique.
+There are only two languages I've found which provide both operations and also do not use the word floor or ceiling in them, which I deliberately put last in the above table: both [Julia](https://docs.julialang.org/en/v1/base/math/#Base.div-Tuple{Any,%20Any,%20RoundingMode}) and [Swift Numerics](https://deepwiki.com/apple/swift-numerics/4.3-division-with-rounding) provide integer division as ternary functions that take a rounding mode, and in both cases the rounding mode for floor is spelled "down" while the rounding mode for ceiling is spelled "up." Nevertheless, Julia still provides a terser form that is simply `fld` and `cld`. Which makes Swift unique.
 
 ## The C++29 Proposal
 
@@ -133,7 +133,7 @@ For the less ubiquitous rounding modes, the names should prioritize clarity over
 |`div(x, y, RoundToZero)`|`x.divided(by: y, rounding: towardZero)`|`div_to_zero(x, y)`|
 |`div(x, y, RoundFromZero)`|`x.divided(by: y, rounding: awayFromZero)`|`div_away_zero(x, y)`|
 
-There's probably a good argument that the common rounding modes (floor, ceiling) and Euclidean division merit their own named functions, while the rest can be handled via a rounding mode enumeration as in Julia (7 options), Swift (11 options), and Matlab (4 options).
+There's probably a good argument that the common rounding modes (floor, ceiling) and Euclidean division merit their own named functions, while the rest can be handled via a rounding mode enumeration as in Julia ([7 options](https://docs.julialang.org/en/v1/base/math/#Base.div-Tuple%7BAny,%20Any,%20RoundingMode%7D)), Swift ([11 options](https://deepwiki.com/apple/swift-numerics/4.3-division-with-rounding)), and Matlab ([4 options](https://www.mathworks.com/help/matlab/ref/idivide.html)).
 
 The paper's argument _against_ such a rounding mode function argument is:
 
@@ -167,9 +167,11 @@ int divide(int x, int y, rounding_mode mode) {
 The user can trivially make such an enum class and switch themselves, if they actually need to. If they don't (which is likely), all we accomplish is making the user write `std::divide(std::rounding::to_neg_inf, x, y)` instead of `std::div_to_neg_inf(x, y)`.
 :::
 
-To start with, there are many claims here that I think are just obviously true: that the rounding mode is almost always a fixed choice, that the implementations of the different modes are substantively different, and that the likely implementation will be the `switch` presented here.
+To start with, there are many claims here that I think are just obviously true: that the rounding mode is almost always a fixed choice, that the implementations of the different modes are substantively different, and that the likely implementation will be the `switch` presented here. But I don't actually think this is an argument against such a shape.
 
-But it's worth pointing out that in that case — that the rounding mode is just passed in as a constant — that switch will [reliably optimize out](https://compiler-explorer.com/z/1xEdj9Gs3) (they have identical codegen even with `-Og`).
+What we're actually doing here is parametrizing an algorithm — a rounding mode parameter allows us to clearly separate the algorithm (division) from the parameter (the rounding mode). Even if all of the different rounding mode approaches are consistently named as `div_`, having them have literally the same name is still an improvement.
+
+Since the rounding mode will almost always be passed in as a constant — that `switch` implementation will [reliably optimize out](https://compiler-explorer.com/z/1xEdj9Gs3) (they have identical codegen even with `-Og`). And in the rare situations where the rounding mode is non-constant, having it be a parameter allows that use-case at all.
 
 And the spelling of the mode allows for more straightforwardly readable spellings of the rarer rounding modes, which is I think a good win. Let's go through a few rounding modes, using Swift's naming approach.
 

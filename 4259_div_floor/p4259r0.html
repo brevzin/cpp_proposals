@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-06-09" />
+  <meta name="dcterms.date" content="2026-06-10" />
   <title>The name of the floor division function should have floor in
 it</title>
   <style>
@@ -578,7 +578,7 @@ division function should have floor in it</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-06-09</td>
+    <td>2026-06-10</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -870,7 +870,7 @@ here.</p>
 <p>There are only two languages I’ve found which provide both operations
 and also do not use the word floor or ceiling in them, which I
 deliberately put last in the above table: both <a href="https://docs.julialang.org/en/v1/base/math/#Base.div-Tuple%7BAny,%20Any,%20RoundingMode%7D">Julia</a>
-and <a href="https://deepwiki.com/apple/swift-numerics/4.3-division-with-rounding?utm_source=chatgpt.com">Swift
+and <a href="https://deepwiki.com/apple/swift-numerics/4.3-division-with-rounding">Swift
 Numerics</a> provide integer division as ternary functions that take a
 rounding mode, and in both cases the rounding mode for floor is spelled
 “down” while the rounding mode for ceiling is spelled “up.”
@@ -1084,7 +1084,10 @@ three:</p>
 <p>There’s probably a good argument that the common rounding modes
 (floor, ceiling) and Euclidean division merit their own named functions,
 while the rest can be handled via a rounding mode enumeration as in
-Julia (7 options), Swift (11 options), and Matlab (4 options).</p>
+Julia (<a href="https://docs.julialang.org/en/v1/base/math/#Base.div-Tuple%7BAny,%20Any,%20RoundingMode%7D">7
+options</a>), Swift (<a href="https://deepwiki.com/apple/swift-numerics/4.3-division-with-rounding">11
+options</a>), and Matlab (<a href="https://www.mathworks.com/help/matlab/ref/idivide.html">4
+options</a>).</p>
 <p>The paper’s argument <em>against</em> such a rounding mode function
 argument is:</p>
 <div class="quote">
@@ -1123,11 +1126,22 @@ obviously true: that the rounding mode is almost always a fixed choice,
 that the implementations of the different modes are substantively
 different, and that the likely implementation will be the
 <code class="sourceCode cpp"><span class="cf">switch</span></code>
-presented here.</p>
-<p>But it’s worth pointing out that in that case — that the rounding
-mode is just passed in as a constant — that switch will <a href="https://compiler-explorer.com/z/1xEdj9Gs3">reliably optimize
+presented here. But I don’t actually think this is an argument against
+such a shape.</p>
+<p>What we’re actually doing here is parametrizing an algorithm — a
+rounding mode parameter allows us to clearly separate the algorithm
+(division) from the parameter (the rounding mode). Even if all of the
+different rounding mode approaches are consistently named as
+<code class="sourceCode cpp">div_</code>, having them have literally the
+same name is still an improvement.</p>
+<p>Since the rounding mode will almost always be passed in as a constant
+— that
+<code class="sourceCode cpp"><span class="cf">switch</span></code>
+implementation will <a href="https://compiler-explorer.com/z/1xEdj9Gs3">reliably optimize
 out</a> (they have identical codegen even with
-<code class="sourceCode cpp"><span class="op">-</span>Og</code>).</p>
+<code class="sourceCode cpp"><span class="op">-</span>Og</code>). And in
+the rare situations where the rounding mode is non-constant, having it
+be a parameter allows that use-case at all.</p>
 <p>And the spelling of the mode allows for more straightforwardly
 readable spellings of the rarer rounding modes, which is I think a good
 win. Let’s go through a few rounding modes, using Swift’s naming
