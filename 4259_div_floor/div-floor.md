@@ -62,7 +62,7 @@ There simply is not a lot of diversity in the names of these functions. But that
 | Scala       | `Math.floorDiv(x, y)` | `Math.ceilDiv(x, y)` |
 | Elixir      | `Integer.floor_div(x, y)` | `Integer.ceil_div(x, y)` |
 | Julia       | `div(x, y, RoundDown)` or `fld(x, y)` | `div(x, y, RoundUp)` or `cld(x, y)` |
-| Swift       | `x.divided(by: y, rounding: .down)` | `x.divided(by: y, rounding: up)` |
+| Swift       | `x.divided(by: y, rounding: .down)` | `x.divided(by: y, rounding: .up)` |
 
 Not all languages provide integer division functions of this form, some simply rely on their regular integer division operation for doing floor division (since in C++, `-5 / 2` is `-2` but in some languages it is `-3`). Nevertheless, there is still a great deal of uniformity in the API space here.
 
@@ -128,10 +128,10 @@ For the less ubiquitous rounding modes, the names should prioritize clarity over
 
 |Julia|Swift|P3724|
 |--|---|--|
-|`div(x, y, RoundNearestTiesAway)`|`x.divided(by: y, rounding: toNearestOrAway)`|`div_ties_away_zero(x, y)`|
-|`div(x, y, RoundNearestTiesUp)`|`x.divided(by: y, rounding: toNearestOrUp)`|`div_ties_to_pos_inf(x, y)`|
-|`div(x, y, RoundToZero)`|`x.divided(by: y, rounding: towardZero)`|`div_to_zero(x, y)`|
-|`div(x, y, RoundFromZero)`|`x.divided(by: y, rounding: awayFromZero)`|`div_away_zero(x, y)`|
+|`div(x, y, RoundNearestTiesAway)`|`x.divided(by: y, rounding: .toNearestOrAway)`|`div_ties_away_zero(x, y)`|
+|`div(x, y, RoundNearestTiesUp)`|`x.divided(by: y, rounding: .toNearestOrUp)`|`div_ties_to_pos_inf(x, y)`|
+|`div(x, y, RoundToZero)`|`x.divided(by: y, rounding: .towardZero)`|`div_to_zero(x, y)`|
+|`div(x, y, RoundFromZero)`|`x.divided(by: y, rounding: .awayFromZero)`|`div_away_zero(x, y)`|
 
 There's probably a good argument that the common rounding modes (floor, ceiling) and Euclidean division merit their own named functions, while the rest can be handled via a rounding mode enumeration as in Julia ([7 options](https://docs.julialang.org/en/v1/base/math/#Base.Rounding.RoundingMode)), Swift ([11 options](https://deepwiki.com/apple/swift-numerics/4.3-division-with-rounding)), and Matlab ([4 options](https://www.mathworks.com/help/matlab/ref/idivide.html)).
 
