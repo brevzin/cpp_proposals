@@ -19,7 +19,7 @@ tag: reflection
 
 # Revision History
 
-Since [@P4101R0], adding a little color, linked to implementation on compiler explorer.
+Since [@P4101R0], adding a little color, linked to [implementation](#implementation-experience) on compiler explorer, rebased wording.
 
 # Introduction
 
@@ -562,7 +562,7 @@ Barry implemented the consteval-only value approach in [his fork of the p2996 fo
 
 This is not exactly the same design as in this paper: it also supports _explicit_ immediate variables, so you'll see some test cases that declare `consteval` variables. But otherwise, the implementation has been updated to implicitly escalate `constexpr` variables initialized with an immediate constant expression to `consteval`, so it just ends up being an extension.
 
-The implementation is on Compiler Explorer. For instance, [here](https://compiler-explorer.com/z/147aYPajz) is the [variant visitation](#variant-visitation) example from earlier, which compiles in the value model but otherwise not in GCC or Clang.
+The implementation is on Compiler Explorer. For instance, [here](https://compiler-explorer.com/z/9rM4b3arP) is the [variant visitation](#variant-visitation) example from earlier, which compiles in the value model but otherwise not in GCC or Clang.
 
 # Options for C++26
 
@@ -619,24 +619,24 @@ Every function of consteval-only type shall be an immediate function ([expr.cons
 :::
 :::
 
-Change the [@CWG2765] definition of constexpr-unknown representation in [expr.const]{.sref}/x:
+Change the definition of constexpr-unknown representation in [expr.const.core]{.sref}/1:
 
 ::: std
-[x]{.pnum} A type has *constexpr-unknown representation* if it
+[1]{.pnum} A type has *constexpr-unknown representation* if it
 
-* [x.1]{.pnum} is a union,
+* [#.1]{.pnum} is a union,
 
 ::: addu
-* [x.#]{.pnum} is `std::meta::info`,
+* [#.*]{.pnum} is `std::meta::info`,
 :::
 
-* [x.#]{.pnum} is a pointer or pointer-to-member type,
-* [x.#]{.pnum} is volatile-qualified,
-* [x.#]{.pnum} is a class type with a non-static data member of reference type, or
-* [x.#]{.pnum} has a base class or a non-static member whose type has constexpr-unknown representation.
+* [#.2]{.pnum} is a pointer or pointer-to-member type,
+* [#.#]{.pnum} is volatile-qualified,
+* [#.#]{.pnum} is a class type with a non-static data member of reference type, or
+* [#.#]{.pnum} has a base class or a non-static member whose type has constexpr-unknown representation.
 :::
 
-Introduce the concepts of consteval-only value, immediate object, and immediate constant expression around [expr.const]{.sref}/21:
+Introduce the concepts of consteval-only value, immediate object, and immediate constant expression at the beginning of [expr.const.const]{.sref}:
 
 ::: std
 ::: addu
@@ -673,13 +673,13 @@ auto e = C<^^char>(); // ok
 Letting `$V$` be a variable that declares or refers to an immediate object `$O$`, each expression `$E$` that odr-uses `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, a diagnostic is only required if either `$D1$` or `$D2$` is reachable from the other.
 
 :::
-[21]{.pnum} A _constant expression_ is either
+[1]{.pnum} A _constant expression_ is either
 
-* [21.1]{.pnum} a glvalue core constant expression [`$E$` for which ]{.rm} [that refers to an object or function]{.addu}, or
+* [#.1]{.pnum} a glvalue core constant expression [`$E$` for which ]{.rm} [that refers to an object or function]{.addu}, or
 
   ::: rm
-    * [21.1.1]{.pnum} `$E$` refers to a non-immediate function,
-    * [21.1.2]{.pnum} `$E$` designates an object `$o$`, and if the complete object of `$o$` is of consteval-only type then so is `$E$`,
+    * [#.1.1]{.pnum} `$E$` refers to a non-immediate function,
+    * [#.1.2]{.pnum} `$E$` designates an object `$o$`, and if the complete object of `$o$` is of consteval-only type then so is `$E$`,
 
   ::: example
   ```cpp
@@ -697,15 +697,15 @@ Letting `$V$` be a variable that declares or refers to an immediate object `$O$`
   :::
   :::
 
-* [21.2]{.pnum} a prvalue core constant expression whose result object ([basic.lval]) satisfies the following constraints:
+* [#.2]{.pnum} a prvalue core constant expression whose result object ([basic.lval]) satisfies the following constraints:
 
-    * [21.2.1]{.pnum} each constituent reference refers to an object or [a non-immediate]{.rm} function,
-    * [21.2.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), [and]{.addu}
-    * [21.2.3]{.pnum} no constituent value of pointer type is [a pointer to an immediate function or]{.rm} an invalid pointer value ([basic.compound])[.]{.addu} [, and]{.rm}
+    * [#.2.1]{.pnum} each constituent reference refers to an object or [a non-immediate]{.rm} function,
+    * [#.2.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), [and]{.addu}
+    * [#.2.3]{.pnum} no constituent value of pointer type is [a pointer to an immediate function or]{.rm} an invalid pointer value ([basic.compound])[.]{.addu} [, and]{.rm}
 
   ::: rm
-    * [21.2.4]{.pnum} no constituent value of pointer-to-member type designates an immediate function.
-    * [21.2.5]{.pnum} unless the value is of consteval-only type,
+    * [#.2.4]{.pnum} no constituent value of pointer-to-member type designates an immediate function.
+    * [#.2.5]{.pnum} unless the value is of consteval-only type,
         - [#.#.#.#]{.pnum} no constituent value of pointer-to-member type points to a direct member of a consteval-only class type
         - [#.#.#.#]{.pnum} no constituent value of pointer type points to or past an object whose complete object is of consteval-only type, and
         - [#.#.#.#]{.pnum} no constituent reference refers to an object whose complete object is of consteval-only type.
@@ -720,10 +720,10 @@ Letting `$V$` be a variable that declares or refers to an immediate object `$O$`
 
 :::
 
-Lastly, still in [expr.const]{.sref}, reword immediate-escalation in terms of consteval-only values:
+Lastly, in [expr.const.imm]{.sref}, reword immediate-escalation in terms of consteval-only values:
 
 ::: std
-[23]{.pnum} An expression or conversion is in an _immediate function context_ if it is potentially evaluated and either:
+[1]{.pnum} An expression or conversion is in an _immediate function context_ if it is potentially evaluated and either:
 
 * [#.#]{.pnum} its innermost enclosing non-block scope is a function parameter scope of an immediate function,
 * [#.#]{.pnum} it is a subexpression of a manifestly constant-evaluated expression or conversion, or
@@ -731,7 +731,7 @@ Lastly, still in [expr.const]{.sref}, reword immediate-escalation in terms of co
 
 An invocation is an _immediate invocation_ if it [is a potentially-evaluated explicit or implicit invocation of an immediate function and is not in an immediate function context. An aggregate initialization is an immediate invocation if it evaluates a default member initializer that has a subexpression that is an immediate-escalating expression.
 
-[24]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and
+[2]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and
 
 * [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that [either]{.addu}
   * [#.#.1]{.pnum} designates an immediate function [or an immediate object]{.addu}, [or]{.addu}
@@ -784,9 +784,9 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
   :::
   :::
 
-[25]{.pnum} An *immediate-escalating* function is [...]
+[#]{.pnum} An *immediate-escalating* function is [...]
 
-[26]{.pnum} An *immediate function* is a function that is [either]{.addu}
+[#]{.pnum} An *immediate function* is a function that is [either]{.addu}
 
 * [#.1]{.pnum} declared with the `consteval` specifier, [or]{.addu}
 * [#.#]{.pnum} [an immediate-escalating function whose type is consteval-only ([basic.types.general]), or]{.rm}
@@ -802,8 +802,8 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
 Revert the allowance for `virtual` functions in [class.virtual]{.sref}/18 added by [@CWG3117] [This allowance was never used in `meta::exception`, its `what()` is still declared `constexpr` — that is [@LWG4513] which is no longer a defect]{.draftnote}:
 
 ::: std
-[18]{.pnum} A [class with a]{.rm} `consteval` virtual function [shall not override]{.addu} [that overrides]{.rm} a virtual function that is not `consteval` [shall have consteval-only type ([basic.types.general])]{.rm}.
-A `consteval` virtual function shall not be overridden by a virtual function that is not `consteval`.
+[18]{.pnum} [A class with an immediate virtual function that overrides a non-immediate virtual function shall have consteval-only type ([basic.types.general]).]{.rm} [A non-immediate virtual function shall not be overridden by an immediate virtual function.]{.addu}
+An immediate virtual function shall not be overridden by a non-immediate virtual function.
 :::
 
 Remove the consteval-only type trait from [meta.type.synop]{.sref}:
@@ -926,7 +926,7 @@ And the same for `data_member_options` in [meta.reflection.define.aggregate]{.sr
 :::
 
 
-Remove the Mandates from `std::bit_cast` in [bit.cast]{.sref} (this assumes the new post-[@CWG2765] wording). This restriction is now handled in [expr.const]:
+Remove the Mandates from `std::bit_cast` in [bit.cast]{.sref}. This restriction is now handled in [expr.const.core]{.sref}:
 
 ::: std
 ::: rm
