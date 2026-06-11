@@ -13,7 +13,7 @@ status: progress
 
 # Revision History
 
-For [@P2758R5]: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request.
+For [@P2758R5]: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request, rebased wording on working draft.
 
 For [@P2758R4]: wording. Re-targeting towards CWG and LEWG. Introduced concept of constexpr-erroneous both for proper wording and to handle an escalating issue.
 
@@ -670,23 +670,13 @@ Alter how static initialization works to ensure there's no fallback to runtime i
 [2]{.pnum} *Constant initialization* is performed if a variable with static or thread storage duration is constant-initialized ([expr.const]). [If the full-expression of the initialization of the variable is a constexpr-erroneous expression ([expr.const]), the program is ill-formed. Otherwise, if]{.addu} [If]{.rm} constant initialization is not performed, a variable with static storage duration ([basic.stc.static]) or thread storage duration ([basic.stc.thread]) is zero-initialized ([dcl.init]).
 :::
 
-Say that a program is ill-formed if an expression is constexpr-erroneous in [expr.const]{.sref}:
+Say that a program is ill-formed if an expression is constexpr-erroneous in [expr.const.defns]{.sref}:
 
 ::: std
-[10]{.pnum} An expression `$E$` is a *core constant expression* unless the evaluation of `$E$` following the rules of the abstract machine ([intro.execution]), would evaluate one of the following:
-
-* [10.1]{.pnum} [...]
-
-[...]
-
-[28]{.pnum} An expression or conversion is *manifestly constant-evaluated* if it is:
-
-* [28.1]{.pnum} [...]
-
-[...]
+[3]{.pnum} An object `a` is said to have constant destruction if [...]
 
 ::: addu
-[x]{.pnum} A program is ill-formed if a *constexpr-erroneous* expression is evaluated in a context that is manifestly constant-evaluated. [Such an expression is still a core constant expression.]{.note}
+[#]{.pnum} A program is ill-formed if a *constexpr-erroneous* expression is evaluated in a context that is manifestly constant-evaluated. [Such an expression is still a core constant expression.]{.note}
 
 ::: example
 ```cpp
@@ -706,23 +696,20 @@ int y = foo(0); // error: reject-zero, can't call with a == 0
 :::
 :::
 
-Make constexpr-erroneous immediate expressions hard errors, so they don't escalate:
+Make constexpr-erroneous immediate expressions hard errors, so they don't escalate, in [expr.const.imm]/2:
 
 ::: std
-[25]{.pnum} An expression or conversion is _immediate-escalating_ if it is not initially in an immediate function context and it is either
-
-* [25.#]{.pnum} a potentially-evaluated _id-expression_ that denotes an immediate function that is not a subexpression of an immediate invocation, or
-* [25.#]{.pnum} an immediate invocation that is not a constant expression and is not a subexpression of an immediate invocation.
+[2]{.pnum} A potentially evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and [...]
 
 ::: addu
-[z]{.pnum} An immediate-escalating expression shall not be constexpr-erroneous.
+[*]{.pnum} An immediate-escalating expression shall not be constexpr-erroneous.
 :::
 
-[26]{.pnum} An _immediate-escalating_ function is:
+[3]{.pnum} An _immediate-escalating_ function is:
 
-* [26.#]{.pnum} the call operator of a lambda that is not declared with the consteval specifier,
-* [26.#]{.pnum} a defaulted special member function that is not declared with the consteval specifier, or
-* [26.#]{.pnum} a function that results from the instantiation of a templated entity defined with the constexpr specifier.
+* [#.#]{.pnum} the call operator of a lambda that is not declared with the `consteval` specifier,
+* [#.#]{.pnum} a non-user-provided defaulted function that is not declared with the `consteval` specifier, or
+* [#.#]{.pnum} a function that is not a prospective destructor and that results from the instantiation of a templated entity defined with the constexpr specifier.
 
 An immediate-escalating expression shall appear only in an immediate-escalating function.
 :::
@@ -759,7 +746,37 @@ Add a new clause after [meta.const.eval]{.sref} named "Emitting messages during 
 
 ::: std
 ::: addu
-[1]{.pnum} The facilities in this subclause are used to emit messages during program translation.
+[1]{.pnum} The facilities in this subclause are used to emit messages during program translation. The ordering and number of diagnostics emitted by the functions defined in this subclause is unspecified.
+
+::: example
+```cpp
+struct C {
+    string_view dtor;
+    constexpr C(string_view ctor, string_view dtor) : dtor(dtor) { constexpr_print_str(ctor); }
+    constexpr ~C() { constexpr_print_str(dtor); }
+};
+
+int f(int i) {
+    constexpr C c1("ctor c1", "dtor c1");
+    constexpr C c2("ctor c2", "dtor c2");
+    return i;
+}
+
+int main() {
+    int x = f(1);
+    int y = f(2);
+    return x + y;
+}
+```
+
+A possible compile-time output of this program is:
+```
+ctor c1
+dtor c1
+ctor c2
+dtor c2
+```
+:::
 
 [#]{.pnum} A call to any of the functions defined in this subclause may produce a diagnostic message during constant evaluation. The text from a `string_view`, `$M$`, is formed by the sequence of `$M$.size()` code units, starting at `$M$.data()`, of the ordinary literal encoding ([lex.charset]).
 
@@ -820,7 +837,7 @@ Add to [version.syn]{.sref}:
 ::: bq
 ::: addu
 ```
-#define __cpp_lib_compile_time_messages 2025XX // freestanding, also in <meta>
+#define __cpp_lib_compile_time_messages 2026XX // freestanding, also in <meta>
 ```
 :::
 :::
