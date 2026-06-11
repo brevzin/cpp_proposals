@@ -841,7 +841,7 @@ Add a new clause after [meta.const.eval]{.sref} named "Emitting messages during 
 
 ::: std
 ::: addu
-[1]{.pnum} The facilities in this subclause are used to emit messages during program translation. The ordering and number of diagnostics emitted by the functions defined in this subclause is unspecified.
+[1]{.pnum} The facilities in this subclause are used to emit messages during program translation. The ordering and number of diagnostics emitted by the functions defined in this subclause are unspecified.
 
 ::: example
 ```cpp
