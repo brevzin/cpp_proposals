@@ -13,7 +13,7 @@ status: progress
 
 # Revision History
 
-For [@P2758R5]: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request, rebased wording on working draft.
+For [@P2758R5]: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request, rebased wording on working draft. Noted GCC [implementation](#implementation-experience) and discussed the interesting question of [diagnostic ordering](#ordering-in-diagnostics).
 
 For [@P2758R4]: wording. Re-targeting towards CWG and LEWG. Introduced concept of constexpr-erroneous both for proper wording and to handle an escalating issue.
 
@@ -398,6 +398,59 @@ So we should probably provide that as well (under whichever name).
 
 But that's a format-specific solution. But a similar pattern works just fine for other error handling mechanisms, except for wanting to return an object (unless your return object happens to have a string part - since the two cases end up being very dfferent). I think that's okay though - at least we have the utility.
 
+## Ordering in Diagnostics
+
+We do not currently specify when (if) constexpr objects are destroyed. The current specification requires us to check to make sure that constexpr variables have constant destruction, which means compilers will trial evaluate the destructor. The result of this is it that it is possible for messages emitting during destruction might be emitted earlier than normal runtime code would.
+
+For example:
+
+::: std
+```cpp
+struct C {
+    std::string_view dtor;
+    constexpr C(std::string_view ctor, std::string_view dtor)
+      : dtor(dtor)
+    {
+        std::constexpr_print_str(ctor);
+    }
+    constexpr ~C() {
+        std::constexpr_print_str(dtor);
+    }
+};
+
+auto f(int i) -> int {
+    [[maybe_unused]] constexpr C c1("ctor c1", "dtor c1");
+    [[maybe_unused]] constexpr C c2("ctor c2", "dtor c2");
+    return i;
+}
+
+auto main() -> int {
+    int x = f(1);
+    int y = f(2);
+    return x + y;
+}
+```
+:::
+
+If we think about normal C++, we would expect the output here to be:
+
+::: std
+```
+ctor c1
+ctor c2
+dtor c2
+dtor c1
+ctor c1
+ctor c2
+dtor c2
+dtor c1
+```
+:::
+
+After all, we have two local variables, and we're calling the function twice, right? But it is possible that implementations only construct `c1` and `c2` once, each (after all, they are constant, right?) and it is possible that as a result of trial destructor evaluation, `dtor c1` is printed before `ctor c2`. This could certainly be confusing, but the alternative is to tightly specify a lot about constant evaluation that isn't currently specified.
+
+I think having compile-time messaging with potentially surprising ordering when it comes to destruction is a lot more valuable than not having compile-time messaging. Besides, this question of ordering is really only relevant for printing — and that's really for debugging compile-time evaluation, so it's not a huge problem. In the warning and error cases, as long as you reliably get the warning and error desired (which you will), the ordering is not as important.
+
 ## Errors in Constraints
 
 Let's take a look again at the example I showed [earlier](#predictability):
@@ -641,7 +694,7 @@ This paper proposes the following:
 
 ## Implementation Experience
 
-Hana Dusíková has a partial implementation of this paper in clang. Specifically, `std::constexpr_print_str` and a simplified version of `std::constexpr_error_str` that does not include a tag. This program fails compilation as desired:
+This proposal is implemented in GCC 16. Or rather, GCC now provides builtins that can be used to implement the library façade of this paper. [This program](https://compiler-explorer.com/z/rrrq3GnGY) fails to compile as desired:
 
 ::: std
 ```cpp
@@ -654,10 +707,52 @@ constexpr int foo(int a) {
 }
 
 int a = foo(2); // OK
-int b = foo(0); // error: custom constexpr error: 'can't call with a == 0'
+int b = foo(0); // error: constexpr message: 'can't call with a == 0'
 ```
 :::
 
+On the other hand, [this program](https://compiler-explorer.com/z/KobhGE6Wo) demonstrates the interesting [question of ordering](#ordering-in-diagnostics):
+
+::: std
+```cpp
+struct C {
+    std::string_view dtor;
+    constexpr C(std::string_view ctor, std::string_view dtor)
+      : dtor(dtor)
+    {
+        std::constexpr_print_str(ctor);
+    }
+    constexpr ~C() {
+        std::constexpr_print_str(dtor);
+    }
+};
+
+auto f(int i) -> int {
+    [[maybe_unused]] constexpr C c1("ctor c1", "dtor c1");
+    [[maybe_unused]] constexpr C c2("ctor c2", "dtor c2");
+    return i;
+}
+
+auto main() -> int {
+    int x = f(1);
+    int y = f(2);
+    return x + y;
+}
+```
+:::
+
+When compiled, this program emits (with a bunch of other noise):
+
+::: std
+```
+<source>:5:44: note: constexpr message: ctor c1
+<source>:5:44: note: constexpr message: dtor c1
+<source>:5:44: note: constexpr message: ctor c2
+<source>:5:44: note: constexpr message: dtor c2
+```
+:::
+
+This is acceptable behavior, both in terms of number of and ordering of messages.
 
 
 # Wording

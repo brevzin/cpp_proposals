@@ -622,24 +622,26 @@ Predictability<span></span></a></li>
 Errors<span></span></a></li>
 <li><a href="#error-handling-in-general" id="toc-error-handling-in-general"><span class="toc-section-number">4.3</span> Error-Handling in
 General<span></span></a></li>
-<li><a href="#errors-in-constraints" id="toc-errors-in-constraints"><span class="toc-section-number">4.4</span> Errors in
+<li><a href="#ordering-in-diagnostics" id="toc-ordering-in-diagnostics"><span class="toc-section-number">4.4</span> Ordering in
+Diagnostics<span></span></a></li>
+<li><a href="#errors-in-constraints" id="toc-errors-in-constraints"><span class="toc-section-number">4.5</span> Errors in
 Constraints<span></span></a></li>
-<li><a href="#warnings-and-tagging" id="toc-warnings-and-tagging"><span class="toc-section-number">4.5</span> Warnings and
+<li><a href="#warnings-and-tagging" id="toc-warnings-and-tagging"><span class="toc-section-number">4.6</span> Warnings and
 Tagging<span></span></a>
 <ul>
-<li><a href="#tag-restrictions" id="toc-tag-restrictions"><span class="toc-section-number">4.5.1</span> Tag
+<li><a href="#tag-restrictions" id="toc-tag-restrictions"><span class="toc-section-number">4.6.1</span> Tag
 Restrictions<span></span></a></li>
-<li><a href="#tagging-in-other-interfaces" id="toc-tagging-in-other-interfaces"><span class="toc-section-number">4.5.2</span> Tagging in other
+<li><a href="#tagging-in-other-interfaces" id="toc-tagging-in-other-interfaces"><span class="toc-section-number">4.6.2</span> Tagging in other
 interfaces<span></span></a></li>
 </ul></li>
-<li><a href="#constexpr-erroneous-values" id="toc-constexpr-erroneous-values"><span class="toc-section-number">4.6</span> Constexpr-Erroneous
+<li><a href="#constexpr-erroneous-values" id="toc-constexpr-erroneous-values"><span class="toc-section-number">4.7</span> Constexpr-Erroneous
 Values<span></span></a>
 <ul>
-<li><a href="#immediate-escalation" id="toc-immediate-escalation"><span class="toc-section-number">4.6.1</span> Immediate
+<li><a href="#immediate-escalation" id="toc-immediate-escalation"><span class="toc-section-number">4.7.1</span> Immediate
 Escalation<span></span></a></li>
-<li><a href="#exceptions" id="toc-exceptions"><span class="toc-section-number">4.6.2</span> Exceptions<span></span></a></li>
+<li><a href="#exceptions" id="toc-exceptions"><span class="toc-section-number">4.7.2</span> Exceptions<span></span></a></li>
 </ul></li>
-<li><a href="#other-encodings" id="toc-other-encodings"><span class="toc-section-number">4.7</span> Other
+<li><a href="#other-encodings" id="toc-other-encodings"><span class="toc-section-number">4.8</span> Other
 Encodings<span></span></a></li>
 </ul></li>
 <li><a href="#proposal" id="toc-proposal"><span class="toc-section-number">5</span> Proposal<span></span></a>
@@ -659,7 +661,9 @@ Macro<span></span></a></li>
 Revision History<a href="#revision-history" class="self-link"></a></h1>
 <p>For <span class="citation" data-cites="P2758R5"><a href="https://wg21.link/p2758r5" role="doc-biblioref">[P2758R5]</a></span>: wording. Re-targeting towards
 LWG. Adding <code class="sourceCode cpp">u8string_view</code> overloads
-per SG16 request, rebased wording on working draft.</p>
+per SG16 request, rebased wording on working draft. Noted GCC <a href="#implementation-experience">implementation</a> and discussed the
+interesting question of <a href="#ordering-in-diagnostics">diagnostic
+ordering</a>.</p>
 <p>For <span class="citation" data-cites="P2758R4"><a href="https://wg21.link/p2758r4" role="doc-biblioref">[P2758R4]</a></span>: wording. Re-targeting towards
 CWG and LEWG. Introduced concept of constexpr-erroneous both for proper
 wording and to handle an escalating issue.</p>
@@ -1213,19 +1217,84 @@ just fine for other error handling mechanisms, except for wanting to
 return an object (unless your return object happens to have a string
 part - since the two cases end up being very dfferent). I think that’s
 okay though - at least we have the utility.</p>
-<h2 data-number="4.4" id="errors-in-constraints"><span class="header-section-number">4.4</span> Errors in Constraints<a href="#errors-in-constraints" class="self-link"></a></h2>
+<h2 data-number="4.4" id="ordering-in-diagnostics"><span class="header-section-number">4.4</span> Ordering in Diagnostics<a href="#ordering-in-diagnostics" class="self-link"></a></h2>
+<p>We do not currently specify when (if) constexpr objects are
+destroyed. The current specification requires us to check to make sure
+that constexpr variables have constant destruction, which means
+compilers will trial evaluate the destructor. The result of this is it
+that it is possible for messages emitting during destruction might be
+emitted earlier than normal runtime code would.</p>
+<p>For example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string_view dtor;</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> C<span class="op">(</span>std<span class="op">::</span>string_view ctor, std<span class="op">::</span>string_view dtor<span class="op">)</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>      <span class="op">:</span> dtor<span class="op">(</span>dtor<span class="op">)</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>constexpr_print_str<span class="op">(</span>ctor<span class="op">)</span>;</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="op">~</span>C<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>constexpr_print_str<span class="op">(</span>dtor<span class="op">)</span>;</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[</span><span class="at">maybe_unused</span><span class="op">]]</span> <span class="kw">constexpr</span> C c1<span class="op">(</span><span class="st">&quot;ctor c1&quot;</span>, <span class="st">&quot;dtor c1&quot;</span><span class="op">)</span>;</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[</span><span class="at">maybe_unused</span><span class="op">]]</span> <span class="kw">constexpr</span> C c2<span class="op">(</span><span class="st">&quot;ctor c2&quot;</span>, <span class="st">&quot;dtor c2&quot;</span><span class="op">)</span>;</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> main<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x <span class="op">=</span> f<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> y <span class="op">=</span> f<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">+</span> y;</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>If we think about normal C++, we would expect the output here to
+be:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>ctor c1</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>ctor c2</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>dtor c2</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>dtor c1</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>ctor c1</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>ctor c2</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>dtor c2</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>dtor c1</span></code></pre></div>
+</blockquote>
+</div>
+<p>After all, we have two local variables, and we’re calling the
+function twice, right? But it is possible that implementations only
+construct <code class="sourceCode cpp">c1</code> and
+<code class="sourceCode cpp">c2</code> once, each (after all, they are
+constant, right?) and it is possible that as a result of trial
+destructor evaluation, <code class="sourceCode cpp">dtor c1</code> is
+printed before <code class="sourceCode cpp">ctor c2</code>. This could
+certainly be confusing, but the alternative is to tightly specify a lot
+about constant evaluation that isn’t currently specified.</p>
+<p>I think having compile-time messaging with potentially surprising
+ordering when it comes to destruction is a lot more valuable than not
+having compile-time messaging. Besides, this question of ordering is
+really only relevant for printing — and that’s really for debugging
+compile-time evaluation, so it’s not a huge problem. In the warning and
+error cases, as long as you reliably get the warning and error desired
+(which you will), the ordering is not as important.</p>
+<h2 data-number="4.5" id="errors-in-constraints"><span class="header-section-number">4.5</span> Errors in Constraints<a href="#errors-in-constraints" class="self-link"></a></h2>
 <p>Let’s take a look again at the example I showed <a href="#predictability">earlier</a>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>i <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;cannot invoke f with a negative number&quot;</span><span class="op">)</span>;</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> I<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>f<span class="op">(</span>I<span class="op">)</span> <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>i <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;cannot invoke f with a negative number&quot;</span><span class="op">)</span>;</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> I<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(</span>f<span class="op">(</span>I<span class="op">)</span> <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Here, <code class="sourceCode cpp">g<span class="op">&lt;</span><span class="dv">2</span><span class="op">&gt;()</span></code>
@@ -1250,11 +1319,11 @@ would be SFINAE-friendly, that seems like an entirely different
 construct than <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code>:
 that would be an exception - that the condition could catch and
 swallow.</p>
-<h2 data-number="4.5" id="warnings-and-tagging"><span class="header-section-number">4.5</span> Warnings and Tagging<a href="#warnings-and-tagging" class="self-link"></a></h2>
+<h2 data-number="4.6" id="warnings-and-tagging"><span class="header-section-number">4.6</span> Warnings and Tagging<a href="#warnings-and-tagging" class="self-link"></a></h2>
 <p>Consider the call:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;x={} and y=&quot;</span>, x, y<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>format<span class="op">(</span><span class="st">&quot;x={} and y=&quot;</span>, x, y<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>The user probably intended to format both
@@ -1278,10 +1347,10 @@ tool for that already: warnings! If the format library could issue a
 custom diagnostic, like:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>constexpr_warning<span class="op">(</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;format-too-many-args&quot;</span>,</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Format string consumed {} arguments but {} were provided.&quot;</span>,</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  current_arg, total<span class="op">)</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>constexpr_warning<span class="op">(</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;format-too-many-args&quot;</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Format string consumed {} arguments but {} were provided.&quot;</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  current_arg, total<span class="op">)</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Then the implementation could let users opt in with <code class="sourceCode cpp"><span class="op">-</span>Wformat<span class="op">-</span>too<span class="op">-</span>many<span class="op">-</span>args</code>
@@ -1299,7 +1368,7 @@ provide a tag.</p>
 <p>There are probably many such examples in many libraries. Giving
 library authors the power to warn users (and users the power to choose
 their warning granularity) seems very useful.</p>
-<h3 data-number="4.5.1" id="tag-restrictions"><span class="header-section-number">4.5.1</span> Tag Restrictions<a href="#tag-restrictions" class="self-link"></a></h3>
+<h3 data-number="4.6.1" id="tag-restrictions"><span class="header-section-number">4.6.1</span> Tag Restrictions<a href="#tag-restrictions" class="self-link"></a></h3>
 <p>During an <a href="https://github.com/sg16-unicode/sg16-meetings/tree/master?tab=readme-ov-file#april-10th-2024">SG-16
 telecon</a>, there was some discussion on what the requirements are of
 the tag we want to pass to <code class="sourceCode cpp">std<span class="op">::</span>constexpr_warning</code>.
@@ -1323,7 +1392,7 @@ only allowed to contain: <code class="x">A-Z</code>,
 <code class="sourceCode cpp">a<span class="op">-</span>z</code>, <code class="x">0-9</code>, <code class="sourceCode cpp">_</code>, and <code class="x">-</code>. That’s a pretty limited set, but it’s probably
 sufficient for the use-case and should not cause problems on shells,
 etc.</p>
-<h3 data-number="4.5.2" id="tagging-in-other-interfaces"><span class="header-section-number">4.5.2</span> Tagging in other interfaces<a href="#tagging-in-other-interfaces" class="self-link"></a></h3>
+<h3 data-number="4.6.2" id="tagging-in-other-interfaces"><span class="header-section-number">4.6.2</span> Tagging in other interfaces<a href="#tagging-in-other-interfaces" class="self-link"></a></h3>
 <p><span class="citation" data-cites="P2758R2"><a href="https://wg21.link/p2758r2" role="doc-biblioref">[P2758R2]</a></span> only introduced a
 <code class="sourceCode cpp">tag</code> parameter for
 <code class="sourceCode cpp">warning</code> but not for
@@ -1334,7 +1403,7 @@ suppress diagnostics or elevate to an error. This revision adds those
 parameters as well (for <code class="sourceCode cpp">print</code>,
 optionally, for <code class="sourceCode cpp">warning</code> and
 <code class="sourceCode cpp">error</code>, mandatory).</p>
-<h2 data-number="4.6" id="constexpr-erroneous-values"><span class="header-section-number">4.6</span> Constexpr-Erroneous Values<a href="#constexpr-erroneous-values" class="self-link"></a></h2>
+<h2 data-number="4.7" id="constexpr-erroneous-values"><span class="header-section-number">4.7</span> Constexpr-Erroneous Values<a href="#constexpr-erroneous-values" class="self-link"></a></h2>
 <p>One of the things that came up during Core review is that we need a
 way to specify how exactly <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code>
 induces failure. The suggestion that Jason Merrill made was that a call
@@ -1359,7 +1428,7 @@ That would let us make sure that we can catch errors at compile-time
 instead of unintentionally turning them into runtime failures.</p>
 <p>There are two other interesting things to bring up on this topic:
 escalation and exceptions.</p>
-<h3 data-number="4.6.1" id="immediate-escalation"><span class="header-section-number">4.6.1</span> Immediate Escalation<a href="#immediate-escalation" class="self-link"></a></h3>
+<h3 data-number="4.7.1" id="immediate-escalation"><span class="header-section-number">4.7.1</span> Immediate Escalation<a href="#immediate-escalation" class="self-link"></a></h3>
 <p>In <span class="citation" data-cites="P2564R3"><a href="https://wg21.link/p2564r3" role="doc-biblioref">[P2564R3]</a></span>, we introduced the notion of
 immediate escalation. That is, a call to a
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
@@ -1373,20 +1442,20 @@ a bug that Jonathan Wakely and I happened to be discussing while I was
 working on this paper:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;print&gt;</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> echo<span class="op">(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="pp">#ifdef LAMBDA</span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">[&amp;]{</span> std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, args<span class="op">...)</span>; <span class="op">}()</span>;</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="pp">#else</span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, args<span class="op">...)</span>;</span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="pp">#endif</span></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    echo<span class="op">()</span>;</span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;print&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> echo<span class="op">(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="pp">#ifdef LAMBDA</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">[&amp;]{</span> std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, args<span class="op">...)</span>; <span class="op">}()</span>;</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="pp">#else</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span>, args<span class="op">...)</span>;</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="pp">#endif</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    echo<span class="op">()</span>;</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Here, we’re basically calling <code class="sourceCode cpp">std<span class="op">::</span>print<span class="op">(</span><span class="st">&quot;{}&quot;</span><span class="op">)</span></code>,
@@ -1418,49 +1487,49 @@ doing more work to produce more confusing error messages. In this case,
 with the direct function template we still get a reasonable error:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:8:16: error: call to consteval function &#39;std::basic_format_string&lt;char&gt;(&quot;{}&quot;)&#39; is not a constant expression</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    8 |     std::print(&quot;{}&quot;, args...);</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>      |                ^~~~</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>In file included from /opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/print:43,</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>                 from &lt;source&gt;:1:</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:8:16:   in &#39;constexpr&#39; expansion of &#39;std::basic_format_string&lt;char&gt;(&quot;{}&quot;)&#39;</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:4377:19:   in &#39;constexpr&#39; expansion of &#39;__scanner.std::__format::_Checking_scanner&lt;char&gt;::std::__format::_Scanner&lt;char&gt;.std::__format::_Scanner&lt;char&gt;::_M_scan()&#39;</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:4032:37:   in &#39;constexpr&#39; expansion of &#39;((std::__format::_Scanner&lt;char&gt;*)this)-&gt;std::__format::_Scanner&lt;char&gt;::_M_pc.std::__format::_Scanner&lt;char&gt;::_Parse_context::std::basic_format_parse_context&lt;char&gt;.std::basic_format_parse_context&lt;char&gt;::next_arg_id()&#39;</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:278:56: error: call to non-&#39;constexpr&#39; function &#39;void std::__format::__invalid_arg_id_in_format_string()&#39;</span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  278 |             __format::__invalid_arg_id_in_format_string();</span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~</span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:224:3: note: &#39;void std::__format::__invalid_arg_id_in_format_string()&#39; declared here</span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  224 |   __invalid_arg_id_in_format_string()</span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:8:16: error: call to consteval function &#39;std::basic_format_string&lt;char&gt;(&quot;{}&quot;)&#39; is not a constant expression</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    8 |     std::print(&quot;{}&quot;, args...);</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>      |                ^~~~</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>In file included from /opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/print:43,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>                 from &lt;source&gt;:1:</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:8:16:   in &#39;constexpr&#39; expansion of &#39;std::basic_format_string&lt;char&gt;(&quot;{}&quot;)&#39;</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:4377:19:   in &#39;constexpr&#39; expansion of &#39;__scanner.std::__format::_Checking_scanner&lt;char&gt;::std::__format::_Scanner&lt;char&gt;.std::__format::_Scanner&lt;char&gt;::_M_scan()&#39;</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:4032:37:   in &#39;constexpr&#39; expansion of &#39;((std::__format::_Scanner&lt;char&gt;*)this)-&gt;std::__format::_Scanner&lt;char&gt;::_M_pc.std::__format::_Scanner&lt;char&gt;::_Parse_context::std::basic_format_parse_context&lt;char&gt;.std::basic_format_parse_context&lt;char&gt;::next_arg_id()&#39;</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:278:56: error: call to non-&#39;constexpr&#39; function &#39;void std::__format::__invalid_arg_id_in_format_string()&#39;</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  278 |             __format::__invalid_arg_id_in_format_string();</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/format:224:3: note: &#39;void std::__format::__invalid_arg_id_in_format_string()&#39; declared here</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>  224 |   __invalid_arg_id_in_format_string()</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span></code></pre></div>
 </blockquote>
 </div>
 <p>But wrap it in a lambda and the error ceases to make sense to most
 people:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:38: error: call to consteval function &#39;&lt;lambda closure object&gt;echo&lt;&gt;()::&lt;lambda()&gt;().echo&lt;&gt;()::&lt;lambda()&gt;()&#39; is not a constant expression</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    6 |     [&amp;]{ std::print(&quot;{}&quot;, args...); }();</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:38: error: &#39;echo&lt;&gt;()::&lt;lambda()&gt;&#39; called in a constant expression</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:5: note: &#39;echo&lt;&gt;()::&lt;lambda()&gt;&#39; is not usable as a &#39;constexpr&#39; function because:</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    6 |     [&amp;]{ std::print(&quot;{}&quot;, args...); }();</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>      |     ^</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:20: error: call to non-&#39;constexpr&#39; function &#39;void std::print(format_string&lt;_Args ...&gt;, _Args&amp;&amp; ...) [with _Args = {}; format_string&lt;_Args ...&gt; = basic_format_string&lt;char&gt;]&#39;</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    6 |     [&amp;]{ std::print(&quot;{}&quot;, args...); }();</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>      |          ~~~~~~~~~~^~~~~~~~~~~~~~~</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>In file included from &lt;source&gt;:1:</span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/print:117:5: note: &#39;void std::print(format_string&lt;_Args ...&gt;, _Args&amp;&amp; ...) [with _Args = {}; format_string&lt;_Args ...&gt; = basic_format_string&lt;char&gt;]&#39; declared here</span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>  117 |     print(format_string&lt;_Args...&gt; __fmt, _Args&amp;&amp;... __args)</span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>      |     ^~~~~</span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:21: note: &#39;echo&lt;&gt;()::&lt;lambda()&gt;&#39; was promoted to an immediate function because its body contains an immediate-escalating expression &#39;std::basic_format_string&lt;char&gt;(&quot;{}&quot;)&#39;</span>
-<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    6 |     [&amp;]{ std::print(&quot;{}&quot;, args...); }();</span>
-<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>      |                     ^~~~</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:38: error: call to consteval function &#39;&lt;lambda closure object&gt;echo&lt;&gt;()::&lt;lambda()&gt;().echo&lt;&gt;()::&lt;lambda()&gt;()&#39; is not a constant expression</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    6 |     [&amp;]{ std::print(&quot;{}&quot;, args...); }();</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:38: error: &#39;echo&lt;&gt;()::&lt;lambda()&gt;&#39; called in a constant expression</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:5: note: &#39;echo&lt;&gt;()::&lt;lambda()&gt;&#39; is not usable as a &#39;constexpr&#39; function because:</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    6 |     [&amp;]{ std::print(&quot;{}&quot;, args...); }();</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>      |     ^</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:20: error: call to non-&#39;constexpr&#39; function &#39;void std::print(format_string&lt;_Args ...&gt;, _Args&amp;&amp; ...) [with _Args = {}; format_string&lt;_Args ...&gt; = basic_format_string&lt;char&gt;]&#39;</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    6 |     [&amp;]{ std::print(&quot;{}&quot;, args...); }();</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>      |          ~~~~~~~~~~^~~~~~~~~~~~~~~</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>In file included from &lt;source&gt;:1:</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>/opt/compiler-explorer/gcc-trunk-20250106/include/c++/15.0.0/print:117:5: note: &#39;void std::print(format_string&lt;_Args ...&gt;, _Args&amp;&amp; ...) [with _Args = {}; format_string&lt;_Args ...&gt; = basic_format_string&lt;char&gt;]&#39; declared here</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>  117 |     print(format_string&lt;_Args...&gt; __fmt, _Args&amp;&amp;... __args)</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>      |     ^~~~~</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:6:21: note: &#39;echo&lt;&gt;()::&lt;lambda()&gt;&#39; was promoted to an immediate function because its body contains an immediate-escalating expression &#39;std::basic_format_string&lt;char&gt;(&quot;{}&quot;)&#39;</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    6 |     [&amp;]{ std::print(&quot;{}&quot;, args...); }();</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>      |                     ^~~~</span></code></pre></div>
 </blockquote>
 </div>
 <p>The solution here is the same: we ensure that the only kinds of
 expressions that are immediate-escalating are those that are not
 constexpr-erroneous.</p>
-<h3 data-number="4.6.2" id="exceptions"><span class="header-section-number">4.6.2</span> Exceptions<a href="#exceptions" class="self-link"></a></h3>
+<h3 data-number="4.7.2" id="exceptions"><span class="header-section-number">4.7.2</span> Exceptions<a href="#exceptions" class="self-link"></a></h3>
 <p>The next question becomes exactly what kinds of expressions should
 produce constexpr-erroneous values. Obviously <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str</code>,
 that’s the point of the paper. I think in the future we’ll want to
@@ -1471,21 +1540,21 @@ function.</p>
 <p>But what about escaped exceptions? Consider this example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">3</span><span class="op">&gt;</span> data <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> v1 <span class="op">=</span> data<span class="op">.</span>at<span class="op">(</span><span class="dv">5</span><span class="op">)</span>;</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> <span class="op">{</span></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="dt">int</span> v2 <span class="op">=</span> data<span class="op">.</span>at<span class="op">(</span><span class="dv">6</span><span class="op">)</span>;</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span> <span class="cf">catch</span> <span class="op">(...)</span> <span class="op">{</span></span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  f<span class="op">()</span>;</span>
-<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> std<span class="op">::</span>array<span class="op">&lt;</span><span class="dt">int</span>, <span class="dv">3</span><span class="op">&gt;</span> data <span class="op">=</span> <span class="op">{</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span><span class="op">}</span>;</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> v1 <span class="op">=</span> data<span class="op">.</span>at<span class="op">(</span><span class="dv">5</span><span class="op">)</span>;</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="dt">int</span> v2 <span class="op">=</span> data<span class="op">.</span>at<span class="op">(</span><span class="dv">6</span><span class="op">)</span>;</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span> <span class="cf">catch</span> <span class="op">(...)</span> <span class="op">{</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>  f<span class="op">()</span>;</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Here, we have two variables with static storage duration whose
@@ -1514,22 +1583,22 @@ constexpr-erroneous expression isn’t recoverable. But an exception, by
 definition, is:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> throw_up<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// some consteval-only type</span></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">throw</span> std<span class="op">::</span>meta<span class="op">::</span>exception<span class="op">(...)</span>;</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> attempt_to<span class="op">(</span>F f<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> <span class="op">{</span></span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    f<span class="op">()</span>;</span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">true</span>;</span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span> <span class="cf">catch</span> <span class="op">(...)</span> <span class="op">{</span></span>
-<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">false</span>;</span>
-<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>attempt_to<span class="op">([]{</span> throw_up<span class="op">()</span>; <span class="op">}))</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">void</span> throw_up<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// some consteval-only type</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">throw</span> std<span class="op">::</span>meta<span class="op">::</span>exception<span class="op">(...)</span>;</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> F<span class="op">&gt;</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">bool</span> attempt_to<span class="op">(</span>F f<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    f<span class="op">()</span>;</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">true</span>;</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span> <span class="cf">catch</span> <span class="op">(...)</span> <span class="op">{</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">false</span>;</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>attempt_to<span class="op">([]{</span> throw_up<span class="op">()</span>; <span class="op">}))</span>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>Currently,
@@ -1546,7 +1615,7 @@ as erroneous (because of the uncaught exception),
 <code class="sourceCode cpp">attempt_to<span class="op">()</span></code>
 wouldn’t be able to recover. But since it can, I don’t think we can
 label escaped exceptions as constexpr-erroneous.</p>
-<h2 data-number="4.7" id="other-encodings"><span class="header-section-number">4.7</span> Other Encodings<a href="#other-encodings" class="self-link"></a></h2>
+<h2 data-number="4.8" id="other-encodings"><span class="header-section-number">4.8</span> Other Encodings<a href="#other-encodings" class="self-link"></a></h2>
 <p>In <span class="citation" data-cites="P2758R4"><a href="https://wg21.link/p2758r4" role="doc-biblioref">[P2758R4]</a></span>, the only overloads proposed
 took <code class="sourceCode cpp">string_view</code>s. It was suggested
 that there should be additional overloads taking
@@ -1631,25 +1700,65 @@ alternatives.</p></li>
 word this.</p></li>
 </ol>
 <h2 data-number="5.1" id="implementation-experience"><span class="header-section-number">5.1</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
-<p>Hana Dusíková has a partial implementation of this paper in clang.
-Specifically, <code class="sourceCode cpp">std<span class="op">::</span>constexpr_print_str</code>
-and a simplified version of <code class="sourceCode cpp">std<span class="op">::</span>constexpr_error_str</code>
-that does not include a tag. This program fails compilation as
-desired:</p>
+<p>This proposal is implemented in GCC 16. Or rather, GCC now provides
+builtins that can be used to implement the library façade of this paper.
+<a href="https://compiler-explorer.com/z/rrrq3GnGY">This program</a>
+fails to compile as desired:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> a<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>a <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;can&#39;t call with a == 0&quot;</span><span class="op">)</span>;</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> a;</span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> a <span class="op">=</span> foo<span class="op">(</span><span class="dv">2</span><span class="op">)</span>; <span class="co">// OK</span></span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> b <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">)</span>; <span class="co">// error: custom constexpr error: &#39;can&#39;t call with a == 0&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> a<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>a <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;can&#39;t call with a == 0&quot;</span><span class="op">)</span>;</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> a;</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> a <span class="op">=</span> foo<span class="op">(</span><span class="dv">2</span><span class="op">)</span>; <span class="co">// OK</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> b <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">)</span>; <span class="co">// error: constexpr message: &#39;can&#39;t call with a == 0&#39;</span></span></code></pre></div>
 </blockquote>
 </div>
+<p>On the other hand, <a href="https://compiler-explorer.com/z/KobhGE6Wo">this program</a>
+demonstrates the interesting <a href="#ordering-in-diagnostics">question
+of ordering</a>:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string_view dtor;</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> C<span class="op">(</span>std<span class="op">::</span>string_view ctor, std<span class="op">::</span>string_view dtor<span class="op">)</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>      <span class="op">:</span> dtor<span class="op">(</span>dtor<span class="op">)</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>constexpr_print_str<span class="op">(</span>ctor<span class="op">)</span>;</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="op">~</span>C<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>constexpr_print_str<span class="op">(</span>dtor<span class="op">)</span>;</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[</span><span class="at">maybe_unused</span><span class="op">]]</span> <span class="kw">constexpr</span> C c1<span class="op">(</span><span class="st">&quot;ctor c1&quot;</span>, <span class="st">&quot;dtor c1&quot;</span><span class="op">)</span>;</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[</span><span class="at">maybe_unused</span><span class="op">]]</span> <span class="kw">constexpr</span> C c2<span class="op">(</span><span class="st">&quot;ctor c2&quot;</span>, <span class="st">&quot;dtor c2&quot;</span><span class="op">)</span>;</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> main<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x <span class="op">=</span> f<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> y <span class="op">=</span> f<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">+</span> y;</span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>When compiled, this program emits (with a bunch of other noise):</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:5:44: note: constexpr message: ctor c1</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:5:44: note: constexpr message: dtor c1</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:5:44: note: constexpr message: ctor c2</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:5:44: note: constexpr message: dtor c2</span></code></pre></div>
+</blockquote>
+</div>
+<p>This is acceptable behavior, both in terms of number of and ordering
+of messages.</p>
 <h1 data-number="6" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">6</span> Wording<a href="#wording" class="self-link"></a></h1>
 <p>We don’t quite have <code class="sourceCode cpp"><span class="kw">constexpr</span> std<span class="op">::</span>format</code>
 yet (although with the addition of <span class="citation" data-cites="P2738R1"><a href="https://wg21.link/p2738r1" role="doc-biblioref">[P2738R1]</a></span> we’re probably nearly the
@@ -1688,16 +1797,16 @@ a core constant expression.<span> — <em>end
 note</em> ]</span></span></p>
 <div class="example">
 <span>[ <em>Example 1:</em> </span>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> a<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>a <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;reject-zero&quot;</span>, <span class="st">&quot;can&#39;t call with a == 0&quot;</span><span class="op">)</span>;</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> a;</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> foo<span class="op">(</span><span class="dv">2</span><span class="op">)</span>; <span class="co">// OK, constant-initialized</span></span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> y <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">)</span>; <span class="co">// error: reject-zero, can&#39;t call with a == 0</span></span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> a<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>a <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;reject-zero&quot;</span>, <span class="st">&quot;can&#39;t call with a == 0&quot;</span><span class="op">)</span>;</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> a;</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> foo<span class="op">(</span><span class="dv">2</span><span class="op">)</span>; <span class="co">// OK, constant-initialized</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> y <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">)</span>; <span class="co">// error: reject-zero, can&#39;t call with a == 0</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
@@ -1740,27 +1849,27 @@ immediate-escalating function.</p>
 <div class="std">
 <blockquote>
 <div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>// all freestanding</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  // ...</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  // [meta.const.eval], constant evaluation context</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  consteval bool is_within_lifetime(const auto*) noexcept;</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.const.msg], emitting messages during program translation</span></span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct <em>tag-string</em>; // exposition-only</span></span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(string_view) noexcept;</span></span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(u8string_view) noexcept;</span></span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, string_view) noexcept;</span></span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, u8string_view) noexcept;</span></span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, string_view) noexcept;</span></span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, u8string_view) noexcept;</span></span>
-<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, string_view) noexcept;</span></span>
-<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, u8string_view) noexcept;</span></span>
-<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>// all freestanding</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>namespace std {</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  // ...</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  // [meta.const.eval], constant evaluation context</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  constexpr bool is_constant_evaluated() noexcept;</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  consteval bool is_within_lifetime(const auto*) noexcept;</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="va">+ // [meta.const.msg], emitting messages during program translation</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct <em>tag-string</em>; // exposition-only</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(string_view) noexcept;</span></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(u8string_view) noexcept;</span></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_print_str(<em>tag-string</em>, u8string_view) noexcept;</span></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_warning_str(<em>tag-string</em>, u8string_view) noexcept;</span></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, string_view) noexcept;</span></span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr void constexpr_error_str(<em>tag-string</em>, u8string_view) noexcept;</span></span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </blockquote>
 </div>
@@ -1775,28 +1884,28 @@ program translation. The ordering and number of diagnostics emitted by
 the functions defined in this subclause is unspecified.</p>
 <div class="example">
 <span>[ <em>Example 2:</em> </span>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    string_view dtor;</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> C<span class="op">(</span>string_view ctor, string_view dtor<span class="op">)</span> <span class="op">:</span> dtor<span class="op">(</span>dtor<span class="op">)</span> <span class="op">{</span> constexpr_print_str<span class="op">(</span>ctor<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="op">~</span>C<span class="op">()</span> <span class="op">{</span> constexpr_print_str<span class="op">(</span>dtor<span class="op">)</span>; <span class="op">}</span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> C c1<span class="op">(</span><span class="st">&quot;ctor c1&quot;</span>, <span class="st">&quot;dtor c1&quot;</span><span class="op">)</span>;</span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> C c2<span class="op">(</span><span class="st">&quot;ctor c2&quot;</span>, <span class="st">&quot;dtor c2&quot;</span><span class="op">)</span>;</span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
-<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x <span class="op">=</span> f<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
-<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> y <span class="op">=</span> f<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
-<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">+</span> y;</span>
-<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> C <span class="op">{</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    string_view dtor;</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> C<span class="op">(</span>string_view ctor, string_view dtor<span class="op">)</span> <span class="op">:</span> dtor<span class="op">(</span>dtor<span class="op">)</span> <span class="op">{</span> constexpr_print_str<span class="op">(</span>ctor<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="op">~</span>C<span class="op">()</span> <span class="op">{</span> constexpr_print_str<span class="op">(</span>dtor<span class="op">)</span>; <span class="op">}</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>;</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> C c1<span class="op">(</span><span class="st">&quot;ctor c1&quot;</span>, <span class="st">&quot;dtor c1&quot;</span><span class="op">)</span>;</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> C c2<span class="op">(</span><span class="st">&quot;ctor c2&quot;</span>, <span class="st">&quot;dtor c2&quot;</span><span class="op">)</span>;</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i;</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x <span class="op">=</span> f<span class="op">(</span><span class="dv">1</span><span class="op">)</span>;</span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> y <span class="op">=</span> f<span class="op">(</span><span class="dv">2</span><span class="op">)</span>;</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">+</span> y;</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>A possible compile-time output of this program is:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>ctor c1</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>dtor c1</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>ctor c2</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>dtor c2</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>ctor c1</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>dtor c1</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>ctor c2</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>dtor c2</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_11" id="pnum_11">2</a></span>
@@ -1813,14 +1922,14 @@ emitted by a call to one of these functions invoked during the
 destructor of a
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 variable.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>struct <em>tag-string</em> { // exposition-only</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>private:</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  string_view <em>str</em>;  // exposition-only</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>public:</span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>};</span></code></pre></div>
-<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>struct <em>tag-string</em> { // exposition-only</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>private:</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  string_view <em>str</em>;  // exposition-only</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>public:</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_13" id="pnum_13">4</a></span>
 <em>Constraints</em>: <code class="sourceCode cpp"><span class="kw">const</span> T<span class="op">&amp;</span></code>
 models <code class="sourceCode cpp">convertible_to<span class="op">&lt;</span>string_view<span class="op">&gt;</span></code>.</p>
@@ -1837,10 +1946,10 @@ models <code class="sourceCode cpp">convertible_to<span class="op">&lt;</span>st
 HYPHEN-MINUS), or a
 <code class="sourceCode cpp"><span class="op">=</span></code> (U+003D
 EQUALS SIGN).</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(string_view msg) noexcept;</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(u8string_view msg) noexcept;</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(string_view msg) noexcept;</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(u8string_view msg) noexcept;</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_16" id="pnum_16">7</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
 issued. Otherwise, no effect.</p>
@@ -1849,8 +1958,8 @@ issued. Otherwise, no effect.</p>
 include the text of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>,
 if provided, and <code class="sourceCode cpp">msg</code>.</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_18" id="pnum_18">9</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
 issued. It is implemention-defined whether a manifestly
@@ -1865,8 +1974,8 @@ such warnings based on the value of
 The resulting diagnostic message should include the text of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>
 and <code class="sourceCode cpp">msg</code>.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_20" id="pnum_20">11</a></span>
 <em>Effects</em>: During constant evaluation, a diagnostic message is
 issued and evaluation of such a call is constexpr-erroneous
@@ -1883,7 +1992,7 @@ and <code class="sourceCode cpp">msg</code>.</p>
 <p>Add to <span>17.3.2 <a href="https://wg21.link/version.syn">[version.syn]</a></span>:</p>
 <blockquote>
 <div class="addu">
-<div class="sourceCode" id="cb34"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>#define __cpp_lib_compile_time_messages 2026XX // freestanding, also in &lt;meta&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>#define __cpp_lib_compile_time_messages 2026XX // freestanding, also in &lt;meta&gt;</span></code></pre></div>
 </div>
 </blockquote>
 <h1 data-number="7" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">7</span>
