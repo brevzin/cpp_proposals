@@ -1,8 +1,8 @@
 ---
 title: "Consteval-only Values for C++26"
-document: D4101R1
+document: P4101R1
 date: today
-audience: EWG, CWG
+audience: EWG, CWG, LWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -19,7 +19,7 @@ tag: reflection
 
 # Revision History
 
-Since [@P4101R0], adding a little color, linked to [implementation](#implementation-experience) on compiler explorer, rebased wording.
+Since [@P4101R0], adding a little color, linked to [implementation](#implementation-experience) on compiler explorer, rebased wording and significantly reduced it.
 
 # Introduction
 
@@ -640,21 +640,21 @@ Introduce the concepts of consteval-only value, immediate object, and immediate 
 
 ::: std
 ::: addu
-[a]{.pnum} A value is *consteval-only* if it is either
+[a]{.pnum} A *consteval-only value* is either
 
 * [a.1]{.pnum} a reflection value ([basic.fundamental]) that is not the null reflection value or
-* [a.#]{.pnum} a pointer or pointer-to-member that points to either an immediate function or either to past the end of an immediate object.
+* [a.#]{.pnum} a pointer or pointer-to-member that points to an immediate function or to or past the end of an immediate object.
 
-[b]{.pnum} An object is an *immediate object* if its complete object has either
+[b]{.pnum} An object is an *immediate object* if its complete object has
 
 * [b.1]{.pnum} a constituent value that is consteval-only or
-* [b.2]{.pnum} a constituent reference that refers to either an immediate object or an immediate function.
+* [b.2]{.pnum} a constituent reference that refers to an immediate object or immediate function.
 
 [c]{.pnum} Every immediate object shall be
 
 * [c.1]{.pnum} the object associated with a constexpr variable or a subobject thereof,
 * [c.#]{.pnum} a template parameter object ([temp.param]) or a subobject thereof, or
-* [c.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a manifestly constant-evaluated expression.
+* [c.#]{.pnum} an object whose lifetime begins and ends during the evaluation of a core constant expression.
 
 ::: example
 ```
@@ -662,22 +662,29 @@ consteval int plus1(int x) { return x + 1; }
 template <auto V> struct C { };
 
 auto a = plus1; // error: immediate object not associated with constexpr variable
-constexpr auto b = plus1; // ok
-auto c = C<a>(); // ok
+constexpr auto b = plus1; // OK
+auto c = C<plus1>(); // OK
 
 auto d = ^^int; // error: immediate object not associated with constexpr variable
-auto e = C<^^char>(); // ok
+auto e = C<^^char>(); // OK
 ```
 :::
 
-Letting `$V$` be a variable that declares or refers to an immediate object `$O$`, each expression `$E$` that odr-uses `$V$` shall be in an immediate function context; letting `$D1$` be the innermost declaration that contains `$E$` and `$D2$` be defining declaration of `$V$`, a diagnostic is only required if either `$D1$` or `$D2$` is reachable from the other.
+Each expression `$E$` that odr-uses a variable that declares or refers to an immediate object shall be in an immediate function context; a diagnostic is required only if either
+
+* [c.4]{.pnum} the innermost declaration that contains `$E$` or
+* [c.5]{.pnum} the defining declaration of the variable
+
+is reachable from the other.
 
 :::
+[1]{.pnum} [A core constant expression is a *constant expression* unless it is a prvalue whose result object ([basic.lval]) has a constituent value that is an invalid pointer value ([basic.compound]) or is indeterminate or erroneous ([basic.indet]).]{.addu}
+
+::: rm
 [1]{.pnum} A _constant expression_ is either
 
-* [#.1]{.pnum} a glvalue core constant expression [`$E$` for which ]{.rm} [that refers to an object or function]{.addu}, or
+* [#.1]{.pnum} a glvalue core constant expression `$E$` for which
 
-  ::: rm
     * [#.1.1]{.pnum} `$E$` refers to a non-immediate function,
     * [#.1.2]{.pnum} `$E$` designates an object `$o$`, and if the complete object of `$o$` is of consteval-only type then so is `$E$`,
 
@@ -695,21 +702,21 @@ Letting `$V$` be a variable that declares or refers to an immediate object `$O$`
   ```
 
   :::
-  :::
+
+  or
 
 * [#.2]{.pnum} a prvalue core constant expression whose result object ([basic.lval]) satisfies the following constraints:
 
-    * [#.2.1]{.pnum} each constituent reference refers to an object or [a non-immediate]{.rm} function,
-    * [#.2.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]), [and]{.addu}
-    * [#.2.3]{.pnum} no constituent value of pointer type is [a pointer to an immediate function or]{.rm} an invalid pointer value ([basic.compound])[.]{.addu} [, and]{.rm}
-
-  ::: rm
+    * [#.2.1]{.pnum} each constituent reference refers to an object or a non-immediate function,
+    * [#.2.2]{.pnum} no constituent value of scalar type is an indeterminate or erroneous value ([basic.indet]),
+    * [#.2.3]{.pnum} no constituent value of pointer type is [a pointer to an immediate function or]{.rm} an invalid pointer value ([basic.compound]), and
     * [#.2.4]{.pnum} no constituent value of pointer-to-member type designates an immediate function.
     * [#.2.5]{.pnum} unless the value is of consteval-only type,
         - [#.#.#.#]{.pnum} no constituent value of pointer-to-member type points to a direct member of a consteval-only class type
         - [#.#.#.#]{.pnum} no constituent value of pointer type points to or past an object whose complete object is of consteval-only type, and
         - [#.#.#.#]{.pnum} no constituent reference refers to an object whose complete object is of consteval-only type.
-  :::
+
+:::
 
 ::: addu
 [d]{.pnum} A constant expression is an *immediate constant expression* if it is either
@@ -733,56 +740,40 @@ An invocation is an _immediate invocation_ if it [is a potentially-evaluated exp
 
 [2]{.pnum} A potentially-evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and
 
-* [#.1]{.pnum} it is an `$id-expression$` or `$splice-expression$` that [either]{.addu}
-  * [#.#.1]{.pnum} designates an immediate function [or an immediate object]{.addu}, [or]{.addu}
-  * [#.#.2]{.pnum} [is a prvalue that computes a consteval-only value;]{.addu}
-
-* [#.2]{.pnum} it is an immediate invocation that [either]{.addu}
-  * [#.#.#]{.pnum} is not a constant expression, or
-
-    ::: addu
-    ::: example
-    ```
-    consteval int id(int x) { return x; }
-    template <auto F>
-    constexpr auto apply_to(int i) { return F(i); }
-
-    auto p = &apply_to<id>; // error: immediate function because F(i)
-                            // is not a constant expression
-    ```
-    :::
-    :::
-
-  * [#.#.#]{.pnum} [is an immediate constant expression; or]{.addu}
-
-    ::: addu
-    ::: example
-    ```
-    consteval std::meta::info refl() { return ^^int; }
-    template <auto F>
-    constexpr void ex() {
-      auto x = F();
-    }
-
-    auto p = &ex<refl>; // error: immediate function because F()
-                        // is an immediate constant expression
-    ```
-    :::
-    :::
-
-* [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm} [it is a `$reflect-expression$`.]{.addu}
+* [#.1]{.pnum} it is an [`$id-expression$` or `$splice-expression$` that designates an immediate function]{.rm} [immediate constant expression, or]{.addu}
 
   ::: addu
   ::: example
   ```
-  std::meta::info r;
-  void normal() {
-    r == r; // ok
-    r == ^^int; // error
+  consteval std::meta::info refl() { return ^^int; }
+  template <auto F>
+  constexpr void ex() {
+    auto x = F();
   }
+  auto p = &ex<refl>; // error: immediate function because F()
+                      // is an immediate constant expression
   ```
   :::
   :::
+
+
+
+* [#.2]{.pnum} it is an immediate invocation that is not a constant expression[,]{.rm} [.]{.addu}
+
+  ::: addu
+  ::: example
+  ```
+  consteval int id(int x) { return x; }
+  template <auto F>
+  constexpr auto apply_to(int i) { return F(i); }
+  auto p = &apply_to<id>; // error: immediate function because F(i)
+                          // is not a constant expression
+  ```
+  :::
+  :::
+
+* [#.3]{.pnum} [it is of consteval-only type ([basic.types.general]).]{.rm}
+
 
 [#]{.pnum} An *immediate-escalating* function is [...]
 
@@ -806,106 +797,6 @@ Revert the allowance for `virtual` functions in [class.virtual]{.sref}/18 added 
 An immediate virtual function shall not be overridden by a non-immediate virtual function.
 :::
 
-Remove the consteval-only type trait from [meta.type.synop]{.sref}:
-
-::: std
-```diff
-namespace std {
-  // [meta.unary.prop], type properties
-  template<class T> struct is_const;
-  template<class T> struct is_volatile;
-  template<class T> struct is_trivially_copyable;
-  template<class T> struct is_standard_layout;
-  template<class T> struct is_empty;
-  template<class T> struct is_polymorphic;
-  template<class T> struct is_abstract;
-  template<class T> struct is_final;
-  template<class T> struct is_aggregate;
-- template<class T> struct is_consteval_only;
-
-  // ...
-
-  // [meta.unary.prop], type properties
-  template<class T>
-    constexpr bool is_const_v = is_const<T>::value;
-  template<class T>
-    constexpr bool is_volatile_v = is_volatile<T>::value;
-  template<class T>
-    constexpr bool is_trivially_copyable_v = is_trivially_copyable<T>::value;
-  template<class T>
-    constexpr bool is_standard_layout_v = is_standard_layout<T>::value;
-  template<class T>
-    constexpr bool is_empty_v = is_empty<T>::value;
-  template<class T>
-    constexpr bool is_polymorphic_v = is_polymorphic<T>::value;
-  template<class T>
-    constexpr bool is_abstract_v = is_abstract<T>::value;
-  template<class T>
-    constexpr bool is_final_v = is_final<T>::value;
-  template<class T>
-    constexpr bool is_aggregate_v = is_aggregate<T>::value;
-- template<class T>
--   constexpr bool is_consteval_only_v = is_consteval_only<T>::value;
-}
-```
-:::
-
-And from the [meta.unary.prop]{.sref} table:
-
-::: std
-<table>
-<tr style="text-align:center"><th>Template</th><th>Condition</th><th>Preconditions</th></tr>
-<tr><td>
-```cpp
-template<class T>
-struct is_const;
-```
-</td><td style="text-align:center; vertical-align: middle">`T` is const-qualified ([basic.type.qualifier])</td><td></td></tr>
-<tr style="text-align:center"><td>...</td><td>...</td><td>...</td></tr>
-<tr><td>
-::: rm
-<code>
-template<class T>
-struct is_consteval_only;
-</code>
-:::
-</td><td style="text-align:center; vertical-align: middle">
-::: rm
-`T` is consteval-only ([basic.types.general])
-:::
-</td><td>
-::: rm
-`remove_all_extents_t<T>` shall be a complete type or `$cv$ void`.
-:::
-</td></tr>
-</table>
-:::
-
-And from [meta.syn]{.sref}:
-
-::: std
-```diff
-namespace std::meta {
-  // associated with [meta.unary.prop], type properties
-  consteval bool is_const_type(info type);
-  consteval bool is_volatile_type(info type);
-  consteval bool is_trivially_copyable_type(info type);
-  consteval bool is_standard_layout_type(info type);
-  consteval bool is_empty_type(info type);
-  consteval bool is_polymorphic_type(info type);
-  consteval bool is_abstract_type(info type);
-  consteval bool is_final_type(info type);
-  consteval bool is_aggregate_type(info type);
-- consteval bool is_consteval_only_type(info type);
-  consteval bool is_signed_type(info type);
-  consteval bool is_unsigned_type(info type);
-  consteval bool is_bounded_array_type(info type);
-  consteval bool is_unbounded_array_type(info type);
-  consteval bool is_scoped_enum_type(info type);
-}
-```
-:::
-
 Replace the reference to consteval-only type to consteval-only value in [meta.reflection.exception]{.sref}/1:
 
 ::: std
@@ -916,7 +807,7 @@ Replace the reference to consteval-only type to consteval-only value in [meta.re
 And the same for `access_context` in [meta.reflection.access.context]{.sref}/3:
 
 ::: std
-[3]{.pnum} The type `access_context` is a structural, [consteval-only,]{.rm} non-aggregate type. [Values of type `access_context` are consteval-only values.]{.addu}
+[3]{.pnum} The type `access_context` is a structural, [consteval-only,]{.rm} non-aggregate type. [A value `ac` of type `access_context` is consteval-only if either `ac.scope()` or `ac.designating_class()` is consteval-only.]{.addu} Two values `ac1` and `ac2` of type `access_context` are template-argument-equivalent ([temp.type]) if `ac1.scope()` and `ac2.scope()` are template-argument-equivalent and `ac1.designating_class()` and `ac2.designating_class()` are template-argument-equivalent.
 :::
 
 And the same for `data_member_options` in [meta.reflection.define.aggregate]{.sref}/1:
