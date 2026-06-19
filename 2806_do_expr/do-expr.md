@@ -18,7 +18,7 @@ status: progress
 
 # Revision History
 
-Since [@P2806R3], implementation, wording, introducing implicit last value, and adding an optional init-statement sequence to `do` expressions to address [lifetime issues](#lifetime).
+Since [@P2806R3], implementation, wording, introducing implicit last value, and adding an optional init-hoist to `do` expressions to address [lifetime issues](#lifetime).
 
 Since [@P2806R2], wording and referencing a longer discussion on divergence in [@P3549R0]{.title}.
 
@@ -597,37 +597,75 @@ The temporary `std::vector<int>` doesn't persist through the whole `do` expressi
 So we need some way to "persist" that temporary through the end of the outer expression. And it definitely cannot happen automatically, as just pointed out, so it has to be explicit in some way. We can think of three approaches to doing this:
 
 1. We can annotate the local variable `__r` somehow, such that any temporaries in its initializer persist through the outer full-expression.
-2. We can annotate the `do` expression with some kind of anti-capture list, as in `do [__r] { ... }`
+2. We can annotate the `do` expression with some kind of anti-capture list, as in `do [__r=e] { ... }`
 3. We can allow the `do` expression itself to carry a sequence of init-statements expressly for this purpose.
 
-For the latter, we mean something like this:
+Having an annotation on a variable retroactively change its lifetime just doesn't seem like a great idea. For the other two, the comparison looks like this:
 
 ::: cmptable
-### Current
+### Init-Hoist
 ```cpp
-do {
-    auto __r = expr;
-    if (not r) {
+do [__r=expr] -> decltype(auto) {
+    if (not __r) {
         return std::unexpected(__r.error());
     }
-    do_return *__r;
+    *FWD(__r)
 }
 ```
 
-### Proposed
+### Init-Statement
 ```cpp
-do (auto __r = expr;) {
-    if (not r) {
+do (auto&& __r = expr;) -> decltype(auto) {
+    if (not __r) {
         return std::unexpected(__r.error());
     }
-    do_return *__r;
+    *FWD(__r)
 }
 ```
 :::
 
-The init-statement sequence after `do` provides declarations whose lifetime extends to the end of the full-expression containing the `do` expression. Any temporaries in those declarations' initializers are likewise extended to that full-expression. Which means that in this case, the temporary `get_data()` will not be inside of a new full-expression (the body of the `do` expression), it will be in the place where it needs to be. We think this is the right approach to addressing lifetime issues, in a way that likely scales better. The proposed form [works](https://compiler-explorer.com/z/5cb3aa8n9).
+Both syntaxes would provide declarations whose lifetime extends to the end of the full-expression containing the `do` expression. Any temporaries in those declarations' initializers are likewise extended to that full-expression. Which means that in this case, the temporary `get_data()` will not be inside of a new full-expression (the body of the `do` expression), it will be in the place where it needs to be. We think this is the right approach to addressing lifetime issues, in a way that likely scales better.
 
-This presents no new parsing difficulties. If the token after `do` is `(`, we parse a sequence of init-statements. Otherwise, we don't.
+Between these, we prefer the init-hoist approach (so named because it's kind of the opposite of an init-capture), since only one form of _init-statement_ even makes sense here. The downside is that we would need `auto&&` semantics here rather than `auto` semantics which lambda init-capture has. It's inconsistent, but with very strong motivation for the difference — since lambdas can actually escape but `do` expressions cannot.
+
+The proposed form [works](https://compiler-explorer.com/z/jcEGbEYnf).
+
+### What about Pattern Matching?
+
+The primary motivation for having an init-hoist is largely around being able to define macros for expressions in ways that actually work properly and to be able to desugar the control flow operator ([@P2561R2]) into a `do` expression.
+
+But, interestingly enough, pattern matching ([@P2688R5]) offers a different way to solve both problems that wouldn't need such a feature:
+
+::: cmptable
+### Init-Hoist
+```cpp
+do [__r=expr] -> decltype(auto) {
+    if (not __r) {
+        return std::unexpected(__r.error());
+    }
+    *FWD(__r)
+}
+```
+
+### Pattern Matching
+```cpp
+expr match -> decltype(auto) {
+    let __r => do -> decltype(auto) {
+        if (not __r) {
+            return std::unexpected(__r.error());
+        }
+        *FWD(__r)
+    }
+}
+```
+:::
+
+On the right, `expr` is obviously evaluated outside of the `do` expression, and so any temporaries within it obviously last until the end of the full-expression.
+
+The question is: do we need to add an init-hoist feature for `do` expressions (a feature in no small part motivated by pattern matching) if pattern matching could solve it for us?
+
+We think it's a probably a good hedge to do it anyway. We'll probably ship `do` expressions first, so the pattern matching paper can simply remove it.
+
 
 ### Conditional Lifetime Extension
 
@@ -793,7 +831,9 @@ In short: `do` expressions should be usable in any expression context.
 
 ## Implementation Experience
 
-This is implemented in clang and can be seen on [compiler explorer](https://compiler-explorer.com/z/5cb3aa8n9). This example shows the combination of a `do` expression with an init-statement sequence and `TRY` macro with the correct lifetime semantics.
+This is implemented in clang and can be seen on [compiler explorer](https://compiler-explorer.com/z/jcEGbEYnf). This example shows the combination of a `do` expression with an init-hoist and `TRY` macro with the correct lifetime semantics.
+
+[Here](https://compiler-explorer.com/z/3v9xGTvWE) is a more involved example showing a more complicated `TRY` macro illustrating that clang can still warn on dangling references in the right places.
 
 # Wording
 
@@ -842,24 +882,6 @@ Add a note to [intro.execution]{.sref}:
 
 ::: {.note .addu}
 An expression `E` within a `$do-expression$` `D` ([expr.prim.do]) can still be a full-expression even though the `$do-expression$` itself is an expression because `E` is not a subexpression of `D`.
-:::
-:::
-:::
-
-## Basic
-
-Add another temporary context to [class.temporary]{.sref}:
-
-::: std
-::: wording
-[10]{.pnum} The seventh context is when [...]
-
-::: addu
-[*]{.pnum} The eighth context is when a temporary object is created during the initialization
-of a variable declared by an `$init-statement$` in the `$init-statement-seq$`
-of a `$do-expression$` ([expr.prim.do]). If such a temporary object would otherwise be destroyed at the end of the
-`$init-declarator$` full-expression, the object persists until the completion
-of the full-expression containing the `$do-expression$`.
 :::
 :::
 :::
@@ -921,14 +943,17 @@ static_assert(f(4) == 2);
 
 ```
 $do-expression$:
-    do $paren-init-statement-seq$@~opt~@ $trailing-return-type$@~opt~@ $compound-statement$
+    do $init-hoist-introducer$@~opt~@ $trailing-return-type$@~opt~@ $compound-statement$
 
-$paren-init-statement-seq$:
-    ( $init-statement-seq$ )
+$init-hoist-introducer$:
+    [ $init-hoist-list$ ]
 
-$init-statement-seq$:
-    $init-statement$
-    $init-statement-seq$ $init-statement$
+$init-hoist-list$:
+    $init-hoist$
+    $init-hoist-list$ , $init-hoist$
+
+$init-hoist$:
+    $identifier$ $initializer$
 ```
 
 A `$do-result-expression$` in the `$compound-statement$` of a `$do-expression$` is treated as a `do_return` statement associated with that `$do-expression$` ([stmt.do.return]) and with an operand that is the `$expression$`.
@@ -937,20 +962,20 @@ A `$do-result-expression$` in the `$compound-statement$` of a `$do-expression$` 
 ```cpp
 int a = do { 42 };                 // OK, equivalent to do { do_return 42; }
 int b = do { int x = 2; x + 3 };   // OK, equivalent to do { int x = 2; do_return x + 3; }
-int c = do (int x = 2;) { x + 3 }; // OK, init-statement followed by implicit do_return
+int c = do [x=2] { x + 3 };        // OK, init-hoist followed by implicit do_return
 ```
 :::
 
-[#]{.pnum} The *init-statement-seq*, if any, of a `$do-expression$` allows declarations to be introduced within an expression. The `$init-statement-seq$` is executed in order before the `$compound-statement$`. A `$do-expression$` with a `$paren-init-statement-seq$` introduces a block scope ([basic.scope.block]) that includes the `$init-statement-seq$` and the `$compound-statement$`.
+[#]{.pnum} The `$init-hoist-introducer$`, if any, of a `$do-expression$` allows declarations to be introduced within an expression. The `$init-hoist-list$` is executed in order before the `$compound-statement$`. A `$do-expression$` with a `$init-hoist-introducer$` introduces a block scope ([basic.scope.block]) that includes the `$init-hoist-list$` and the `$compound-statement$`.
 
-[#]{.pnum} If evaluation of the `$compound-statement$` completes by an associated `do_return` statement, that `do_return` statement does not exit the block scope introduced by the `$paren-init-statement-seq$`; variables declared in the `$init-statement-seq$` are destroyed, in reverse order of their construction, at the end of the full-expression containing the `$do-expression$`.
+[#]{.pnum} If evaluation of the `$compound-statement$` completes by an associated `do_return` statement, that `do_return` statement does not exit the block scope introduced by the `$init-hoist-introducer$`; variables declared in the `$init-hoist-list$` are destroyed, in reverse order of their construction, at the end of the full-expression containing the `$do-expression$`.
 
-[#]{.pnum} [Temporaries created during initialization of a variable declared in the `$init-statement-seq$` are destroyed at the end of the full-expression containing the `$do-expression$` ([class.temporary]).]{.note}
+[#]{.pnum} [Temporaries created during initialization of a variable declared in the `$init-hoist-list$` are destroyed at the end of the full-expression containing the `$do-expression$` ([class.temporary]).]{.note}
 
 ::: example
 ```cpp
 constexpr int f() {
-    return do (int x = 1; int y = 2;) { x + y };
+    return do [x = 1, y = 2] { x + y };
 }
 static_assert(f() == 3); // OK
 
@@ -958,7 +983,7 @@ constexpr int const& id(int const& r) { return r; }
 constexpr int const* ptr(int const& r) { return &r; }
 
 constexpr int h() {
-    return do (int const* p = ptr(id(42));) { *p };
+    return do [p = ptr(id(42));] { *p };
 }
 static_assert(h() == 42); // OK, no dangling
 ```
