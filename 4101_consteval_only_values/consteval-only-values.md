@@ -13,7 +13,7 @@ author:
     - name: Dan Katz
       email: <katzdm@gmail.com>
 toc: true
-status: progress
+status: accepted
 tag: reflection
 ---
 
