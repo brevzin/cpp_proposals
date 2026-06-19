@@ -881,7 +881,7 @@ Add a note to [intro.execution]{.sref}:
 [...]
 
 ::: {.note .addu}
-An expression `E` within a `$do-expression$` `D` ([expr.prim.do]) can still be a full-expression even though the `$do-expression$` itself is an expression because `E` is not a subexpression of `D`.
+An expression `E` in the `$compound-statement$` of a `$do-expression$` `D` ([expr.prim.do]) can still be a full-expression even though `D` itself is an expression, because `E` is not a subexpression of `D`. By contrast, the constituent expressions of an `$initializer$` in the `$init-hoist-introducer$` of `D` are part of the full-expression that contains `D`.
 :::
 :::
 :::
@@ -966,11 +966,13 @@ int c = do [x=2] { x + 3 };        // OK, init-hoist followed by implicit do_ret
 ```
 :::
 
-[#]{.pnum} The `$init-hoist-introducer$`, if any, of a `$do-expression$` allows declarations to be introduced within an expression. The `$init-hoist-list$` is executed in order before the `$compound-statement$`. A `$do-expression$` with a `$init-hoist-introducer$` introduces a block scope ([basic.scope.block]) that includes the `$init-hoist-list$` and the `$compound-statement$`.
+[#]{.pnum} The `$init-hoist-introducer$`, if any, of a `$do-expression$` allows declarations to be introduced within an expression. A `$do-expression$` with an `$init-hoist-introducer$` introduces a block scope ([basic.scope.block]) that includes the `$init-hoist-list$` and the `$compound-statement$`. Each `$init-hoist$` declares a variable; its type is deduced as if from a declaration of the form `auto&& $init-hoist$ ;` ([dcl.spec.auto]), and the variable is so initialized. The point of declaration of the `$identifier$` of an `$init-hoist$` is immediately after its `$initializer$` ([basic.scope.pdecl]). The variables declared by the `$init-hoist-list$` are initialized in order before the `$compound-statement$` is executed.
 
-[#]{.pnum} If evaluation of the `$compound-statement$` completes by an associated `do_return` statement, that `do_return` statement does not exit the block scope introduced by the `$init-hoist-introducer$`; variables declared in the `$init-hoist-list$` are destroyed, in reverse order of their construction, at the end of the full-expression containing the `$do-expression$`.
+[#]{.pnum} The constituent expressions of the `$initializer$` of an `$init-hoist$` are part of the full-expression ([intro.execution]) that contains the `$do-expression$`.
+[Consequently, a temporary created during the initialization of such a variable is destroyed at the end of that full-expression ([class.temporary]), not at the end of the `$do-expression$`.]{.note}
 
-[#]{.pnum} [Temporaries created during initialization of a variable declared in the `$init-hoist-list$` are destroyed at the end of the full-expression containing the `$do-expression$` ([class.temporary]).]{.note}
+[#]{.pnum} A `do_return` statement ([stmt.do.return]) whose associated `$do-expression$` has an `$init-hoist-introducer$` does not exit the block scope introduced by that `$init-hoist-introducer$`. The variables declared in the `$init-hoist-list$` are destroyed, in reverse order of their construction, at the end of the full-expression that contains the `$do-expression$`; if control instead exits that block scope by any other means, those variables are destroyed as that scope is exited ([stmt.jump]).
+[Because each such variable has reference type, a temporary bound to it ([class.temporary]) is likewise destroyed at the end of the full-expression that contains the `$do-expression$`.]{.note}
 
 ::: example
 ```cpp
@@ -983,7 +985,7 @@ constexpr int const& id(int const& r) { return r; }
 constexpr int const* ptr(int const& r) { return &r; }
 
 constexpr int h() {
-    return do [p = ptr(id(42));] { *p };
+    return do [p = ptr(id(42))] { *p };
 }
 static_assert(h() == 42); // OK, no dangling
 ```

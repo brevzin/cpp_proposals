@@ -2242,13 +2242,18 @@ full-expression.</li>
 <p>[…]</p>
 <div class="note addu">
 <p><span>[ <em>Note:</em> </span>An expression
-<code class="sourceCode cpp">E</code> within a
+<code class="sourceCode cpp">E</code> in the
+<code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code>
 <code class="sourceCode cpp">D</code> ([expr.prim.do]) can still be a
-full-expression even though the
-<code class="sourceCode cpp"><em>do-expression</em></code> itself is an
-expression because <code class="sourceCode cpp">E</code> is not a
-subexpression of <code class="sourceCode cpp">D</code>.<span> — <em>end
+full-expression even though <code class="sourceCode cpp">D</code> itself
+is an expression, because <code class="sourceCode cpp">E</code> is not a
+subexpression of <code class="sourceCode cpp">D</code>. By contrast, the
+constituent expressions of an
+<code class="sourceCode cpp"><em>initializer</em></code> in the
+<code class="sourceCode cpp"><em>init-hoist-introducer</em></code> of
+<code class="sourceCode cpp">D</code> are part of the full-expression
+that contains <code class="sourceCode cpp">D</code>.<span> — <em>end
 note</em> ]</span></p>
 </div>
 </div>
@@ -2369,33 +2374,53 @@ associated with that
 <p><span class="marginalizedparent"><a href="#pnum-16" id="pnum-16" class="marginalized">2</a></span> The
 <code class="sourceCode cpp"><em>init-hoist-introducer</em></code>, if
 any, of a <code class="sourceCode cpp"><em>do-expression</em></code>
-allows declarations to be introduced within an expression. The
-<code class="sourceCode cpp"><em>init-hoist-list</em></code> is executed
-in order before the
-<code class="sourceCode cpp"><em>compound-statement</em></code>. A
-<code class="sourceCode cpp"><em>do-expression</em></code> with a
+allows declarations to be introduced within an expression. A
+<code class="sourceCode cpp"><em>do-expression</em></code> with an
 <code class="sourceCode cpp"><em>init-hoist-introducer</em></code>
 introduces a block scope (<a href="https://eel.is/c++draft/basic.scope.block" title="6.4.3 Block scope">[basic.scope.block]</a>) that includes the
 <code class="sourceCode cpp"><em>init-hoist-list</em></code> and the
-<code class="sourceCode cpp"><em>compound-statement</em></code>.</p>
-<p><span class="marginalizedparent"><a href="#pnum-17" id="pnum-17" class="marginalized">3</a></span> If evaluation of the
-<code class="sourceCode cpp"><em>compound-statement</em></code>
-completes by an associated <code class="sourceCode cpp">do_return</code>
-statement, that <code class="sourceCode cpp">do_return</code> statement
-does not exit the block scope introduced by the
-<code class="sourceCode cpp"><em>init-hoist-introducer</em></code>;
+<code class="sourceCode cpp"><em>compound-statement</em></code>. Each
+<code class="sourceCode cpp"><em>init-hoist</em></code> declares a
+variable; its type is deduced as if from a declaration of the form
+<code class="sourceCode cpp"><span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>init-hoist</em> <span class="op">;</span></code>
+(<a href="https://eel.is/c++draft/dcl.spec.auto" title="9.2.9.7 Placeholder type specifiers">[dcl.spec.auto]</a>), and
+the variable is so initialized. The point of declaration of the
+<code class="sourceCode cpp"><em>identifier</em></code> of an
+<code class="sourceCode cpp"><em>init-hoist</em></code> is immediately
+after its <code class="sourceCode cpp"><em>initializer</em></code> (<a href="https://eel.is/c++draft/basic.scope.pdecl" title="6.4.2 Point of declaration">[basic.scope.pdecl]</a>). The
+variables declared by the
+<code class="sourceCode cpp"><em>init-hoist-list</em></code> are
+initialized in order before the
+<code class="sourceCode cpp"><em>compound-statement</em></code> is
+executed.</p>
+<p><span class="marginalizedparent"><a href="#pnum-17" id="pnum-17" class="marginalized">3</a></span> The constituent expressions of the
+<code class="sourceCode cpp"><em>initializer</em></code> of an
+<code class="sourceCode cpp"><em>init-hoist</em></code> are part of the
+full-expression (<a href="https://eel.is/c++draft/intro.execution" title="6.10.1 Sequential execution">[intro.execution]</a>) that contains
+the <code class="sourceCode cpp"><em>do-expression</em></code>. <span class="note"><span>[ <em>Note:</em> </span>Consequently, a temporary
+created during the initialization of such a variable is destroyed at the
+end of that full-expression (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>), not at the end
+of the <code class="sourceCode cpp"><em>do-expression</em></code>.<span>
+— <em>end note</em> ]</span></span></p>
+<p><span class="marginalizedparent"><a href="#pnum-18" id="pnum-18" class="marginalized">4</a></span> A
+<code class="sourceCode cpp">do_return</code> statement
+([stmt.do.return]) whose associated
+<code class="sourceCode cpp"><em>do-expression</em></code> has an
+<code class="sourceCode cpp"><em>init-hoist-introducer</em></code> does
+not exit the block scope introduced by that
+<code class="sourceCode cpp"><em>init-hoist-introducer</em></code>. The
 variables declared in the
 <code class="sourceCode cpp"><em>init-hoist-list</em></code> are
 destroyed, in reverse order of their construction, at the end of the
-full-expression containing the
-<code class="sourceCode cpp"><em>do-expression</em></code>.</p>
-<p><span class="marginalizedparent"><a href="#pnum-18" id="pnum-18" class="marginalized">4</a></span> <span class="note"><span>[
-<em>Note:</em> </span>Temporaries created during initialization of a
-variable declared in the
-<code class="sourceCode cpp"><em>init-hoist-list</em></code> are
-destroyed at the end of the full-expression containing the
-<code class="sourceCode cpp"><em>do-expression</em></code> (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>).<span> — <em>end
-note</em> ]</span></span></p>
+full-expression that contains the
+<code class="sourceCode cpp"><em>do-expression</em></code>; if control
+instead exits that block scope by any other means, those variables are
+destroyed as that scope is exited (<a href="https://eel.is/c++draft/stmt.jump" title="8.8 Jump statements">[stmt.jump]</a>). <span class="note"><span>[
+<em>Note:</em> </span>Because each such variable has reference type, a
+temporary bound to it (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>) is likewise
+destroyed at the end of the full-expression that contains the
+<code class="sourceCode cpp"><em>do-expression</em></code>.<span> —
+<em>end note</em> ]</span></span></p>
 <div class="example">
 <span>[ <em>Example:</em> </span>
 <div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
@@ -2407,7 +2432,7 @@ note</em> ]</span></span></p>
 <span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> <span class="kw">const</span><span class="op">*</span> ptr<span class="op">(</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span> r<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">&amp;</span>r<span class="op">;</span> <span class="op">}</span></span>
 <span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> h<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="cf">do</span> <span class="op">[</span>p <span class="op">=</span> ptr<span class="op">(</span>id<span class="op">(</span><span class="dv">42</span><span class="op">));]</span> <span class="op">{</span> <span class="op">*</span>p <span class="op">};</span></span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="cf">do</span> <span class="op">[</span>p <span class="op">=</span> ptr<span class="op">(</span>id<span class="op">(</span><span class="dv">42</span><span class="op">))]</span> <span class="op">{</span> <span class="op">*</span>p <span class="op">};</span></span>
 <span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>h<span class="op">()</span> <span class="op">==</span> <span class="dv">42</span><span class="op">);</span> <span class="co">// OK, no dangling</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
