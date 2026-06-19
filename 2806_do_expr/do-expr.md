@@ -827,6 +827,7 @@ Add the keyword `do_return` to the table of keywords in [lex.key]{.sref}:
 Add a note to [intro.execution]{.sref}:
 
 ::: std
+::: wording
 [5]{.pnum} A *full-expression* is
 
 * [5.1]{.pnum} an unevaluated operand ([expr.context]),
@@ -843,12 +844,14 @@ Add a note to [intro.execution]{.sref}:
 An expression `E` within a `$do-expression$` `D` ([expr.prim.do]) can still be a full-expression even though the `$do-expression$` itself is an expression because `E` is not a subexpression of `D`.
 :::
 :::
+:::
 
 ## Basic
 
 Add another temporary context to [class.temporary]{.sref}:
 
 ::: std
+::: wording
 [10]{.pnum} The seventh context is when [...]
 
 ::: addu
@@ -859,12 +862,13 @@ of a `$do-expression$` ([expr.prim.do]). If such a temporary object would otherw
 of the full-expression containing the `$do-expression$`.
 :::
 :::
+:::
 
 ## Expressions
 
 Add `$do-expression$` to the grammar in [expr.prim.grammar]{.sref}:
 
-::: std
+::: {.std .wording}
 ```diff
 $primary-expression$:
   $literal$
@@ -881,7 +885,7 @@ $primary-expression$:
 
 Extend the rule for move-eligible expressions in [expr.prim.id.unqual]{.sref}:
 
-::: std
+::: {.std .wording}
 [15]{.pnum} An *implicitly movable entity* is a variable with automatic storage duration that is either a non-volatile object or an rvalue reference to a non-volatile object type. An `$id-expression$` or `$splice-expression$` ([expr.prim.splice]) is *move-eligible* if
 
 * [15.1]{.pnum} it designates an implicitly movable entity,
@@ -892,7 +896,7 @@ Extend the rule for move-eligible expressions in [expr.prim.id.unqual]{.sref}:
 
 Add a new clause [expr.prim.do] after [expr.prim.req.nested]{.sref}:
 
-::: std
+::: {.std .wording}
 ::: addu
 **Do expressions [expr.prim.do]**
 
@@ -1036,7 +1040,7 @@ void f() {
 
 Change [stmt.pre]{.sref} to make the `$compound-statement$` of a `$do-expression$` transparent to the enclosing statement:
 
-::: std
+::: {.std .wording}
 [3]{.pnum} A `$statement$` `S1` encloses a `$statement$` `S2` if
 
 * [3.1]{.pnum} `S2` is a substatement of `S1`,
@@ -1048,7 +1052,7 @@ Change [stmt.pre]{.sref} to make the `$compound-statement$` of a `$do-expression
 
 Change [stmt.expr]{.sref} to disambiguate a `$do-expression$` from a `do`-`while` loop:
 
-::: std
+::: {.std .wording}
 [1]{.pnum} Expression statements have the form
 ```
 $expression-statement$:
@@ -1061,7 +1065,7 @@ The expression is a *discarded-value expression* ([expr.context]). All side effe
 
 Change [stmt.block]{.sref} to allow a `$compound-statement$` to end in an expression in the context of a `$do-expression$`:
 
-::: std
+::: {.std .wording}
 [1]{.pnum} A *compound statement* (also known as a block) groups a sequence of statements into a single statement.
 
 ```diff
@@ -1102,7 +1106,7 @@ $jump-statement$:
 
 Change [stmt.break]{.sref} to prohibit its use in `$do-expression$`s in confusing places:
 
-::: std
+::: {.std .wording}
 [1]{.pnum} A `break` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]), an `$expansion-statement$` ([stmt.expand]), or a `switch` statement ([stmt.switch]).
 The `break` statement causes termination of the innermost such enclosing statement; control passes to the statement following the terminated statement, if any.
 
@@ -1122,7 +1126,7 @@ unless the enclosing `$iteration-statement$` or `switch` statement of that `brea
 
 Change [stmt.cont]{.sref} similarly:
 
-::: std
+::: {.std .wording}
 [1]{.pnum} A `continue` statement shall be enclosed by ([stmt.pre]) an `$iteration-statement$` ([stmt.iter]) or an `$expansion-statement$` ([stmt.expand]). [...]
 
 ::: addu
@@ -1139,7 +1143,7 @@ unless the enclosing `$iteration-statement$` of that `continue` statement is als
 
 Add a new subclause [stmt.do.return] "The `do_return` statement" after [stmt.return.coroutine]{.sref}:
 
-::: std
+::: {.std .wording}
 ::: addu
 **The `do_return` statement [stmt.do.return]**
 

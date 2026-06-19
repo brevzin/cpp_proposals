@@ -18,5 +18,7 @@ endif
 #    --bibliography $(THIS_DIR)wg21_fmt.yaml \
 #	$(full_index)
 
-$(OUTDIR)/p%.html $(OUTDIR)/d%.html: $(DEPS)
+$(PAPER) : $(DEPS) $(SRCDEPS) $(GENDEPS)
 	$(PANDOC) --bibliography $(DATADIR)/csl.json --bibliography $(THIS_DIR)wg21_fmt.yaml -f markdown-tex_math_dollars
+
+.DEFAULT_GOAL := $(PAPER)
