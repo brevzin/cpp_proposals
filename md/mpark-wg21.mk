@@ -16,4 +16,4 @@ endif
 #	$(full_index)
 
 $(OUTDIR)/p%.html $(OUTDIR)/d%.html : $(DEPS)
-	$(PANDOC) --bibliography $(DATADIR)/csl.json --bibliography $(THIS_DIR)wg21_fmt.yaml -f markdown-tex_math_dollars
+	$(PANDOC) --bibliography $(THIS_DIR)wg21_fmt.yaml -f markdown-tex_math_dollars
