@@ -4,9 +4,6 @@ OUTDIR := .
 DEFAULTS := $(THIS_DIR)defaults.yaml
 include $(THIS_DIR)wg21/Makefile
 
-$(THIS_DIR)defaults.yaml : $(THIS_DIR)defaults.py
-	$< > $@
-
 ifdef NO_BIBLIO
 full_index :=
 else
