@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-05-20" />
+  <meta name="dcterms.date" content="2024-06-01" />
   <title>Introspection of Closure Types</title>
   <style>
       code{white-space: pre-wrap;}
@@ -490,7 +490,7 @@ margin: 5em;
 :root {
 --diff-ins: #C9FBC9;
 --diff-strongins: #acf2bd;
---diff-del: #ffdddd;
+--diff-del: #FFC8EB;
 --diff-strongdel: #ff8888;
 }
 span.diffins {
@@ -539,7 +539,7 @@ border: 1px solid #B3EBB3;
 }
 div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
 div.std blockquote del { text-decoration: line-through;
-color: #000000; background-color: #FFC8EB;
+color: #000000; background-color: var(--diff-del);
 border: none; }
 code del { border: 1px solid #ECB3C7; }
 </style>
@@ -561,7 +561,7 @@ Types</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-05-20</td>
+    <td>2024-06-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -601,46 +601,55 @@ Reference Captures<span></span></a></li>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Recent proposals of reflection facilities for C++ (such as <span class="citation" data-cites="P2996R2">[<a href="https://wg21.link/p2996r2" role="doc-biblioref">P2996R2</a>]</span> and <span class="citation" data-cites="P3157R0">[<a href="https://wg21.link/p3157r0" role="doc-biblioref">P3157R0</a>]</span>) raise important questions
-regarding the applicability of reflection to the layout of closure
-types. The ability to introspect closure types has important
-applications to applications that need to carry computation and
-data—packaged together in closures—across address spaces: inter-process
-communication, networking, serialization, and GPU execution. We propose
-to strenghten the layout guarantees of closure types in ways that allow
-introspection to work appropriately. To the best of our knowledge, the
-guarantees we propose are already observed by current implementations,
-so we estimate no or low impact on existing compiler infrastructure.</p>
+regarding the applicability of reflection to the layout of closure types
+(the types of lambda expressions). The ability to introspect closure
+types has important applications to programs that need to carry
+computation and data—packaged together in closures—across address
+spaces: inter-process communication, networking, serialization, and GPU
+execution. We propose to strenghten the layout guarantees of closure
+types in ways that allow introspection to work appropriately. To the
+best of our knowledge, the guarantees we propose are already observed in
+current implementations, so we estimate no or low impact on existing
+compiler infrastructure.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="motivation"><span class="header-section-number">2</span>
 Motivation<a href="#motivation" class="self-link"></a></h1>
 <p>Closure objects are a simple, syntactically compact, and convenient
 means to package computation and data together. Captures allow closures
 to carry arbitrary amounts of data within. Because of these advantages,
-closures are used extensively in C++ code either as a means to customize
-algorithms, or in various applications of the <a href="https://en.wikipedia.org/wiki/Command_pattern">Command</a> design
+closures are used extensively in C++ code, either as a means to
+customize algorithms, or in various applications of the <a href="https://en.wikipedia.org/wiki/Command_pattern">Command</a> design
 pattern.</p>
 <p>The CUDA C++ dialect aimed at running algorithms on GPU devices with
 dedicated computational and memory hardware pays special attention to
 closure types, making them transparently available for execution on GPU
-hardware. Libraries such as <a href="https://developer.nvidia.com/thrust">Thrust</a> and <a href="https://docs.nvidia.com/cuda/cub/index.html">Cub</a> make good use
-of device lambda functions as a central feature.</p>
-<p>Introspection of closure types promises new opportunities for such
-codes as well as any code that needs to marshal data and computation
-across memory address spaces. To realize such opportunities, closure
-types must make their state available for introspection so that custom
-code can carry marshaling operations, or disallow certain data
-statically or dynamically.</p>
+hardware, dispatching to the right generated code, depending on where
+the lambda is invoked from. Libraries such as <a href="https://developer.nvidia.com/thrust">Thrust</a>, a GPU
+implementation of the parallel STL, and <a href="https://docs.nvidia.com/cuda/cub/index.html">Cub</a>, reusable
+algorithmic components for CUDA, make good use of such CPU- and
+GPU-side-executable lambda functions as a central feature. This special
+handling of closure types is not specific to CUDA C++ only.</p>
+<p>Introspection of closure types promises new opportunities for any
+such codes that need to marshal data and computation across memory
+address and execution spaces. To realize such opportunities, closure
+types must make their state available for introspection (e.g., by type
+traits and reflection) so that custom code can carry out marshaling
+operations, or disallow certain data statically or dynamically. An
+important trait, for example, is whether a closure type is trivially
+copyable.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="proposed-changes-specify-storage-of-reference-captures"><span class="header-section-number">3</span> Proposed Changes: Specify Storage
 of Reference Captures<a href="#proposed-changes-specify-storage-of-reference-captures" class="self-link"></a></h1>
 <p>Given that the introspection primitives proposed in P2996 can query
 class types and that closure types are class types (per <span>7.5.5.2 <a href="https://wg21.link/expr.prim.lambda.closure">[expr.prim.lambda.closure]</a></span>),
-it follows that introspection should apply by definition to closure
-types. However, there is one specific issue with reference captures: per
-<span>7.5.5.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>,
+it follows that introspection should apply to closure types by
+definition. However, there is one specific issue with reference
+captures: per <span>7.5.5.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>,
 the language definition leaves it to the implementation whether member
 variables are declared in the closure type to accommodate those
-captures. This makes it impossible for code that uses introspection for
-closure objects to portably take account of all captured data.</p>
-<p>We propose to change wording in <span>7.5.5.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>/12:</p>
+captures, and how those captures are represented. This makes it
+impossible for code that uses introspection for closure objects to
+portably take account of all captured data.</p>
+<p>We propose to change the wording in <span>7.5.5.3 <a href="https://wg21.link/expr.prim.lambda.capture">[expr.prim.lambda.capture]</a></span>/12
+to specify the behavior for reference captures:</p>
 <div class="std">
 <blockquote>
 <p><span class="marginalizedparent"><a class="marginalized" href="#pnum_1" id="pnum_1">12</a></span>
@@ -671,10 +680,10 @@ Discussion<a href="#discussion" class="self-link"></a></h1>
 by-reference lambda captures by means of reference or pointer members,
 so we anticipate no or small impact on compiler implementations.</p>
 <p>To the extent the intent of the existing wording was meant to allow
-optimizations (e.g., use direct access for reference captures when the
-lambda is executed directly upon introduction), we note that all
-optimizations are still possible if reflection facilities are not used
-for any given lambda.</p>
+optimizations (e.g., directly accessing variables captured by reference
+when the lambda is executed immediately upon definition), we note that
+all optimizations are still possible if reflection facilities are not
+used to observe the structure of a closure type.</p>
 <h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="1" role="doc-bibliography">
