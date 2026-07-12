@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-06-19" />
+  <meta name="dcterms.date" content="2026-07-12" />
   <title>`do` expressions</title>
   <style>
 
@@ -174,6 +174,7 @@ margin-left: -1.5em;
 }
 :target { background-color: yellow; }
 :target .codeblock { background-color: yellow; }
+:target .sourceCode { background-color: yellow; }
 :target ul { background-color: yellow; }
 p:has(> span.marginalizedparent > a.marginalized:target),
 li:has(> span.marginalizedparent > a.marginalized:target) {
@@ -694,7 +695,7 @@ expressions</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-06-19</td>
+    <td>2026-07-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -797,7 +798,7 @@ expression, loops aren’t expressions, statements aren’t expressions
 (except maybe in the specific case of
 <code class="sourceCode cpp"><em>expression</em><span class="op">;</span></code>).</p>
 <p>When a single expression is insufficient, the only solution C++
-currently has as its disposal is to invoke a function - where that
+currently has at its disposal is to invoke a function - where that
 function can now contain arbitrarily many statements. Since C++11, that
 function can be expressed more conveniently in the form of an
 immediately invoked lambda.</p>
@@ -814,7 +815,7 @@ the enclosing function or
 <code class="sourceCode cpp"><span class="cf">co_return</span></code>
 from the enclosing coroutine becomes an exercise in cleverness.</p>
 <p>You also have to deal with the issue that the difference between
-initializing a variable used an immediately-invoked lambda and
+initializing a variable using an immediately-invoked lambda and
 initializing a variable from a lambda only differs in the trailing
 <code class="sourceCode cpp"><span class="op">()</span></code>,
 arbitrarily deep into an expression, which are easy to forget. Some
@@ -822,9 +823,9 @@ people actually use
 <code class="sourceCode cpp">std<span class="op">::</span>invoke</code>
 in this context, specifically to make it clearer that this lambda is,
 indeed, intended to be immediately invoked.</p>
-<p>This problem surfaces especially brightly in the context of <span class="title"><span class="citation" data-cites="P2688R4"><a href="https://wg21.link/p2688r4">[P2688R4] (Pattern Matching: `match`
-Expression)</a></span></span>, where the current design is built upon a
-sequence of:</p>
+<p>This problem surfaces especially brightly in the context of <span class="title"><span class="citation" data-cites="P2688R4"><a href="https://wg21.link/P2688R4">[P2688R4] (Pattern Matching:
+<code class="sourceCode cpp">match</code> Expression)</a></span></span>,
+where the current design is built upon a sequence of:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><em>pattern</em> =&gt; <em>expression</em>;</span></code></pre></div>
@@ -886,7 +887,7 @@ expression.</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> do_return <span class="dv">42</span><span class="op">;</span> <span class="op">};</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> y <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">42</span> <span class="op">};</span> <span class="co">// the last expression can omit the semicolon, equivalent to above</span></span></code></pre></div>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> y <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">42</span> <span class="op">};</span> <span class="co">// equivalent to above</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>A <code class="sourceCode cpp"><span class="cf">do</span></code>
@@ -907,7 +908,7 @@ the same form as the
 <code class="sourceCode cpp"><span class="cf">return</span></code>
 statement we have today:
 <code class="sourceCode cpp">do_return <em>expr-or-braced-init-list</em><sub>opt</sub><span class="op">;</span></code>.
-It’s behavior corresponds closely to that
+Its behavior corresponds closely to that of
 <code class="sourceCode cpp"><span class="cf">return</span></code>, in
 unsurprising ways - <code class="sourceCode cpp">do_return</code> yields
 from a <code class="sourceCode cpp"><span class="cf">do</span></code>
@@ -996,7 +997,7 @@ explicit return:</p>
 </tr>
 </tbody>
 </table>
-<p>In the simple cases, explicit last value (on the left) will be
+<p>In the simple cases, implicit last value (on the left) will be
 shorter than an explicit return (on the right). But implicit last value
 is more limited. We cannot do early return (by design), which means that
 a <code class="sourceCode cpp"><span class="cf">do</span></code>
@@ -1034,7 +1035,7 @@ provided to override this:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">long</span> <span class="op">{</span> do_return <span class="dv">42</span><span class="op">;</span> <span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>If no (non-discard) <code class="sourceCode cpp">do_return</code>
+<p>If no (non-discarded) <code class="sourceCode cpp">do_return</code>
 statement appears in the body of the
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression, or every (non-discarded)
@@ -1051,7 +1052,7 @@ if this is incompatible with the type of the
 expression, the expression is ill-formed. This is the one key difference
 with functions: this case is not undefined behavior. This will be
 discussed in more detail later.</p>
-<p>This makes the pattern matching cases <span class="citation" data-cites="P2688R4"><a href="https://wg21.link/p2688r4">[P2688R4]</a></span> work pretty
+<p>This makes the pattern matching cases <span class="citation" data-cites="P2688R4"><a href="https://wg21.link/P2688R4">[P2688R4]</a></span> work pretty
 naturally:</p>
 <table class="cmptable">
 <colgroup>
@@ -1214,8 +1215,8 @@ propagate the same rules for falling-off-the-end as functions, then
 lambdas (C++11), then coroutines (C++20), we would like to consider not
 introducing another case for undefined behavior here and enforcing that
 the user provides more information themselves.</p>
-<p>That is, the rule we propose that the implementation form a control
-flow graph of the
+<p>That is, the rule we propose is that the implementation form a
+control flow graph of the
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression and consider each one of the six escaping kinds described
 above. All (non-discarded) <code class="sourceCode cpp">do_return</code>
@@ -1306,18 +1307,18 @@ Ill-formed: There are two yielding control paths here: the
 and the implicit
 <code class="sourceCode cpp">do_return<span class="op">;</span></code>
 from falling off the end, those types are incompatible. The equivalent
-in functions and coroutines would be undefined behavior in if
+in functions and coroutines would be undefined behavior if
 <code class="sourceCode cpp"><em>cond</em></code> is
 <code class="sourceCode cpp"><span class="kw">false</span></code>.
 </td>
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> e <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> e <span class="op">=</span> <span class="op">(</span><span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        do_return<span class="op">;</span></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="op">},</span> <span class="dv">1</span><span class="op">;</span></span></code></pre></div>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="op">},</span> <span class="dv">1</span><span class="op">);</span></span></code></pre></div>
 </td>
 <td>
 OK: As above, there are two yielding control paths here, but both the
@@ -1505,8 +1506,8 @@ that might
 <code class="sourceCode cpp">std<span class="op">::</span>terminate<span class="op">()</span></code>
 or are
 <code class="sourceCode cpp">std<span class="op">::</span>unreachable<span class="op">()</span></code>,
-so it that proposal currently is introducing a dedicated syntax to mark
-an arm as non-returning:
+so that proposal currently is introducing a dedicated syntax to mark an
+arm as non-returning:
 <code class="sourceCode cpp"><span class="op">!{</span> std<span class="op">::</span>terminate<span class="op">();</span> <span class="op">}</span></code>.
 Which is… less than ideal.</p>
 <p>However, the rule in <span>9.13.10 Noreturn attribute <a href="https://eel.is/c++draft/dcl.attr.noreturn#2" title="9.13.10 Noreturn attribute, paragraph 2">[dcl.attr.noreturn]/2</a></span>
@@ -1530,7 +1531,7 @@ introducing any new undefined behavior ourselves as part of this
 feature.</p>
 <p>That is: invoking a function marked
 <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>
-can be considering an escaping control flow in exactly the same way that
+can be considered an escaping control flow in exactly the same way that
 <code class="sourceCode cpp"><span class="cf">return</span></code>,
 <code class="sourceCode cpp"><span class="cf">break</span></code>,
 <code class="sourceCode cpp"><span class="cf">throw</span></code>, etc.,
@@ -1694,7 +1695,7 @@ falls off the end of the
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression, as discussed in this section) or should this statement be
 undefined behavior? The latter would be consistent with functions,
-lambdas, and coroutines (and not a if-you-squint-enough kind of
+lambdas, and coroutines (and not an if-you-squint-enough kind of
 consistency either, this would be exactly identical).</p>
 <p>It would make for a simpler design if we adopted undefined behavior
 here, but we think it’s a better design to force the user to cover all
@@ -1747,7 +1748,7 @@ case decaying is irrelevant, so we just return everything by value):</p>
 <blockquote>
 <div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TRY</span><span class="op">(</span>expr<span class="op">)</span><span class="pp"> </span><span class="cf">do</span><span class="pp"> </span><span class="op">{</span><span class="pp">                          </span><span class="op">\</span></span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="kw">auto</span><span class="pp"> </span>__r<span class="pp"> </span><span class="op">=</span><span class="pp"> </span>expr<span class="op">;</span><span class="pp">                            </span><span class="op">\</span></span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="cf">if</span><span class="pp"> </span><span class="op">(</span><span class="kw">not</span><span class="pp"> </span>r<span class="op">)</span><span class="pp"> </span><span class="op">{</span><span class="pp">                                </span><span class="op">\</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="cf">if</span><span class="pp"> </span><span class="op">(</span><span class="kw">not</span><span class="pp"> </span>__r<span class="op">)</span><span class="pp"> </span><span class="op">{</span><span class="pp">                              </span><span class="op">\</span></span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="pp">        </span><span class="cf">return</span><span class="pp"> </span>std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span><span class="pp">    </span><span class="op">\</span></span>
 <span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">}</span><span class="pp">                                           </span><span class="op">\</span></span>
 <span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span>do_return<span class="pp"> </span><span class="op">*</span>__r<span class="op">;</span><span class="pp">                             </span><span class="op">\</span></span>
@@ -1921,7 +1922,7 @@ end of the full-expression.</p>
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions (a feature in no small part motivated by pattern matching)
 if pattern matching could solve it for us?</p>
-<p>We think it’s a probably a good hedge to do it anyway. We’ll probably
+<p>We think it’s probably a good hedge to do it anyway. We’ll probably
 ship <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions first, so the pattern matching paper can simply remove
 it.</p>
@@ -1937,7 +1938,7 @@ Extension<a href="#conditional-lifetime-extension" class="self-link"></a></h3>
 <span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r1 <span class="op">=</span> prvalue<span class="op">();</span></span>
 <span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// dangling</span></span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r2 <span class="op">=</span> <span class="op">[]()</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> prvalue<span class="op">();</span> <span class="op">};</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r2 <span class="op">=</span> <span class="op">[]()</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> prvalue<span class="op">();</span> <span class="op">}();</span></span>
 <span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// lifetime extension??</span></span>
 <span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r3 <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> do_return prvalue<span class="op">();</span> <span class="op">};</span></span>
@@ -1970,7 +1971,7 @@ complicated:</p>
 <span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
 <span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>            do_return prvalue<span class="op">();</span></span>
 <span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
 <span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r5 <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
 <span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>c<span class="op">)</span> <span class="op">{</span></span>
@@ -1979,7 +1980,7 @@ complicated:</p>
 <span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>            T x <span class="op">=</span> prvalue<span class="op">();</span></span>
 <span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>            do_return x<span class="op">;</span></span>
 <span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
 <span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
@@ -2108,8 +2109,8 @@ that are not easy to add:</p>
 <li>The ability to specify a return type, which is critical for allowing
 statement-expressions to be lvalues.</li>
 <li>The ability to support yielding out of different branches of
-<code class="sourceCode cpp"><span class="cf">if</span></code>, due the
-implicit nature of the yield.</li>
+<code class="sourceCode cpp"><span class="cf">if</span></code>, due to
+the implicit nature of the yield.</li>
 </ol>
 <p>For (1), there is simply no obvious place to put the
 <code class="sourceCode cpp"><em>trailing-return-type</em></code>. For
@@ -2155,7 +2156,7 @@ initializer, etc, fails:</p>
 <span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>In such contexts, there is a much smaller difference than a
+<p>In such contexts, there is a much smaller difference between a
 statement-expression and an immediately invoked lambda since you don’t
 have any other interesting control flow that you can do - the expression
 either yields a value or the program terminates.</p>
@@ -2240,8 +2241,8 @@ subexpression of another expression and that is not otherwise part of a
 full-expression.</li>
 </ul>
 <p>[…]</p>
-<div class="note addu">
-<p><span>[ <em>Note:</em> </span>An expression
+<div id="note-1" class="note addu" data-num="1">
+<p><span>[ <em>Note <a href="#note-1">1</a>:</em> </span>An expression
 <code class="sourceCode cpp">E</code> in the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code>
@@ -2328,8 +2329,8 @@ introducing a new function scope. A
 statements can transfer control out of a
 <code class="sourceCode cpp"><em>do-expression</em></code> without
 producing a value.</p>
-<div class="example">
-<span>[ <em>Example:</em> </span>
+<div id="example-1" class="example" data-num="1">
+<span>[ <em>Example <a href="#example-1">1</a>:</em> </span>
 <div class="sourceCode" id="cb45"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> half <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>i <span class="op">%</span> <span class="dv">2</span> <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
@@ -2364,8 +2365,8 @@ associated with that
 <code class="sourceCode cpp"><em>do-expression</em></code>
 ([stmt.do.return]) and with an operand that is the
 <code class="sourceCode cpp"><em>expression</em></code>.</p>
-<div class="example">
-<span>[ <em>Example:</em> </span>
+<div id="example-2" class="example" data-num="2">
+<span>[ <em>Example <a href="#example-2">2</a>:</em> </span>
 <div class="sourceCode" id="cb47"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dv">42</span> <span class="op">};</span>                 <span class="co">// OK, equivalent to do { do_return 42; }</span></span>
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> <span class="dt">int</span> x <span class="op">=</span> <span class="dv">2</span><span class="op">;</span> x <span class="op">+</span> <span class="dv">3</span> <span class="op">};</span>   <span class="co">// OK, equivalent to do { int x = 2; do_return x + 3; }</span></span>
 <span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> c <span class="op">=</span> <span class="cf">do</span> <span class="op">[</span>x<span class="op">=</span><span class="dv">2</span><span class="op">]</span> <span class="op">{</span> x <span class="op">+</span> <span class="dv">3</span> <span class="op">};</span>        <span class="co">// OK, init-hoist followed by implicit do_return</span></span></code></pre></div>
@@ -2397,9 +2398,9 @@ executed.</p>
 <code class="sourceCode cpp"><em>initializer</em></code> of an
 <code class="sourceCode cpp"><em>init-hoist</em></code> are part of the
 full-expression (<a href="https://eel.is/c++draft/intro.execution" title="6.10.1 Sequential execution">[intro.execution]</a>) that contains
-the <code class="sourceCode cpp"><em>do-expression</em></code>. <span class="note"><span>[ <em>Note:</em> </span>Consequently, a temporary
-created during the initialization of such a variable is destroyed at the
-end of that full-expression (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>), not at the end
+the <code class="sourceCode cpp"><em>do-expression</em></code>. <span id="note-2" class="note" data-num="1"><span>[ <em>Note <a href="#note-2">1</a>:</em> </span>Consequently, a temporary created
+during the initialization of such a variable is destroyed at the end of
+that full-expression (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>), not at the end
 of the <code class="sourceCode cpp"><em>do-expression</em></code>.<span>
 — <em>end note</em> ]</span></span></p>
 <p><span class="marginalizedparent"><a href="#pnum-18" id="pnum-18" class="marginalized">4</a></span> A
@@ -2415,14 +2416,14 @@ destroyed, in reverse order of their construction, at the end of the
 full-expression that contains the
 <code class="sourceCode cpp"><em>do-expression</em></code>; if control
 instead exits that block scope by any other means, those variables are
-destroyed as that scope is exited (<a href="https://eel.is/c++draft/stmt.jump" title="8.8 Jump statements">[stmt.jump]</a>). <span class="note"><span>[
-<em>Note:</em> </span>Because each such variable has reference type, a
-temporary bound to it (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>) is likewise
+destroyed as that scope is exited (<a href="https://eel.is/c++draft/stmt.jump" title="8.8 Jump statements">[stmt.jump]</a>). <span id="note-3" class="note" data-num="2"><span>[ <em>Note <a href="#note-3">2</a>:</em>
+</span>Because each such variable has reference type, a temporary bound
+to it (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>) is likewise
 destroyed at the end of the full-expression that contains the
 <code class="sourceCode cpp"><em>do-expression</em></code>.<span> —
 <em>end note</em> ]</span></span></p>
-<div class="example">
-<span>[ <em>Example:</em> </span>
+<div id="example-3" class="example" data-num="3">
+<span>[ <em>Example <a href="#example-3">3</a>:</em> </span>
 <div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="cf">do</span> <span class="op">[</span>x <span class="op">=</span> <span class="dv">1</span><span class="op">,</span> y <span class="op">=</span> <span class="dv">2</span><span class="op">]</span> <span class="op">{</span> x <span class="op">+</span> y <span class="op">};</span></span>
 <span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
@@ -2453,7 +2454,7 @@ control to the caller of the function that lexically contains the
 statement or expression appearing in a
 <code class="sourceCode cpp"><em>do-expression</em></code> acts on the
 coroutine that lexically contains the
-<code class="sourceCode cpp"><em>do-expression</em></code>. <span class="note"><span>[ <em>Note:</em> </span>That is, a
+<code class="sourceCode cpp"><em>do-expression</em></code>. <span id="note-4" class="note" data-num="3"><span>[ <em>Note <a href="#note-4">3</a>:</em> </span>That is, a
 <code class="sourceCode cpp"><em>do-expression</em></code> is
 transparent to the enclosing function or coroutine.<span> — <em>end
 note</em> ]</span></span></p>
@@ -2466,7 +2467,7 @@ enclosing
 <code class="sourceCode cpp"><em>iteration-statement</em></code> or
 <code class="sourceCode cpp"><span class="cf">switch</span></code>
 statement that contains the
-<code class="sourceCode cpp"><em>do-expression</em></code>. <span class="note"><span>[ <em>Note:</em> </span>A
+<code class="sourceCode cpp"><em>do-expression</em></code>. <span id="note-5" class="note" data-num="4"><span>[ <em>Note <a href="#note-5">4</a>:</em> </span>A
 <code class="sourceCode cpp"><span class="cf">break</span></code> or
 <code class="sourceCode cpp"><span class="cf">continue</span></code>
 statement cannot be used to exit a
@@ -2526,8 +2527,8 @@ the <code class="sourceCode cpp"><em>do-expression</em></code> shall
 deduce to the same type; otherwise, the program is ill-formed.</li>
 </ul></li>
 </ul>
-<div class="example">
-<span>[ <em>Example:</em> </span>
+<div id="example-4" class="example" data-num="4">
+<span>[ <em>Example <a href="#example-4">4</a>:</em> </span>
 <div class="sourceCode" id="cb49"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> do_return <span class="dv">1</span><span class="op">;</span> <span class="op">};</span>           <span class="co">// OK, deduces int</span></span>
 <span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">long</span> <span class="op">{</span> do_return <span class="dv">1</span><span class="op">;</span> <span class="op">};</span>   <span class="co">// OK, explicit type is long</span></span>
 <span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span>                           <span class="co">// error: inconsistent deduction</span></span>
@@ -2560,7 +2561,7 @@ the <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code> whose type is
 not
 <code class="sourceCode cpp"><em>cv</em> <span class="dt">void</span></code>,
-the program is ill-formed. <span class="note"><span>[ <em>Note:</em>
+the program is ill-formed. <span id="note-6" class="note" data-num="5"><span>[ <em>Note <a href="#note-6">5</a>:</em>
 </span>Control flows off the end if there exists any path through the
 compound statement that does not terminate with a
 <code class="sourceCode cpp">do_return</code> statement, a
@@ -2570,8 +2571,8 @@ expression, a call to a
 function, or a jump statement that exits the
 <code class="sourceCode cpp"><em>do-expression</em></code>.<span> —
 <em>end note</em> ]</span></span></p>
-<div class="example">
-<span>[ <em>Example:</em> </span>
+<div id="example-5" class="example" data-num="5">
+<span>[ <em>Example <a href="#example-5">5</a>:</em> </span>
 <div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="kw">extern</span> <span class="dt">bool</span> cond<span class="op">;</span></span>
 <span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span>                       <span class="co">// error: control may flow off the end</span></span>
@@ -2601,18 +2602,17 @@ before the destruction of temporaries at the end of the full-expression
 established by the operand of the executed
 <code class="sourceCode cpp">do_return</code> statement, which, in turn,
 is sequenced before the destruction of local variables (<a href="https://eel.is/c++draft/stmt.jump" title="8.8 Jump statements">[stmt.jump]</a>) whose scope is exited by
-the <code class="sourceCode cpp">do_return</code> statement. <span class="note"><span>[ <em>Note:</em> </span>A copy or move operation
-associated with a <code class="sourceCode cpp">do_return</code>
-statement can be elided or converted to a move operation the same as for
-a <code class="sourceCode cpp"><span class="cf">return</span></code>
+the <code class="sourceCode cpp">do_return</code> statement. <span id="note-7" class="note" data-num="6"><span>[ <em>Note <a href="#note-7">6</a>:</em> </span>A copy or move operation associated
+with a <code class="sourceCode cpp">do_return</code> statement can be
+elided or converted to a move operation the same as for a
+<code class="sourceCode cpp"><span class="cf">return</span></code>
 statement (<a href="https://eel.is/c++draft/class.copy.elision" title="11.9.6 Copy/move elision">[class.copy.elision]</a>).<span> —
 <em>end note</em> ]</span></span></p>
 <p><span class="marginalizedparent"><a href="#pnum-35" id="pnum-35" class="marginalized">14</a></span> A
 <code class="sourceCode cpp"><em>do-expression</em></code> can appear in
 any context where an expression is permitted, including at namespace
-scope. <span class="note"><span>[ <em>Note:</em> </span>At namespace
-scope or in a default member initializer, there is no enclosing
-function, so
+scope. <span id="note-8" class="note" data-num="7"><span>[ <em>Note <a href="#note-8">7</a>:</em> </span>At namespace scope or in a default
+member initializer, there is no enclosing function, so
 <code class="sourceCode cpp"><span class="cf">return</span></code>,
 <code class="sourceCode cpp"><span class="cf">break</span></code>,
 <code class="sourceCode cpp"><span class="cf">continue</span></code>,
@@ -2687,8 +2687,7 @@ executed. An expression statement with the expression missing is called
 a <em>null statement</em>. <span class="addu">The
 <code class="sourceCode cpp"><em>expression</em></code> shall not be a
 <code class="sourceCode cpp"><em>do-expression</em></code>.</span></p>
-<p><span class="note addu"><span>[ <em>Note:</em> </span>A statement
-beginning with the keyword
+<p><span id="note-9" class="note addu" data-num="1"><span>[ <em>Note <a href="#note-9">1</a>:</em> </span>A statement beginning with the keyword
 <code class="sourceCode cpp"><span class="cf">do</span></code> is always
 parsed as a
 <code class="sourceCode cpp"><span class="cf">do</span></code>-<code class="sourceCode cpp"><span class="cf">while</span></code>
@@ -2723,8 +2722,8 @@ appear only in the
 <code class="sourceCode cpp"><em>do-expression</em></code>
 ([expr.prim.do]).</p>
 </div>
-<p><span class="marginalizedparent"><a href="#pnum-45" id="pnum-45" class="marginalized">2</a></span> <span class="note"><span>[
-<em>Note:</em> </span>A compound statement defines a block scope (<a href="https://eel.is/c++draft/basic.scope" title="6.4 Scope">[basic.scope]</a>).<span> — <em>end note</em>
+<p><span class="marginalizedparent"><a href="#pnum-45" id="pnum-45" class="marginalized">2</a></span> <span id="note-10" class="note" data-num="1"><span>[ <em>Note <a href="#note-10">1</a>:</em> </span>A
+compound statement defines a block scope (<a href="https://eel.is/c++draft/basic.scope" title="6.4 Scope">[basic.scope]</a>).<span> — <em>end note</em>
 ]</span></span></p>
 </blockquote>
 </div>
@@ -2869,8 +2868,8 @@ function body. The innermost such
 <code class="sourceCode cpp">do_return</code> statement’s
 <em>associated</em>
 <code class="sourceCode cpp"><em>do-expression</em></code>.</p>
-<div class="example">
-<span>[ <em>Example:</em> </span>
+<div id="example-6" class="example" data-num="1">
+<span>[ <em>Example <a href="#example-6">1</a>:</em> </span>
 <div class="sourceCode" id="cb54"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> f<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> g <span class="op">=</span> <span class="op">[]()</span> <span class="op">{</span></span>
@@ -2911,8 +2910,8 @@ copy-initialization (<a href="https://eel.is/c++draft/dcl.init" title="9.5 Initi
 </ul>
 <p>to a temporary expression (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>) is
 ill-formed.</p>
-<div class="example">
-<span>[ <em>Example:</em> </span>
+<div id="example-7" class="example" data-num="2">
+<span>[ <em>Example <a href="#example-7">2</a>:</em> </span>
 <div class="sourceCode" id="cb55"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span><span class="op">&amp;</span> f<span class="op">();</span></span>
 <span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> do_return f<span class="op">();</span> <span class="op">};</span>     <span class="co">// OK</span></span>
 <span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> do_return <span class="dv">42</span><span class="op">;</span> <span class="op">};</span>      <span class="co">// error: binds reference to temporary</span></span></code></pre></div>
@@ -2939,8 +2938,8 @@ attributes. <a href="https://wg21.link/p2552r2"><div class="csl-indent">https://
 [P2561R2] Barry Revzin. 2023-05-18. A control flow operator. <a href="https://wg21.link/p2561r2"><div class="csl-indent">https://wg21.link/p2561r2</div></a>
 </div>
 <div id="ref-P2688R4" class="csl-entry" role="listitem">
-[P2688R4] Michael Park. 2024-12-17. Pattern Matching: `match`
-Expression. <a href="https://wg21.link/p2688r4"><div class="csl-indent">https://wg21.link/p2688r4</div></a>
+[P2688R4] Michael Park. 2024-12-17. Pattern Matching:
+<code class="sourceCode cpp">match</code> Expression. <a href="https://wg21.link/P2688R4"><div class="csl-indent">https://wg21.link/P2688R4</div></a>
 </div>
 <div id="ref-P2688R5" class="csl-entry" role="listitem">
 [P2688R5] Michael Park. 2025-01-13. Pattern Matching: `match`

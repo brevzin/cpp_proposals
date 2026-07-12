@@ -30,11 +30,11 @@ Since [@P2806R0], some more discussion about implicit last value vs explicit ret
 
 C++ is a language built on statements. `if` is not an expression, loops aren't expressions, statements aren't expressions (except maybe in the specific case of `$expression$;`).
 
-When a single expression is insufficient, the only solution C++ currently has as its disposal is to invoke a function - where that function can now contain arbitrarily many statements. Since C++11, that function can be expressed more conveniently in the form of an immediately invoked lambda.
+When a single expression is insufficient, the only solution C++ currently has at its disposal is to invoke a function - where that function can now contain arbitrarily many statements. Since C++11, that function can be expressed more conveniently in the form of an immediately invoked lambda.
 
 However, this approach leaves a lot to be desired. An immediately invoked lambda introduced an extra function scope, which makes control flow much more challenging - it becomes impossible to `break` or `continue` out of a loop, and attempting to `return` from the enclosing function or `co_await`, `co_yield`, or `co_return` from the enclosing coroutine becomes an exercise in cleverness.
 
-You also have to deal with the issue that the difference between initializing a variable used an immediately-invoked lambda and initializing a variable from a lambda only differs in the trailing `()`, arbitrarily deep into an expression, which are easy to forget. Some people actually use `std::invoke` in this context, specifically to make it clearer that this lambda is, indeed, intended to be immediately invoked.
+You also have to deal with the issue that the difference between initializing a variable using an immediately-invoked lambda and initializing a variable from a lambda only differs in the trailing `()`, arbitrarily deep into an expression, which are easy to forget. Some people actually use `std::invoke` in this context, specifically to make it clearer that this lambda is, indeed, intended to be immediately invoked.
 
 This problem surfaces especially brightly in the context of [@P2688R4]{.title}, where the current design is built upon a sequence of:
 
@@ -79,7 +79,7 @@ In its simplest form:
 ::: std
 ```cpp
 int x = do { do_return 42; };
-int y = do { 42 }; // the last expression can omit the semicolon, equivalent to above
+int y = do { 42 }; // equivalent to above
 ```
 :::
 
@@ -91,7 +91,7 @@ A `do` expression does introduce a new block scope - as the braces might suggest
 
 ## `do_return` statement
 
-The new `do_return` statement has the same form as the `return` statement we have today: `do_return $expr-or-braced-init-list$@~opt~@;`. It's behavior corresponds closely to that `return`, in unsurprising ways - `do_return` yields from a `do` expression in the same way that `return` returns from a function.
+The new `do_return` statement has the same form as the `return` statement we have today: `do_return $expr-or-braced-init-list$@~opt~@;`. Its behavior corresponds closely to that of `return`, in unsurprising ways - `do_return` yields from a `do` expression in the same way that `return` returns from a function.
 
 While `do_return $value$;` and `return $value$;` do look quite close together and mean fairly different things, the leading `do` we think should be sufficiently clear, and we think it is a good spelling for this statement.
 
@@ -143,7 +143,7 @@ auto bar(int i) -> std::expected<int, E> {
 ```
 :::
 
-In the simple cases, explicit last value (on the left) will be shorter than an explicit return (on the right). But implicit last value is more limited. We cannot do early return (by design), which means that a `do` expression would not be able to return from a loop either. We would have to extend the language to support `if` expressions, so that at the very least the first example above could be made easier - which would add more complexity to the design.
+In the simple cases, implicit last value (on the left) will be shorter than an explicit return (on the right). But implicit last value is more limited. We cannot do early return (by design), which means that a `do` expression would not be able to return from a loop either. We would have to extend the language to support `if` expressions, so that at the very least the first example above could be made easier - which would add more complexity to the design.
 
 Which is to say — the `do_return` statement is still a valuable and necessary addition, given that we do not have `if` or loop expressions, and we are unlikely to add them.
 
@@ -164,7 +164,7 @@ do -> long { do_return 42; }
 ```
 :::
 
-If no (non-discard) `do_return` statement appears in the body of the `do` expression, or every (non-discarded) `do_return` statement is of the form `do_return;`, then the expression is a prvalue of type `void`.
+If no (non-discarded) `do_return` statement appears in the body of the `do` expression, or every (non-discarded) `do_return` statement is of the form `do_return;`, then the expression is a prvalue of type `void`.
 
 Falling off the end of a `do` expression behaves like an implicit `do_return;` - if this is incompatible with the type of the `do` expression, the expression is ill-formed. This is the one key difference with functions: this case is not undefined behavior. This will be discussed in more detail later.
 
@@ -252,7 +252,7 @@ For a `do` expression, we have two different directions where we can escape (in 
 
 Additionally, for point (4) while we could simply (for consistency) propagate the same rules for falling-off-the-end as functions, then lambdas (C++11), then coroutines (C++20), we would like to consider not introducing another case for undefined behavior here and enforcing that the user provides more information themselves.
 
-That is, the rule we propose that the implementation form a control flow graph of the `do` expression and consider each one of the six escaping kinds described above. All (non-discarded) `do_return` statements (including the implicit `do_return;` introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no `$trailing-return-type$`) or be compatible with the provided return type (if provided). Anything else is ill-formed.
+That is, the rule we propose is that the implementation form a control flow graph of the `do` expression and consider each one of the six escaping kinds described above. All (non-discarded) `do_return` statements (including the implicit `do_return;` introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no `$trailing-return-type$`) or be compatible with the provided return type (if provided). Anything else is ill-formed.
 
 Let's go through some examples.
 
@@ -299,14 +299,14 @@ auto d = do {
     }
 };
 ```
-</td><td>Ill-formed: There are two yielding control paths here: the `do_return 1;` and the implicit `do_return;` from falling off the end, those types are incompatible. The equivalent in functions and coroutines would be undefined behavior in if `$cond$` is `false`.</td></tr>
+</td><td>Ill-formed: There are two yielding control paths here: the `do_return 1;` and the implicit `do_return;` from falling off the end, those types are incompatible. The equivalent in functions and coroutines would be undefined behavior if `$cond$` is `false`.</td></tr>
 <tr><td>
 ```cpp
-int e = do {
+int e = (do {
     if ($cond$) {
         do_return;
     }
-}, 1;
+}, 1);
 ```
 </td><td>OK: As above, there are two yielding control paths here, but both the explicit and the implicit ones are `do_return;` which are compatible.</tr>
 <tr><td>
@@ -411,7 +411,7 @@ int i = do {
 ```
 :::
 
-Pattern Matching has this same problem - it needs to support arms that might `std::terminate()` or are `std::unreachable()`, so it that proposal currently is introducing a dedicated syntax to mark an arm as non-returning: `!{ std::terminate(); }`. Which is... less than ideal.
+Pattern Matching has this same problem - it needs to support arms that might `std::terminate()` or are `std::unreachable()`, so that proposal currently is introducing a dedicated syntax to mark an arm as non-returning: `!{ std::terminate(); }`. Which is... less than ideal.
 
 However, the rule in [dcl.attr.noreturn]{.sref}/2 is:
 
@@ -421,7 +421,7 @@ However, the rule in [dcl.attr.noreturn]{.sref}/2 is:
 
 That is normative wording which we can rely on. The above `do` expression can only fall off the end if `std::abort` returns, which is _already_ undefined behavior. We can avoid introducing any new undefined behavior ourselves as part of this feature.
 
-That is: invoking a function marked `[[noreturn]]` can be considering an escaping control flow in exactly the same way that `return`, `break`, `throw`, etc., are already.
+That is: invoking a function marked `[[noreturn]]` can be considered an escaping control flow in exactly the same way that `return`, `break`, `throw`, etc., are already.
 
 Note that this violates the so-called Second Ignorability Rule suggested in [@P2552R2]{.title}, which is a great reason to ignore that rule.
 
@@ -520,7 +520,7 @@ int i = do {
 ```
 :::
 
-Is this statement ill-formed (because there is a control path that falls off the end of the `do` expression, as discussed in this section) or should this statement be undefined behavior? The latter would be consistent with functions, lambdas, and coroutines (and not a if-you-squint-enough kind of consistency either, this would be exactly identical).
+Is this statement ill-formed (because there is a control path that falls off the end of the `do` expression, as discussed in this section) or should this statement be undefined behavior? The latter would be consistent with functions, lambdas, and coroutines (and not an if-you-squint-enough kind of consistency either, this would be exactly identical).
 
 It would make for a simpler design if we adopted undefined behavior here, but we think it's a better design to force the user to cover all control paths themselves.
 
@@ -560,7 +560,7 @@ With `do` expressions, it would be tempting to implement a `TRY` macro similar t
 ```cpp
 #define TRY(expr) do {                          \
     auto __r = expr;                            \
-    if (not r) {                                \
+    if (not __r) {                              \
         return std::unexpected(__r.error());    \
     }                                           \
     do_return *__r;                             \
@@ -664,7 +664,7 @@ On the right, `expr` is obviously evaluated outside of the `do` expression, and 
 
 The question is: do we need to add an init-hoist feature for `do` expressions (a feature in no small part motivated by pattern matching) if pattern matching could solve it for us?
 
-We think it's a probably a good hedge to do it anyway. We'll probably ship `do` expressions first, so the pattern matching paper can simply remove it.
+We think it's probably a good hedge to do it anyway. We'll probably ship `do` expressions first, so the pattern matching paper can simply remove it.
 
 
 ### Conditional Lifetime Extension
@@ -680,7 +680,7 @@ auto f() -> void {
     T const& r1 = prvalue();
 
     // dangling
-    T const& r2 = []() -> T const& { return prvalue(); };
+    T const& r2 = []() -> T const& { return prvalue(); }();
 
     // lifetime extension??
     T const& r3 = do -> T const& { do_return prvalue(); };
@@ -706,7 +706,7 @@ auto g(bool c) -> void {
         } else {
             do_return prvalue();
         }
-    }
+    };
 
     T const& r5 = do -> T const& {
         if (c) {
@@ -715,7 +715,7 @@ auto g(bool c) -> void {
             T x = prvalue();
             do_return x;
         }
-    }
+    };
 }
 ```
 :::
@@ -794,7 +794,7 @@ do {
 The reason we're not simply proposing to standardize the existing extension is that there are two features we see that are lacking in it that are not easy to add:
 
 1. The ability to specify a return type, which is critical for allowing statement-expressions to be lvalues.
-2. The ability to support yielding out of different branches of `if`, due the implicit nature of the yield.
+2. The ability to support yielding out of different branches of `if`, due to the implicit nature of the yield.
 
 For (1), there is simply no obvious place to put the `$trailing-return-type$`. For (2), you can't turn `if`s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.
 
@@ -821,7 +821,7 @@ int i = ({      // error: statement-expressions are not allowed outside function
 ```
 :::
 
-In such contexts, there is a much smaller difference than a statement-expression and an immediately invoked lambda since you don't have any other interesting control flow that you can do - the expression either yields a value or the program terminates.
+In such contexts, there is a much smaller difference between a statement-expression and an immediately invoked lambda since you don't have any other interesting control flow that you can do - the expression either yields a value or the program terminates.
 
 But if we're going to add a new language feature, it seems better to allow it to be used in all expression contexts - we would just have to say what happens in this case. Especially since if we're adding a feature to subsume immediately invoked lambdas, it would be preferable to subsume _all_ immediately invoked lambdas, not just some or most.
 
