@@ -702,6 +702,33 @@ Note that this last version has lower complexity: While the versions using an ex
 
 On Compiler Explorer: [EDG](https://godbolt.org/z/hf777PfGo), [Clang](https://godbolt.org/z/TTxMs4fMa).
 
+We can even generate switch-case. For instance we can use `deducing this` with a nested switch-case.
+
+::: bq
+```c++
+template <typename E> requires std::is_enum_v<E>
+constexpr auto enum_to_string(E value) {
+  static constexpr auto enumerators = std::meta::enumerators_of(^E);
+  return [value]<std::size_t I = 0u>(this auto&& self) -> std::optional<std::string_view> {
+    switch (value) {
+      default:
+        if constexpr (I < std::size(enumerators) - 1)
+          return self.template operator()<I + 1>();
+        else
+          return std::nullopt;
+      case [: enumerators[I] :]:
+        return std::meta::name_of(enumerators[I]);
+    }
+  }();
+}
+```
+:::
+
+Note that this version optimizations depends on the compiler ability to flatten nested switch-case and it will be able to rewritten with the code generation abilities in the future versions.
+
+On Compiler Explorer: [Clang](https://godbolt.org/z/Mc5Yvsrxc)
+
+:::
 
 Many many variations of these functions are possible and beneficial depending on the needs of the client code.
 For example:
