@@ -5,6 +5,7 @@ import sys
 import subprocess
 # import pygraphviz
 import hashlib
+from panflute import toJSONFilter, RawInline
 
 def h1hr(elem, doc):
     """
@@ -115,8 +116,22 @@ def std(elem, doc):
 
         return pf.Div(pf.BlockQuote(elem), classes=["std"])
 
+def soft_break(elem, doc):
+    if isinstance(elem, pf.Str):
+        if '&sbr;' in elem.text:
+            # Replace all instances of '&sbr;' with a soft break without spacing or hyphenation
+            # (akin to a zero-width space)
+            replaced_text = elem.text.replace(
+                '&sbr;',
+                '''<span style="hyphenate-character: '';">&shy;</span>'''
+            )
+            # Return the replaced text as RawInline HTML
+            return pf.RawInline(replaced_text, format='html')
+    # If no replacement is needed, return None to keep the original element
+    return None
+
 
 if __name__ == '__main__':
     # pf.run_filters([h1hr, bq, graphviz, mermaid, op])
-    pf.run_filters([h1hr, bq, std, mermaid, op])
+    pf.run_filters([h1hr, bq, std, mermaid, op, soft_break])
     # pf.run_filters([h1hr, bq, op])
