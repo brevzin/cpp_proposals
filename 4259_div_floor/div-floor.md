@@ -210,13 +210,13 @@ div(x, y, rounding::to_nearest_or_ceil)  // with mode
 
 Of course, the ones that explicitly provide a rounding mode are longer than the other options — although the relative margin of difference goes down if the variable names are longer than a single character. But the enum allows for, and arguably even forces, clearer names.
 
-I think clearer names are more valuable than terser names for these functions — especially for these more rarer used rounding modes.
+I think clearer names are more valuable than terser names for these functions — especially for these more rarely used rounding modes.
 
 ## Floor and Ceiling as Rounding Modes
 
 If we have an enumeration for the rounding modes, what should we call the rounding mode equivalents of the operations `div_floor` and `div_ceil`?
 
-I've been arguing that the _operations_ should be named `floor` and `ceil`, since that's what people will search for. Floor and ceiling are the names of those operations. But they aren't necessarily rounding _modes_ — rounding mode is more like "toward zero" or "up." This is the same naming distinct that Julia makes: `fld` and `cld` for the operations but `RoundDown` and `RoundUp` for the rounding mode. It's this question of mode that explains why there shouldn't be an enumerator for `rounding::euclid` — that's not a rounding mode, that's a different algorithm.
+I've been arguing that the _operations_ should be named `floor` and `ceil`, since that's what people will search for. Floor and ceiling are the names of those operations. But they aren't necessarily rounding _modes_ — rounding mode is more like "toward zero" or "up." This is the same naming distinction that Julia makes: `fld` and `cld` for the operations but `RoundDown` and `RoundUp` for the rounding mode. It's this question of mode that explains why there shouldn't be an enumerator for `rounding::euclid` — that's not a rounding mode, that's a different algorithm.
 
 I think the three pairs that make sense are:
 
@@ -224,22 +224,22 @@ I think the three pairs that make sense are:
 * `up` and `down` (e.g. Swift, Julia, `fesetround`)
 * `toward_positive` and `toward_negative` (e.g. IEEE)
 
-Now, it turns out that `up` and `down` has some interesting usage. In Swift and Julia, they mean moving the number up and down the number line — `1.5` rounds up to `2` and `-1.5` rounds up to `-1`.
-
- But in Java's [`RoundingMode`](https://docs.oracle.com/javase/8/docs/api/java/math/RoundingMode.html), Python's [`decimal`](https://docs.python.org/3/library/decimal.html#rounding-modes), and Ruby's [`BigDecimal`](https://ruby-doc.org/stdlib-2.5.8/libdoc/bigdecimal/rdoc/BigDecimal.html), all provide _both_ `UP` and `DOWN` _and_ `CEILING` and `FLOOR`. Not as synonyms, these are four distinct rounding modes. All of these come from IBM's [General Decimal Arithmetic specification](https://speleotrove.com/decimal/decarith.pdf), defines these rounding modes:
+Now, it turns out that the names `up` and `down` have some interesting usage. In Swift and Julia, they mean moving the number up and down the number line — `1.5` rounds up to `2` and `-1.5` rounds up to `-1`. But Java's [`RoundingMode`](https://docs.oracle.com/javase/8/docs/api/java/math/RoundingMode.html), Python's [`decimal`](https://docs.python.org/3/library/decimal.html#rounding-modes), and Ruby's [`BigDecimal`](https://rubydoc.info/gems/bigdecimal/BigDecimal) all provide _both_ `UP` and `DOWN` _and_ `CEILING` and `FLOOR`. Not as synonyms, these are four distinct rounding modes. All of these come from IBM's [General Decimal Arithmetic specification](https://speleotrove.com/decimal/decarith.pdf), which defines these rounding modes:
 
 |mode name|definition|
 |:-:|----|
 |round-down|(Round toward 0; truncate.) The discarded digits are ignored; the result is unchanged.|
-|round-half-up|If the discarded digits represent greater than or equal to half (0.5) of the value of a one in the next left position then the result coefficient should be incremented by 1 (rounded up). Otherwise the discarded digits are ignored.|
-|round-half-even|If the discarded digits represent greater than half (0.5) the value of a one in the next left position then the result coefficient should be incremented by 1 (rounded up). If they represent less than half, then the result coefficient is not adjusted (that is, the discarded digits are ignored). <br />Otherwise (they represent exactly half) the result coefficient is unaltered if its rightmost digit is even, or incremented by 1 (rounded up) if its rightmost digit is odd (to make an even digit).
+|round-half-up|...|
+|round-half-even|...|
 |round-ceiling|(Round toward +∞.) If all of the discarded digits are zero or if the sign is 1 the result is unchanged. Otherwise, the result coefficient should be incremented by 1 (rounded up).|
 |round-floor|(Round toward -∞.) If all of the discarded digits are zero or if the sign is 0 the result is unchanged. Otherwise, the sign is 1 and the result coefficient should be incremented by 1.|
-|round-half-down|If the discarded digits represent greater than half (0.5) of the value of a one in the next left position then the result coefficient should be incremented by 1 (rounded up). Otherwise (the discarded digits are 0.5 or less) the discarded digits are ignored.
+|round-half-down|...|
 |round-up|(Round away from 0.) If all of the discarded digits are zero the result is unchanged. Otherwise, the result coefficient should be incremented by 1 (rounded up).
-|round-05up|(Round zero or five away from 0.) The same as round-up, except that rounding up only occurs if the digit to be rounded up is 0 or 5, and after overflow the result is the same as for round-down.
+|round-05up|...|
 
 Personally, I think "toward zero" is a perfectly good way to express rounding toward zero, which has the benefit that I can continue to view it as a number line rather than a number parabola in which "down" means two different directions. But the divergence in existing practice of what rounding "up" and "down" means, especially given that multiple languages actually provide UP and CEILING as distinct modes, suggests that we should not simply copy the Julia and Swift naming approach.
+
+Given that, and the demonstrated use of floor and ceiling as rounding _modes_ even as I earlier claimed of them as being operations, I see no reason not to just use `floor` and `ceil` for the modes too.
 
 # Proposal
 

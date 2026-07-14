@@ -1320,7 +1320,7 @@ difference goes down if the variable names are longer than a single
 character. But the enum allows for, and arguably even forces, clearer
 names.</p>
 <p>I think clearer names are more valuable than terser names for these
-functions — especially for these more rarer used rounding modes.</p>
+functions — especially for these more rarely used rounding modes.</p>
 <h2 data-number="1.4" id="floor-and-ceiling-as-rounding-modes"><span class="header-section-number">1.4</span> Floor and Ceiling as Rounding
 Modes<a href="#floor-and-ceiling-as-rounding-modes" class="self-link"></a></h2>
 <p>If we have an enumeration for the rounding modes, what should we call
@@ -1332,8 +1332,8 @@ the rounding mode equivalents of the operations
 <code class="sourceCode cpp">ceil</code>, since that’s what people will
 search for. Floor and ceiling are the names of those operations. But
 they aren’t necessarily rounding <em>modes</em> — rounding mode is more
-like “toward zero” or “up.” This is the same naming distinct that Julia
-makes: <code class="sourceCode cpp">fld</code> and
+like “toward zero” or “up.” This is the same naming distinction that
+Julia makes: <code class="sourceCode cpp">fld</code> and
 <code class="sourceCode cpp">cld</code> for the operations but
 <code class="sourceCode cpp">RoundDown</code> and
 <code class="sourceCode cpp">RoundUp</code> for the rounding mode. It’s
@@ -1351,23 +1351,24 @@ for
 <li><code class="sourceCode cpp">toward_positive</code> and
 <code class="sourceCode cpp">toward_negative</code> (e.g. IEEE)</li>
 </ul>
-<p>Now, it turns out that <code class="sourceCode cpp">up</code> and
-<code class="sourceCode cpp">down</code> has some interesting usage. In
+<p>Now, it turns out that the names
+<code class="sourceCode cpp">up</code> and
+<code class="sourceCode cpp">down</code> have some interesting usage. In
 Swift and Julia, they mean moving the number up and down the number line
 — <code class="sourceCode cpp"><span class="fl">1.5</span></code> rounds
 up to <code class="sourceCode cpp"><span class="dv">2</span></code> and
 <code class="sourceCode cpp"><span class="op">-</span><span class="fl">1.5</span></code>
 rounds up to
-<code class="sourceCode cpp"><span class="op">-</span><span class="dv">1</span></code>.</p>
-<p>But in Java’s <a href="https://docs.oracle.com/javase/8/docs/api/java/math/RoundingMode.html"><code class="sourceCode cpp">RoundingMode</code></a>,
+<code class="sourceCode cpp"><span class="op">-</span><span class="dv">1</span></code>.
+But Java’s <a href="https://docs.oracle.com/javase/8/docs/api/java/math/RoundingMode.html"><code class="sourceCode cpp">RoundingMode</code></a>,
 Python’s <a href="https://docs.python.org/3/library/decimal.html#rounding-modes"><code class="sourceCode cpp">decimal</code></a>,
-and Ruby’s <a href="https://ruby-doc.org/stdlib-2.5.8/libdoc/bigdecimal/rdoc/BigDecimal.html"><code class="sourceCode cpp">BigDecimal</code></a>,
+and Ruby’s <a href="https://rubydoc.info/gems/bigdecimal/BigDecimal"><code class="sourceCode cpp">BigDecimal</code></a>
 all provide <em>both</em> <code class="sourceCode cpp">UP</code> and
 <code class="sourceCode cpp">DOWN</code> <em>and</em>
 <code class="sourceCode cpp">CEILING</code> and
 <code class="sourceCode cpp">FLOOR</code>. Not as synonyms, these are
 four distinct rounding modes. All of these come from IBM’s <a href="https://speleotrove.com/decimal/decarith.pdf">General Decimal
-Arithmetic specification</a>, defines these rounding modes:</p>
+Arithmetic specification</a>, which defines these rounding modes:</p>
 <table>
 <colgroup>
 <col style="width: 42%" />
@@ -1391,21 +1392,11 @@ result is unchanged.</td>
 </tr>
 <tr>
 <td style="text-align: center;">round-half-up</td>
-<td>If the discarded digits represent greater than or equal to half
-(0.5) of the value of a one in the next left position then the result
-coefficient should be incremented by 1 (rounded up). Otherwise the
-discarded digits are ignored.</td>
+<td>…</td>
 </tr>
 <tr>
 <td style="text-align: center;">round-half-even</td>
-<td>If the discarded digits represent greater than half (0.5) the value
-of a one in the next left position then the result coefficient should be
-incremented by 1 (rounded up). If they represent less than half, then
-the result coefficient is not adjusted (that is, the discarded digits
-are ignored). <br />Otherwise (they represent exactly half) the result
-coefficient is unaltered if its rightmost digit is even, or incremented
-by 1 (rounded up) if its rightmost digit is odd (to make an even
-digit).</td>
+<td>…</td>
 </tr>
 <tr>
 <td style="text-align: center;">round-ceiling</td>
@@ -1421,10 +1412,7 @@ result coefficient should be incremented by 1.</td>
 </tr>
 <tr>
 <td style="text-align: center;">round-half-down</td>
-<td>If the discarded digits represent greater than half (0.5) of the
-value of a one in the next left position then the result coefficient
-should be incremented by 1 (rounded up). Otherwise (the discarded digits
-are 0.5 or less) the discarded digits are ignored.</td>
+<td>…</td>
 </tr>
 <tr>
 <td style="text-align: center;">round-up</td>
@@ -1434,9 +1422,7 @@ incremented by 1 (rounded up).</td>
 </tr>
 <tr>
 <td style="text-align: center;">round-05up</td>
-<td>(Round zero or five away from 0.) The same as round-up, except that
-rounding up only occurs if the digit to be rounded up is 0 or 5, and
-after overflow the result is the same as for round-down.</td>
+<td>…</td>
 </tr>
 </tbody>
 </table>
@@ -1447,6 +1433,10 @@ two different directions. But the divergence in existing practice of
 what rounding “up” and “down” means, especially given that multiple
 languages actually provide UP and CEILING as distinct modes, suggests
 that we should not simply copy the Julia and Swift naming approach.</p>
+<p>Given that, and the demonstrated use of floor and ceiling as rounding
+<em>modes</em> even as I earlier claimed of them as being operations, I
+see no reason not to just use <code class="sourceCode cpp">floor</code>
+and <code class="sourceCode cpp">ceil</code> for the modes too.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>The names
 <code class="sourceCode cpp">std<span class="op">::</span>div_to_pos_inf</code>
