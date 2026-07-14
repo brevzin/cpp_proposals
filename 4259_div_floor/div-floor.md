@@ -45,7 +45,7 @@ Here is a list of programming languages and the name they give their functions f
 | Clojure    | `math/floor`         | `math/ceil`          |
 | Excel[^excel]      | `FLOOR`              | `CEILING`            |
 
-[^excel]: Excel's `FLOOR` and `CEILING` are actually binary, they take a significance argument.
+[^excel]: Excel's `FLOOR` and `CEILING` are actually binary: they take a significance argument.
 
 There simply is not a lot of diversity in the names of these functions. But that's for unary floating point/decimal operations. Many languages also offer binary integer functions that return the mathematical results of `⌊x/y⌋` and `⌈x/y⌉`. There is a bit more diversity to those operations:
 
@@ -65,7 +65,7 @@ There simply is not a lot of diversity in the names of these functions. But that
 | Julia       | `div(x, y, RoundDown)` or `fld(x, y)` | `div(x, y, RoundUp)` or `cld(x, y)` |
 | Swift       | `x.divided(by: y, rounding: .down)` | `x.divided(by: y, rounding: .up)` |
 
-[^rust]: Rust's `div_ceil` is stable for unsigned integer but unstable for signed integer, `div_floor` is unstable for both (since unsigned floor division is just `/`).
+[^rust]: Rust's `div_ceil` is stable for unsigned integers but unstable for signed integers; `div_floor` is unstable for both (since unsigned floor division is just `/`).
 [^racket]: Not in Core Racket, but rather in [SRFI 141](https://srfi.schemers.org/srfi-141/srfi-141.html). Note that this also has Euclidean division, as well as truncating, rounding to nearest (ties to even), and balanced.
 
 Not all languages provide integer division functions of this form — some simply rely on their regular integer division operation for doing floor division (since in C++, `-5 / 2` is `-2` but in some languages it is `-3`). Nevertheless, there is still a great deal of uniformity in the API space here.
@@ -96,7 +96,7 @@ While the answer may be obvious to a mathematician, that does not apply to every
 To provide some more rationale:
 
 * The proposed scheme does not nicely extend to division with rounding away from zero; there is no established term for that.
-* A hypothetical `std::div_round` (for rounding to the nearest integer) would be somewhat perplexing because all proposed functions round, just towards different targets. However, taking `std::div_floor` as a counterpart to `std::floor` strongly suggests that there should be a `std::div_round` function as a counterpart to `std::round`, which is not the case.
+* A hypothetical `std::div_round` (for rounding to the nearest integer) would be somewhat perplexing because all proposed functions round, just toward different targets. However, taking `std::div_floor` as a counterpart to `std::floor` strongly suggests that there should be a `std::div_round` function as a counterpart to `std::round`, which is not the case.
 
 Regardless whether the functions end up called `std::div_floor` or `std::div_to_neg_inf`, the names should remain somewhat brief so they take up a reasonable amount of space in C++ expressions.
 :::
@@ -179,14 +179,14 @@ Since the rounding mode will almost always be passed in as a constant, that `swi
 
 And the spelling of the mode allows for more straightforwardly readable spellings of the rarer rounding modes, which is I think a good win. Let's go through a few rounding modes, using Swift's naming approach.
 
-Towards zero:
+Toward zero:
 
 ::: std
 ```cpp
 x / y                                  // just the language operator
 div_trunc(x, y)                        // following trunc()
 div_to_zero(x, y)                      // P3724
-div(x, y, rounding::towards_zero)      // with mode
+div(x, y, rounding::toward_zero)       // with mode
 ```
 :::
 
@@ -210,7 +210,36 @@ div(x, y, rounding::to_nearest_or_ceil)  // with mode
 
 Of course, the ones that explicitly provide a rounding mode are longer than the other options — although the relative margin of difference goes down if the variable names are longer than a single character. But the enum allows for, and arguably even forces, clearer names.
 
-I think clearer names are more valuable than terser names for these functions — especially for these rarer used rounding modes.
+I think clearer names are more valuable than terser names for these functions — especially for these more rarer used rounding modes.
+
+## Floor and Ceiling as Rounding Modes
+
+If we have an enumeration for the rounding modes, what should we call the rounding mode equivalents of the operations `div_floor` and `div_ceil`?
+
+I've been arguing that the _operations_ should be named `floor` and `ceil`, since that's what people will search for. Floor and ceiling are the names of those operations. But they aren't necessarily rounding _modes_ — rounding mode is more like "toward zero" or "up." This is the same naming distinct that Julia makes: `fld` and `cld` for the operations but `RoundDown` and `RoundUp` for the rounding mode. It's this question of mode that explains why there shouldn't be an enumerator for `rounding::euclid` — that's not a rounding mode, that's a different algorithm.
+
+I think the three pairs that make sense are:
+
+* `ceil` and `floor` (after the operations)
+* `up` and `down` (e.g. Swift, Julia, `fesetround`)
+* `toward_positive` and `toward_negative` (e.g. IEEE)
+
+Now, it turns out that `up` and `down` has some interesting usage. In Swift and Julia, they mean moving the number up and down the number line — `1.5` rounds up to `2` and `-1.5` rounds up to `-1`.
+
+ But in Java's [`RoundingMode`](https://docs.oracle.com/javase/8/docs/api/java/math/RoundingMode.html), Python's [`decimal`](https://docs.python.org/3/library/decimal.html#rounding-modes), and Ruby's [`BigDecimal`](https://ruby-doc.org/stdlib-2.5.8/libdoc/bigdecimal/rdoc/BigDecimal.html), all provide _both_ `UP` and `DOWN` _and_ `CEILING` and `FLOOR`. Not as synonyms, these are four distinct rounding modes. All of these come from IBM's [General Decimal Arithmetic specification](https://speleotrove.com/decimal/decarith.pdf), defines these rounding modes:
+
+|mode name|definition|
+|:-:|----|
+|round-down|(Round toward 0; truncate.) The discarded digits are ignored; the result is unchanged.|
+|round-half-up|If the discarded digits represent greater than or equal to half (0.5) of the value of a one in the next left position then the result coefficient should be incremented by 1 (rounded up). Otherwise the discarded digits are ignored.|
+|round-half-even|If the discarded digits represent greater than half (0.5) the value of a one in the next left position then the result coefficient should be incremented by 1 (rounded up). If they represent less than half, then the result coefficient is not adjusted (that is, the discarded digits are ignored). <br />Otherwise (they represent exactly half) the result coefficient is unaltered if its rightmost digit is even, or incremented by 1 (rounded up) if its rightmost digit is odd (to make an even digit).
+|round-ceiling|(Round toward +∞.) If all of the discarded digits are zero or if the sign is 1 the result is unchanged. Otherwise, the result coefficient should be incremented by 1 (rounded up).|
+|round-floor|(Round toward -∞.) If all of the discarded digits are zero or if the sign is 0 the result is unchanged. Otherwise, the sign is 1 and the result coefficient should be incremented by 1.|
+|round-half-down|If the discarded digits represent greater than half (0.5) of the value of a one in the next left position then the result coefficient should be incremented by 1 (rounded up). Otherwise (the discarded digits are 0.5 or less) the discarded digits are ignored.
+|round-up|(Round away from 0.) If all of the discarded digits are zero the result is unchanged. Otherwise, the result coefficient should be incremented by 1 (rounded up).
+|round-05up|(Round zero or five away from 0.) The same as round-up, except that rounding up only occurs if the digit to be rounded up is 0 or 5, and after overflow the result is the same as for round-down.
+
+Personally, I think "toward zero" is a perfectly good way to express rounding toward zero, which has the benefit that I can continue to view it as a number line rather than a number parabola in which "down" means two different directions. But the divergence in existing practice of what rounding "up" and "down" means, especially given that multiple languages actually provide UP and CEILING as distinct modes, suggests that we should not simply copy the Julia and Swift naming approach.
 
 # Proposal
 
@@ -236,7 +265,7 @@ enum class rounding {
     // directed rules
     ceil,
     floor,
-    towards_zero,
+    toward_zero,
     away_from_zero,
 
     // nearest rules
@@ -252,14 +281,6 @@ template<class T> constexpr T div(T x, T y, rounding mode);
 template<class T> constexpr div_result<T> div_rem(T x, T y, rounding mode);
 ```
 :::
-
-The big question is actually what those first two directed rounding modes should be. I've been arguing that the _operations_ should be named `floor` and `ceil`, since that's what people will search for. Floor and ceiling are the names of those operations. But they aren't necessarily rounding _modes_ — rounding mode is more like up or down. This is the same naming distinct that Julia makes: `fld` and `cld` for the operations but `RoundDown` and `RoundUp` for the rounding mode. It's this question of mode that explains why there's no `rounding::euclid` — that's not a rounding mode, that's a different algorithm. I think the three pairs that make sense are:
-
-* `ceil` and `floor` (after the operations)
-* `up` and `down` [^java] (e.g. Swift, Julia, `fesetround`)
-* `towards_positive` and `towards_negative` (e.g. IEEE)
-
-[^java]: Java, in its [`RoundingMode`](https://docs.oracle.com/javase/8/docs/api/java/math/RoundingMode.html) enumeration, notably uses `CEILING` and `FLOOR` as the names of those operations but then _also_ provides `UP` and `DOWN`. These are not actually synonyms. To Java, `UP` means "away from zero" and `DOWN` means "towards zero." It's the only language I could find that apparently views the number line as more of a number parabola.
 
 Note that `std::div` already exists — and returns not just the quotient but both the quotient and remainder together (as proposed in the better named `div_rem` family). I think this is okay because `std::div` in its current form isn't very useful, due to two flaws:
 
