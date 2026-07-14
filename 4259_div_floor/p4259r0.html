@@ -978,7 +978,7 @@ or
 </tr>
 </tbody>
 </table>
-<p>Not all languages provide integer division functions of this form,
+<p>Not all languages provide integer division functions of this form —
 some simply rely on their regular integer division operation for doing
 floor division (since in C++,
 <code class="sourceCode cpp"><span class="op">-</span><span class="dv">5</span> <span class="op">/</span> <span class="dv">2</span></code>
@@ -1227,7 +1227,7 @@ worst of the three:</p>
 (floor, ceiling) and Euclidean division merit their own named functions,
 while the rest can be handled via a rounding mode enumeration as in
 Julia (<a href="https://docs.julialang.org/en/v1/base/math/#Base.Rounding.RoundingMode">7
-options</a>), Swift (<a href="https://deepwiki.com/apple/swift-numerics/4.3-division-with-rounding">11
+options</a>), Swift (<a href="https://github.com/apple/swift-numerics/blob/main/Sources/IntegerUtilities/RoundingRule.swift">11
 options</a>), and Matlab (<a href="https://www.mathworks.com/help/matlab/ref/idivide.html">4
 options</a>).</p>
 <p>The paper’s argument <em>against</em> such a rounding mode function
@@ -1310,8 +1310,8 @@ approach.</p>
 <p>To the nearest integer, rounding ties up:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>div_ties_to_pos_inf<span class="op">(</span>x<span class="op">,</span> y<span class="op">)</span>              <span class="co">// P3724</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>div<span class="op">(</span>x<span class="op">,</span> y<span class="op">,</span> rounding<span class="op">::</span>to_nearest_or_up<span class="op">)</span>  <span class="co">// with mode</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>div_ties_to_pos_inf<span class="op">(</span>x<span class="op">,</span> y<span class="op">)</span>                <span class="co">// P3724</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>div<span class="op">(</span>x<span class="op">,</span> y<span class="op">,</span> rounding<span class="op">::</span>to_nearest_or_ceil<span class="op">)</span>  <span class="co">// with mode</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Of course, the ones that explicitly provide a rounding mode are
@@ -1337,8 +1337,8 @@ a rounding mode enumeration doesn’t preclude explicit names for the more
 common operations, and there’s existing practice for just that in Julia.
 At the very least, the names of several of the rounding modes should be
 reconsidered to read better. The proposed
-<code class="sourceCode cpp">div_away_zero</code> is worst of the names
-since it’s just missing a preposition, but the family of nearest
+<code class="sourceCode cpp">div_away_zero</code> is the worst of the
+names since it’s just missing a preposition, but the family of nearest
 rounding rules aren’t very well named either since they omit the
 “nearest” part in the name — you just have to know that
 <code class="sourceCode cpp">div_ties_to_even</code> has an implicit
@@ -1378,6 +1378,30 @@ names this mode
 <span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">constexpr</span> div_result<span class="op">&lt;</span>T<span class="op">&gt;</span> div_rem<span class="op">(</span>T x<span class="op">,</span> T y<span class="op">,</span> rounding mode<span class="op">);</span></span></code></pre></div>
 </blockquote>
 </div>
+<p>The big question is actually what those first two directed rounding
+modes should be. I’ve been arguing that the <em>operations</em> should
+be named <code class="sourceCode cpp">floor</code> and
+<code class="sourceCode cpp">ceil</code>, since that’s what people will
+search for. Floor and ceiling are the names of those operations. But
+they aren’t necessarily rounding <em>modes</em> — rounding mode is more
+like up or down. This is the same naming distinct that Julia makes:
+<code class="sourceCode cpp">fld</code> and
+<code class="sourceCode cpp">cld</code> for the operations but
+<code class="sourceCode cpp">RoundDown</code> and
+<code class="sourceCode cpp">RoundUp</code> for the rounding mode. It’s
+this question of mode that explains why there’s no
+<code class="sourceCode cpp">rounding<span class="op">::</span>euclid</code>
+— that’s not a rounding mode, that’s a different algorithm. I think the
+three pairs that make sense are:</p>
+<ul>
+<li><code class="sourceCode cpp">ceil</code> and
+<code class="sourceCode cpp">floor</code> (after the operations)</li>
+<li><code class="sourceCode cpp">up</code> and
+<code class="sourceCode cpp">down</code> <a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>
+(e.g. Swift, Julia, <code class="sourceCode cpp">fesetround</code>)</li>
+<li><code class="sourceCode cpp">towards_positive</code> and
+<code class="sourceCode cpp">towards_negative</code> (e.g. IEEE)</li>
+</ul>
 <p>Note that
 <code class="sourceCode cpp">std<span class="op">::</span>div</code>
 already exists — and returns not just the quotient but both the quotient
@@ -1404,7 +1428,7 @@ naming its family of functions
 <code class="sourceCode cpp">div_<span class="op">*</span></code> that
 only return the quotient even though the existing
 <code class="sourceCode cpp">std<span class="op">::</span>div</code>
-does not.</p>
+returns both.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body" data-entry-spacing="0" role="list">
@@ -1418,13 +1442,24 @@ References<a href="#bibliography" class="self-link"></a></h1>
 <li id="fn1"><p>Excel’s <code class="sourceCode cpp">FLOOR</code> and
 <code class="sourceCode cpp">CEILING</code> are actually binary, they
 take a significance argument.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>Rust’s <code class="sourceCode cpp">div_floor</code> is
-still unstable for signed integers, but unsigned
-<code class="sourceCode cpp">div_ceil</code> and
-<code class="sourceCode cpp">div_floor</code> are stable.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Rust’s <code class="sourceCode cpp">div_ceil</code> is
+stable for unsigned integer but unstable for signed integer,
+<code class="sourceCode cpp">div_floor</code> is unstable for both
+(since unsigned floor division is just
+<code class="sourceCode cpp"><span class="op">/</span></code>).<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn3"><p>Not in Core Racket, but rather in <a href="https://srfi.schemers.org/srfi-141/srfi-141.html">SRFI 141</a>.
 Note that this also has Euclidean division, as well as truncating,
 rounding to nearest (ties to even), and balanced.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Java, in its <a href="https://docs.oracle.com/javase/8/docs/api/java/math/RoundingMode.html"><code class="sourceCode cpp">RoundingMode</code></a>
+enumeration, notably uses <code class="sourceCode cpp">CEILING</code>
+and <code class="sourceCode cpp">FLOOR</code> as the names of those
+operations but then <em>also</em> provides
+<code class="sourceCode cpp">UP</code> and
+<code class="sourceCode cpp">DOWN</code>. These are not actually
+synonyms. To Java, <code class="sourceCode cpp">UP</code> means “away
+from zero” and <code class="sourceCode cpp">DOWN</code> means “towards
+zero.” It’s the only language I could find that apparently views the
+number line as more of a number parabola.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 </div>
