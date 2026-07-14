@@ -224,7 +224,7 @@ I think the three pairs that make sense are:
 * `up` and `down` (e.g. Swift, Julia, `fesetround`)
 * `toward_positive` and `toward_negative` (e.g. IEEE)
 
-Now, it turns out that the names `up` and `down` have some interesting usage. In Swift and Julia, they mean moving the number up and down the number line — `1.5` rounds up to `2` and `-1.5` rounds up to `-1`. But Java's [`RoundingMode`](https://docs.oracle.com/javase/8/docs/api/java/math/RoundingMode.html), Python's [`decimal`](https://docs.python.org/3/library/decimal.html#rounding-modes), and Ruby's [`BigDecimal`](https://rubydoc.info/gems/bigdecimal/BigDecimal) all provide _both_ `UP` and `DOWN` _and_ `CEILING` and `FLOOR`. Not as synonyms, these are four distinct rounding modes. All of these come from IBM's [General Decimal Arithmetic specification](https://speleotrove.com/decimal/decarith.pdf), which defines these rounding modes:
+Now, it turns out that the names `up` and `down` have some interesting usage. In Swift and Julia, they mean moving the number up and down the number line — `1.5` rounds up to `2` and `-1.5` rounds up to `-1`. But Java's [`RoundingMode`](https://docs.oracle.com/javase/8/docs/api/java/math/RoundingMode.html), Python's [`decimal`](https://docs.python.org/3/library/decimal.html#rounding-modes), and Ruby's [`BigDecimal`](https://rubydoc.info/gems/bigdecimal/BigDecimal) all provide _both_ `UP` and `DOWN` _and_ `CEILING` and `FLOOR`. Not as synonyms — these are four distinct rounding modes. All of these come from IBM's [General Decimal Arithmetic specification](https://speleotrove.com/decimal/decarith.pdf), which defines these rounding modes:
 
 |mode name|definition|
 |:-:|----|
@@ -239,7 +239,7 @@ Now, it turns out that the names `up` and `down` have some interesting usage. In
 
 Personally, I think "toward zero" is a perfectly good way to express rounding toward zero, which has the benefit that I can continue to view it as a number line rather than a number parabola in which "down" means two different directions. But the divergence in existing practice of what rounding "up" and "down" means, especially given that multiple languages actually provide UP and CEILING as distinct modes, suggests that we should not simply copy the Julia and Swift naming approach.
 
-Given that, and the demonstrated use of floor and ceiling as rounding _modes_ even as I earlier claimed of them as being operations, I see no reason not to just use `floor` and `ceil` for the modes too.
+Given that, and given that the decimal-arithmetic languages demonstrate floor and ceiling being used as rounding _mode_ names — even though I earlier characterized them as _operation_ names — I see no reason not to use `floor` and `ceil` for the modes too.
 
 # Proposal
 
@@ -263,8 +263,8 @@ template<class T> constexpr div_result<T> div_rem_euclid(T x, T y); // as in P37
 
 enum class rounding {
     // directed rules
-    ceil,
     floor,
+    ceil,
     toward_zero,
     away_from_zero,
 

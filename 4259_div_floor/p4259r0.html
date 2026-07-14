@@ -1366,7 +1366,7 @@ and Ruby’s <a href="https://rubydoc.info/gems/bigdecimal/BigDecimal"><code cla
 all provide <em>both</em> <code class="sourceCode cpp">UP</code> and
 <code class="sourceCode cpp">DOWN</code> <em>and</em>
 <code class="sourceCode cpp">CEILING</code> and
-<code class="sourceCode cpp">FLOOR</code>. Not as synonyms, these are
+<code class="sourceCode cpp">FLOOR</code>. Not as synonyms — these are
 four distinct rounding modes. All of these come from IBM’s <a href="https://speleotrove.com/decimal/decarith.pdf">General Decimal
 Arithmetic specification</a>, which defines these rounding modes:</p>
 <table>
@@ -1433,10 +1433,11 @@ two different directions. But the divergence in existing practice of
 what rounding “up” and “down” means, especially given that multiple
 languages actually provide UP and CEILING as distinct modes, suggests
 that we should not simply copy the Julia and Swift naming approach.</p>
-<p>Given that, and the demonstrated use of floor and ceiling as rounding
-<em>modes</em> even as I earlier claimed of them as being operations, I
-see no reason not to just use <code class="sourceCode cpp">floor</code>
-and <code class="sourceCode cpp">ceil</code> for the modes too.</p>
+<p>Given that, and given that the decimal-arithmetic languages
+demonstrate floor and ceiling being used as rounding <em>mode</em> names
+— even though I earlier characterized them as <em>operation</em> names —
+I see no reason not to use <code class="sourceCode cpp">floor</code> and
+<code class="sourceCode cpp">ceil</code> for the modes too.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="proposal"><span class="header-section-number">2</span> Proposal<a href="#proposal" class="self-link"></a></h1>
 <p>The names
 <code class="sourceCode cpp">std<span class="op">::</span>div_to_pos_inf</code>
@@ -1476,8 +1477,8 @@ names this mode
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> <span class="kw">class</span> rounding <span class="op">{</span></span>
 <span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// directed rules</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    ceil<span class="op">,</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    floor<span class="op">,</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    floor<span class="op">,</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    ceil<span class="op">,</span></span>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    toward_zero<span class="op">,</span></span>
 <span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    away_from_zero<span class="op">,</span></span>
 <span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
