@@ -70,6 +70,8 @@ $pattern$ => $expr-or-braced-init-list$;
 ```
 :::
 
+Indeed, as of [@P2688R5]{.title}, the `{ $statement$ }` production is gone and the `$braced-init-list$` case is now supported. Pattern matching now relies upon `do` expressions to support multiple statements.
+
 # `do` expressions
 
 Our proposal is the addition of a new kind of expression, called a `do` expression.
