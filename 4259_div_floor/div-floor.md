@@ -107,7 +107,7 @@ Indeed, the use of names like floor and ceil is common. Not just common, but all
 
 The answer to what `div_floor` does for negative numbers is of course the same as it is for positive numbers: it gives the largest integer less than or equal to the quotient. It is difficult to accept the claim that this is hard for a non-mathematician to understand, while `div_to_neg_inf` is somehow easier, especially given the landscape that we find ourselves in. Additionally, `to_neg_inf` is appreciably more mathematically-oriented than `floor` (not to mention `down`).
 
-That there is no established term for rounding away from zero (indeed as far as I know only Julia and Swift provide this sort of rounding, and both provide it in the ternary form where the rounding mode is an operand) does not mean that we should ignore the fact that there _is_ an established term for floor and ceiling division. And even for rounding away from zero, the paper's choice of naming is too terse. Both Swift and Julia call this rounding _from_ zero, whereas the proposed name is just "away zero":
+That there is no established term for rounding away from zero (the only languages I'm aware of that provide this mode only provide it in the ternary form where the rounding mode is an operand) does not mean that we should ignore the fact that there _is_ an established term for floor and ceiling division. And even for rounding away from zero, the paper's choice of naming is too terse. Both Swift and Julia call this rounding _from_ zero, whereas the proposed name is just "away zero":
 
 |Language|Integer Division, rounding away from zero|
 |-|-|
