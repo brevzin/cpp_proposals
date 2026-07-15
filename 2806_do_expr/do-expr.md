@@ -800,7 +800,7 @@ The reason we're not simply proposing to standardize the existing extension is t
 
 For (1), there is simply no obvious place to put the `$trailing-return-type$`. For (2), you can't turn `if`s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.
 
-With allowing [implicit last value](#implicit-last-value), the simple translation from gcc statement-expression to `do` expression is just a matter of swapping parentheses for a leading `do`. We're just generalizing to make the feature more flexible.
+With allowing [implicit last value](#implicit-last-value), the simple translation from gcc statement-expression to `do` expression is just a matter of swapping parentheses for a leading `do` (and dropping the `;` on the last statement). We're just generalizing to make the feature more flexible.
 
 ## What About Reflection?
 
