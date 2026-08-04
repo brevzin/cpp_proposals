@@ -766,7 +766,7 @@ implementation (mostly just allowing
 <code class="sourceCode cpp"><span class="kw">consteval</span></code> on
 variable declarations) and wording.</p>
 <h2 data-number="1.1" id="mutability"><span class="header-section-number">1.1</span> Mutability<a href="#mutability" class="self-link"></a></h2>
-<p>We proposal that a variable declared
+<p>We propose that a variable declared
 <code class="sourceCode cpp"><span class="kw">consteval</span></code> is
 similar to a variable declared
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
@@ -780,16 +780,25 @@ instead.</p>
 <p>This proposal also doesn’t provide any enhancements to the kinds of
 things we could do with
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
-variables either. As mentioned in both <span class="citation" data-cites="P3603R1"><a href="https://wg21.link/p3603r1">[P3603R1]</a></span> and <span class="citation" data-cites="P4101R1"><a href="https://wg21.link/p4101r1">[P4101R1]</a></span>, a
+variables. As mentioned in both <span class="citation" data-cites="P3603R1"><a href="https://wg21.link/p3603r1">[P3603R1]</a></span> and <span class="citation" data-cites="P4101R1"><a href="https://wg21.link/p4101r1">[P4101R1]</a></span>, a
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 variable could be allowed to “persist” its allocation. It’s a
 compile-time only variable, so none of the issues around non-transient
 allocation exist. But that will come in a future paper.</p>
 <h2 data-number="1.3" id="implementation-experience"><span class="header-section-number">1.3</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
-<p>This has been implemented in my fork of Clang since Sofia. You can
-see it on <a href="https://compiler-explorer.com/z/fz9r54P6f">compiler
+<p>This has been implemented in Barry’s fork of Clang since Sofia. You
+can see it on <a href="https://compiler-explorer.com/z/fz9r54P6f">compiler
 explorer</a>.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">2</span> Wording<a href="#wording" class="self-link"></a></h1>
+<p><span class="draftnote" style="color: #0000ff">[ Drafting note: We’re
+defining the term “constexpr variable” to be those variables declared
+either <code class="sourceCode default cpp">constexpr</code> or
+<code class="sourceCode default cpp">consteval</code>, since all rules
+we have apply to both (except for a new one specifically for those
+declared <code class="sourceCode default cpp">consteval</code>). This is
+simpler than making sure we catch all the uses of “constexpr” to be
+“constexpr or consteval”, and is how Barry implemented it too.
+]</span></p>
 <p>Allow variables to be declared
 <code class="sourceCode cpp"><span class="kw">consteval</span></code> in
 <span>9.2.6 The constexpr and consteval specifiers <a href="https://eel.is/c++draft/dcl.constexpr" title="9.2.6 The constexpr and consteval specifiers">[dcl.constexpr]</a></span>:</p>
@@ -814,6 +823,18 @@ of a function or function template has a
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 specifier, then all its declarations shall contain the same
 specifier.</p>
+<p><span class="note"><span>[ <em>Note:</em> </span> An explicit
+specialization can differ from the template declaration with respect to
+the
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code> or
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier.<span> — <em>end note</em> ]</span></span></p>
+<p><span class="note"><span>[ <em>Note:</em> </span>Function parameters
+cannot be declared
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+<span class="addu">or
+<code class="sourceCode cpp"><span class="kw">consteval</span></code></span>.<span>
+— <em>end note</em> ]</span></span></p>
 <p>[…]</p>
 <p><span class="marginalizedparent"><a href="#pnum-2" id="pnum-2" class="marginalized">6</a></span> A
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
@@ -827,7 +848,7 @@ an object shall have literal type and shall be initialized. <span class="addu">A
 specifier used in the declaration of a variable declares that variable
 to be a <em>constexpr variable</em>.</span> A <span class="rm" style="color: #bf0303"><del><code class="sourceCode default cpp">constexpr</code></del></span>
 <span class="addu">constexpr</span> variable shall be
-constant-initializable (<a href="https://eel.is/c++draft/expr.const" title="7.7 Constant evaluation">[expr.const]</a>). A <span class="rm" style="color: #bf0303"><del><code class="sourceCode default cpp">constexpr</code></del></span>
+constant-initializable (<a href="https://eel.is/c++draft/expr.const.init" title="7.7.4 Constant initialization">[expr.const.init]</a>). A <span class="rm" style="color: #bf0303"><del><code class="sourceCode default cpp">constexpr</code></del></span>
 <span class="addu">constexpr</span> variable that is an object, as well
 as any temporary to which a <span class="rm" style="color: #bf0303"><del><code class="sourceCode default cpp">constexpr</code></del></span>
 <span class="addu">constexpr</span> reference is bound, shall have
@@ -842,7 +863,10 @@ declared by consteval variables in <span>7.7.3 Constant expressions <a href="htt
 object</em> if its complete object <span class="rm" style="color: #bf0303"><del>has</del></span></p>
 <ul>
 <li><span class="marginalizedparent"><a href="#pnum-4" id="pnum-4" class="marginalized">(2.0)</a></span> <span class="addu">is the object
-declared by a consteval variable,</span></li>
+declared by, or a temporary object whose liftime is extended to that of,
+a variable declared with the
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier,</span></li>
 <li><span class="marginalizedparent"><a href="#pnum-5" id="pnum-5" class="marginalized">(2.1)</a></span> <span class="addu">has</span> a
 constituent value that is consteval-only<span class="addu">,</span>
 or</li>
@@ -850,6 +874,166 @@ or</li>
 constituent reference that refers to an immediate object or immediate
 function.</li>
 </ul>
+</blockquote>
+</div>
+<p>Add
+<code class="sourceCode cpp"><span class="kw">consteval</span></code> to
+what you can do in an expansion statement, first in <span>8.1 Preamble
+<a href="https://eel.is/c++draft/stmt.pre" title="8.1 Preamble">[stmt.pre]</a></span>:</p>
+<div class="std wording">
+<blockquote>
+<p><span class="marginalizedparent"><a href="#pnum-7" id="pnum-7" class="marginalized">8</a></span> For any <em>condition</em> or
+<em>for-range-declaration</em>
+<code class="sourceCode cpp"><em>D</em></code>, each
+<em>decl-specifier</em> in the <em>decl-specifier-seq</em> of
+<code class="sourceCode cpp"><em>D</em></code>, including that of any
+<em>structured-binding-declaration</em> of
+<code class="sourceCode cpp"><em>D</em></code>, shall be either a
+<em>type-specifier</em><span class="addu">,
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>,</span>
+or
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>.</p>
+</blockquote>
+</div>
+<p>And in <span>8.7 Expansion statements <a href="https://eel.is/c++draft/stmt.expand" title="8.7 Expansion statements">[stmt.expand]</a></span>:</p>
+<div class="std wording">
+<blockquote>
+<p><span class="marginalizedparent"><a href="#pnum-8" id="pnum-8" class="marginalized">1</a></span> Expansion statements specify repeated
+instantiations (<a href="https://eel.is/c++draft/temp.decls.general" title="13.7.1 General">[temp.decls.general]</a>) of their
+substatement.</p>
+<div class="addu">
+<p>Let <code class="sourceCode cpp"><em>CONST-SPECIFIER</em></code>
+be:</p>
+<ul>
+<li><span class="marginalizedparent"><a href="#pnum-9" id="pnum-9" class="marginalized">(1.1)</a></span> the keyword
+<code class="sourceCode cpp"><span class="kw">consteval</span></code> if
+<code class="sourceCode cpp"><span class="kw">consteval</span></code> is
+one of the <em>decl-specifiers</em> of the <em>decl-specifier-seq</em>
+of the <em>for-range-declaration</em>,</li>
+<li><span class="marginalizedparent"><a href="#pnum-10" id="pnum-10" class="marginalized">(1.2)</a></span> otherwise, the keyword
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code> if
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code> is
+one of the <em>decl-specifiers</em> of the <em>decl-specifier-seq</em>
+of the <em>for-range-declaration</em>,</li>
+<li><span class="marginalizedparent"><a href="#pnum-11" id="pnum-11" class="marginalized">(1.3)</a></span> otherwise, nothing.</li>
+</ul>
+</div>
+<p>[…]</p>
+<ul>
+<li><p><span class="marginalizedparent"><a href="#pnum-12" id="pnum-12" class="marginalized">(5.2)</a></span> Otherwise, if
+<code class="sourceCode cpp"><em>S</em></code> is an iterating expansion
+statement, <code class="sourceCode cpp"><em>S</em></code> is equivalent
+to:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <em>init-statement</em></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="rm" style="color: #bf0303"><del>constexpr<sub>opt</sub></del></span> <span class="addu"><em>CONST-SPECIFIER</em></span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <em>range</em> <span class="op">=</span> <span class="op">(</span> <em>expansion-initializer</em> <span class="op">);</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="rm" style="color: #bf0303"><del>constexpr<sub>opt</sub></del></span> <span class="addu"><em>CONST-SPECIFIER</em></span> <span class="kw">auto</span> <em>begin</em> <span class="op">=</span> <em>begin-expr</em><span class="op">;</span> <span class="co">// see [stmt.ranged]</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <em>S</em><sub><em>0</em></sub></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  ...</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <em>S</em><sub><em><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>-1</em></sub></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>where <code class="sourceCode cpp"><em>N</em></code> is the result of
+evaluating the expression</p>
+<p>[…]</p>
+<p>and
+<code class="sourceCode cpp"><em>S</em><sub><em>i</em></sub></code>
+is</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="rm" style="color: #bf0303"><del>constexpr<sub>opt</sub></del></span> <span class="addu"><em>CONST-SPECIFIER</em></span> <span class="kw">auto</span> <em>iter</em> <span class="op">=</span> <em>begin</em> <span class="op">+</span> i<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <em>for-range-declaration</em> <span class="op">=</span> <span class="op">*</span><em>iter</em><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <em>compound-statement</em></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The variables <code class="sourceCode cpp"><em>range</em></code>,
+<code class="sourceCode cpp"><em>begin</em></code>, and
+<code class="sourceCode cpp"><em>iter</em></code> are defined for
+exposition only. <span class="rm" style="color: #bf0303"><del>The
+keyword constexpr is present in the declarations of range, begin, and
+iter if and only if constexpr is one of the decl-specifiers of the
+decl-specifier-seq of the for-range-declaration.</del></span>. The
+identifier <code class="sourceCode cpp"><em>i</em></code> is considered
+to be a prvalue of type
+<code class="sourceCode cpp">std​<span class="op">::</span>​ptrdiff_t</code>;
+the program is ill-formed if
+<code class="sourceCode cpp"><em>i</em></code> is not representable as
+such a value.</p></li>
+<li><p><span class="marginalizedparent"><a href="#pnum-13" id="pnum-13" class="marginalized">(5.3)</a></span> Otherwise,
+<code class="sourceCode cpp"><em>S</em></code> is a destructuring
+expansion statement and, if
+<code class="sourceCode cpp"><em>N</em></code> is
+<code class="sourceCode cpp"><span class="dv">0</span></code>,
+<code class="sourceCode cpp"><em>S</em></code> is equivalent to:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <em>init-statement</em></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="rm" style="color: #bf0303"><del>constexpr<sub>opt</sub></del></span> <span class="addu"><em>CONST-SPECIFIER</em></span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <em>range</em> <span class="op">=</span> <em>expansion-initializer</em><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>otherwise, <code class="sourceCode cpp"><em>S</em></code> is
+equivalent to:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <em>init-statement</em></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="rm" style="color: #bf0303"><del>constexpr<sub>opt</sub></del></span> <span class="addu"><em>CONST-SPECIFIER</em></span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">[</span>u<sub>0</sub><span class="op">,</span> u<sub>1</sub><span class="op">,</span> ...<span class="op">,</span> u<sub><em><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>-1</em></sub><span class="op">]</span> <span class="op">=</span> <em>expansion-initializer</em> <span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <em>S</em><sub><em>0</em></sub></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  ...</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <em>S</em><sub><em>N-1</em></sub></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>where <code class="sourceCode cpp"><em>N</em></code> is the
+structured binding size of the type of the
+<code class="sourceCode cpp"><em>expansion-initializer</em></code> and
+<code class="sourceCode cpp"><em>S</em><sub><em>i</em></sub></code>
+is</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <em>for-range-declaration</em> <span class="op">=</span> <em>u</em><sub><em>i</em></sub> <span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <em>compound-statement</em></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>If the <em>expansion-initializer</em> is an lvalue, then
+<code class="sourceCode cpp">v<sub>i</sub></code> is
+<code class="sourceCode cpp">u<sub>i</sub></code>; otherwise,
+<code class="sourceCode cpp">v<sub>i</sub></code> is
+<code class="sourceCode cpp"><span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>u<sub>i</sub><span class="op">)&amp;&amp;&gt;(</span>u<sub>i</sub><span class="op">)</span></code>.
+<span class="rm" style="color: #bf0303"><del>The keyword
+<code class="sourceCode default cpp">constexpr</code> is present in the
+declaration of
+<code class="sourceCode default cpp">u<sub>0</sub>, u<sub>1</sub>, ..., u<sub><em><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>-1</em></sub></code>
+if and only if <code class="sourceCode default cpp">constexpr</code> is
+one of the
+<code class="sourceCode default cpp"><em>decl-specifier</em></code>s of
+the
+<code class="sourceCode default cpp"><em>decl-specifier-seq</em></code>
+of the
+<code class="sourceCode default cpp"><em>for-range-declaration</em></code>.</del></span></p></li>
+</ul>
+</blockquote>
+</div>
+<p>Add
+<code class="sourceCode cpp"><span class="kw">consteval</span></code> to
+the list of structured bindings declarations in <span>9.1 Preamble <a href="https://eel.is/c++draft/dcl.pre" title="9.1 Preamble">[dcl.pre]</a></span>:</p>
+<div class="std wording">
+<blockquote>
+<p><span class="marginalizedparent"><a href="#pnum-14" id="pnum-14" class="marginalized">7</a></span> A <em>simple-declaration</em> or a
+<em>condition</em> with a <em>structured-binding-declaration</em> is
+called a <em>structured binding declaration</em> (<a href="https://eel.is/c++draft/dcl.struct.bind" title="9.7 Structured binding declarations">[dcl.struct.bind]</a>). Each
+<em>decl-specifier</em> in the <em>decl-specifier-seq</em> shall be
+<span class="addu"><code class="sourceCode cpp"><span class="kw">consteval</span></code>,</span>
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>,
+<code class="sourceCode cpp"><span class="kw">constinit</span></code>,
+<code class="sourceCode cpp"><span class="kw">static</span></code>,
+<code class="sourceCode cpp"><span class="kw">thread_local</span></code>,
+<code class="sourceCode cpp"><span class="kw">auto</span></code> (<a href="https://eel.is/c++draft/dcl.spec.auto" title="9.2.9.7 Placeholder type specifiers">[dcl.spec.auto]</a>), or a
+<em>cv</em>-qualifier. The declaration shall contain at most one
+<em>sb-identifier</em> whose <em>identifier</em> is preceded by an
+ellipsis. If the declaration contains any such <em>sb-identifier</em>,
+it shall declare a templated entity (<a href="https://eel.is/c++draft/temp.pre" title="13.1 Preamble">[temp.pre]</a>).</p>
+</blockquote>
+</div>
+<p>Adjust <span>9.5.1 General <a href="https://eel.is/c++draft/dcl.init.general" title="9.5.1 General">[dcl.init.general]</a></span>:</p>
+<div class="std wording">
+<blockquote>
+<p><span class="marginalizedparent"><a href="#pnum-15" id="pnum-15" class="marginalized">2</a></span> Except for objects declared with the
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
+<span class="addu">or
+<code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
+specifier, for which see <a href="https://eel.is/c++draft/dcl.constexpr" title="9.2.6 The constexpr and consteval specifiers">[dcl.constexpr]</a>,
+[…]</p>
 </blockquote>
 </div>
 <h2 data-number="2.1" id="feature-test-macro"><span class="header-section-number">2.1</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
