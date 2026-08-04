@@ -67,7 +67,7 @@ Extend the definition of _immediate object_ to include those declared by constev
 * [#.#]{.pnum} [has]{.addu} a constituent reference that refers to an immediate object or immediate function.
 :::
 
-Add `consteval` to what you can do in an expansion statement, first in [stmt.pre]{.sref}:
+Add `consteval` to what you can do in an expansion statement and if/for/while condition, first in [stmt.pre]{.sref}:
 
 ::: {.std .wording}
 [8]{.pnum} For any *condition* or *for-range-declaration* `$D$`, each *decl-specifier* in the *decl-specifier-seq* of `$D$`, including that of any *structured-binding-declaration* of `$D$`, shall be either a *type-specifier*[, `consteval`,]{.addu} or `constexpr`.
@@ -105,7 +105,7 @@ Let `$CONST-SPECIFIER$` consist of each *decl-specifier* of the *decl-specifier-
 
   ```cpp
   {
-    @[constexpr~opt~]{.rm} [*CONST-SPECIFIER*]{.addu}@ auto @*iter*@ = $begin$ + i;
+    @[constexpr~opt~]{.rm} [*CONST-SPECIFIER*]{.addu}@ auto @*iter*@ = $begin$ + decltype(begin - begin){i};
     $for-range-declaration$ = *@*iter*@;
     $compound-statement$
   }

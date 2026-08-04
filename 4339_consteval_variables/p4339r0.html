@@ -878,8 +878,8 @@ function.</li>
 </div>
 <p>Add
 <code class="sourceCode cpp"><span class="kw">consteval</span></code> to
-what you can do in an expansion statement, first in <span>8.1 Preamble
-<a href="https://eel.is/c++draft/stmt.pre" title="8.1 Preamble">[stmt.pre]</a></span>:</p>
+what you can do in an expansion statement and if/for/while condition,
+first in <span>8.1 Preamble <a href="https://eel.is/c++draft/stmt.pre" title="8.1 Preamble">[stmt.pre]</a></span>:</p>
 <div class="std wording">
 <blockquote>
 <p><span class="marginalizedparent"><a href="#pnum-7" id="pnum-7" class="marginalized">8</a></span> For any <em>condition</em> or
@@ -932,7 +932,7 @@ evaluating the expression</p>
 <code class="sourceCode cpp"><em>S</em><sub><em>i</em></sub></code>
 is</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="rm" style="color: #bf0303"><del>constexpr<sub>opt</sub></del></span> <span class="addu"><em>CONST-SPECIFIER</em></span> <span class="kw">auto</span> <em>iter</em> <span class="op">=</span> <em>begin</em> <span class="op">+</span> i<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="rm" style="color: #bf0303"><del>constexpr<sub>opt</sub></del></span> <span class="addu"><em>CONST-SPECIFIER</em></span> <span class="kw">auto</span> <em>iter</em> <span class="op">=</span> <em>begin</em> <span class="op">+</span> <span class="kw">decltype</span><span class="op">(</span>begin <span class="op">-</span> begin<span class="op">){</span>i<span class="op">};</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <em>for-range-declaration</em> <span class="op">=</span> <span class="op">*</span><em>iter</em><span class="op">;</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <em>compound-statement</em></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
