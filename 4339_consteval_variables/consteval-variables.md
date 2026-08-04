@@ -46,24 +46,12 @@ If any declaration of a function or function template has a `constexpr` or `cons
 [...]
 
 [6]{.pnum} A `constexpr` [or `consteval`]{.addu} specifier used in an object declaration declares the object as `const`.
-Such an object shall have literal type and shall be initialized.
-A `constexpr` [or `consteval`]{.addu} variable shall be constant-initializable ([expr.const]).
-A `constexpr` [or `consteval`]{.addu} variable that is an object, as well as any temporary to which a `constexpr` [or `consteval`]{.addu} reference is bound, shall have constant destruction.
+Such an object shall have literal type and shall be initialized. [A `constexpr` or `consteval` specifier used in the declaration of a variable declares that variable to be a *constexpr variable*.]{.addu}
+A [`constexpr`]{.rm} [constexpr]{.addu} variable shall be constant-initializable ([expr.const]).
+A [`constexpr`]{.rm} [constexpr]{.addu} variable that is an object, as well as any temporary to which a [`constexpr`]{.rm} [constexpr]{.addu} reference is bound, shall have constant destruction.
 :::
 
-Change the definitions of _potentially-constant_ and _usable in constant expressions_ to include variables declared `consteval` in [expr.const.init]{.sref}:
-
-::: {.std .wording}
-[6]{.pnum} A variable is potentially-constant if it is constexpr [or consteval]{.addu} or it has reference or non-volatile const-qualified integral or enumeration type.
-
-[7]{.pnum} A variable `$V$` is *usable in constant expressions* at a point `$P$` if `$V$` is constant-initialized and potentially-constant, `$V$`'s initializing declaration `$D$` is reachable from `$P$`, and
-
-* [#.1]{.pnum} `$V$` is constexpr [or consteval]{.addu},
-* [#.#]{.pnum} `$V$` is not initialized to a TU-local value, or
-* [#.#]{.pnum} `$P$` is in the same translation unit as `$D$`.
-:::
-
-And then extend the definition of _immediate object_ to include those declared by consteval variables in [expr.const.const]{.sref}:
+Extend the definition of _immediate object_ to include those declared by consteval variables in [expr.const.const]{.sref}:
 
 ::: {.std .wording}
 [2]{.pnum} An object is an *immediate object* if its complete object [has]{.rm}

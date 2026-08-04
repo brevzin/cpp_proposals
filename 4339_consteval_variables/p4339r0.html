@@ -821,66 +821,32 @@ specifier.</p>
 <code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
 specifier used in an object declaration declares the object as
 <code class="sourceCode cpp"><span class="kw">const</span></code>. Such
-an object shall have literal type and shall be initialized. A
-<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
-<span class="addu">or
-<code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
-variable shall be constant-initializable (<a href="https://eel.is/c++draft/expr.const" title="7.7 Constant evaluation">[expr.const]</a>). A
-<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
-<span class="addu">or
-<code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
-variable that is an object, as well as any temporary to which a
-<code class="sourceCode cpp"><span class="kw">constexpr</span></code>
-<span class="addu">or
-<code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
-reference is bound, shall have constant destruction.</p>
+an object shall have literal type and shall be initialized. <span class="addu">A
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code> or
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+specifier used in the declaration of a variable declares that variable
+to be a <em>constexpr variable</em>.</span> A <span class="rm" style="color: #bf0303"><del><code class="sourceCode default cpp">constexpr</code></del></span>
+<span class="addu">constexpr</span> variable shall be
+constant-initializable (<a href="https://eel.is/c++draft/expr.const" title="7.7 Constant evaluation">[expr.const]</a>). A <span class="rm" style="color: #bf0303"><del><code class="sourceCode default cpp">constexpr</code></del></span>
+<span class="addu">constexpr</span> variable that is an object, as well
+as any temporary to which a <span class="rm" style="color: #bf0303"><del><code class="sourceCode default cpp">constexpr</code></del></span>
+<span class="addu">constexpr</span> reference is bound, shall have
+constant destruction.</p>
 </blockquote>
 </div>
-<p>Change the definitions of <em>potentially-constant</em> and
-<em>usable in constant expressions</em> to include variables declared
-<code class="sourceCode cpp"><span class="kw">consteval</span></code> in
-<span>7.7.4 Constant initialization <a href="https://eel.is/c++draft/expr.const.init" title="7.7.4 Constant initialization">[expr.const.init]</a></span>:</p>
+<p>Extend the definition of <em>immediate object</em> to include those
+declared by consteval variables in <span>7.7.3 Constant expressions <a href="https://eel.is/c++draft/expr.const.const" title="7.7.3 Constant expressions">[expr.const.const]</a></span>:</p>
 <div class="std wording">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-3" id="pnum-3" class="marginalized">6</a></span> A variable is potentially-constant if
-it is constexpr <span class="addu">or consteval</span> or it has
-reference or non-volatile const-qualified integral or enumeration
-type.</p>
-<p><span class="marginalizedparent"><a href="#pnum-4" id="pnum-4" class="marginalized">7</a></span> A variable
-<code class="sourceCode cpp"><em>V</em></code> is <em>usable in constant
-expressions</em> at a point
-<code class="sourceCode cpp"><em>P</em></code> if
-<code class="sourceCode cpp"><em>V</em></code> is constant-initialized
-and potentially-constant,
-<code class="sourceCode cpp"><em>V</em></code>’s initializing
-declaration <code class="sourceCode cpp"><em>D</em></code> is reachable
-from <code class="sourceCode cpp"><em>P</em></code>, and</p>
-<ul>
-<li><span class="marginalizedparent"><a href="#pnum-5" id="pnum-5" class="marginalized">(7.1)</a></span>
-<code class="sourceCode cpp"><em>V</em></code> is constexpr <span class="addu">or consteval</span>,</li>
-<li><span class="marginalizedparent"><a href="#pnum-6" id="pnum-6" class="marginalized">(7.2)</a></span>
-<code class="sourceCode cpp"><em>V</em></code> is not initialized to a
-TU-local value, or</li>
-<li><span class="marginalizedparent"><a href="#pnum-7" id="pnum-7" class="marginalized">(7.3)</a></span>
-<code class="sourceCode cpp"><em>P</em></code> is in the same
-translation unit as <code class="sourceCode cpp"><em>D</em></code>.</li>
-</ul>
-</blockquote>
-</div>
-<p>And then extend the definition of <em>immediate object</em> to
-include those declared by consteval variables in <span>7.7.3 Constant
-expressions <a href="https://eel.is/c++draft/expr.const.const" title="7.7.3 Constant expressions">[expr.const.const]</a></span>:</p>
-<div class="std wording">
-<blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-8" id="pnum-8" class="marginalized">2</a></span> An object is an <em>immediate
+<p><span class="marginalizedparent"><a href="#pnum-3" id="pnum-3" class="marginalized">2</a></span> An object is an <em>immediate
 object</em> if its complete object <span class="rm" style="color: #bf0303"><del>has</del></span></p>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-9" id="pnum-9" class="marginalized">(2.0)</a></span> <span class="addu">is the object
+<li><span class="marginalizedparent"><a href="#pnum-4" id="pnum-4" class="marginalized">(2.0)</a></span> <span class="addu">is the object
 declared by a consteval variable,</span></li>
-<li><span class="marginalizedparent"><a href="#pnum-10" id="pnum-10" class="marginalized">(2.1)</a></span> <span class="addu">has</span> a
+<li><span class="marginalizedparent"><a href="#pnum-5" id="pnum-5" class="marginalized">(2.1)</a></span> <span class="addu">has</span> a
 constituent value that is consteval-only<span class="addu">,</span>
 or</li>
-<li><span class="marginalizedparent"><a href="#pnum-11" id="pnum-11" class="marginalized">(2.2)</a></span> <span class="addu">has</span> a
+<li><span class="marginalizedparent"><a href="#pnum-6" id="pnum-6" class="marginalized">(2.2)</a></span> <span class="addu">has</span> a
 constituent reference that refers to an immediate object or immediate
 function.</li>
 </ul>
