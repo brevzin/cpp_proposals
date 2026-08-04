@@ -62,7 +62,7 @@ Extend the definition of _immediate object_ to include those declared by constev
 ::: {.std .wording}
 [2]{.pnum} An object is an *immediate object* if its complete object [has]{.rm}
 
-* [#.0]{.pnum} [is the object declared by, or a temporary object whose liftime is extended to that of, a variable declared with the `consteval` specifier,]{.addu}
+* [#.0]{.pnum} [is the object declared by, or a temporary object whose lifetime is extended to that of, a variable declared with the `consteval` specifier,]{.addu}
 * [#.1]{.pnum} [has]{.addu} a constituent value that is consteval-only[,]{.addu} or
 * [#.#]{.pnum} [has]{.addu} a constituent reference that refers to an immediate object or immediate function.
 :::
@@ -73,18 +73,13 @@ Add `consteval` to what you can do in an expansion statement, first in [stmt.pre
 [8]{.pnum} For any *condition* or *for-range-declaration* `$D$`, each *decl-specifier* in the *decl-specifier-seq* of `$D$`, including that of any *structured-binding-declaration* of `$D$`, shall be either a *type-specifier*[, `consteval`,]{.addu} or `constexpr`.
 :::
 
-And in [stmt.expand]{.sref}:
+And in [stmt.expand]{.sref}, mirroring the wording in [dcl.struct.bind]{.sref}:
 
 ::: {.std .wording}
 [1]{.pnum} Expansion statements specify repeated instantiations ([temp.decls.general]) of their substatement.
 
 ::: addu
-Let `$CONST-SPECIFIER$` be:
-
-* [#.#]{.pnum} the keyword `consteval` if `consteval` is one of the *decl-specifiers* of the *decl-specifier-seq* of the *for-range-declaration*,
-* [#.#]{.pnum} otherwise, the keyword `constexpr` if `constexpr` is one of the
-*decl-specifiers* of the *decl-specifier-seq* of the *for-range-declaration*,
-* [#.#]{.pnum} otherwise, nothing.
+Let `$CONST-SPECIFIER$` consist of each *decl-specifier* of the *decl-specifier-seq* of the *for-range-declaration* that is either `consteval` or `constexpr`.
 :::
 
 [...]
@@ -116,7 +111,7 @@ Let `$CONST-SPECIFIER$` be:
   }
   ```
 
-   The variables `$range$`, `$begin$`, and `$iter$` are defined for exposition only. [The keyword constexpr is present in the declarations of range, begin, and iter if and only if constexpr is one of the decl-specifiers of the decl-specifier-seq of the for-range-declaration.]{.rm}. The identifier `$i$` is considered to be a prvalue of type `std​::​ptrdiff_t`; the program is ill-formed if `$i$` is not representable as such a value.
+   The variables `$range$`, `$begin$`, and `$iter$` are defined for exposition only. [The keyword constexpr is present in the declarations of range, begin, and iter if and only if constexpr is one of the decl-specifiers of the decl-specifier-seq of the for-range-declaration.]{.rm} The identifier `$i$` is considered to be a prvalue of type `std​::​ptrdiff_t`; the program is ill-formed if `$i$` is not representable as such a value.
 - [#.#]{.pnum} Otherwise, `$S$` is a destructuring expansion statement and, if `$N$` is `0`,  `$S$` is equivalent to:
 
   ```cpp
@@ -140,7 +135,7 @@ Let `$CONST-SPECIFIER$` be:
 
   ```cpp
   {
-    $for-range-declaration$ = $u$@~_i_~@ ;
+    $for-range-declaration$ = $v$@~_i_~@ ;
     $compound-statement$
   }
   ```
@@ -162,6 +157,12 @@ Adjust [dcl.init.general]{.sref}:
 
 ::: {.std .wording}
 [2]{.pnum} Except for objects declared with the `constexpr` [or `consteval`]{.addu} specifier, for which see [dcl.constexpr], [...]
+:::
+
+Update `consteval` handling in [dcl.struct.bind]{.sref}:
+
+::: {.std .wording}
+[1]{.pnum} [...] Let *cv* denote the *cv-qualifier*s in the *decl-specifier-seq* and `$S$` consist of each *decl-specifier* of the *decl-specifier-seq* that is `constexpr`, [`consteval`,]{.addu} `constinit`, or a *storage-class-specifier*. [...]
 :::
 
 ## Feature-test Macro

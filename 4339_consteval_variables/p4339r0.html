@@ -863,8 +863,8 @@ declared by consteval variables in <span>7.7.3 Constant expressions <a href="htt
 object</em> if its complete object <span class="rm" style="color: #bf0303"><del>has</del></span></p>
 <ul>
 <li><span class="marginalizedparent"><a href="#pnum-4" id="pnum-4" class="marginalized">(2.0)</a></span> <span class="addu">is the object
-declared by, or a temporary object whose liftime is extended to that of,
-a variable declared with the
+declared by, or a temporary object whose lifetime is extended to that
+of, a variable declared with the
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 specifier,</span></li>
 <li><span class="marginalizedparent"><a href="#pnum-5" id="pnum-5" class="marginalized">(2.1)</a></span> <span class="addu">has</span> a
@@ -895,7 +895,8 @@ or
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>.</p>
 </blockquote>
 </div>
-<p>And in <span>8.7 Expansion statements <a href="https://eel.is/c++draft/stmt.expand" title="8.7 Expansion statements">[stmt.expand]</a></span>:</p>
+<p>And in <span>8.7 Expansion statements <a href="https://eel.is/c++draft/stmt.expand" title="8.7 Expansion statements">[stmt.expand]</a></span>, mirroring the
+wording in <span>9.7 Structured binding declarations <a href="https://eel.is/c++draft/dcl.struct.bind" title="9.7 Structured binding declarations">[dcl.struct.bind]</a></span>:</p>
 <div class="std wording">
 <blockquote>
 <p><span class="marginalizedparent"><a href="#pnum-8" id="pnum-8" class="marginalized">1</a></span> Expansion statements specify repeated
@@ -903,24 +904,15 @@ instantiations (<a href="https://eel.is/c++draft/temp.decls.general" title="13.7
 substatement.</p>
 <div class="addu">
 <p>Let <code class="sourceCode cpp"><em>CONST-SPECIFIER</em></code>
-be:</p>
-<ul>
-<li><span class="marginalizedparent"><a href="#pnum-9" id="pnum-9" class="marginalized">(1.1)</a></span> the keyword
-<code class="sourceCode cpp"><span class="kw">consteval</span></code> if
-<code class="sourceCode cpp"><span class="kw">consteval</span></code> is
-one of the <em>decl-specifiers</em> of the <em>decl-specifier-seq</em>
-of the <em>for-range-declaration</em>,</li>
-<li><span class="marginalizedparent"><a href="#pnum-10" id="pnum-10" class="marginalized">(1.2)</a></span> otherwise, the keyword
-<code class="sourceCode cpp"><span class="kw">constexpr</span></code> if
-<code class="sourceCode cpp"><span class="kw">constexpr</span></code> is
-one of the <em>decl-specifiers</em> of the <em>decl-specifier-seq</em>
-of the <em>for-range-declaration</em>,</li>
-<li><span class="marginalizedparent"><a href="#pnum-11" id="pnum-11" class="marginalized">(1.3)</a></span> otherwise, nothing.</li>
-</ul>
+consist of each <em>decl-specifier</em> of the
+<em>decl-specifier-seq</em> of the <em>for-range-declaration</em> that
+is either
+<code class="sourceCode cpp"><span class="kw">consteval</span></code> or
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>.</p>
 </div>
 <p>[…]</p>
 <ul>
-<li><p><span class="marginalizedparent"><a href="#pnum-12" id="pnum-12" class="marginalized">(5.2)</a></span> Otherwise, if
+<li><p><span class="marginalizedparent"><a href="#pnum-9" id="pnum-9" class="marginalized">(5.2)</a></span> Otherwise, if
 <code class="sourceCode cpp"><em>S</em></code> is an iterating expansion
 statement, <code class="sourceCode cpp"><em>S</em></code> is equivalent
 to:</p>
@@ -950,14 +942,14 @@ is</p>
 exposition only. <span class="rm" style="color: #bf0303"><del>The
 keyword constexpr is present in the declarations of range, begin, and
 iter if and only if constexpr is one of the decl-specifiers of the
-decl-specifier-seq of the for-range-declaration.</del></span>. The
+decl-specifier-seq of the for-range-declaration.</del></span> The
 identifier <code class="sourceCode cpp"><em>i</em></code> is considered
 to be a prvalue of type
 <code class="sourceCode cpp">std​<span class="op">::</span>​ptrdiff_t</code>;
 the program is ill-formed if
 <code class="sourceCode cpp"><em>i</em></code> is not representable as
 such a value.</p></li>
-<li><p><span class="marginalizedparent"><a href="#pnum-13" id="pnum-13" class="marginalized">(5.3)</a></span> Otherwise,
+<li><p><span class="marginalizedparent"><a href="#pnum-10" id="pnum-10" class="marginalized">(5.3)</a></span> Otherwise,
 <code class="sourceCode cpp"><em>S</em></code> is a destructuring
 expansion statement and, if
 <code class="sourceCode cpp"><em>N</em></code> is
@@ -982,7 +974,7 @@ structured binding size of the type of the
 <code class="sourceCode cpp"><em>S</em><sub><em>i</em></sub></code>
 is</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <em>for-range-declaration</em> <span class="op">=</span> <em>u</em><sub><em>i</em></sub> <span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <em>for-range-declaration</em> <span class="op">=</span> <em>v</em><sub><em>i</em></sub> <span class="op">;</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <em>compound-statement</em></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>If the <em>expansion-initializer</em> is an lvalue, then
@@ -1009,7 +1001,7 @@ of the
 the list of structured bindings declarations in <span>9.1 Preamble <a href="https://eel.is/c++draft/dcl.pre" title="9.1 Preamble">[dcl.pre]</a></span>:</p>
 <div class="std wording">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-14" id="pnum-14" class="marginalized">7</a></span> A <em>simple-declaration</em> or a
+<p><span class="marginalizedparent"><a href="#pnum-11" id="pnum-11" class="marginalized">7</a></span> A <em>simple-declaration</em> or a
 <em>condition</em> with a <em>structured-binding-declaration</em> is
 called a <em>structured binding declaration</em> (<a href="https://eel.is/c++draft/dcl.struct.bind" title="9.7 Structured binding declarations">[dcl.struct.bind]</a>). Each
 <em>decl-specifier</em> in the <em>decl-specifier-seq</em> shall be
@@ -1028,12 +1020,27 @@ it shall declare a templated entity (<a href="https://eel.is/c++draft/temp.pre" 
 <p>Adjust <span>9.5.1 General <a href="https://eel.is/c++draft/dcl.init.general" title="9.5.1 General">[dcl.init.general]</a></span>:</p>
 <div class="std wording">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-15" id="pnum-15" class="marginalized">2</a></span> Except for objects declared with the
+<p><span class="marginalizedparent"><a href="#pnum-12" id="pnum-12" class="marginalized">2</a></span> Except for objects declared with the
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
 <span class="addu">or
 <code class="sourceCode cpp"><span class="kw">consteval</span></code></span>
 specifier, for which see <a href="https://eel.is/c++draft/dcl.constexpr" title="9.2.6 The constexpr and consteval specifiers">[dcl.constexpr]</a>,
 […]</p>
+</blockquote>
+</div>
+<p>Update
+<code class="sourceCode cpp"><span class="kw">consteval</span></code>
+handling in <span>9.7 Structured binding declarations <a href="https://eel.is/c++draft/dcl.struct.bind" title="9.7 Structured binding declarations">[dcl.struct.bind]</a></span>:</p>
+<div class="std wording">
+<blockquote>
+<p><span class="marginalizedparent"><a href="#pnum-13" id="pnum-13" class="marginalized">1</a></span> […] Let <em>cv</em> denote the
+<em>cv-qualifier</em>s in the <em>decl-specifier-seq</em> and
+<code class="sourceCode cpp"><em>S</em></code> consist of each
+<em>decl-specifier</em> of the <em>decl-specifier-seq</em> that is
+<code class="sourceCode cpp"><span class="kw">constexpr</span></code>,
+<span class="addu"><code class="sourceCode cpp"><span class="kw">consteval</span></code>,</span>
+<code class="sourceCode cpp"><span class="kw">constinit</span></code>,
+or a <em>storage-class-specifier</em>. […]</p>
 </blockquote>
 </div>
 <h2 data-number="2.1" id="feature-test-macro"><span class="header-section-number">2.1</span> Feature-test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
