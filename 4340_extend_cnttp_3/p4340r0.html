@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="mpark/wg21" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2026-08-05" />
+  <title>Extending constant template parameter support by customizing
+`std::meta::reflect_constant`</title>
+  <style>
+
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ background-color: #f6f8fa; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { } 
+code span.al { color: #ff0000; } 
+code span.an { } 
+code span.at { } 
+code span.bn { color: #9f6807; } 
+code span.bu { color: #9f6807; } 
+code span.cf { color: #00607c; } 
+code span.ch { color: #9f6807; } 
+code span.cn { } 
+code span.co { color: #6a737d; font-style: italic; } 
+code span.cv { color: #6a737d; font-style: italic; } 
+code span.do { color: #6a737d; } 
+code span.dt { color: #00607c; } 
+code span.dv { color: #9f6807; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #9f6807; } 
+code span.fu { } 
+code span.im { } 
+code span.in { color: #6a737d; } 
+code span.kw { color: #00607c; } 
+code span.op { color: #7b3e91; } 
+code span.ot { } 
+code span.pp { color: #6f4e37; } 
+code span.re { } 
+code span.sc { color: #9f6807; } 
+code span.ss { color: #9f6807; } 
+code span.st { color: #9f6807; } 
+code span.va { } 
+code span.vs { color: #9f6807; } 
+code span.wa { color: #6a737d; font-weight: bold; } 
+
+div.csl-bib-body { }
+div.csl-entry {
+clear: both;
+margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+margin-left:2em;
+text-indent:-2em;
+}
+div.csl-left-margin {
+min-width:2em;
+float:left;
+}
+div.csl-right-inline {
+margin-left:2em;
+padding-left:1em;
+}
+div.csl-indent {
+margin-left: 2em;
+} code.diff {color: #898887}
+code.diff span.va {color: #006e28}
+code.diff span.st {color: #bf0303}
+</style>
+  <style type="text/css">
+body {
+margin: 5em;
+font-family: serif;
+
+hyphens: auto;
+line-height: 1.35;
+text-align: justify;
+}
+@media screen and (max-width: 30em) {
+body {
+margin: 1.5em;
+}
+}
+div.wrapper {
+max-width: 60em;
+margin: auto;
+}
+ul {
+list-style-type: none;
+padding-left: 2em;
+margin-top: -0.2em;
+margin-bottom: -0.2em;
+}
+a {
+text-decoration: none;
+color: #4183C4;
+}
+a.hidden_link {
+text-decoration: none;
+color: inherit;
+}
+li {
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+h1, h2, h3, h4 {
+position: relative;
+line-height: 1;
+}
+a.self-link {
+position: absolute;
+top: 0;
+left: calc(-1 * (3.5rem - 26px));
+width: calc(3.5rem - 26px);
+height: 2em;
+text-align: center;
+border: none;
+transition: opacity .2s;
+opacity: .5;
+font-family: sans-serif;
+font-weight: normal;
+font-size: 83%;
+}
+a.self-link:hover { opacity: 1; }
+a.self-link::before { content: "§"; }
+ul > li:before {
+content: "\2014";
+position: absolute;
+margin-left: -1.5em;
+}
+:target { background-color: yellow; }
+:target .codeblock { background-color: yellow; }
+:target .sourceCode { background-color: yellow; }
+:target ul { background-color: yellow; }
+p:has(> span.marginalizedparent > a.marginalized:target),
+li:has(> span.marginalizedparent > a.marginalized:target) {
+background-color: yellow;
+}
+a.marginalized:target { background-color: transparent; }
+.abbr_ref { float: right; }
+.folded_abbr_ref { float: right; }
+:target .folded_abbr_ref { display: none; }
+:target .unfolded_abbr_ref { float: right; display: inherit; }
+.unfolded_abbr_ref { display: none; }
+.secnum { display: inline-block; min-width: 35pt; }
+.header-section-number { display: inline-block; min-width: 35pt; }
+.annexnum { display: block; }
+div.sourceLinkParent {
+float: right;
+}
+a.sourceLink {
+position: absolute;
+opacity: 0;
+margin-left: 10pt;
+}
+a.sourceLink:hover {
+opacity: 1;
+}
+a.itemDeclLink {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+opacity: 0;
+}
+a.itemDeclLink:hover { opacity: 1; }
+span.marginalizedparent {
+position: relative;
+left: -5em;
+}
+li span.marginalizedparent { left: -7em; }
+li ul > li span.marginalizedparent { left: -9em; }
+li ul > li ul > li span.marginalizedparent { left: -11em; }
+li ul > li ul > li ul > li span.marginalizedparent { left: -13em; }
+div.footnoteNumberParent {
+position: relative;
+left: -4.7em;
+}
+a.marginalized {
+position: absolute;
+font-size: 75%;
+text-align: right;
+width: 5em;
+}
+a.enumerated_item_num {
+position: relative;
+left: -3.5em;
+display: inline-block;
+margin-right: -3em;
+text-align: right;
+width: 3em;
+}
+div.para { margin-bottom: 0.6em; margin-top: 0.6em; text-align: justify; }
+div.section { text-align: justify; }
+div.sentence { display: inline; }
+span.indexparent {
+display: inline;
+position: relative;
+float: right;
+right: -1em;
+}
+a.index {
+position: absolute;
+display: none;
+}
+a.index:before { content: "⟵"; }
+
+a.index:target {
+display: inline;
+}
+.indexitems {
+margin-left: 2em;
+text-indent: -2em;
+}
+div.itemdescr {
+margin-left: 3em;
+}
+.bnf {
+font-family: serif;
+margin-left: 40pt;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+.ncbnf {
+font-family: serif;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+}
+.ncsimplebnf {
+font-family: serif;
+font-style: italic;
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+margin-left: 40pt;
+background: inherit; 
+}
+span.textnormal {
+font-style: normal;
+font-family: serif;
+white-space: normal;
+display: inline-block;
+}
+span.rlap {
+display: inline-block;
+width: 0px;
+}
+span.descr { font-style: normal; font-family: serif; }
+span.grammarterm { font-style: italic; }
+span.term { font-style: italic; }
+span.terminal { font-family: monospace; font-style: normal; }
+span.nonterminal { font-style: italic; }
+span.tcode { font-family: monospace; font-style: normal; }
+span.textbf { font-weight: bold; }
+span.textsc { font-variant: small-caps; }
+a.nontermdef { font-style: italic; font-family: serif; }
+span.emph { font-style: italic; }
+span.techterm { font-style: italic; }
+span.mathit { font-style: italic; }
+span.mathsf { font-family: sans-serif; }
+span.mathrm { font-family: serif; font-style: normal; }
+span.textrm { font-family: serif; }
+span.textsl { font-style: italic; }
+span.mathtt { font-family: monospace; font-style: normal; }
+span.mbox { font-family: serif; font-style: normal; }
+span.ungap { display: inline-block; width: 2pt; }
+span.textit { font-style: italic; }
+span.texttt { font-family: monospace; }
+span.tcode_in_codeblock { font-family: monospace; font-style: normal; }
+span.phantom { color: white; }
+
+span.math { font-style: normal; }
+span.mathblock {
+display: block;
+margin-left: auto;
+margin-right: auto;
+margin-top: 1.2em;
+margin-bottom: 1.2em;
+text-align: center;
+}
+span.mathalpha {
+font-style: italic;
+}
+span.synopsis {
+font-weight: bold;
+margin-top: 0.5em;
+display: block;
+}
+span.definition {
+font-weight: bold;
+display: block;
+}
+.codeblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+.outputblock {
+margin-left: 1.2em;
+line-height: 127%;
+}
+div.itemdecl {
+margin-top: 2ex;
+}
+code.itemdeclcode {
+white-space: pre;
+display: block;
+}
+span.textsuperscript {
+vertical-align: super;
+font-size: smaller;
+line-height: 0;
+}
+.footnotenum { vertical-align: super; font-size: smaller; line-height: 0; }
+.footnote {
+font-size: small;
+margin-left: 2em;
+margin-right: 2em;
+margin-top: 0.6em;
+margin-bottom: 0.6em;
+}
+div.minipage {
+display: inline-block;
+margin-right: 3em;
+}
+div.numberedTable {
+text-align: center;
+margin: 2em;
+}
+div.figure {
+text-align: center;
+margin: 2em;
+}
+table {
+border: 1px solid black;
+border-collapse: collapse;
+margin-left: auto;
+margin-right: auto;
+margin-top: 0.8em;
+text-align: left;
+hyphens: none; 
+}
+td, th {
+padding-left: 1em;
+padding-right: 1em;
+vertical-align: top;
+}
+td.empty {
+padding: 0px;
+padding-left: 1px;
+}
+td.left {
+text-align: left;
+}
+td.right {
+text-align: right;
+}
+td.center {
+text-align: center;
+}
+td.justify {
+text-align: justify;
+}
+td.border {
+border-left: 1px solid black;
+}
+tr.rowsep, td.cline {
+border-top: 1px solid black;
+}
+tr.even, tr.odd {
+border-bottom: 1px solid black;
+}
+tr.capsep {
+border-top: 3px solid black;
+border-top-style: double;
+}
+tr.header {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+th {
+border-bottom: 1px solid black;
+}
+span.centry {
+font-weight: bold;
+}
+div.table {
+display: block;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+width: 90%;
+}
+span.indented {
+display: block;
+margin-left: 2em;
+margin-bottom: 1em;
+margin-top: 1em;
+}
+ol.enumeratea { list-style-type: none; background: inherit; }
+ol.enumerate { list-style-type: none; background: inherit; }
+</style>
+  <style type="text/css">table thead tr {
+border-bottom: 3px solid black;
+border-bottom-style: double;
+}
+table tbody tr {
+border-bottom: 1px solid black;
+}
+.cmptable {
+width: 100%;
+}
+
+#title-block-header > table {
+border: none;
+float: right;
+}
+#title-block-header > table tbody tr {
+border-bottom: none;
+}
+
+ins, del {
+text-decoration-thickness: 1px;
+}
+
+ins {
+text-underline-offset: 3.5px;
+}
+
+div.sourceCode {
+padding: 0.5em;
+}
+
+.view-controls {
+position: sticky;
+top: 0.75rem;
+z-index: 1000;
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+gap: 0.35rem;
+width: fit-content;
+margin-left: auto;
+margin-bottom: 1rem;
+padding: 0.45rem 0.8rem;
+border: 1px solid #b7c0c8;
+border-radius: 999px;
+background: rgba(255, 255, 255, 0.96);
+color: #22303c;
+font: 600 0.9rem/1.1 sans-serif;
+box-shadow: 0 0.2rem 0.8rem rgba(34, 48, 60, 0.12);
+}
+.view-controls:hover {
+background: #f3f6f8;
+}
+.view-controls label {
+display: flex;
+align-items: center;
+gap: 0.45rem;
+}
+.view-controls input {
+margin: 0;
+}
+.view-controls span {
+white-space: nowrap;
+}
+body[data-syntax-highlighting="off"] code.sourceCode:not(.diff) span:not(.add, .rm, .co, .cv, .do, .in) {
+color: inherit !important;
+font-style: inherit !important;
+font-weight: inherit !important;
+text-decoration: inherit !important;
+}
+body[data-deleted-text="hide"] .rm del {
+display: none !important;
+}
+</style>
+  <style type="text/css">a {
+color : #4183C4;
+text-decoration: underline;
+}
+a.marginalized {
+text-decoration: none;
+}
+a.self-link {
+text-decoration: none;
+}
+h1#toctitle {
+border-bottom: 1px solid #cccccc;
+}
+#TOC li {
+margin-top: 1px;
+margin-bottom: 1px;
+}
+#TOC ul>li:before { display: none; }
+h3.subtitle { margin-top: -15px; }
+h1:target { background-color: transparent; }
+h2:target { background-color: transparent; }
+h3:target { background-color: transparent; }
+h4:target { background-color: transparent; }
+h5:target { background-color: transparent; }
+h6:target { background-color: transparent; }
+body[data-syntax-highlighting="on"] code span.co {
+font-family: monospace;
+color: #008000;
+}
+table tr {
+background-color: white;
+}
+table tr:nth-child(2n) {
+background-color: #f6f8fa;
+}
+#title-block-header > table tr:nth-child(2n) {
+background-color: white;
+}
+td > div.sourceCode {
+background-color: inherit;
+}
+td > div > div.sourceCode {
+background-color: inherit;
+}
+table {
+border-collapse: collapse;
+}
+table td, table th {
+border: 1px solid #cccccc;
+}
+table th {
+border-bottom: 1px solid black;
+text-align: center;
+}
+table tr:first-child th {
+border-top: 0;
+}
+table tr:last-child td {
+border-bottom: 0;
+}
+table tr td:first-child,
+table tr th:first-child {
+border-left: 0;
+}
+table tr td:last-child,
+table tr th:last-child {
+border-right: 0;
+}
+table tbody tr:first-child td {
+border-top: 1px solid black;
+}
+#title-block-header td { border: 0; }
+@media all {
+body {
+margin: 2em;
+}
+}
+@media screen and (min-width: 480px) {
+body {
+margin: 5em;
+}
+}
+#refs code{padding-left: 0px; text-indent: 0px;}
+:root {
+--diff-ins: #C9FBC9;
+--diff-strongins: #acf2bd;
+--diff-del: #FFC8EB;
+--diff-strongdel: #ff8888;
+}
+span.diffins {
+background-color: var(--diff-strongins);
+}
+span.diffdel {
+background-color: var(--diff-strongdel);
+}
+div.rm { text-decoration: line-through; }
+div.rm code.sourceCode { text-decoration: line-through; }
+div.addu, span.addu {
+color: #006e28;
+background-color: var(--diff-ins);
+}
+
+div.rm pre, div.add pre { background-color: #f6f8fa; }
+div.addu pre { background-color: var(--diff-ins); }
+div.addu td pre { background-color: inherit; }
+div.add, div.add pre { background-color: var(--diff-ins); }
+div.addu blockquote {
+border-left: 4px solid #00a000;
+padding: 0 15px;
+color: #006e28;
+text-decoration: none;
+}
+div.addu blockquote code.sourceCode { text-decoration: none; }
+div.addu blockquote pre { text-decoration: none; }
+div.addu blockquote pre code { text-decoration: none; }
+div.quote {
+border-left: 7px solid #ccc;
+background: #f9f9f9;
+margin: 1.5em 10px;
+padding-left: 20px;
+}
+code.diff span.va { color: #000000; background-color: var(--diff-ins); }
+code.diff span.st { color: #000000; background-color: var(--diff-del); }
+div.std blockquote { color: #000000; background-color: #F1F1F1;
+border: 1px solid #D1D1D1;
+padding-left: 0.5em; padding-right: 0.5em; }
+div.std.ins blockquote {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.ins > div.example {
+color: #000000; background-color: #C8FFC8;
+border: 1px solid #B3EBB3;
+}
+div.std div.sourceCode { background-color: inherit; margin-left: 1em; }
+div.rm li {
+text-decoration: line-through;
+color: #bf0303;
+}
+div.std blockquote del, div.rm {
+text-decoration: line-through;
+color: #bf0303;
+background-color: var(--diff-del);
+border: none;
+}
+code del { border: 1px solid #ECB3C7; }
+span.orange {
+background-color: #ffa500;
+}
+span.yellow {
+background-color: #ffff00;
+}</style>
+  <link href="data:image/vnd.microsoft.icon;base64,AAABAAIAEBAAAAEAIABoBAAAJgAAACAgAAABACAAqBAAAI4EAAAoAAAAEAAAACAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAVoJEAN6CRADegkQAWIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wCCRAAAgkQAAIJEAACCRAAsgkQAvoJEAP+CRAD/gkQA/4JEAP+CRADAgkQALoJEAACCRAAAgkQAAP///wD///8AgkQAAIJEABSCRACSgkQA/IJEAP99PQD/dzMA/3czAP99PQD/gkQA/4JEAPyCRACUgkQAFIJEAAD///8A////AHw+AFiBQwDqgkQA/4BBAP9/PxP/uZd6/9rJtf/bybX/upd7/39AFP+AQQD/gkQA/4FDAOqAQgBc////AP///wDKklv4jlEa/3o7AP+PWC//8+3o///////////////////////z7un/kFox/35AAP+GRwD/mVYA+v///wD///8A0Zpk+NmibP+0d0T/8evj///////+/fv/1sKz/9bCs//9/fr//////+/m2/+NRwL/nloA/5xYAPj///8A////ANKaZPjRmGH/5cKh////////////k149/3UwAP91MQD/lmQ//86rhv+USg3/m1YA/5hSAP+bVgD4////AP///wDSmmT4zpJY/+/bx///////8+TV/8mLT/+TVx//gkIA/5lVAP+VTAD/x6B//7aEVv/JpH7/s39J+P///wD///8A0ppk+M6SWP/u2sf///////Pj1f/Nj1T/2KFs/8mOUv+eWhD/lEsA/8aee/+0glT/x6F7/7J8Rvj///8A////ANKaZPjRmGH/48Cf///////+/v7/2qt//82PVP/OkFX/37KJ/86siv+USg7/mVQA/5hRAP+bVgD4////AP///wDSmmT40ppk/9CVXP/69O////////7+/v/x4M//8d/P//7+/f//////9u7n/6tnJf+XUgD/nFgA+P///wD///8A0ppk+NKaZP/RmWL/1qNy//r07///////////////////////+vXw/9akdP/Wnmn/y5FY/6JfFvj///8A////ANKaZFTSmmTo0ppk/9GYYv/Ql1//5cWm//Hg0P/x4ND/5cWm/9GXYP/RmGH/0ppk/9KaZOjVnmpY////AP///wDSmmQA0ppkEtKaZI7SmmT60ppk/9CWX//OkVb/zpFW/9CWX//SmmT/0ppk/NKaZJDSmmQS0ppkAP///wD///8A0ppkANKaZADSmmQA0ppkKtKaZLrSmmT/0ppk/9KaZP/SmmT/0ppkvNKaZCrSmmQA0ppkANKaZAD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkUtKaZNzSmmTc0ppkVNKaZADSmmQA0ppkANKaZADSmmQA////AP5/AAD4HwAA4AcAAMADAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAMADAADgBwAA+B8AAP5/AAAoAAAAIAAAAEAAAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAyCRACMgkQA6oJEAOqCRACQgkQAEIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRABigkQA5oJEAP+CRAD/gkQA/4JEAP+CRADqgkQAZoJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAA4gkQAwoJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQAxIJEADyCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAAgkQAAP///wD///8A////AP///wCCRAAAgkQAAIJEAACCRAAAgkQAAIJEAACCRAAWgkQAmIJEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAJyCRAAYgkQAAIJEAACCRAAAgkQAAIJEAACCRAAA////AP///wD///8A////AIJEAACCRAAAgkQAAIJEAACCRAAAgkQAdIJEAPCCRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAP+CRAD/gkQA/4JEAPSCRAB4gkQAAIJEAACCRAAAgkQAAIJEAAD///8A////AP///wD///8AgkQAAIJEAACCRAAAgkQASoJEANKCRAD/gkQA/4JEAP+CRAD/g0YA/39AAP9zLgD/bSQA/2shAP9rIQD/bSQA/3MuAP9/PwD/g0YA/4JEAP+CRAD/gkQA/4JEAP+CRADUgkQAToJEAACCRAAAgkQAAP///wD///8A////AP///wB+PwAAgkUAIoJEAKiCRAD/gkQA/4JEAP+CRAD/hEcA/4BBAP9sIwD/dTAA/5RfKv+viF7/vp56/76ee/+wiF7/lWAr/3YxAP9sIwD/f0AA/4RHAP+CRAD/gkQA/4JEAP+CRAD/gkQArIJEACaBQwAA////AP///wD///8A////AIBCAEBzNAD6f0EA/4NFAP+CRAD/gkQA/4VIAP92MwD/bSUA/6N1Tv/ezsL/////////////////////////////////38/D/6V3Uv9uJgD/dTEA/4VJAP+CRAD/gkQA/4JEAP+BQwD/fUAA/4FDAEj///8A////AP///wD///8AzJRd5qBlKf91NgD/dDUA/4JEAP+FSQD/cy4A/3YyAP/PuKP//////////////////////////////////////////////////////9K7qP94NQD/ciwA/4VJAP+CRAD/fkEA/35BAP+LSwD/mlYA6v///wD///8A////AP///wDdpnL/4qx3/8KJUv+PUhf/cTMA/3AsAP90LgD/4dK+/////////////////////////////////////////////////////////////////+TYxf91MAD/dTIA/31CAP+GRwD/llQA/6FcAP+gWwD8////AP///wD///8A////ANGZY/LSm2X/4ap3/92mcP+wdT3/byQA/8mwj////////////////////////////////////////////////////////////////////////////+LYxv9zLgP/jUoA/59bAP+hXAD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/RmWL/1p9q/9ubXv/XqXj////////////////////////////7+fD/vZyG/6BxS/+gcUr/vJuE//r37f//////////////////////3MOr/5dQBf+dVQD/nVkA/5xYAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmWP/yohJ//jo2P//////////////////////4NTG/4JDFf9lGAD/bSQA/20kAP9kGAD/fz8S/+Xb0f//////5NG9/6txN/+LOgD/m1QA/51aAP+cWAD/m1cA/5xYAP+cWADy////AP///wD///8A////ANKaZPLSmmT/0ppk/8+TWf/Unmv//v37//////////////////////+TWRr/VwsA/35AAP+ERgD/g0UA/4JGAP9lHgD/kFga/8KXX/+TRwD/jT4A/49CAP+VTQD/n10A/5xYAP+OQQD/lk4A/55cAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/y4tO/92yiP//////////////////////8NnE/8eCQP+rcTT/ez0A/3IyAP98PgD/gEMA/5FSAP+USwD/jj8A/5lUAP+JNwD/yqV2/694Mf+HNQD/jkAA/82rf/+laBj/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/LiUr/4byY///////////////////////gupX/0I5P/+Wuev/Lklz/l1sj/308AP+QSwD/ol0A/59aAP+aVQD/k0oA/8yoh///////+fXv/6pwO//Lp3v///////Pr4f+oay7y////AP///wD///8A////ANKaZPLSmmT/0ppk/8uJSv/hvJj//////////////////////+G7l//Jhkb/0ppk/96nc//fqXX/x4xO/6dkFP+QSQD/llEA/5xXAP+USgD/yaOA///////38uv/qG05/8ijdv//////8efb/6ZpLPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/zIxO/9yxh///////////////////////7dbA/8iEQf/Sm2X/0Zlj/9ScZv/eqHf/2KJv/7yAQf+XTgD/iToA/5lSAP+JNgD/yKFv/611LP+HNQD/jT8A/8qmeP+kZRT/jT4A8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/Pk1n/1J5q//78+//////////////////+/fv/1aFv/8iEQv/Tm2b/0ppl/9GZY//Wn2z/1pZc/9eldf/Bl2b/kUcA/4w9AP+OQAD/lUwA/59eAP+cWQD/jT8A/5ZOAP+eXADy////AP///wD///8A////ANKaZPLSmmT/0ppk/9KZY//KiEn/8d/P///////////////////////47+f/05tm/8iCP//KiEj/yohJ/8eCP//RmGH//vfy///////n1sP/rXQ7/4k4AP+TTAD/nVoA/5xYAP+cVwD/nFgA/5xYAPL///8A////AP///wD///8A0ppk8tKaZP/SmmT/0ptl/8uLTf/aq37////////////////////////////+/fz/6c2y/961jv/etY7/6Myx//78+v//////////////////////3MWv/5xXD/+ORAD/mFQA/51ZAP+cWAD/nFgA8v///wD///8A////AP///wDSmmTy0ppk/9KaZP/SmmT/0ppk/8mFRP/s1b//////////////////////////////////////////////////////////////////////////////+PD/0JFU/7NzMv+WUQD/kUsA/5tXAP+dWQDy////AP///wD///8A////ANKaZP/SmmT/0ppk/9KaZP/Sm2X/z5NZ/8yMT//z5NX/////////////////////////////////////////////////////////////////9Ofa/8yNUP/UmGH/36p5/8yTWv+qaSD/kksA/5ROAPz///8A////AP///wD///8A0ppk5NKaZP/SmmT/0ppk/9KaZP/TnGf/zY9T/82OUv/t1sD//////////////////////////////////////////////////////+7Yw//OkFX/zI5R/9OcZ//SmmP/26V0/9ymdf/BhUf/ol8R6P///wD///8A////AP///wDSmmQ80ppk9tKaZP/SmmT/0ppk/9KaZP/TnGj/zpFW/8qJSv/dson/8uHS//////////////////////////////////Lj0//etIv/y4lL/86QVf/TnGj/0ppk/9KaZP/RmWP/05xn/9ymdfjUnWdC////AP///wD///8A////ANKaZADSmmQc0ppkotKaZP/SmmT/0ppk/9KaZP/Tm2b/0Zli/8qJSf/NjlH/16Z3/+G8mP/myKr/5siq/+G8mP/Xp3f/zY5S/8qISf/RmGH/05tm/9KaZP/SmmT/0ppk/9KaZP/SmmSm0pljINWdaQD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkQtKaZMrSmmT/0ppk/9KaZP/SmmT/0ptl/9GYYf/Nj1P/y4lL/8qISP/KiEj/y4lK/82PU//RmGH/0ptl/9KaZP/SmmT/0ppk/9KaZP/SmmTO0ppkRtKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZGzSmmTu0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmTw0ppkcNKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZBLSmmSQ0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppklNKaZBTSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP///wD///8A0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQy0ppkutKaZP/SmmT/0ppk/9KaZP/SmmT/0ppk/9KaZP/SmmT/0ppkvtKaZDbSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkAP///wD///8A////AP///wDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkXNKaZODSmmT/0ppk/9KaZP/SmmT/0ppk5NKaZGDSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA////AP///wD///8A////ANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkBtKaZIbSmmTo0ppk6tKaZIrSmmQK0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZADSmmQA0ppkANKaZAD///8A////AP/8P///+B///+AH//+AAf//AAD//AAAP/AAAA/gAAAHwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA8AAAAPAAAADwAAAA+AAAAfwAAAP/AAAP/8AAP//gAH//+AH///4H////D//" rel="icon" />
+  
+</head>
+<body data-syntax-highlighting="on" data-deleted-text="show">
+<form class="view-controls">
+<label for="no-syntax-highlighting-toggle">
+<input id="no-syntax-highlighting-toggle" type="checkbox"></input>
+<span>No syntax highlighting</span>
+</label>
+<label for="hide-deleted-text-toggle">
+<input id="hide-deleted-text-toggle" type="checkbox"></input>
+<span>Hide deleted text</span>
+</label>
+</form>
+<div class="wrapper">
+<header id="title-block-header">
+<h1 class="title" style="text-align:center">Extending constant template
+parameter support by customizing
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_constant</code></h1>
+<table>
+  <tr>
+    <td>Document #:</td>
+    <td>
+      P4340R0
+      [<a href="https://wg21.link/P4340">Latest</a>]
+      [<a href="https://wg21.link/P4340/status">Status</a>]
+    </td>
+  </tr>
+  <tr>
+    <td>Date:</td>
+    <td>2026-08-05</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Project:</td>
+    <td>Programming Language C++</td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Audience:</td>
+    <td>
+      EWG<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align:top">Reply-to:</td>
+    <td>
+      Barry Revzin<br>&lt;<a href="mailto:barry.revzin@gmail.com" class="email">barry.revzin@gmail.com</a>&gt;<br>
+    </td>
+  </tr>
+</table>
+</header>
+<div style="clear:both">
+<div id="TOC" role="doc-toc">
+<h1 id="toctitle">Contents</h1>
+<ul>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="#design" id="toc-design"><span class="toc-section-number">2</span> Design</a>
+<ul>
+<li><a href="#normalizing" id="toc-normalizing"><span class="toc-section-number">2.1</span> Normalizing</a></li>
+<li><a href="#defaulting-reflect_constant" id="toc-defaulting-reflect_constant"><span class="toc-section-number">2.2</span> Defaulting
+<code class="sourceCode cpp">reflect_constant</code></a></li>
+<li><a href="#standard-library-extensions" id="toc-standard-library-extensions"><span class="toc-section-number">2.3</span> Standard Library
+Extensions</a></li>
+<li><a href="#future-extensions-with-containers" id="toc-future-extensions-with-containers"><span class="toc-section-number">2.4</span> Future Extensions with
+Containers</a></li>
+<li><a href="#string-literals" id="toc-string-literals"><span class="toc-section-number">2.5</span> String Literals</a></li>
+<li><a href="#normalization-ii" id="toc-normalization-ii"><span class="toc-section-number">2.6</span> Normalization II</a></li>
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">2.7</span> Implementation Experience</a></li>
+</ul></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">3</span> References</a></li>
+</ul>
+</div>
+<h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
+Introduction<a href="#introduction" class="self-link"></a></h1>
+<p>This is a follow-up to <span class="title"><span class="citation" data-cites="P2484R0"><a href="https://wg21.link/p2484r0">[P2484R0]
+(Extending class types as non-type template
+parameters)</a></span></span> and <span class="title"><span class="citation" data-cites="P3380R1"><a href="https://wg21.link/p3380r1">[P3380R1] (Extending support for class
+types as non-type template parameters)</a></span></span> (the latter of
+which starts with a useful reading list), and is a new solution to that
+problem building upon three insights:</p>
+<ul>
+<li>Richard Smith’s initial recognition that this is a
+serialization/deserialization problem in order to avoid ODR issues,</li>
+<li>Faisal Vali’s idea that reflection provides a good answer for how to
+serialize arbitrary elements, and</li>
+<li>Dan Katz’s experimentation that eventually led to the
+<code class="sourceCode cpp">std<span class="op">::</span>define_static_meow</code>
+functions in <span class="title"><span class="citation" data-cites="P3491R3"><a href="https://wg21.link/p349143">[P3491R3]
+(<code class="sourceCode cpp">define_static_<span class="op">{</span>string<span class="op">,</span>object<span class="op">,</span>array<span class="op">}</span></code>)</a></span></span></li>
+</ul>
+<p>The goal here is to allow types to opt-in to being usable as constant
+template parameters in a way that’s forward-looking to containers as
+well. This proposal will also make the following standard library types
+usable:
+<code class="sourceCode cpp">std<span class="op">::</span>optional</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>expected</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>variant</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>tuple</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>string_view</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>span</code>,
+everything in
+<code class="sourceCode cpp"><span class="op">&lt;</span>chrono<span class="op">&gt;</span></code>,
+<code class="sourceCode cpp">std<span class="op">::</span>complex</code>,
+the comparison categories, and
+<code class="sourceCode cpp">std<span class="op">::</span>bitset</code>.
+Additionally, string literals will also become usable.</p>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="design"><span class="header-section-number">2</span> Design<a href="#design" class="self-link"></a></h1>
+<p>One of the many consteval functions added to the standard library by
+<span class="title"><span class="citation" data-cites="P2996R13"><a href="https://wg21.link/p2996r13">[P2996R13] (Reflection for
+C++26)</a></span></span> was
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>v<span class="op">)</span></code>.
+This is a very interesting function in that, if
+<code class="sourceCode cpp">v</code> has class type, this returns a
+reflection representing <em>the</em> template parameter object that is
+template-argument-equivalent to
+<code class="sourceCode cpp">v</code>.</p>
+<p>That is, for all class types that are today usable as constant
+template parameters, this comparison holds (let’s agree to ignore that
+I’m not using
+<code class="sourceCode cpp">std<span class="op">::</span>addressof</code>):</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">void</span> <span class="kw">const</span><span class="op">*</span> addr <span class="op">=</span> <span class="op">&amp;</span>V<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>addr<span class="op">&lt;</span>E<span class="op">&gt;</span> <span class="op">==</span> <span class="op">&amp;[:</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>E<span class="op">)</span> <span class="op">:]);</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Ultimately, the whole problem of how to opt an arbitrary type with
+non-public subobjects into being usable as a constant template parameter
+is about this question of how to produce the template parameter object.
+What if we cut out the middle-man and simply allowed (forced) types to
+<em>directly</em> produce that template parameter object?</p>
+<p>Here is a very simple example:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Widget <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// private, so not usable by default</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> data_<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> Widget<span class="op">(</span><span class="dt">int</span> d<span class="op">)</span> <span class="op">:</span> data_<span class="op">(</span>d<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> D<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="kw">auto</span> impl <span class="op">=</span> Widget<span class="op">(</span>D<span class="op">);</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> Widget<span class="op">::</span>reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> substitute<span class="op">(^^</span>impl<span class="op">,</span> <span class="op">{</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>data_<span class="op">)});</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p><code class="sourceCode cpp">Widget</code> is defining how to produce
+a template parameter object:
+<code class="sourceCode cpp">reflect_constant</code> returns a
+reflection representing a static storage duration object. It is up to
+<code class="sourceCode cpp">Widget</code> to figure out how to do that,
+but once it does so, we have already solved all the other problems in
+this space:</p>
+<ul>
+<li>template-argument-equivalence is chosen by the
+<code class="sourceCode cpp">Widget</code> author based on how they
+define the object being returned (in this case, by comparing the
+<code class="sourceCode cpp"><span class="dt">int</span></code>s).</li>
+<li>the serialization/deserialization process is implicit here — we
+serialize in
+<code class="sourceCode cpp">Widget<span class="op">::</span>reflect_constant</code>
+(each template argument is the next element we’re serializing) and we
+deserialize in the initialization of that variable template (where
+likewise each template argument is the next element we’re
+deserializing)</li>
+<li>the potential ODR issues are avoided because we’re defining
+<em>the</em> template parameter object, so it will be <em>that</em>
+object that gets used.</li>
+</ul>
+<p><code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>v<span class="op">)</span></code>
+will then be extended to first invoke
+<code class="sourceCode cpp">v<span class="op">.</span>reflect_constant<span class="op">()</span></code>
+for class types that opt in before falling back to the normal C++20
+structural rules.</p>
+<h2 data-number="2.1" id="normalizing"><span class="header-section-number">2.1</span> Normalizing<a href="#normalizing" class="self-link"></a></h2>
+<p>Let’s go through two examples where we do something non-trivial: we
+want to do some normalization on the way in, so that we have fewer or
+more predictable specializations. Previous papers in this space brought
+up two examples:</p>
+<ul>
+<li>a <code class="sourceCode cpp">Fraction</code> type that is only in
+lowest terms</li>
+<li>a <code class="sourceCode cpp">SmallString</code> container that
+doesn’t care about trailing data.</li>
+</ul>
+<p>Let’s start with <code class="sourceCode cpp">Fraction</code>. We
+need to make sure that we serialize it in lowest terms, we the arguments
+we’re
+<code class="sourceCode cpp">substitute<span class="op">()</span></code>-ing
+will have to be reduced:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Frac <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> numer<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> denom<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">int</span> N<span class="op">,</span> <span class="dt">int</span> D<span class="op">&gt;</span> <span class="kw">constexpr</span> <span class="kw">auto</span> interned <span class="op">=</span> Frac<span class="op">{</span>N<span class="op">,</span> D<span class="op">};</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> Frac<span class="op">::</span>reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> g <span class="op">=</span> std<span class="op">::</span>gcd<span class="op">(</span>numer<span class="op">,</span> denom<span class="op">);</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> substitute<span class="op">(^^</span>interned<span class="op">,</span> <span class="op">{</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>numer <span class="op">/</span> g<span class="op">),</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>denom <span class="op">/</span> g<span class="op">),</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>And the result we will end up with is:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">auto</span> V<span class="op">&gt;</span> <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">const</span><span class="op">&amp;</span> ref <span class="op">=</span> V<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">// the template parameter object is {1, 2}, that&#39;s all we see</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>ref<span class="op">&lt;</span>Frac<span class="op">{</span><span class="dv">2</span><span class="op">,</span> <span class="dv">4</span><span class="op">}&gt;.</span>numer <span class="op">==</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>ref<span class="op">&lt;</span>Frac<span class="op">{</span><span class="dv">2</span><span class="op">,</span> <span class="dv">4</span><span class="op">}&gt;.</span>denom <span class="op">==</span> <span class="dv">2</span><span class="op">);</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">// there is only one template parameter object, so these</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">// alternate representations have the same address</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(&amp;</span>ref<span class="op">&lt;</span>Frac<span class="op">{</span><span class="dv">2</span><span class="op">,</span> <span class="dv">4</span><span class="op">}&gt;</span> <span class="op">==</span> <span class="op">&amp;</span>ref<span class="op">&lt;</span>Frac<span class="op">{</span><span class="dv">3</span><span class="op">,</span> <span class="dv">6</span><span class="op">}&gt;);</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Similarly, the <code class="sourceCode cpp">SmallString</code>
+container I showed in <span class="citation" data-cites="P3380R1"><a href="https://wg21.link/p3380r1">[P3380R1]</a></span> wanted to ensure
+that regardless of what path you get to the same “value” that you only
+see the real value, and not any trailing characters. We can do that
+too:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SmallString <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> data_<span class="op">[</span><span class="dv">32</span><span class="op">];</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> length_ <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="co">// always &lt;= 32</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    SmallString<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> SmallString<span class="op">(</span>std<span class="op">::</span>initializer_list<span class="op">&lt;</span><span class="dt">char</span><span class="op">&gt;</span> elems<span class="op">)</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> data_<span class="op">(),</span> length_<span class="op">(</span>elems<span class="op">.</span>size<span class="op">())</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>copy<span class="op">(</span>elems<span class="op">.</span>begin<span class="op">(),</span> elems<span class="op">.</span>end<span class="op">(),</span> data_<span class="op">);</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> data<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> <span class="op">{</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> data_<span class="op">;</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> push_back<span class="op">(</span><span class="dt">char</span> c<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        <span class="ot">assert</span><span class="op">(</span>length_ <span class="op">&lt;</span> <span class="dv">31</span><span class="op">);</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        data_<span class="op">[</span>length_<span class="op">]</span> <span class="op">=</span> c<span class="op">;</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">++</span>length_<span class="op">;</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> pop_back<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        <span class="ot">assert</span><span class="op">(</span>length_ <span class="op">&gt;</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        <span class="op">--</span>length_<span class="op">;</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="kw">auto</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">size_t</span> idx<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">char</span> <span class="op">{</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> data_<span class="op">[</span>idx<span class="op">];</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">;</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">char</span><span class="op">...</span> Cs<span class="op">&gt;</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> SmallString impl <span class="op">=</span> <span class="op">{</span>Cs<span class="op">...};</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> SmallString<span class="op">::</span>reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>meta<span class="op">::</span>info<span class="op">&gt;</span> elems<span class="op">;</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">!=</span> length_<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>        elems<span class="op">.</span>push_back<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>data_<span class="op">[</span>i<span class="op">]));</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> substitute<span class="op">(^^</span>impl<span class="op">,</span> elems<span class="op">);</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>We simply only serialize
+<code class="sourceCode cpp">data<span class="op">[</span><span class="dv">0</span><span class="op">:</span>length<span class="op">]</span></code>
+and not all of
+<code class="sourceCode cpp">data<span class="op">[</span><span class="dv">0</span><span class="op">:</span><span class="dv">32</span><span class="op">]</span></code>.
+The result is that the trailing data gets dropped and we end up with the
+same object:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> SmallString <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> s <span class="op">=</span> SmallString<span class="op">();</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span>push_back<span class="op">(</span><span class="ch">&#39;x&#39;</span><span class="op">);</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> s<span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> g<span class="op">()</span> <span class="op">-&gt;</span> SmallString <span class="op">{</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> s <span class="op">=</span> f<span class="op">();</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span>push_back<span class="op">(</span><span class="ch">&#39;y&#39;</span><span class="op">);</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span>pop_back<span class="op">();</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> s<span class="op">;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(&amp;</span>ref<span class="op">&lt;</span>f<span class="op">()&gt;</span> <span class="op">==</span> <span class="op">&amp;</span>ref<span class="op">&lt;</span>g<span class="op">()&gt;);</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co">// It doesn&#39;t matter that g()[1] == &#39;y&#39;, normalizing through the</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co">// template parameter object gives us all trailing nulls</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>ref<span class="op">&lt;</span>g<span class="op">()&gt;[</span><span class="dv">1</span><span class="op">]</span> <span class="op">==</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">);</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>As a result, this example just isn’t an ODR issue, because
+<code class="sourceCode cpp">bad<span class="op">&lt;</span>f<span class="op">()&gt;</span></code>
+and
+<code class="sourceCode cpp">bad<span class="op">&lt;</span>g<span class="op">()&gt;</span></code>
+both evaluate the same way — they return
+<code class="sourceCode cpp"><span class="dv">0</span></code>.</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>SmallString S<span class="op">&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> bad<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span>S<span class="op">.</span>data<span class="op">()[</span><span class="dv">1</span><span class="op">]</span> <span class="op">==</span> <span class="ch">&#39;y&#39;</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<h2 data-number="2.2" id="defaulting-reflect_constant"><span class="header-section-number">2.2</span> Defaulting
+<code class="sourceCode cpp">reflect_constant</code><a href="#defaulting-reflect_constant" class="self-link"></a></h2>
+<p>While it’s important to be able to support the kind of arbitrary
+selection of serialization and normalization that I’ve shown in the
+previous three examples, in practice, for a large number of types, this
+kind of genericity is unnecessary. In fact, a lot of time, all we want
+to do is have a simple member-wise (or really subobject-wise)
+template-argument-equivalence.</p>
+<p>That’s the C++20 rule we have today, except that rule requires that
+all the subobjects be
+<code class="sourceCode cpp"><span class="kw">public</span></code>.
+That’s necessary, since we can’t otherwise distinguish between
+<code class="sourceCode cpp">std<span class="op">::</span>string_view</code>
+and
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>,
+and those would definitely want to have very different rules around
+equivalence (the former comparing pointers, the latter comparing
+contents). But what if I want to both have
+<code class="sourceCode cpp"><span class="kw">private</span></code>
+members and also have member-wise equivalence?</p>
+<p>Take <code class="sourceCode cpp">string_view</code>. It’s
+straightforward enough to implement
+<code class="sourceCode cpp">reflect_constant</code> in a way that does
+what we want:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">,</span> <span class="kw">auto</span><span class="op">...</span> Vals<span class="op">&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> impl <span class="op">=</span> T<span class="op">(</span>Vals<span class="op">...);</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> string_view <span class="op">{</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> ptr_<span class="op">;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> len_<span class="op">;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> string_view<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*,</span> <span class="dt">size_t</span><span class="op">);</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">{</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> substitute<span class="op">(^^</span>impl<span class="op">,</span> <span class="op">{</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>            <span class="op">^^</span>string_view<span class="op">,</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>ptr_<span class="op">),</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">(</span>len_<span class="op">),</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">});</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>This works fine, and we already have the constructor that we need to
+support this. But this is a lot of ceremony for what is basically the
+default behavior: serialize and then deserialize all of my members.
+Since that is a very reasonable default behavior, we should just allow
+<code class="sourceCode cpp"><span class="cf">default</span></code>-ing
+this. This does mirror very nicely the way that other defaulted
+functions behave:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> string_view <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> ptr_<span class="op">;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> len_<span class="op">;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> string_view<span class="op">(</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*,</span> <span class="dt">size_t</span><span class="op">);</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>We’ll want defaulting behavior for
+<code class="sourceCode cpp">reflect_constant</code> to be similar to
+defaulting behavior for other functions, like the copy constructor and
+the comparison operators: for dependent types, if one of the subobjects
+isn’t usable as a constant template parameter (whether it’s not C++20
+structural or doesn’t customize
+<code class="sourceCode cpp">reflect_constant</code>), the resulting
+customization is
+<code class="sourceCode cpp"><span class="kw">delete</span></code>d
+rather than being ill-formed. That means that for a class template like
+<code class="sourceCode cpp">std<span class="op">::</span>tuple</code>,
+we can simply
+<code class="sourceCode cpp"><span class="cf">default</span></code> the
+implementation and not have to worry about providing suitable
+constraints.</p>
+<p>Note that a consequence of being able to
+<code class="sourceCode cpp"><span class="cf">default</span></code> this
+function is that you can also be able to
+<code class="sourceCode cpp"><span class="kw">delete</span></code> it
+too, which means that a type could (if so desired) simply opt out of
+being usable as a constant template parameter.</p>
+<h2 data-number="2.3" id="standard-library-extensions"><span class="header-section-number">2.3</span> Standard Library Extensions<a href="#standard-library-extensions" class="self-link"></a></h2>
+<p>There are no standard library types that I’m aware of that would
+actually provide a bespoke implementation of
+<code class="sourceCode cpp">reflect_constant</code>, but there are
+quite a few for whom
+<code class="sourceCode cpp"><span class="cf">default</span></code>ing
+is the correct behavior. For the class templates below,
+<code class="sourceCode cpp"><span class="cf">default</span></code>ing
+will do the right thing by opting in those types whose subobjects are
+usable as constant template parameters and not opting in those types
+whose subobjects are not usable:</p>
+<ul>
+<li><code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>variant<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>tuple<span class="op">&lt;</span>Ts<span class="op">...&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>basic_string_view<span class="op">&lt;</span>charT<span class="op">,</span> Traits<span class="op">&gt;</span></code>
+(all specializations)</li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span>T<span class="op">,</span> Extent<span class="op">&gt;</span></code>
+(all specializations)</li>
+<li>A lot of
+<code class="sourceCode cpp"><span class="op">&lt;</span>chrono<span class="op">&gt;</span></code>
+types:
+<ul>
+<li><code class="sourceCode cpp">duration<span class="op">&lt;</span>Rep<span class="op">,</span> Period<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">time_point<span class="op">&lt;</span>Clock<span class="op">,</span> Duration<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">day</code></li>
+<li><code class="sourceCode cpp">month</code></li>
+<li><code class="sourceCode cpp">year</code></li>
+<li><code class="sourceCode cpp">weekday</code></li>
+<li><code class="sourceCode cpp">weekday_indexed</code></li>
+<li><code class="sourceCode cpp">weekday_last</code></li>
+<li><code class="sourceCode cpp">month_day</code></li>
+<li><code class="sourceCode cpp">month_day_last</code></li>
+<li><code class="sourceCode cpp">month_weekday</code></li>
+<li><code class="sourceCode cpp">month_weekday_last</code></li>
+<li><code class="sourceCode cpp">year_month</code></li>
+<li><code class="sourceCode cpp">year_month_day</code></li>
+<li><code class="sourceCode cpp">year_month_day_last</code></li>
+<li><code class="sourceCode cpp">year_month_weekday</code></li>
+<li><code class="sourceCode cpp">year_month_weekday_last</code></li>
+</ul></li>
+<li>The comparison categories
+— <code class="sourceCode cpp">std<span class="op">::</span>partial_ordering</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>weak_ordering</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>strong_ordering</code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>bitset<span class="op">&lt;</span>N<span class="op">&gt;</span></code></li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>inplace_vector<span class="op">&lt;</span>T<span class="op">,</span> N<span class="op">&gt;</span></code></li>
+</ul>
+<p>For all of these types and class templates, adding the single
+line:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Does the right thing and opts those types (or suitable
+specializations of those class templates) into being used as constant
+template parameters, with the correct semantics.</p>
+<h2 data-number="2.4" id="future-extensions-with-containers"><span class="header-section-number">2.4</span> Future Extensions with
+Containers<a href="#future-extensions-with-containers" class="self-link"></a></h2>
+<p>Notably absent from the above list are allocating containers, most
+significantly
+<code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+and
+<code class="sourceCode cpp">std<span class="op">::</span>string</code>.
+That’s because we do not yet have non-transient allocation and so cannot
+support them yet.</p>
+<p>However, once we <em>do</em> have non-transient allocation, this
+paper provides a design that lets us easily provide constant template
+parameter support for them. Here is
+<code class="sourceCode cpp">vector</code> for instance:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">,</span> <span class="kw">auto</span><span class="op">&amp;</span> R<span class="op">&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> impl <span class="op">=</span> T<span class="op">(</span>std<span class="op">::</span>begin<span class="op">(</span>R<span class="op">),</span> std<span class="op">::</span>end<span class="op">(</span>R<span class="op">));</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> vector <span class="op">{</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">requires</span> std<span class="op">::</span>meta<span class="op">::</span>is_structural_type<span class="op">(^^</span>T<span class="op">)</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> substitute<span class="op">(^^</span>impl<span class="op">,</span> <span class="op">{</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>            <span class="op">^^</span>vector<span class="op">,</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>meta<span class="op">::</span>reflect_constant_array<span class="op">(*</span><span class="kw">this</span><span class="op">),</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">});</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Note that this implicitly normalizes capacity — as long as the
+elements are the same, we will chose the same specialization of
+<code class="sourceCode cpp">impl</code>, which means we will end up
+with the same object (which will have whatever capacity it has).</p>
+<p>If for some reason, you actually <em>do</em> want capacity to
+participate in all of this, that’s easy too — just also pass in
+<code class="sourceCode cpp">capacity<span class="op">()</span></code>
+as an additional serialization argument.</p>
+<h2 data-number="2.5" id="string-literals"><span class="header-section-number">2.5</span> String Literals<a href="#string-literals" class="self-link"></a></h2>
+<p>One other type to cover not only isn’t in the standard library, but
+it isn’t even a class type: string literals. While
+<code class="sourceCode cpp"><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span></code>
+is usable as a template <em>parameter</em>, we cannot currently pass a
+string literal as a template <em>argument</em>.</p>
+<p>The reason for this is that we do not ensure that
+<code class="sourceCode cpp"><span class="st">&quot;hello&quot;</span></code>
+is the same exact pointer across all translation units (and we will not
+start doing this now), and the result is that given a class template
+like:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> P<span class="op">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> X <span class="op">{</span> <span class="op">};</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>There is no guarantee that
+<code class="sourceCode cpp">X<span class="op">&lt;</span><span class="st">&quot;hello&quot;</span><span class="op">&gt;</span></code>
+is the same <em>type</em> in every translation unit.</p>
+<p>Now, <span class="title"><span class="citation" data-cites="P0424R2"><a href="https://wg21.link/p0424r2">[P0424R2]
+(String literals as non-type template parameters)</a></span></span>
+already proposed the solution to this problem. Except that paper was
+dropped in favor of the more general <span class="title"><span class="citation" data-cites="P0732R2"><a href="https://wg21.link/p0732r2">[P0732R2] (Class Types in Non-Type
+Template Parameters)</a></span></span> in the C++20 timeframe. But we
+still cannot pass in string literals, so I’m resurrecting the ideas
+behind the original paper.</p>
+<p>In modern C++26 reflection terms, the way we need this to work is
+that when we pass a string literal as a template argument:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>X<span class="op">&lt;</span><span class="st">&quot;hello&quot;</span><span class="op">&gt;</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>That it needs to evaluate instead as:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>X<span class="op">&lt;[:</span> std<span class="op">::</span>meta<span class="op">::</span>reflect_constant_string<span class="op">(</span><span class="st">&quot;hello&quot;</span><span class="op">)</span> <span class="op">:]&gt;</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>And this now ensures that, across all translation units,
+<code class="sourceCode cpp">X<span class="op">&lt;</span><span class="st">&quot;hello&quot;</span><span class="op">&gt;</span></code>
+is the same type. This is really the only way to ensure this property,
+and is the requirement for this to be allowed to work, so we should do
+it.</p>
+<p>Note that it’s not quite <em>that</em> simple, because:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> a <span class="op">=</span> <span class="st">&quot;holdup&quot;</span><span class="op">;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> b <span class="op">=</span> a <span class="op">+</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> c <span class="op">=</span> <span class="st">&quot;dup&quot;</span><span class="op">;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>X<span class="op">&lt;</span>b<span class="op">&gt;</span> dup1<span class="op">;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>X<span class="op">&lt;</span>c<span class="op">&gt;</span> dup2<span class="op">;</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>Do <code class="sourceCode cpp">dup1</code> and
+<code class="sourceCode cpp">dup2</code> have the same type? I would
+argue no, they do not. The transformation I expect is more like
+this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="dt">char</span><span class="op">...</span> Cs<span class="op">&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">char</span> <span class="kw">const</span> lit<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span>Cs<span class="op">...,</span> <span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">};</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>X<span class="op">&lt;</span>lit<span class="op">&lt;</span><span class="ch">&#39;h&#39;</span><span class="op">,</span> <span class="ch">&#39;o&#39;</span><span class="op">,</span> <span class="ch">&#39;l&#39;</span><span class="op">,</span> <span class="ch">&#39;d&#39;</span><span class="op">,</span> <span class="ch">&#39;u&#39;</span><span class="op">,</span> <span class="ch">&#39;p&#39;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="dv">3</span><span class="op">&gt;</span> dup1<span class="op">;</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>X<span class="op">&lt;</span>lit<span class="op">&lt;</span><span class="ch">&#39;d&#39;</span><span class="op">,</span> <span class="ch">&#39;u&#39;</span><span class="op">,</span> <span class="ch">&#39;p&#39;</span><span class="op">&gt;&gt;</span> dup2<span class="op">;</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>That is, just because the string contents of
+<code class="sourceCode cpp">a <span class="op">+</span> <span class="dv">3</span></code>
+and <code class="sourceCode cpp">c</code> are the same
+(<code class="sourceCode cpp"><span class="st">&quot;dup&quot;</span></code>),
+the pointers themselves are different, and template-argument-equivalence
+should preserve that. This is essential for another issue to bring
+up…</p>
+<h2 data-number="2.6" id="normalization-ii"><span class="header-section-number">2.6</span> Normalization II<a href="#normalization-ii" class="self-link"></a></h2>
+<p>I talked about normalization earlier from the perspective of wanting
+to mutate an object down to its canonical representation, and only use
+that canonical representation as a template parameter object.</p>
+<p>But there’s another perspective of normalization to consider: simple
+aggregation. What happens here:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Stuff <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string_view s<span class="op">;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x<span class="op">;</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>Stuff S<span class="op">&gt;</span> <span class="dt">int</span> f<span class="op">();</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> r <span class="op">=</span> f<span class="op">&lt;</span>Stuff<span class="op">{.</span>s<span class="op">=</span><span class="st">&quot;hello&quot;</span><span class="bu">sv</span><span class="op">,</span> <span class="op">.</span>x<span class="op">=</span><span class="dv">1</span><span class="op">}&gt;();</span></span></code></pre></div>
+</blockquote>
+</div>
+<p><code class="sourceCode cpp">Stuff</code> has
+all-<code class="sourceCode cpp"><span class="kw">public</span></code>
+members, all of whom are usable as constant template parameters, so this
+should just work without <code class="sourceCode cpp">Stuff</code>
+having to do anything. But in order for this to work:</p>
+<ul>
+<li>the
+<code class="sourceCode cpp"><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span></code>
+that the <code class="sourceCode cpp">string_view</code> owns, because
+it’s a string literal, needs to be transformed through the string
+literal process described above</li>
+<li>then, the <code class="sourceCode cpp">string_view</code> needs to
+go through its (defaulted)
+<code class="sourceCode cpp">reflect_constant</code> opt-in</li>
+</ul>
+<p>This all needs to basically… just happen as part of the template
+parameter object construction process. Otherwise composition completely
+breaks down.</p>
+<p>This is also why the string literal rule has to have the form I
+described above. Imagine of
+<code class="sourceCode cpp">std<span class="op">::</span>string_view</code>’s
+storage looked like this:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> string_view <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> begin_<span class="op">;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> end_<span class="op">;</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>In the above initialization,
+<code class="sourceCode cpp">string_view<span class="op">(</span><span class="st">&quot;hello&quot;</span><span class="bu">sv</span><span class="op">)</span></code>
+would have two pointers into the same string literal — so that needs to
+transform into
+<code class="sourceCode cpp"><span class="op">(</span>p<span class="op">,</span> p <span class="op">+</span> <span class="dv">5</span><span class="op">)</span></code>
+where <code class="sourceCode cpp">p</code> points to a static storage
+duration array. It <em>cannot</em> turn into two pointers into
+<em>different</em> arrays. That would be horribly broken.</p>
+<h2 data-number="2.7" id="implementation-experience"><span class="header-section-number">2.7</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<p>This has been implemented in <a href="https://github.com/brevzin/llvm-project/commit/5530216c70cf1af20d8660d73d721902d8f3dc21">my
+fork</a> of Clang, and you can see it on <a href="https://compiler-explorer.com/z/P8WccrYP4">compiler
+explorer</a>.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
+References<a href="#bibliography" class="self-link"></a></h1>
+<div id="refs" class="references csl-bib-body" data-entry-spacing="0" role="list">
+<div id="ref-P0424R2" class="csl-entry" role="listitem">
+[P0424R2] Louis Dionne, Hana Dusíková. 2017-11-14. String literals as
+non-type template parameters. <a href="https://wg21.link/p0424r2"><div class="csl-indent">https://wg21.link/p0424r2</div></a>
+</div>
+<div id="ref-P0732R2" class="csl-entry" role="listitem">
+[P0732R2] Jeff Snyder, Louis Dionne. 2018-06-06. Class Types in Non-Type
+Template Parameters. <a href="https://wg21.link/p0732r2"><div class="csl-indent">https://wg21.link/p0732r2</div></a>
+</div>
+<div id="ref-P2484R0" class="csl-entry" role="listitem">
+[P2484R0] Richard Smith. 2021-11-17. Extending class types as non-type
+template parameters. <a href="https://wg21.link/p2484r0"><div class="csl-indent">https://wg21.link/p2484r0</div></a>
+</div>
+<div id="ref-P2996R13" class="csl-entry" role="listitem">
+[P2996R13] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
+Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2025-06-18. Reflection
+for C++26. <a href="https://wg21.link/p2996r13"><div class="csl-indent">https://wg21.link/p2996r13</div></a>
+</div>
+<div id="ref-P3380R1" class="csl-entry" role="listitem">
+[P3380R1] Barry Revzin. 2024-12-17. Extending support for class types as
+non-type template parameters. <a href="https://wg21.link/p3380r1"><div class="csl-indent">https://wg21.link/p3380r1</div></a>
+</div>
+<div id="ref-P3491R3" class="csl-entry" role="listitem">
+[P3491R3] Wyatt Childers, Peter Dimov, Barry Revzin, and Daveed
+Vandevoorde. 2025-06-20.
+<code class="sourceCode cpp">define_static_<span class="op">{</span>string<span class="op">,</span>object<span class="op">,</span>array<span class="op">}</span></code>.
+<a href="https://wg21.link/p349143"><div class="csl-indent">https://wg21.link/p349143</div></a>
+</div>
+</div>
+</div>
+</div>
+<script>
+const body = document.body;
+const noSyntaxHighlightingCheckbox = document.getElementById('no-syntax-highlighting-toggle');
+noSyntaxHighlightingCheckbox.checked = false;
+noSyntaxHighlightingCheckbox.addEventListener('change', () => {
+  body.dataset.syntaxHighlighting = noSyntaxHighlightingCheckbox.checked ? 'off' : 'on';
+});
+
+const hideDeletedTextCheckbox = document.getElementById('hide-deleted-text-toggle');
+hideDeletedTextCheckbox.checked = false;
+hideDeletedTextCheckbox.addEventListener('change', () => {
+  body.dataset.deletedText = hideDeletedTextCheckbox.checked ? 'hide' : 'show';
+});
+</script>
+</body>
+</html>
