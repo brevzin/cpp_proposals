@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-08-05" />
+  <meta name="dcterms.date" content="2026-08-09" />
   <title>Extending constant template parameter support by customizing
 `std::meta::reflect_constant`</title>
   <style>
@@ -700,7 +700,7 @@ parameter support by customizing
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-08-05</td>
+    <td>2026-08-09</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -730,13 +730,14 @@ parameter support by customizing
 <li><a href="#normalizing" id="toc-normalizing"><span class="toc-section-number">2.1</span> Normalizing</a></li>
 <li><a href="#defaulting-reflect_constant" id="toc-defaulting-reflect_constant"><span class="toc-section-number">2.2</span> Defaulting
 <code class="sourceCode cpp">reflect_constant</code></a></li>
-<li><a href="#standard-library-extensions" id="toc-standard-library-extensions"><span class="toc-section-number">2.3</span> Standard Library
+<li><a href="#concrete-details" id="toc-concrete-details"><span class="toc-section-number">2.3</span> Concrete Details</a></li>
+<li><a href="#standard-library-extensions" id="toc-standard-library-extensions"><span class="toc-section-number">2.4</span> Standard Library
 Extensions</a></li>
-<li><a href="#future-extensions-with-containers" id="toc-future-extensions-with-containers"><span class="toc-section-number">2.4</span> Future Extensions with
+<li><a href="#future-extensions-with-containers" id="toc-future-extensions-with-containers"><span class="toc-section-number">2.5</span> Future Extensions with
 Containers</a></li>
-<li><a href="#string-literals" id="toc-string-literals"><span class="toc-section-number">2.5</span> String Literals</a></li>
-<li><a href="#normalization-ii" id="toc-normalization-ii"><span class="toc-section-number">2.6</span> Normalization II</a></li>
-<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">2.7</span> Implementation Experience</a></li>
+<li><a href="#string-literals" id="toc-string-literals"><span class="toc-section-number">2.6</span> String Literals</a></li>
+<li><a href="#normalization-ii" id="toc-normalization-ii"><span class="toc-section-number">2.7</span> Normalization II</a></li>
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">2.8</span> Implementation Experience</a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">3</span> References</a></li>
 </ul>
@@ -769,10 +770,13 @@ usable:
 <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>,
 <code class="sourceCode cpp">std<span class="op">::</span>string_view</code>,
 <code class="sourceCode cpp">std<span class="op">::</span>span</code>,
-everything in
+most types in
 <code class="sourceCode cpp"><span class="op">&lt;</span>chrono<span class="op">&gt;</span></code>,
 <code class="sourceCode cpp">std<span class="op">::</span>complex</code>,
-the comparison categories, and
+the comparison categories,
+<code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper</code>,
+<code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>,
+and
 <code class="sourceCode cpp">std<span class="op">::</span>bitset</code>.
 Additionally, string literals will also become usable.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="design"><span class="header-section-number">2</span> Design<a href="#design" class="self-link"></a></h1>
@@ -862,7 +866,7 @@ lowest terms</li>
 doesn’t care about trailing data.</li>
 </ul>
 <p>Let’s start with <code class="sourceCode cpp">Fraction</code>. We
-need to make sure that we serialize it in lowest terms, we the arguments
+need to make sure that we serialize it in lowest terms, so the arguments
 we’re
 <code class="sourceCode cpp">substitute<span class="op">()</span></code>-ing
 will have to be reduced:</p>
@@ -985,7 +989,7 @@ same object:</p>
 and
 <code class="sourceCode cpp">bad<span class="op">&lt;</span>g<span class="op">()&gt;</span></code>
 both evaluate the same way — they return
-<code class="sourceCode cpp"><span class="dv">0</span></code>.</p>
+<code class="sourceCode cpp"><span class="dv">1</span></code>.</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>SmallString S<span class="op">&gt;</span></span>
@@ -1085,17 +1089,118 @@ function is that you can also be able to
 <code class="sourceCode cpp"><span class="kw">delete</span></code> it
 too, which means that a type could (if so desired) simply opt out of
 being usable as a constant template parameter.</p>
-<h2 data-number="2.3" id="standard-library-extensions"><span class="header-section-number">2.3</span> Standard Library Extensions<a href="#standard-library-extensions" class="self-link"></a></h2>
-<p>There are no standard library types that I’m aware of that would
+<p>Also, the actual implementation details of defaulting
+<code class="sourceCode cpp">reflect_constant</code> would differ from
+those of explicitly providing it. If it is user-provided, the
+implementation will of course invoke and use that result as the template
+parameter object. But if it is defaulted, then effectively the
+implementation just tracks an extra bit on the type that tells it to
+ignore the usual access rule for C++20 class types as non-type template
+parameters. It wouldn’t have to change the rules for
+template-argument-equivalence for that case.</p>
+<h2 data-number="2.3" id="concrete-details"><span class="header-section-number">2.3</span> Concrete Details<a href="#concrete-details" class="self-link"></a></h2>
+<p>Currently, the rule is that
+<code class="sourceCode cpp">f<span class="op">&lt;</span>x<span class="op">&gt;</span></code>
+and
+<code class="sourceCode cpp">f<span class="op">&lt;</span>y<span class="op">&gt;</span></code>
+are the same specialization when <code class="sourceCode cpp">x</code>
+and <code class="sourceCode cpp">y</code> are
+template-argument-equivalent. For which the relevant rule from
+<span>13.6 Type equivalence <a href="https://eel.is/c++draft/temp.type" title="13.6 Type equivalence">[temp.type]</a></span> for class types
+is:</p>
+<div class="std">
+<blockquote>
+<p><span class="marginalizedparent"><a href="#pnum-1" id="pnum-1" class="marginalized">2</a></span> Two values are
+<em>template-argument-equivalent</em> if they are of the same type
+and</p>
+<ul>
+<li><span class="marginalizedparent"><a href="#pnum-2" id="pnum-2" class="marginalized">(2.1)</a></span> […]</li>
+<li><span class="marginalizedparent"><a href="#pnum-3" id="pnum-3" class="marginalized">(2.10)</a></span> they are of union type and either
+they both have no active member or they have the same active member and
+their active members are template-argument-equivalent, or</li>
+<li><span class="marginalizedparent"><a href="#pnum-4" id="pnum-4" class="marginalized">(2.11)</a></span> […], or</li>
+<li><span class="marginalizedparent"><a href="#pnum-5" id="pnum-5" class="marginalized">(2.12)</a></span> they are of class type and their
+corresponding direct subobjects and reference members are
+template-argument-equivalent.</li>
+</ul>
+</blockquote>
+</div>
+<p>This proposal extends the those two bullets such that two values
+<code class="sourceCode cpp">x</code> and
+<code class="sourceCode cpp">y</code> of class type
+<code class="sourceCode cpp">T</code> (including union type) are
+template-argument equivalent if <code class="sourceCode cpp">T</code>
+provides a non-default
+<code class="sourceCode cpp">reflect_constant</code> customization and
+<code class="sourceCode cpp">x<span class="op">.</span>reflect_constant<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>reflect_constant<span class="op">()</span></code>
+(i.e. are reflections representing the same object).</p>
+<p>In order for that to be viable, we need to impose strict (albeit
+obvious) restrictions on the return type of
+<code class="sourceCode cpp">reflect_constant</code>. For a class type
+<code class="sourceCode cpp">T</code>,
+<code class="sourceCode cpp">T<span class="op">::</span>reflect_constant</code>
+must return a reflection representing either an object or a variable.
+Letting: <code class="sourceCode cpp">O</code> be either that object or
+the object defined by that variable:</p>
+<ul>
+<li><code class="sourceCode cpp">O</code> has static storage
+duration,</li>
+<li><code class="sourceCode cpp">O</code> is usable in constant
+expressions,</li>
+<li><code class="sourceCode cpp">O</code> has linkage (with internal
+linkage we would end up with a TU-local specialization),</li>
+<li><code class="sourceCode cpp">O</code> has type
+<code class="sourceCode cpp">T <span class="kw">const</span></code>
+(this also guards against inheriting a customization
+— <code class="sourceCode cpp">Base</code>’s implementation would have
+to return a
+<code class="sourceCode cpp">Base <span class="kw">const</span></code>
+object, which would be incompatible with the rules for a
+<code class="sourceCode cpp">Derived</code>).</li>
+</ul>
+<p><code class="sourceCode cpp">reflect_constant</code> must also be
+deterministic (same value in, same object out) and idempotent (given a
+value <code class="sourceCode cpp">x</code>,
+<code class="sourceCode cpp">x<span class="op">.</span>reflect_constant<span class="op">()</span></code>
+and
+<code class="sourceCode cpp"><span class="op">[:</span> x<span class="op">.</span>reflect_constant<span class="op">()</span> <span class="op">:].</span>reflect_constant<span class="op">()</span></code>
+must be the same object). Idempotence we can actually check as part of
+the implementation, in the same way that template variable construction
+does an extra copy right now.</p>
+<p>We’ll have the same rules for the shape of the customization point
+for defaulting reasons as we have for defaulting the comparison
+operators. That is, it must be:</p>
+<ul>
+<li><code class="sourceCode cpp"><span class="kw">consteval</span></code></li>
+<li>non-static member function,</li>
+<li>which returns
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+or
+<code class="sourceCode cpp"><span class="kw">auto</span></code>,</li>
+<li>have no non-object parameter, and</li>
+<li>the object parameter must have type either
+<code class="sourceCode cpp">T</code> or
+<code class="sourceCode cpp">T <span class="kw">const</span><span class="op">&amp;</span></code>.</li>
+</ul>
+<p>Note that a type with
+<code class="sourceCode cpp"><span class="kw">mutable</span></code>
+members is non-structural, regardless of any customization point.</p>
+<h2 data-number="2.4" id="standard-library-extensions"><span class="header-section-number">2.4</span> Standard Library Extensions<a href="#standard-library-extensions" class="self-link"></a></h2>
+<p>There is one standard library type that I’m aware of that would
 actually provide a bespoke implementation of
-<code class="sourceCode cpp">reflect_constant</code>, but there are
-quite a few for whom
+<code class="sourceCode cpp">reflect_constant</code> (see below), but
+there are quite a few for whom
 <code class="sourceCode cpp"><span class="cf">default</span></code>ing
 is the correct behavior. For the class templates below,
 <code class="sourceCode cpp"><span class="cf">default</span></code>ing
 will do the right thing by opting in those types whose subobjects are
 usable as constant template parameters and not opting in those types
-whose subobjects are not usable:</p>
+whose subobjects are not usable (note that
+<code class="sourceCode cpp">std<span class="op">::</span>pair</code>
+and
+<code class="sourceCode cpp">std<span class="op">::</span>array</code>
+are absent from this list, but that is only because they are already
+usable as constant template parameters):</p>
 <ul>
 <li><code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code></li>
 <li><code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span></code></li>
@@ -1104,6 +1209,8 @@ whose subobjects are not usable:</p>
 <li><code class="sourceCode cpp">std<span class="op">::</span>basic_string_view<span class="op">&lt;</span>charT<span class="op">,</span> Traits<span class="op">&gt;</span></code>
 (all specializations)</li>
 <li><code class="sourceCode cpp">std<span class="op">::</span>span<span class="op">&lt;</span>T<span class="op">,</span> Extent<span class="op">&gt;</span></code>
+(all specializations)</li>
+<li><code class="sourceCode cpp">std<span class="op">::</span>reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 (all specializations)</li>
 <li>A lot of
 <code class="sourceCode cpp"><span class="op">&lt;</span>chrono<span class="op">&gt;</span></code>
@@ -1132,7 +1239,6 @@ types:
 <code class="sourceCode cpp">std<span class="op">::</span>weak_ordering</code>,
 <code class="sourceCode cpp">std<span class="op">::</span>strong_ordering</code></li>
 <li><code class="sourceCode cpp">std<span class="op">::</span>bitset<span class="op">&lt;</span>N<span class="op">&gt;</span></code></li>
-<li><code class="sourceCode cpp">std<span class="op">::</span>inplace_vector<span class="op">&lt;</span>T<span class="op">,</span> N<span class="op">&gt;</span></code></li>
 </ul>
 <p>For all of these types and class templates, adding the single
 line:</p>
@@ -1144,7 +1250,13 @@ line:</p>
 <p>Does the right thing and opts those types (or suitable
 specializations of those class templates) into being used as constant
 template parameters, with the correct semantics.</p>
-<h2 data-number="2.4" id="future-extensions-with-containers"><span class="header-section-number">2.4</span> Future Extensions with
+<p>The only standard library type that we would add a non-defaulted
+<code class="sourceCode cpp">reflect_constant</code> to is
+<code class="sourceCode cpp">std<span class="op">::</span>inplace_vector<span class="op">&lt;</span>T<span class="op">,</span> N<span class="op">&gt;</span></code>.
+Its customization point would look the same as
+<code class="sourceCode cpp">std<span class="op">::</span>vector</code>’s
+(defined below).</p>
+<h2 data-number="2.5" id="future-extensions-with-containers"><span class="header-section-number">2.5</span> Future Extensions with
 Containers<a href="#future-extensions-with-containers" class="self-link"></a></h2>
 <p>Notably absent from the above list are allocating containers, most
 significantly
@@ -1160,7 +1272,7 @@ parameter support for them. Here is
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">,</span> <span class="kw">auto</span><span class="op">&amp;</span> R<span class="op">&gt;</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> impl <span class="op">=</span> T<span class="op">(</span>std<span class="op">::</span>begin<span class="op">(</span>R<span class="op">),</span> std<span class="op">::</span>end<span class="op">(</span>R<span class="op">));</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="kw">auto</span> impl <span class="op">=</span> T<span class="op">(</span>std<span class="op">::</span>from_range<span class="op">,</span> R<span class="op">);</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> vector <span class="op">{</span></span>
@@ -1177,14 +1289,14 @@ parameter support for them. Here is
 </blockquote>
 </div>
 <p>Note that this implicitly normalizes capacity — as long as the
-elements are the same, we will chose the same specialization of
+elements are the same, we will choose the same specialization of
 <code class="sourceCode cpp">impl</code>, which means we will end up
 with the same object (which will have whatever capacity it has).</p>
 <p>If for some reason, you actually <em>do</em> want capacity to
 participate in all of this, that’s easy too — just also pass in
 <code class="sourceCode cpp">capacity<span class="op">()</span></code>
 as an additional serialization argument.</p>
-<h2 data-number="2.5" id="string-literals"><span class="header-section-number">2.5</span> String Literals<a href="#string-literals" class="self-link"></a></h2>
+<h2 data-number="2.6" id="string-literals"><span class="header-section-number">2.6</span> String Literals<a href="#string-literals" class="self-link"></a></h2>
 <p>One other type to cover not only isn’t in the standard library, but
 it isn’t even a class type: string literals. While
 <code class="sourceCode cpp"><span class="dt">char</span> <span class="kw">const</span><span class="op">*</span></code>
@@ -1260,7 +1372,7 @@ and <code class="sourceCode cpp">c</code> are the same
 the pointers themselves are different, and template-argument-equivalence
 should preserve that. This is essential for another issue to bring
 up…</p>
-<h2 data-number="2.6" id="normalization-ii"><span class="header-section-number">2.6</span> Normalization II<a href="#normalization-ii" class="self-link"></a></h2>
+<h2 data-number="2.7" id="normalization-ii"><span class="header-section-number">2.7</span> Normalization II<a href="#normalization-ii" class="self-link"></a></h2>
 <p>I talked about normalization earlier from the perspective of wanting
 to mutate an object down to its canonical representation, and only use
 that canonical representation as a template parameter object.</p>
@@ -1297,7 +1409,7 @@ go through its (defaulted)
 parameter object construction process. Otherwise composition completely
 breaks down.</p>
 <p>This is also why the string literal rule has to have the form I
-described above. Imagine of
+described above. Imagine if
 <code class="sourceCode cpp">std<span class="op">::</span>string_view</code>’s
 storage looked like this:</p>
 <div class="std">
@@ -1316,7 +1428,7 @@ transform into
 where <code class="sourceCode cpp">p</code> points to a static storage
 duration array. It <em>cannot</em> turn into two pointers into
 <em>different</em> arrays. That would be horribly broken.</p>
-<h2 data-number="2.7" id="implementation-experience"><span class="header-section-number">2.7</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<h2 data-number="2.8" id="implementation-experience"><span class="header-section-number">2.8</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>This has been implemented in <a href="https://github.com/brevzin/llvm-project/commit/5530216c70cf1af20d8660d73d721902d8f3dc21">my
 fork</a> of Clang, and you can see it on <a href="https://compiler-explorer.com/z/P8WccrYP4">compiler
 explorer</a>.</p>

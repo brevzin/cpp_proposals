@@ -19,7 +19,7 @@ This is a follow-up to [@P2484R0]{.title} and [@P3380R1]{.title} (the latter of 
 * Faisal Vali's idea that reflection provides a good answer for how to serialize arbitrary elements, and
 * Dan Katz's experimentation that eventually led to the `std::define_static_meow` functions in [@P3491R3]{.title}
 
-The goal here is to allow types to opt-in to being usable as constant template parameters in a way that's forward-looking to containers as well. This proposal will also make the following standard library types usable: `std::optional`, `std::expected`, `std::variant`, `std::tuple`, `std::string_view`, `std::span`, everything in `<chrono>`, `std::complex`, the comparison categories, and `std::bitset`. Additionally, string literals will also become usable.
+The goal here is to allow types to opt-in to being usable as constant template parameters in a way that's forward-looking to containers as well. This proposal will also make the following standard library types usable: `std::optional`, `std::expected`, `std::variant`, `std::tuple`, `std::string_view`, `std::span`, most types in `<chrono>`, `std::complex`, the comparison categories, `std::reference_wrapper`, `std::inplace_vector`, and `std::bitset`. Additionally, string literals will also become usable.
 
 # Design
 
@@ -75,7 +75,7 @@ Let's go through two examples where we do something non-trivial: we want to do s
 * a `Fraction` type that is only in lowest terms
 * a `SmallString` container that doesn't care about trailing data.
 
-Let's start with `Fraction`. We need to make sure that we serialize it in lowest terms, we the arguments we're `substitute()`-ing will have to be reduced:
+Let's start with `Fraction`. We need to make sure that we serialize it in lowest terms, so the arguments we're `substitute()`-ing will have to be reduced:
 
 ::: std
 ```cpp
@@ -189,7 +189,7 @@ static_assert(ref<g()>[1] == '\0');
 ```
 :::
 
-As a result, this example just isn't an ODR issue, because `bad<f()>` and `bad<g()>` both evaluate the same way — they return `0`.
+As a result, this example just isn't an ODR issue, because `bad<f()>` and `bad<g()>` both evaluate the same way — they return `1`.
 
 ::: std
 ```cpp
@@ -255,9 +255,45 @@ We'll want defaulting behavior for `reflect_constant` to be similar to defaultin
 
 Note that a consequence of being able to `default` this function is that you can also be able to `delete` it too, which means that a type could (if so desired) simply opt out of being usable as a constant template parameter.
 
+Also, the actual implementation details of defaulting `reflect_constant` would differ from those of explicitly providing it. If it is user-provided, the implementation will of course invoke and use that result as the template parameter object. But if it is defaulted, then effectively the implementation just tracks an extra bit on the type that tells it to ignore the usual access rule for C++20 class types as non-type template parameters. It wouldn't have to change the rules for template-argument-equivalence for that case.
+
+## Concrete Details
+
+Currently, the rule is that `f<x>` and `f<y>` are the same specialization when `x` and `y` are template-argument-equivalent. For which the relevant rule from [temp.type]{.sref} for class types is:
+
+::: std
+[2]{.pnum} Two values are *template-argument-equivalent* if they are of the same type and
+
+* [2.1]{.pnum} [...]
+* [2.10]{.pnum} they are of union type and either they both have no active member or they have the same active member and their active members are template-argument-equivalent, or
+* [2.11]{.pnum} [...], or
+* [2.12]{.pnum} they are of class type and their corresponding direct subobjects and reference members are template-argument-equivalent.
+:::
+
+This proposal extends the those two bullets such that two values `x` and `y` of class type `T` (including union type) are template-argument equivalent if `T` provides a non-default `reflect_constant` customization and `x.reflect_constant() == y.reflect_constant()` (i.e. are reflections representing the same object).
+
+In order for that to be viable, we need to impose strict (albeit obvious) restrictions on the return type of `reflect_constant`. For a class type `T`, `T::reflect_constant` must return a reflection representing either an object or a variable. Letting: `O` be either that object or the object defined by that variable:
+
+* `O` has static storage duration,
+* `O` is usable in constant expressions,
+* `O` has linkage (with internal linkage we would end up with a TU-local specialization),
+* `O` has type `T const` (this also guards against inheriting a customization — `Base`'s implementation would have to return a `Base const` object, which would be incompatible with the rules for a `Derived`).
+
+`reflect_constant` must also be deterministic (same value in, same object out) and idempotent (given a value `x`, `x.reflect_constant()` and `[: x.reflect_constant() :].reflect_constant()` must be the same object). Idempotence we can actually check as part of the implementation, in the same way that template variable construction does an extra copy right now.
+
+We'll have the same rules for the shape of the customization point for defaulting reasons as we have for defaulting the comparison operators. That is, it must be:
+
+* `consteval`
+* non-static member function,
+* which returns `std::meta::info` or `auto`,
+* have no non-object parameter, and
+* the object parameter must have type either `T` or `T const&`.
+
+Note that a type with `mutable` members is non-structural, regardless of any customization point.
+
 ## Standard Library Extensions
 
-There are no standard library types that I'm aware of that would actually provide a bespoke implementation of `reflect_constant`, but there are quite a few for whom `default`ing is the correct behavior. For the class templates below, `default`ing will do the right thing by opting in those types whose subobjects are usable as constant template parameters and not opting in those types whose subobjects are not usable:
+There is one standard library type that I'm aware of that would actually provide a bespoke implementation of `reflect_constant` (see below), but there are quite a few for whom `default`ing is the correct behavior. For the class templates below, `default`ing will do the right thing by opting in those types whose subobjects are usable as constant template parameters and not opting in those types whose subobjects are not usable (note that `std::pair` and `std::array` are absent from this list, but that is only because they are already usable as constant template parameters):
 
 * `std::optional<T>`
 * `std::expected<T, E>`
@@ -265,6 +301,7 @@ There are no standard library types that I'm aware of that would actually provid
 * `std::tuple<Ts...>`
 * `std::basic_string_view<charT, Traits>` (all specializations)
 * `std::span<T, Extent>` (all specializations)
+* `std::reference_wrapper<T>` (all specializations)
 * A lot of `<chrono>` types:
   * `duration<Rep, Period>`
   * `time_point<Clock, Duration>`
@@ -285,7 +322,6 @@ There are no standard library types that I'm aware of that would actually provid
   * `year_month_weekday_last`
 * The comparison categories — `std::partial_ordering`, `std::weak_ordering`, `std::strong_ordering`
 * `std::bitset<N>`
-* `std::inplace_vector<T, N>`
 
 For all of these types and class templates, adding the single line:
 
@@ -297,6 +333,8 @@ consteval auto reflect_constant() const -> std::meta::info = default;
 
 Does the right thing and opts those types (or suitable specializations of those class templates) into being used as constant template parameters, with the correct semantics.
 
+The only standard library type that we would add a non-defaulted `reflect_constant` to is `std::inplace_vector<T, N>`. Its customization point would look the same as `std::vector`'s (defined below).
+
 ## Future Extensions with Containers
 
 Notably absent from the above list are allocating containers, most significantly `std::vector<T>` and `std::string`. That's because we do not yet have non-transient allocation and so cannot support them yet.
@@ -306,7 +344,7 @@ However, once we _do_ have non-transient allocation, this paper provides a desig
 ::: std
 ```cpp
 template <class T, auto& R>
-inline constexpr auto impl = T(std::begin(R), std::end(R));
+inline constexpr auto impl = T(std::from_range, R);
 
 template <class T>
 class vector {
@@ -323,7 +361,7 @@ public:
 ```
 :::
 
-Note that this implicitly normalizes capacity — as long as the elements are the same, we will chose the same specialization of `impl`, which means we will end up with the same object (which will have whatever capacity it has).
+Note that this implicitly normalizes capacity — as long as the elements are the same, we will choose the same specialization of `impl`, which means we will end up with the same object (which will have whatever capacity it has).
 
 If for some reason, you actually _do_ want capacity to participate in all of this, that's easy too — just also pass in `capacity()` as an additional serialization argument.
 
@@ -415,7 +453,7 @@ int r = f<Stuff{.s="hello"sv, .x=1}>();
 
 This all needs to basically... just happen as part of the template parameter object construction process. Otherwise composition completely breaks down.
 
-This is also why the string literal rule has to have the form I described above. Imagine of `std::string_view`'s storage looked like this:
+This is also why the string literal rule has to have the form I described above. Imagine if `std::string_view`'s storage looked like this:
 
 ::: std
 ```cpp
