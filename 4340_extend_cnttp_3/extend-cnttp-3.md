@@ -468,4 +468,4 @@ In the above initialization, `string_view("hello"sv)` would have two pointers in
 
 ## Implementation Experience
 
-This has been implemented in [my fork](https://github.com/brevzin/llvm-project/commit/5530216c70cf1af20d8660d73d721902d8f3dc21) of Clang, and you can see it on [compiler explorer](https://compiler-explorer.com/z/P8WccrYP4).
+This has been implemented in [my fork](https://github.com/brevzin/llvm-project/commit/750c1763c183d9fb1bc0e6bb1c6a4adde11c9094) of Clang, and you can see it on [compiler explorer](https://compiler-explorer.com/z/P8WccrYP4).
