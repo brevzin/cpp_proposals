@@ -28,6 +28,18 @@ Since [@P2806R1], switched syntax from `do return` to `do_return` to avoid ambig
 
 Since [@P2806R0], some more discussion about implicit last value vs explicit return, reflection, and a grammar fix to the still-incomplete wording.
 
+# Abstract
+
+We propose the addition of a new kind of expression, called a `do` expression. In its simplest form:
+
+::: std
+```cpp
+int x = do { do_return 42; };
+```
+:::
+
+A `do` expression consists of a sequence of statements, but is still, itself, an expression (and thus has a value and a type). It is similar to an immediately invoked lambda with a capture of `[&]`, except using the `do_return` keyword to produce a value instead of `return`.
+
 # Introduction
 
 C++ is a language built on statements. `if` is not an expression, loops aren't expressions, statements aren't expressions (except maybe in the specific case of `$expression$;`).
@@ -87,21 +99,9 @@ let x = match result {
 
 This is functionality that immediately invoked lambda expressions _cannot_ provide, but something we want to add a new kind of expression to support — in a way that is orthogonal to the pattern matching feature (which otherwise previously attempted to solve this problem with a bespoke, pattern-matching-specific sort of block expression).
 
-# `do` expressions
+# Proposal Details
 
-Our proposal is the addition of a new kind of expression, called a `do` expression.
-
-In its simplest form:
-
-::: std
-```cpp
-int x = do { do_return 42; };
-```
-:::
-
-A `do` expression consists of a sequence of statements, but is still, itself, an expression (and thus has a value and a type). It is similar to an immediately invoked lambda with a capture of `[&]`, except using the `do_return` keyword to produce a value instead of `return`.
-
-There are a lot of interesting rules that we need to discuss about how those statements behave.
+There are a lot of interesting rules that we need to discuss about a `do` expression behaves.
 
 ## Scope
 
@@ -120,56 +120,6 @@ Other alternative spellings we've considered:
 * `do yield`
 * `do break` (similarly to `return`, we are breaking out of this expression, but is less likely to conflict since `break` is less likely to be used than `return` and also the corresponding `break $value$;` is invalid today)
 * `=>` (or some other arrow, like `<-` or `<=`)
-
-## Implicit Last Value
-
-Let's take the example motivating case from [@P2561R2]{.title} and compare implicit last expression to explicit return:
-
-::: cmptable
-### Implicit Last Value
-```cpp
-auto foo(int i) -> std::expected<int, E>
-
-auto bar(int i) -> std::expected<int, E> {
-    int j = do {
-        auto r = foo(i);
-        if (not r) {
-            return std::unexpected(r.error());
-        }
-        *r // <== NB: no semicolon
-    };
-
-    return j * j;
-}
-```
-
-### Explicit Return
-```cpp
-auto foo(int i) -> std::expected<int, E>
-
-auto bar(int i) -> std::expected<int, E> {
-    int j = do {
-        auto r = foo(i);
-        if (not r) {
-            return std::unexpected(r.error());
-        }
-        do_return *r;
-    };
-
-    return j * j;
-}
-```
-:::
-
-In the simple cases, implicit last value (on the left) will be shorter than an explicit return (on the right). But implicit last value is more limited. We cannot do early return (by design), which means that a `do` expression would not be able to return from a loop either. We would have to extend the language to support `if` expressions, so that at the very least the first example above could be made easier - which would add more complexity to the design.
-
-Which is to say — the `do_return` statement is still a valuable and necessary addition, given that we do not have `if` or loop expressions, and we are unlikely to add them.
-
-However, for many common uses of `do` expressions, we don't actually need early return, so paying the syntactic cost might seem unnecessary. Which is why [@P2806R4] proposed both `do_return` and implicit last value.
-
-On the other hand, as you can tell from the above example, `do` expressions are useful precisely when you want to have at least one statement. Otherwise, you'd just write `E` — nobody is writing `do { E }`. And once you have at least one statement, you're likely formatting your `do` expression across multiple lines. Once you do that though, is there really any syntactic/visual noise benefit of being able to avoid the `do_return`? It's already on its own line. Making that line shorter doesn't seem like it has any value at all. Regardless of any other issues with this idea (such as inconsistency with lambdas, wherein being able to omit `return` actually does seem quite valuable). As such, this proposal now proposes that the only way to produce a value from a `do` expression is through the `do_return` statement.
-
-Note that Rust also allows both (you can label a block expression and then `break` out of it).
 
 
 ## Type and Value Category
@@ -763,6 +713,56 @@ do { do_return X{}; }.foo();
 
 Such code would also have to be parenthesized to disambiguate, which doesn't seem like a huge burden on the user.
 
+
+## Implicit Last Value
+
+Let's take the example motivating case from [@P2561R2]{.title} and compare implicit last expression to explicit return:
+
+::: cmptable
+### Implicit Last Value
+```cpp
+auto foo(int i) -> std::expected<int, E>
+
+auto bar(int i) -> std::expected<int, E> {
+    int j = do {
+        auto r = foo(i);
+        if (not r) {
+            return std::unexpected(r.error());
+        }
+        *r // <== NB: no semicolon
+    };
+
+    return j * j;
+}
+```
+
+### Explicit Return
+```cpp
+auto foo(int i) -> std::expected<int, E>
+
+auto bar(int i) -> std::expected<int, E> {
+    int j = do {
+        auto r = foo(i);
+        if (not r) {
+            return std::unexpected(r.error());
+        }
+        do_return *r;
+    };
+
+    return j * j;
+}
+```
+:::
+
+In the simple cases, implicit last value (on the left) will be shorter than an explicit return (on the right). But implicit last value is more limited. We cannot do early return (by design), which means that a `do` expression would not be able to return from a loop either. We would have to extend the language to support `if` expressions, so that at the very least the first example above could be made easier - which would add more complexity to the design.
+
+Which is to say — the `do_return` statement is still a valuable and necessary addition, given that we do not have `if` or loop expressions, and we are unlikely to add them.
+
+However, for many common uses of `do` expressions, we don't actually need early return, so paying the syntactic cost might seem unnecessary. Which is why [@P2806R4] proposed both `do_return` and implicit last value.
+
+On the other hand, as you can tell from the above example, `do` expressions are useful precisely when you want to have at least one statement. Otherwise, you'd just write `E` — nobody is writing `do { E }`. And once you have at least one statement, you're likely formatting your `do` expression across multiple lines. Once you do that though, is there really any syntactic/visual noise benefit of being able to avoid the `do_return`? It's already on its own line. Making that line shorter doesn't seem like it has any value at all. Regardless of any other issues with this idea (such as inconsistency with lambdas, wherein being able to omit `return` actually does seem quite valuable). As such, this proposal now proposes that the only way to produce a value from a `do` expression is through the `do_return` statement.
+
+Note that Rust also allows both (you can label a block expression and then `break` out of it).
 
 ## Prior Art
 

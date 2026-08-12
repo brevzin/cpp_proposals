@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-08-11" />
+  <meta name="dcterms.date" content="2026-08-12" />
   <title>`do` expressions</title>
   <style>
 
@@ -698,7 +698,7 @@ expressions</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-08-11</td>
+    <td>2026-08-12</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -726,51 +726,50 @@ expressions</h1>
 <h1 id="toctitle">Contents</h1>
 <ul>
 <li><a href="#revision-history" id="toc-revision-history"><span class="toc-section-number">1</span> Revision History</a></li>
-<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">2</span> Introduction</a></li>
-<li><a href="#do-expressions" id="toc-do-expressions"><span class="toc-section-number">3</span>
-<code class="sourceCode cpp"><span class="cf">do</span></code>
-expressions</a>
+<li><a href="#abstract" id="toc-abstract"><span class="toc-section-number">2</span> Abstract</a></li>
+<li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">3</span> Introduction</a></li>
+<li><a href="#proposal-details" id="toc-proposal-details"><span class="toc-section-number">4</span> Proposal Details</a>
 <ul>
-<li><a href="#scope" id="toc-scope"><span class="toc-section-number">3.1</span> Scope</a></li>
-<li><a href="#do_return-statement" id="toc-do_return-statement"><span class="toc-section-number">3.2</span>
+<li><a href="#scope" id="toc-scope"><span class="toc-section-number">4.1</span> Scope</a></li>
+<li><a href="#do_return-statement" id="toc-do_return-statement"><span class="toc-section-number">4.2</span>
 <code class="sourceCode cpp">do_return</code> statement</a></li>
-<li><a href="#implicit-last-value" id="toc-implicit-last-value"><span class="toc-section-number">3.3</span> Implicit Last Value</a></li>
-<li><a href="#type-and-value-category" id="toc-type-and-value-category"><span class="toc-section-number">3.4</span> Type and Value Category</a></li>
-<li><a href="#copy-elision" id="toc-copy-elision"><span class="toc-section-number">3.5</span> Copy Elision</a></li>
-<li><a href="#control-flow" id="toc-control-flow"><span class="toc-section-number">3.6</span> Control Flow</a>
+<li><a href="#type-and-value-category" id="toc-type-and-value-category"><span class="toc-section-number">4.3</span> Type and Value Category</a></li>
+<li><a href="#copy-elision" id="toc-copy-elision"><span class="toc-section-number">4.4</span> Copy Elision</a></li>
+<li><a href="#control-flow" id="toc-control-flow"><span class="toc-section-number">4.5</span> Control Flow</a>
 <ul>
-<li><a href="#noreturn-functions" id="toc-noreturn-functions"><span class="toc-section-number">3.6.1</span>
+<li><a href="#noreturn-functions" id="toc-noreturn-functions"><span class="toc-section-number">4.5.1</span>
 <code class="sourceCode cpp">noreturn</code> functions</a></li>
-<li><a href="#always-escaping-expressions" id="toc-always-escaping-expressions"><span class="toc-section-number">3.6.2</span> Always-escaping
+<li><a href="#always-escaping-expressions" id="toc-always-escaping-expressions"><span class="toc-section-number">4.5.2</span> Always-escaping
 expressions</a></li>
-<li><a href="#goto" id="toc-goto"><span class="toc-section-number">3.6.3</span>
+<li><a href="#goto" id="toc-goto"><span class="toc-section-number">4.5.3</span>
 <code class="sourceCode cpp"><span class="cf">goto</span></code></a></li>
 </ul></li>
-<li><a href="#lifetime" id="toc-lifetime"><span class="toc-section-number">3.7</span> Lifetime</a>
+<li><a href="#lifetime" id="toc-lifetime"><span class="toc-section-number">4.6</span> Lifetime</a>
 <ul>
-<li><a href="#what-about-pattern-matching" id="toc-what-about-pattern-matching"><span class="toc-section-number">3.7.1</span> What about Pattern
+<li><a href="#what-about-pattern-matching" id="toc-what-about-pattern-matching"><span class="toc-section-number">4.6.1</span> What about Pattern
 Matching?</a></li>
-<li><a href="#conditional-lifetime-extension" id="toc-conditional-lifetime-extension"><span class="toc-section-number">3.7.2</span> Conditional Lifetime
+<li><a href="#conditional-lifetime-extension" id="toc-conditional-lifetime-extension"><span class="toc-section-number">4.6.2</span> Conditional Lifetime
 Extension</a></li>
 </ul></li>
-<li><a href="#sfinae-friendliness" id="toc-sfinae-friendliness"><span class="toc-section-number">3.8</span> SFINAE-Friendliness</a></li>
-<li><a href="#grammar-disambiguation" id="toc-grammar-disambiguation"><span class="toc-section-number">3.9</span> Grammar Disambiguation</a></li>
-<li><a href="#prior-art" id="toc-prior-art"><span class="toc-section-number">3.10</span> Prior Art</a></li>
-<li><a href="#what-about-reflection" id="toc-what-about-reflection"><span class="toc-section-number">3.11</span> What About Reflection?</a></li>
-<li><a href="#where-can-do-expressions-appear" id="toc-where-can-do-expressions-appear"><span class="toc-section-number">3.12</span> Where can
+<li><a href="#sfinae-friendliness" id="toc-sfinae-friendliness"><span class="toc-section-number">4.7</span> SFINAE-Friendliness</a></li>
+<li><a href="#grammar-disambiguation" id="toc-grammar-disambiguation"><span class="toc-section-number">4.8</span> Grammar Disambiguation</a></li>
+<li><a href="#implicit-last-value" id="toc-implicit-last-value"><span class="toc-section-number">4.9</span> Implicit Last Value</a></li>
+<li><a href="#prior-art" id="toc-prior-art"><span class="toc-section-number">4.10</span> Prior Art</a></li>
+<li><a href="#what-about-reflection" id="toc-what-about-reflection"><span class="toc-section-number">4.11</span> What About Reflection?</a></li>
+<li><a href="#where-can-do-expressions-appear" id="toc-where-can-do-expressions-appear"><span class="toc-section-number">4.12</span> Where can
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions appear</a></li>
-<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">3.13</span> Implementation
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">4.13</span> Implementation
 Experience</a></li>
 </ul></li>
-<li><a href="#wording" id="toc-wording"><span class="toc-section-number">4</span> Wording</a>
+<li><a href="#wording" id="toc-wording"><span class="toc-section-number">5</span> Wording</a>
 <ul>
-<li><a href="#lex-intro" id="toc-lex-intro"><span class="toc-section-number">4.1</span> Lex / Intro</a></li>
-<li><a href="#expressions" id="toc-expressions"><span class="toc-section-number">4.2</span> Expressions</a></li>
-<li><a href="#statements" id="toc-statements"><span class="toc-section-number">4.3</span> Statements</a></li>
-<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">4.4</span> Feature-Test Macro</a></li>
+<li><a href="#lex-intro" id="toc-lex-intro"><span class="toc-section-number">5.1</span> Lex / Intro</a></li>
+<li><a href="#expressions" id="toc-expressions"><span class="toc-section-number">5.2</span> Expressions</a></li>
+<li><a href="#statements" id="toc-statements"><span class="toc-section-number">5.3</span> Statements</a></li>
+<li><a href="#feature-test-macro" id="toc-feature-test-macro"><span class="toc-section-number">5.4</span> Feature-Test Macro</a></li>
 </ul></li>
-<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">5</span> References</a></li>
+<li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">6</span> References</a></li>
 </ul>
 </div>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="revision-history"><span class="header-section-number">1</span>
@@ -794,7 +793,24 @@ Added section on <a href="#lifetime">lifetime</a>.</p>
 <p>Since <span class="citation" data-cites="P2806R0"><a href="https://wg21.link/p2806r0">[P2806R0]</a></span>, some more
 discussion about implicit last value vs explicit return, reflection, and
 a grammar fix to the still-incomplete wording.</p>
-<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">2</span>
+<h1 data-number="2" style="border-bottom:1px solid #cccccc" id="abstract"><span class="header-section-number">2</span> Abstract<a href="#abstract" class="self-link"></a></h1>
+<p>We propose the addition of a new kind of expression, called a
+<code class="sourceCode cpp"><span class="cf">do</span></code>
+expression. In its simplest form:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> do_return <span class="dv">42</span><span class="op">;</span> <span class="op">};</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>A <code class="sourceCode cpp"><span class="cf">do</span></code>
+expression consists of a sequence of statements, but is still, itself,
+an expression (and thus has a value and a type). It is similar to an
+immediately invoked lambda with a capture of
+<code class="sourceCode cpp"><span class="op">[&amp;]</span></code>,
+except using the <code class="sourceCode cpp">do_return</code> keyword
+to produce a value instead of
+<code class="sourceCode cpp"><span class="cf">return</span></code>.</p>
+<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">3</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>C++ is a language built on statements.
 <code class="sourceCode cpp"><span class="cf">if</span></code> is not an
@@ -831,18 +847,18 @@ Do Expression
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> x <span class="op">=</span> <span class="op">[&amp;]{</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    S1<span class="op">;</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    S2<span class="op">;</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> E<span class="op">;</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">}();</span></span></code></pre></div>
-</td>
-<td>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> x <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> x <span class="op">=</span> <span class="op">[&amp;]{</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    S1<span class="op">;</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    S2<span class="op">;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    do_return E<span class="op">;</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> E<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">}();</span></span></code></pre></div>
+</td>
+<td>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> x <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    S1<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    S2<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    do_return E<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </td>
 </tr>
 </table>
@@ -866,7 +882,7 @@ it.</p>
 where the current design is built upon a sequence of:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb3"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><em>pattern</em> =&gt; <em>expression</em>;</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><em>pattern</em> =&gt; <em>expression</em>;</span></code></pre></div>
 </blockquote>
 </div>
 <p>It is idiomatic in languages that have pattern matching to allow
@@ -895,35 +911,18 @@ expression to support — in a way that is orthogonal to the pattern
 matching feature (which otherwise previously attempted to solve this
 problem with a bespoke, pattern-matching-specific sort of block
 expression).</p>
-<h1 data-number="3" style="border-bottom:1px solid #cccccc" id="do-expressions"><span class="header-section-number">3</span>
+<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="proposal-details"><span class="header-section-number">4</span>
+Proposal Details<a href="#proposal-details" class="self-link"></a></h1>
+<p>There are a lot of interesting rules that we need to discuss about a
 <code class="sourceCode cpp"><span class="cf">do</span></code>
-expressions<a href="#do-expressions" class="self-link"></a></h1>
-<p>Our proposal is the addition of a new kind of expression, called a
-<code class="sourceCode cpp"><span class="cf">do</span></code>
-expression.</p>
-<p>In its simplest form:</p>
-<div class="std">
-<blockquote>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span> do_return <span class="dv">42</span><span class="op">;</span> <span class="op">};</span></span></code></pre></div>
-</blockquote>
-</div>
-<p>A <code class="sourceCode cpp"><span class="cf">do</span></code>
-expression consists of a sequence of statements, but is still, itself,
-an expression (and thus has a value and a type). It is similar to an
-immediately invoked lambda with a capture of
-<code class="sourceCode cpp"><span class="op">[&amp;]</span></code>,
-except using the <code class="sourceCode cpp">do_return</code> keyword
-to produce a value instead of
-<code class="sourceCode cpp"><span class="cf">return</span></code>.</p>
-<p>There are a lot of interesting rules that we need to discuss about
-how those statements behave.</p>
-<h2 data-number="3.1" id="scope"><span class="header-section-number">3.1</span> Scope<a href="#scope" class="self-link"></a></h2>
+expression behaves.</p>
+<h2 data-number="4.1" id="scope"><span class="header-section-number">4.1</span> Scope<a href="#scope" class="self-link"></a></h2>
 <p>A <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression does introduce a new block scope - as the braces might
 suggest. But it does <em>not</em> introduce a new function scope. There
 is no new stack frame. Which is what allows external control flow to
 work (see below).</p>
-<h2 data-number="3.2" id="do_return-statement"><span class="header-section-number">3.2</span>
+<h2 data-number="4.2" id="do_return-statement"><span class="header-section-number">4.2</span>
 <code class="sourceCode cpp">do_return</code> statement<a href="#do_return-statement" class="self-link"></a></h2>
 <p>The new <code class="sourceCode cpp">do_return</code> statement has
 the same form as the
@@ -969,99 +968,7 @@ is invalid today)</li>
 <code class="sourceCode cpp"><span class="op">&lt;-</span></code> or
 <code class="sourceCode cpp"><span class="op">&lt;=</span></code>)</li>
 </ul>
-<h2 data-number="3.3" id="implicit-last-value"><span class="header-section-number">3.3</span> Implicit Last Value<a href="#implicit-last-value" class="self-link"></a></h2>
-<p>Let’s take the example motivating case from <span class="title"><span class="citation" data-cites="P2561R2"><a href="https://wg21.link/p2561r2">[P2561R2] (A control flow
-operator)</a></span></span> and compare implicit last expression to
-explicit return:</p>
-<table class="cmptable">
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
-<thead>
-<tr>
-<th><div style="text-align:center">
-<strong>Implicit Last Value</strong>
-</div></th>
-<th><div style="text-align:center">
-<strong>Explicit Return</strong>
-</div></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> E<span class="op">&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> E<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">);</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">());</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>r <span class="co">// &lt;== NB: no semicolon</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> j <span class="op">*</span> j<span class="op">;</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> E<span class="op">&gt;</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> E<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">);</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">());</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        do_return <span class="op">*</span>r<span class="op">;</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> j <span class="op">*</span> j<span class="op">;</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
-</tr>
-</tbody>
-</table>
-<p>In the simple cases, implicit last value (on the left) will be
-shorter than an explicit return (on the right). But implicit last value
-is more limited. We cannot do early return (by design), which means that
-a <code class="sourceCode cpp"><span class="cf">do</span></code>
-expression would not be able to return from a loop either. We would have
-to extend the language to support
-<code class="sourceCode cpp"><span class="cf">if</span></code>
-expressions, so that at the very least the first example above could be
-made easier - which would add more complexity to the design.</p>
-<p>Which is to say — the <code class="sourceCode cpp">do_return</code>
-statement is still a valuable and necessary addition, given that we do
-not have <code class="sourceCode cpp"><span class="cf">if</span></code>
-or loop expressions, and we are unlikely to add them.</p>
-<p>However, for many common uses of
-<code class="sourceCode cpp"><span class="cf">do</span></code>
-expressions, we don’t actually need early return, so paying the
-syntactic cost might seem unnecessary. Which is why <span class="citation" data-cites="P2806R4"><a href="https://wg21.link/p2806r4">[P2806R4]</a></span> proposed both
-<code class="sourceCode cpp">do_return</code> and implicit last
-value.</p>
-<p>On the other hand, as you can tell from the above example,
-<code class="sourceCode cpp"><span class="cf">do</span></code>
-expressions are useful precisely when you want to have at least one
-statement. Otherwise, you’d just write
-<code class="sourceCode cpp">E</code> — nobody is writing
-<code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> E <span class="op">}</span></code>.
-And once you have at least one statement, you’re likely formatting your
-<code class="sourceCode cpp"><span class="cf">do</span></code>
-expression across multiple lines. Once you do that though, is there
-really any syntactic/visual noise benefit of being able to avoid the
-<code class="sourceCode cpp">do_return</code>? It’s already on its own
-line. Making that line shorter doesn’t seem like it has any value at
-all. Regardless of any other issues with this idea (such as
-inconsistency with lambdas, wherein being able to omit
-<code class="sourceCode cpp"><span class="cf">return</span></code>
-actually does seem quite valuable). As such, this proposal now proposes
-that the only way to produce a value from a
-<code class="sourceCode cpp"><span class="cf">do</span></code>
-expression is through the <code class="sourceCode cpp">do_return</code>
-statement.</p>
-<p>Note that Rust also allows both (you can label a block expression and
-then <code class="sourceCode cpp"><span class="cf">break</span></code>
-out of it).</p>
-<h2 data-number="3.4" id="type-and-value-category"><span class="header-section-number">3.4</span> Type and Value Category<a href="#type-and-value-category" class="self-link"></a></h2>
+<h2 data-number="4.3" id="type-and-value-category"><span class="header-section-number">4.3</span> Type and Value Category<a href="#type-and-value-category" class="self-link"></a></h2>
 <p>The expression
 <code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> do_return <span class="dv">42</span><span class="op">;</span> <span class="op">}</span></code>
 is a prvalue of type
@@ -1076,7 +983,7 @@ type deduction works for functions and lambdas.</p>
 provided to override this:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">long</span> <span class="op">{</span> do_return <span class="dv">42</span><span class="op">;</span> <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">long</span> <span class="op">{</span> do_return <span class="dv">42</span><span class="op">;</span> <span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>If no (non-discarded) <code class="sourceCode cpp">do_return</code>
@@ -1115,16 +1022,16 @@ naturally:</p>
 </thead>
 <tbody>
 <tr>
-<td><div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>x match <span class="op">{</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span><span class="op">;</span> <span class="op">};</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span><span class="op">;</span> <span class="op">};</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    _ <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span><span class="op">;</span> <span class="op">};</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>x match <span class="op">{</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span><span class="op">;</span> <span class="op">};</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span><span class="op">;</span> <span class="op">};</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    _ <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span><span class="op">;</span> <span class="op">};</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>x match <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span><span class="op">;</span> <span class="op">};</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span><span class="op">;</span> <span class="op">};</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    _ <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span><span class="op">;</span> <span class="op">};</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>x match <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span><span class="op">;</span> <span class="op">};</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span><span class="op">;</span> <span class="op">};</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    _ <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span><span class="op">;</span> <span class="op">};</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1165,18 +1072,18 @@ expression just in this one spot.</p>
 </thead>
 <tbody>
 <tr>
-<td><div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i match <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">};</span>          <span class="co">// ill-formed</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        _ <span class="op">=&gt;</span> std<span class="op">::</span>pair<span class="op">{</span><span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">};</span> <span class="co">// ok</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i match <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">};</span>          <span class="co">// ok</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        _ <span class="op">=&gt;</span> std<span class="op">::</span>pair<span class="op">{</span><span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">};</span> <span class="co">// ok</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i match <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">};</span>          <span class="co">// ill-formed</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        _ <span class="op">=&gt;</span> std<span class="op">::</span>pair<span class="op">{</span><span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">};</span> <span class="co">// ok</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i match <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">};</span>          <span class="co">// ok</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        _ <span class="op">=&gt;</span> std<span class="op">::</span>pair<span class="op">{</span><span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">};</span> <span class="co">// ok</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1191,7 +1098,7 @@ expressions, the grammar of pattern matching can use
 <code class="sourceCode cpp"><em>expr-or-braced-init-list</em></code> in
 the same way that we already do in many other places in the C++ grammar.
 This example just works.</p>
-<h2 data-number="3.5" id="copy-elision"><span class="header-section-number">3.5</span> Copy Elision<a href="#copy-elision" class="self-link"></a></h2>
+<h2 data-number="4.4" id="copy-elision"><span class="header-section-number">4.4</span> Copy Elision<a href="#copy-elision" class="self-link"></a></h2>
 <p>All the rules for initializing from
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression, and the way the expression that appears in a
@@ -1205,17 +1112,17 @@ expression. In the following example,
 <code class="sourceCode cpp"><em>id-expression</em></code> that names an
 automatic storage variable declared within the statement, so it’s
 implicitly moved:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>string s <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string r <span class="op">=</span> <span class="st">&quot;hello&quot;</span><span class="op">;</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    r <span class="op">+=</span> <span class="st">&quot;world&quot;</span><span class="op">;</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    do_return r<span class="op">;</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>string s <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string r <span class="op">=</span> <span class="st">&quot;hello&quot;</span><span class="op">;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    r <span class="op">+=</span> <span class="st">&quot;world&quot;</span><span class="op">;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    do_return r<span class="op">;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 <p>Note that automatic storage variables declared within the function
 that the <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression appears, but not declared within the statement-expression
 itself, are <em>not</em> implicitly moved (since they can be used
 later).</p>
-<h2 data-number="3.6" id="control-flow"><span class="header-section-number">3.6</span> Control Flow<a href="#control-flow" class="self-link"></a></h2>
+<h2 data-number="4.5" id="control-flow"><span class="header-section-number">4.5</span> Control Flow<a href="#control-flow" class="self-link"></a></h2>
 <p>In a regular function, there are four ways to escape the function
 scope:</p>
 <ol type="1">
@@ -1287,13 +1194,13 @@ Discussion
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">2</span><span class="op">;</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> a <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </td>
 <td>
 OK: All yielding control paths have the same type. There’s no falling
@@ -1302,13 +1209,13 @@ off the end.
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        do_return <span class="fl">2.0</span><span class="op">;</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> b <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        do_return <span class="fl">2.0</span><span class="op">;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </td>
 <td>
 Ill-formed: The yielding control paths have different types and there is
@@ -1325,13 +1232,13 @@ etc.
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    do_return <span class="dv">2</span><span class="op">;</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> c <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    do_return <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </td>
 <td>
 OK: Similar to <code class="sourceCode cpp">a</code>, all yielding
@@ -1343,11 +1250,11 @@ it is not important that a yielding
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> d <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> d <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </td>
 <td>
 Ill-formed: There are two yielding control paths here: the
@@ -1362,11 +1269,11 @@ in functions and coroutines would be undefined behavior if
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> e <span class="op">=</span> <span class="op">(</span><span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        do_return<span class="op">;</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="op">},</span> <span class="dv">1</span><span class="op">);</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> e <span class="op">=</span> <span class="op">(</span><span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        do_return<span class="op">;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="op">},</span> <span class="dv">1</span><span class="op">);</span></span></code></pre></div>
 </td>
 <td>
 OK: As above, there are two yielding control paths here, but both the
@@ -1376,13 +1283,13 @@ which are compatible.
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> f <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> <span class="dv">2</span><span class="op">;</span></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> f <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </td>
 <td>
 OK: We no longer fall off the end here, since we always escape. There is
@@ -1391,15 +1298,15 @@ only one yielding path.
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> outer<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> g <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>            do_return <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">3</span><span class="op">;</span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> outer<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> g <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>            do_return <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </td>
 <td>
 OK: Similar to the above, it’s just that we’re escaping by returning
@@ -1409,13 +1316,13 @@ end.
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> h <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>abort<span class="op">();</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> h <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>abort<span class="op">();</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </td>
 <td>
 OK:
@@ -1427,21 +1334,21 @@ below.
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> Color <span class="op">{</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    Red<span class="op">,</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    Green<span class="op">,</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    Blue</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> func<span class="op">(</span>Color c<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string_view name <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">switch</span> <span class="op">(</span>c<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">case</span> Red<span class="op">:</span>   do_return <span class="st">&quot;Red&quot;</span><span class="bu">sv</span><span class="op">;</span></span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">case</span> Green<span class="op">:</span> do_return <span class="st">&quot;Green&quot;</span><span class="bu">sv</span><span class="op">;</span></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">case</span> Blue<span class="op">:</span>  do_return <span class="st">&quot;Blue&quot;</span><span class="bu">sv</span><span class="op">;</span></span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> Color <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    Red<span class="op">,</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    Green<span class="op">,</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    Blue</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> func<span class="op">(</span>Color c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string_view name <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">switch</span> <span class="op">(</span>c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">case</span> Red<span class="op">:</span>   do_return <span class="st">&quot;Red&quot;</span><span class="bu">sv</span><span class="op">;</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">case</span> Green<span class="op">:</span> do_return <span class="st">&quot;Green&quot;</span><span class="bu">sv</span><span class="op">;</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">case</span> Blue<span class="op">:</span>  do_return <span class="st">&quot;Blue&quot;</span><span class="bu">sv</span><span class="op">;</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </td>
 <td>
 Ill-formed: This is probably the most interesting case when it comes to
@@ -1461,23 +1368,23 @@ value or some other kind of control flow (like an exception, etc).
 </tr>
 <tr>
 <td>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> func<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(;;)</span> <span class="op">{</span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span><span class="op">;</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span><em>something</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>                    do_return <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>            do_return <span class="dv">2</span><span class="op">;</span></span>
-<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">};</span></span>
-<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> func<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(;;)</span> <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> <span class="op">(</span><em>something</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>                    do_return <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>            do_return <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">};</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </td>
 <td>
 <p>OK: The first
@@ -1515,7 +1422,7 @@ statement entirely (exceptions,
 <code class="sourceCode cpp"><span class="cf">co_return</span></code>)
 do not need to be considered for purposes of consistency of yields
 (since they do not yield values).</p>
-<h3 data-number="3.6.1" id="noreturn-functions"><span class="header-section-number">3.6.1</span>
+<h3 data-number="4.5.1" id="noreturn-functions"><span class="header-section-number">4.5.1</span>
 <code class="sourceCode cpp">noreturn</code> functions<a href="#noreturn-functions" class="self-link"></a></h3>
 <p>The language currently has several kinds of escaping control flow
 that it recognizes. As mentioned, exceptions,
@@ -1537,16 +1444,16 @@ or
 escapes control flow, for sure, but today this is just an attribute:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">5</span><span class="op">;</span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>abort<span class="op">();</span></span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// we know control flow never gets here, so we should not need to</span></span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">// insert an implicit &quot;do_return;&quot;</span></span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>        do_return <span class="dv">5</span><span class="op">;</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>abort<span class="op">();</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// we know control flow never gets here, so we should not need to</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">// insert an implicit &quot;do_return;&quot;</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Pattern Matching has this same problem - it needs to support arms
@@ -1588,13 +1495,13 @@ are already.</p>
 suggested in <span class="title"><span class="citation" data-cites="P2552R2"><a href="https://wg21.link/p2552r2">[P2552R2] (On
 the ignorability of standard attributes)</a></span></span>, which is a
 great reason to ignore that rule.</p>
-<h3 data-number="3.6.2" id="always-escaping-expressions"><span class="header-section-number">3.6.2</span> Always-escaping expressions<a href="#always-escaping-expressions" class="self-link"></a></h3>
+<h3 data-number="4.5.2" id="always-escaping-expressions"><span class="header-section-number">4.5.2</span> Always-escaping expressions<a href="#always-escaping-expressions" class="self-link"></a></h3>
 <p>Consider:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> <span class="dv">42</span><span class="op">;</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> <span class="dv">42</span><span class="op">;</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>This is weird, but might end up as a result of template instantiation
@@ -1642,7 +1549,7 @@ expressions, and arbitrary user-defined libraries just fall out.</p>
 <p>See reflector discussion <a href="https://lists.isocpp.org/ext/2023/05/21202.php">here</a> and more
 thorough discussion in <span class="title"><span class="citation" data-cites="P3549R0"><a href="https://wg21.link/p3549r0">[P3549R0]
 (Diverging expressions)</a></span></span>.</p>
-<h3 data-number="3.6.3" id="goto"><span class="header-section-number">3.6.3</span>
+<h3 data-number="4.5.3" id="goto"><span class="header-section-number">4.5.3</span>
 <code class="sourceCode cpp"><span class="cf">goto</span></code><a href="#goto" class="self-link"></a></h3>
 <p>Using
 <code class="sourceCode cpp"><span class="cf">goto</span></code> in a
@@ -1667,18 +1574,18 @@ and <code class="sourceCode cpp"><span class="cf">return</span></code>
 are:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><em>loop</em><sub>1</sub><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><em>loop</em><sub>2</sub><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">goto</span> done<span class="op">;</span></span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>                do_return <em>value</em><span class="op">;</span></span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>            <span class="op">};</span></span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>done<span class="op">:</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><em>loop</em><sub>1</sub><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><em>loop</em><sub>2</sub><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>            <span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span><em>cond</em><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">goto</span> done<span class="op">;</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>                do_return <em>value</em><span class="op">;</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>            <span class="op">};</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>done<span class="op">:</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Breaking out of multiple loops is one of the uses of
@@ -1697,49 +1604,49 @@ directly, but the ability to jump to it indirectly is still
 problematic):</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> label <span class="op">{</span></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">inline</span> <span class="dt">void</span><span class="op">*</span> e<span class="op">;</span></span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> v<span class="op">;</span></span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    label<span class="op">()</span></span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span></span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> v<span class="op">(({</span></span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>            fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;oh</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>            e <span class="op">=</span> <span class="op">&amp;&amp;</span>awesome<span class="op">;</span></span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">throw</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>            <span class="dv">42</span><span class="op">;</span></span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}))</span></span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>        fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;no</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>        awesome<span class="op">:</span></span>
-<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>        fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;you</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
-<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">catch</span><span class="op">(...)</span> <span class="op">{</span></span>
-<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>        fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;don&#39;t</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
-<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">goto</span> <span class="op">*</span>e<span class="op">;</span></span>
-<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
-<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>    label l<span class="op">;</span></span>
-<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> label <span class="op">{</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">inline</span> <span class="dt">void</span><span class="op">*</span> e<span class="op">;</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> v<span class="op">;</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    label<span class="op">()</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> v<span class="op">(({</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>            fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;oh</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>            e <span class="op">=</span> <span class="op">&amp;&amp;</span>awesome<span class="op">;</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">throw</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>            <span class="dv">42</span><span class="op">;</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}))</span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>        fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;no</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>        awesome<span class="op">:</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>        fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;you</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">catch</span><span class="op">(...)</span> <span class="op">{</span></span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>        fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;don&#39;t</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">goto</span> <span class="op">*</span>e<span class="op">;</span></span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>    label l<span class="op">;</span></span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<h2 data-number="3.7" id="lifetime"><span class="header-section-number">3.7</span> Lifetime<a href="#lifetime" class="self-link"></a></h2>
+<h2 data-number="4.6" id="lifetime"><span class="header-section-number">4.6</span> Lifetime<a href="#lifetime" class="self-link"></a></h2>
 <p>One important question is: when are local variables declared within a
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression destroyed?</p>
 <p>Let’s start with this example:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>lock_guard _<span class="op">(</span>mtx<span class="op">);</span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>        do_return get<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="op">+</span> <span class="cf">do</span> <span class="op">{</span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>lock_guard _<span class="op">(</span>mtx<span class="op">);</span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>        do_return get<span class="op">(</span><span class="dv">1</span><span class="op">);</span></span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>lock_guard _<span class="op">(</span>mtx<span class="op">);</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>        do_return get<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="op">+</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>lock_guard _<span class="op">(</span>mtx<span class="op">);</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>        do_return get<span class="op">(</span><span class="dv">1</span><span class="op">);</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Each <code class="sourceCode cpp"><span class="cf">do</span></code>
@@ -1759,9 +1666,9 @@ set of functions, where
 <code class="sourceCode cpp">unexpected</code>):</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> get_data<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;;</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> find_interesting<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>span<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&gt;,</span> std<span class="op">::</span>string<span class="op">&gt;;</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> best_of<span class="op">(</span>std<span class="op">::</span>span<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&gt;)</span> <span class="op">-&gt;</span> <span class="dt">int</span><span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> get_data<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> find_interesting<span class="op">(</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>std<span class="op">::</span>span<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&gt;,</span> std<span class="op">::</span>string<span class="op">&gt;;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> best_of<span class="op">(</span>std<span class="op">::</span>span<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&gt;)</span> <span class="op">-&gt;</span> <span class="dt">int</span><span class="op">;</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>With <code class="sourceCode cpp"><span class="cf">do</span></code>
@@ -1772,18 +1679,18 @@ macro. In this case, we could try to do it this way (note that in this
 case decaying is irrelevant, so we just return everything by value):</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TRY</span><span class="op">(</span>expr<span class="op">)</span><span class="pp"> </span><span class="cf">do</span><span class="pp"> </span><span class="op">{</span><span class="pp">                          </span><span class="op">\</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="kw">auto</span><span class="pp"> </span>__r<span class="pp"> </span><span class="op">=</span><span class="pp"> </span>expr<span class="op">;</span><span class="pp">                            </span><span class="op">\</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="cf">if</span><span class="pp"> </span><span class="op">(</span><span class="kw">not</span><span class="pp"> </span>__r<span class="op">)</span><span class="pp"> </span><span class="op">{</span><span class="pp">                              </span><span class="op">\</span></span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="pp">        </span><span class="cf">return</span><span class="pp"> </span>std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span><span class="pp">    </span><span class="op">\</span></span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">}</span><span class="pp">                                           </span><span class="op">\</span></span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span>do_return<span class="pp"> </span><span class="op">*</span>__r<span class="op">;</span><span class="pp">                             </span><span class="op">\</span></span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> do_something<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> std<span class="op">::</span>string<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> value <span class="op">=</span> best_of<span class="op">(</span>TRY<span class="op">(</span>find_interesting<span class="op">(</span>get_data<span class="op">())));</span></span>
-<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value<span class="op">;</span></span>
-<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TRY</span><span class="op">(</span>expr<span class="op">)</span><span class="pp"> </span><span class="cf">do</span><span class="pp"> </span><span class="op">{</span><span class="pp">                          </span><span class="op">\</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="kw">auto</span><span class="pp"> </span>__r<span class="pp"> </span><span class="op">=</span><span class="pp"> </span>expr<span class="op">;</span><span class="pp">                            </span><span class="op">\</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="cf">if</span><span class="pp"> </span><span class="op">(</span><span class="kw">not</span><span class="pp"> </span>__r<span class="op">)</span><span class="pp"> </span><span class="op">{</span><span class="pp">                              </span><span class="op">\</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="pp">        </span><span class="cf">return</span><span class="pp"> </span>std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span><span class="pp">    </span><span class="op">\</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">}</span><span class="pp">                                           </span><span class="op">\</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span>do_return<span class="pp"> </span><span class="op">*</span>__r<span class="op">;</span><span class="pp">                             </span><span class="op">\</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> do_something<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> std<span class="op">::</span>string<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> value <span class="op">=</span> best_of<span class="op">(</span>TRY<span class="op">(</span>find_interesting<span class="op">(</span>get_data<span class="op">())));</span></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value<span class="op">;</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>This <em>looks</em> reasonable. Sure,
@@ -1795,18 +1702,18 @@ that’s not what would actually happen. If we expand the macro, and add
 the explicit return type for clarity, this evaluates as:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> do_something<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> std<span class="op">::</span>string<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> value <span class="op">=</span> best_of<span class="op">(</span><span class="cf">do</span> <span class="op">-&gt;</span> std<span class="op">::</span>span<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> __r <span class="op">=</span> find_interesting<span class="op">(</span>get_data<span class="op">());</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">//                                     ^</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">//                              vector destroyed here</span></span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>        do_return <span class="op">*</span>__r<span class="op">;</span></span>
-<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span></span>
-<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value<span class="op">;</span></span>
-<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> do_something<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> std<span class="op">::</span>string<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> value <span class="op">=</span> best_of<span class="op">(</span><span class="cf">do</span> <span class="op">-&gt;</span> std<span class="op">::</span>span<span class="op">&lt;</span><span class="dt">int</span> <span class="kw">const</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> __r <span class="op">=</span> find_interesting<span class="op">(</span>get_data<span class="op">());</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">//                                     ^</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">//                              vector destroyed here</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>        do_return <span class="op">*</span>__r<span class="op">;</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value<span class="op">;</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>The temporary
@@ -1855,18 +1762,18 @@ looks like this:</p>
 </thead>
 <tbody>
 <tr>
-<td><div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">[</span>__r<span class="op">=</span>expr<span class="op">]</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    do_return <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> __r <span class="op">=</span> expr<span class="op">;)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    do_return <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">[</span>__r<span class="op">=</span>expr<span class="op">]</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    do_return <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> __r <span class="op">=</span> expr<span class="op">;)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    do_return <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1895,7 +1802,7 @@ escape but
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions cannot.</p>
 <p>The proposed form <a href="https://compiler-explorer.com/z/vMforYcGP">works</a>.</p>
-<h3 data-number="3.7.1" id="what-about-pattern-matching"><span class="header-section-number">3.7.1</span> What about Pattern
+<h3 data-number="4.6.1" id="what-about-pattern-matching"><span class="header-section-number">4.6.1</span> What about Pattern
 Matching?<a href="#what-about-pattern-matching" class="self-link"></a></h3>
 <p>The primary motivation for having an init-hoist is largely around
 being able to define macros for expressions in ways that actually work
@@ -1922,20 +1829,20 @@ feature:</p>
 </thead>
 <tbody>
 <tr>
-<td><div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">[</span>__r<span class="op">=</span>expr<span class="op">]</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    do_return <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>expr match <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> __r <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>        do_return <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">[</span>__r<span class="op">=</span>expr<span class="op">]</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    do_return <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>expr match <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> __r <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>        do_return <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -1952,23 +1859,23 @@ if pattern matching could solve it for us?</p>
 ship <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions first, so the pattern matching paper can simply remove it.
 Hopefully we just get both in C++29.</p>
-<h3 data-number="3.7.2" id="conditional-lifetime-extension"><span class="header-section-number">3.7.2</span> Conditional Lifetime
+<h3 data-number="4.6.2" id="conditional-lifetime-extension"><span class="header-section-number">4.6.2</span> Conditional Lifetime
 Extension<a href="#conditional-lifetime-extension" class="self-link"></a></h3>
 <p>An interesting sub-question on lifetimes is what does this do:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> prvalue<span class="op">()</span> <span class="op">-&gt;</span> T<span class="op">;</span></span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// lifetime extension, reference bound to temporary</span></span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r1 <span class="op">=</span> prvalue<span class="op">();</span></span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// dangling</span></span>
-<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r2 <span class="op">=</span> <span class="op">[]()</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> prvalue<span class="op">();</span> <span class="op">}();</span></span>
-<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// lifetime extension??</span></span>
-<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r3 <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> do_return prvalue<span class="op">();</span> <span class="op">};</span></span>
-<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> prvalue<span class="op">()</span> <span class="op">-&gt;</span> T<span class="op">;</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// lifetime extension, reference bound to temporary</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r1 <span class="op">=</span> prvalue<span class="op">();</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// dangling</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r2 <span class="op">=</span> <span class="op">[]()</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> <span class="cf">return</span> prvalue<span class="op">();</span> <span class="op">}();</span></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// lifetime extension??</span></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r3 <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span> do_return prvalue<span class="op">();</span> <span class="op">};</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p><code class="sourceCode cpp">r1</code> is our familiar lifetime
@@ -1987,27 +1894,27 @@ possible for lifetime extension to work here.</p>
 complicated:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> lvalue<span class="op">()</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;;</span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> prvalue<span class="op">()</span> <span class="op">-&gt;</span> T<span class="op">;</span></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span><span class="dt">bool</span> c<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r4 <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>c<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>            do_return lvalue<span class="op">();</span></span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>            do_return prvalue<span class="op">();</span></span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
-<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r5 <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
-<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>c<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>            do_return lvalue<span class="op">();</span></span>
-<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>            T x <span class="op">=</span> prvalue<span class="op">();</span></span>
-<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>            do_return x<span class="op">;</span></span>
-<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
-<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> lvalue<span class="op">()</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;;</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> prvalue<span class="op">()</span> <span class="op">-&gt;</span> T<span class="op">;</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> g<span class="op">(</span><span class="dt">bool</span> c<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r4 <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>            do_return lvalue<span class="op">();</span></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>            do_return prvalue<span class="op">();</span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>    T <span class="kw">const</span><span class="op">&amp;</span> r5 <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> T <span class="kw">const</span><span class="op">&amp;</span> <span class="op">{</span></span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>            do_return lvalue<span class="op">();</span></span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>            T x <span class="op">=</span> prvalue<span class="op">();</span></span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>            do_return x<span class="op">;</span></span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>If <code class="sourceCode cpp">r3</code> doesn’t dangle (and we do
@@ -2029,7 +1936,7 @@ lifetime extension in any of these cases, not in
 <code class="sourceCode cpp">r3</code>, not in
 <code class="sourceCode cpp">r4</code>, and definitely not in
 <code class="sourceCode cpp">r5</code>.</p>
-<h2 data-number="3.8" id="sfinae-friendliness"><span class="header-section-number">3.8</span> SFINAE-Friendliness<a href="#sfinae-friendliness" class="self-link"></a></h2>
+<h2 data-number="4.7" id="sfinae-friendliness"><span class="header-section-number">4.7</span> SFINAE-Friendliness<a href="#sfinae-friendliness" class="self-link"></a></h2>
 <p>The only part of a
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression that is in the immediate context of a template substitution
@@ -2038,7 +1945,7 @@ require SFINAE on statements, which the language does not currently
 support and we are not trying to tackle in this paper.</p>
 <p>This is consistent with lambdas, where the lambda body is not in the
 immediate context.</p>
-<h2 data-number="3.9" id="grammar-disambiguation"><span class="header-section-number">3.9</span> Grammar Disambiguation<a href="#grammar-disambiguation" class="self-link"></a></h2>
+<h2 data-number="4.8" id="grammar-disambiguation"><span class="header-section-number">4.8</span> Grammar Disambiguation<a href="#grammar-disambiguation" class="self-link"></a></h2>
 <p>We have to disambiguate between a
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression and a
@@ -2066,7 +1973,7 @@ context of a
 expression:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="cf">return</span> <em>value</em><span class="op">;</span> <span class="cf">while</span> <span class="op">(</span><em>cond</em><span class="op">);</span></span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="cf">return</span> <em>value</em><span class="op">;</span> <span class="cf">while</span> <span class="op">(</span><em>cond</em><span class="op">);</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>This could have been parsed as a
@@ -2085,12 +1992,104 @@ with <code class="sourceCode cpp"><span class="cf">do</span></code> as a
 loop, code like this would not work:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">{</span> do_return X<span class="op">{};</span> <span class="op">}.</span>foo<span class="op">();</span></span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span> <span class="op">{</span> do_return X<span class="op">{};</span> <span class="op">}.</span>foo<span class="op">();</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Such code would also have to be parenthesized to disambiguate, which
 doesn’t seem like a huge burden on the user.</p>
-<h2 data-number="3.10" id="prior-art"><span class="header-section-number">3.10</span> Prior Art<a href="#prior-art" class="self-link"></a></h2>
+<h2 data-number="4.9" id="implicit-last-value"><span class="header-section-number">4.9</span> Implicit Last Value<a href="#implicit-last-value" class="self-link"></a></h2>
+<p>Let’s take the example motivating case from <span class="title"><span class="citation" data-cites="P2561R2"><a href="https://wg21.link/p2561r2">[P2561R2] (A control flow
+operator)</a></span></span> and compare implicit last expression to
+explicit return:</p>
+<table class="cmptable">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th><div style="text-align:center">
+<strong>Implicit Last Value</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>Explicit Return</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> E<span class="op">&gt;</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">);</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">());</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>r <span class="co">// &lt;== NB: no semicolon</span></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> j <span class="op">*</span> j<span class="op">;</span></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> foo<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> E<span class="op">&gt;</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> bar<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> j <span class="op">=</span> <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> r <span class="op">=</span> foo<span class="op">(</span>i<span class="op">);</span></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> r<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>r<span class="op">.</span>error<span class="op">());</span></span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>        do_return <span class="op">*</span>r<span class="op">;</span></span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> j <span class="op">*</span> j<span class="op">;</span></span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+<p>In the simple cases, implicit last value (on the left) will be
+shorter than an explicit return (on the right). But implicit last value
+is more limited. We cannot do early return (by design), which means that
+a <code class="sourceCode cpp"><span class="cf">do</span></code>
+expression would not be able to return from a loop either. We would have
+to extend the language to support
+<code class="sourceCode cpp"><span class="cf">if</span></code>
+expressions, so that at the very least the first example above could be
+made easier - which would add more complexity to the design.</p>
+<p>Which is to say — the <code class="sourceCode cpp">do_return</code>
+statement is still a valuable and necessary addition, given that we do
+not have <code class="sourceCode cpp"><span class="cf">if</span></code>
+or loop expressions, and we are unlikely to add them.</p>
+<p>However, for many common uses of
+<code class="sourceCode cpp"><span class="cf">do</span></code>
+expressions, we don’t actually need early return, so paying the
+syntactic cost might seem unnecessary. Which is why <span class="citation" data-cites="P2806R4"><a href="https://wg21.link/p2806r4">[P2806R4]</a></span> proposed both
+<code class="sourceCode cpp">do_return</code> and implicit last
+value.</p>
+<p>On the other hand, as you can tell from the above example,
+<code class="sourceCode cpp"><span class="cf">do</span></code>
+expressions are useful precisely when you want to have at least one
+statement. Otherwise, you’d just write
+<code class="sourceCode cpp">E</code> — nobody is writing
+<code class="sourceCode cpp"><span class="cf">do</span> <span class="op">{</span> E <span class="op">}</span></code>.
+And once you have at least one statement, you’re likely formatting your
+<code class="sourceCode cpp"><span class="cf">do</span></code>
+expression across multiple lines. Once you do that though, is there
+really any syntactic/visual noise benefit of being able to avoid the
+<code class="sourceCode cpp">do_return</code>? It’s already on its own
+line. Making that line shorter doesn’t seem like it has any value at
+all. Regardless of any other issues with this idea (such as
+inconsistency with lambdas, wherein being able to omit
+<code class="sourceCode cpp"><span class="cf">return</span></code>
+actually does seem quite valuable). As such, this proposal now proposes
+that the only way to produce a value from a
+<code class="sourceCode cpp"><span class="cf">do</span></code>
+expression is through the <code class="sourceCode cpp">do_return</code>
+statement.</p>
+<p>Note that Rust also allows both (you can label a block expression and
+then <code class="sourceCode cpp"><span class="cf">break</span></code>
+out of it).</p>
+<h2 data-number="4.10" id="prior-art"><span class="header-section-number">4.10</span> Prior Art<a href="#prior-art" class="self-link"></a></h2>
 <p>GCC has had an extension called <a href="https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html">statement-expressions</a>
 for decades, which look very similar to what we’re proposing here:</p>
 <table class="cmptable">
@@ -2152,7 +2151,7 @@ extension is particularly problematic as something like
 would become ill-formed due to trying to copy the
 <code class="sourceCode cpp">ostream</code>.</p>
 <p>We’re just generalizing to make the feature more flexible.</p>
-<h2 data-number="3.11" id="what-about-reflection"><span class="header-section-number">3.11</span> What About Reflection?<a href="#what-about-reflection" class="self-link"></a></h2>
+<h2 data-number="4.11" id="what-about-reflection"><span class="header-section-number">4.11</span> What About Reflection?<a href="#what-about-reflection" class="self-link"></a></h2>
 <p>A question that often comes up, for any language feature: if we had
 reflection and, in particular, code injection: would we need this
 facility?</p>
@@ -2170,7 +2169,7 @@ would inject an expression that would evaluate in the way that that
 paper proposes. But in order to do such a thing, we would need to be
 able to have a block expression to inject. This paper provides such a
 block expression.</p>
-<h2 data-number="3.12" id="where-can-do-expressions-appear"><span class="header-section-number">3.12</span> Where can
+<h2 data-number="4.12" id="where-can-do-expressions-appear"><span class="header-section-number">4.12</span> Where can
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions appear<a href="#where-can-do-expressions-appear" class="self-link"></a></h2>
 <p>gcc’s statement-expressions are not usable in all expression
@@ -2206,7 +2205,7 @@ rather than a language design detail.</p>
 <p>In short:
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions should be usable in any expression context.</p>
-<h2 data-number="3.13" id="implementation-experience"><span class="header-section-number">3.13</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<h2 data-number="4.13" id="implementation-experience"><span class="header-section-number">4.13</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>This is <a href="https://github.com/brevzin/llvm-project/commit/ca322b0267ba042db01b111e1380bc7352c2a57d">implemented
 in clang</a> and can be seen on <a href="https://compiler-explorer.com/z/vMforYcGP">compiler explorer</a>.
 This example shows the combination of a
@@ -2218,8 +2217,8 @@ semantics.</p>
 more involved example showing a more complicated
 <code class="sourceCode cpp">TRY</code> macro illustrating that clang
 can still warn on dangling references in the right places.</p>
-<h1 data-number="4" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">4</span> Wording<a href="#wording" class="self-link"></a></h1>
-<h2 data-number="4.1" id="lex-intro"><span class="header-section-number">4.1</span> Lex / Intro<a href="#lex-intro" class="self-link"></a></h2>
+<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="wording"><span class="header-section-number">5</span> Wording<a href="#wording" class="self-link"></a></h1>
+<h2 data-number="5.1" id="lex-intro"><span class="header-section-number">5.1</span> Lex / Intro<a href="#lex-intro" class="self-link"></a></h2>
 <p>Add the keyword <code class="sourceCode cpp">do_return</code> to the
 table of keywords in <span>5.12 Keywords <a href="https://eel.is/c++draft/lex.key" title="5.12 Keywords">[lex.key]</a></span>:</p>
 <div class="std">
@@ -2289,7 +2288,7 @@ note</em> ]</span></p>
 </div>
 </blockquote>
 </div>
-<h2 data-number="4.2" id="expressions"><span class="header-section-number">4.2</span> Expressions<a href="#expressions" class="self-link"></a></h2>
+<h2 data-number="5.2" id="expressions"><span class="header-section-number">5.2</span> Expressions<a href="#expressions" class="self-link"></a></h2>
 <p>Add <code class="sourceCode cpp"><em>do-expression</em></code> to the
 grammar in <span>7.5.1 Grammar <a href="https://eel.is/c++draft/expr.prim.grammar" title="7.5.1 Grammar">[expr.prim.grammar]</a></span>:</p>
 <div class="std wording">
@@ -2627,7 +2626,7 @@ note</em> ]</span></span></p>
 </div>
 </blockquote>
 </div>
-<h2 data-number="4.3" id="statements"><span class="header-section-number">4.3</span> Statements<a href="#statements" class="self-link"></a></h2>
+<h2 data-number="5.3" id="statements"><span class="header-section-number">5.3</span> Statements<a href="#statements" class="self-link"></a></h2>
 <p>Change <span>8.1 Preamble <a href="https://eel.is/c++draft/stmt.pre" title="8.1 Preamble">[stmt.pre]</a></span> to make the
 <code class="sourceCode cpp"><em>compound-statement</em></code> of a
 <code class="sourceCode cpp"><em>do-expression</em></code> transparent
@@ -2896,14 +2895,14 @@ ill-formed.</p>
 </div>
 </blockquote>
 </div>
-<h2 data-number="4.4" id="feature-test-macro"><span class="header-section-number">4.4</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
+<h2 data-number="5.4" id="feature-test-macro"><span class="header-section-number">5.4</span> Feature-Test Macro<a href="#feature-test-macro" class="self-link"></a></h2>
 <p>Add to <span>15.12 Predefined macro names <a href="https://eel.is/c++draft/cpp.predefined" title="15.12 Predefined macro names">[cpp.predefined]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb53"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ __cpp_do_expressions 20XXXXL</span></span></code></pre></div>
 </blockquote>
 </div>
-<h1 data-number="5" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">5</span>
+<h1 data-number="6" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">6</span>
 References<a href="#bibliography" class="self-link"></a></h1>
 <div id="refs" class="references csl-bib-body" data-entry-spacing="0" role="list">
 <div id="ref-P2552R2" class="csl-entry" role="listitem">
