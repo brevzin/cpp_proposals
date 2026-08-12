@@ -1,6 +1,6 @@
 ---
 title: "`do` expressions"
-document: P2806R4
+document: P2806R5
 date: today
 audience: EWG
 author:
@@ -18,6 +18,8 @@ status: progress
 
 # Revision History
 
+Since [@P2806R4], rewrote prose, and removed the implicit last value option introduced in the previous revision.
+
 Since [@P2806R3], implementation, wording, introducing implicit last value, and adding an optional init-hoist to `do` expressions to address [lifetime issues](#lifetime).
 
 Since [@P2806R2], wording and referencing a longer discussion on divergence in [@P3549R0]{.title}.
@@ -30,11 +32,37 @@ Since [@P2806R0], some more discussion about implicit last value vs explicit ret
 
 C++ is a language built on statements. `if` is not an expression, loops aren't expressions, statements aren't expressions (except maybe in the specific case of `$expression$;`).
 
-When a single expression is insufficient, the only solution C++ currently has at its disposal is to invoke a function - where that function can now contain arbitrarily many statements. Since C++11, that function can be expressed more conveniently in the form of an immediately invoked lambda.
+However, sometimes a single expression is insufficient — we want an expression, but also want to execute multiple statements. The current best C++ answer to that situation is an immediately invoked lambda. Immediately invoked lambdas are decent enough solutions for that problem, but they are not perfect. Two problems they have are:
 
-However, this approach leaves a lot to be desired. An immediately invoked lambda introduced an extra function scope, which makes control flow much more challenging - it becomes impossible to `break` or `continue` out of a loop, and attempting to `return` from the enclosing function or `co_await`, `co_yield`, or `co_return` from the enclosing coroutine becomes an exercise in cleverness.
+* it is not obvious at the beginning of a lambda that it will actually be immediately invoked — you see `[&]{` and then the trailing `}()` part is arbitrarily far in the future.
+* the lambda machinery is surprisingly expensive to compile, and in this particular context the compiler has to do work that we know we don't even need (because we're immediately invoking it).
 
-You also have to deal with the issue that the difference between initializing a variable using an immediately-invoked lambda and initializing a variable from a lambda only differs in the trailing `()`, arbitrarily deep into an expression, which are easy to forget. Some people actually use `std::invoke` in this context, specifically to make it clearer that this lambda is, indeed, intended to be immediately invoked.
+Nevertheless, they are fine. If all we were proposing were a slightly more expressive/cheaper immediately invoked lambda, that'd be a mild improvement at best:
+
+<table>
+<tr><th>Immediately Invoked Lambda</th><th>Do Expression</th></tr>
+<tr><td>
+```cpp
+auto x = [&]{
+    S1;
+    S2;
+    return E;
+}();
+```
+</td>
+<td>
+```cpp
+auto x = do {
+    S1;
+    S2;
+    do_return E;
+};
+```
+</td>
+</tr>
+</table>
+
+The _bigger_ problem with immediately invoked lambdas as a solution to the "expression but with statements" problem is dealing with control flow. It becomes impossible to `break` or `continue` out of loop, and attempting to `return` from the enclosing function or `co_await`, `co_yield`, or `co_return` from the enclosing coroutine becomes an exercise in cleverness. We need to encode in the result of that lambda both the actual value we wanted to produce and also any control flow we wanted to have, and then act on it.
 
 This problem surfaces especially brightly in the context of [@P2688R4]{.title}, where the current design is built upon a sequence of:
 
@@ -44,33 +72,20 @@ $pattern$ => $expression$;
 ```
 :::
 
-This syntax only allows for a single `$expression$`, which means that pattern matching has to figure out how to deal with the situation where the user wants to write more than, well, a single expression. The current design is to allow `{ $statement$ }` to be evaluated as an expression of type `void`. This is a hack, which is kind of weird (since such a thing is not actually an expression of type `void`), but also limits the ability for pattern matching to support another kind of useful syntax: `=> $braced-init-list$`:
+It is idiomatic in languages that have pattern matching to allow control flow out of those expressions. We want to be able to have a pattern match `return` out of a function while another does not, or `continue` to the next iteration of a loop.
+
+The most familiar example might be what Rust's `?` operator (previously its `try!` macro) desugars as:
 
 ::: std
-```cpp
-auto f() -> std::pair<int, int> {
-    // this is fine
-    return {1, 2};
-
-    // this is ill-formed in P1371
-    return true match -> std::pair<int, int> {
-        _ => {1, 2}
-    };
-}
+```rust
+let x = match result {
+    Ok(val) => val,
+    Err(err) => return Err(err),
+};
 ```
 :::
 
-There's no way to make that work, because `{` starts a statement. So the choice in that paper lacks orthogonality: we have a hack to support multiple expressions (which are very important to support) that is inventing such support on the fly, in a novel way that is very narrow (only supports `void`), that throws other useful syntax under the bus.
-
-What pattern matching really needs here is a statement-expression syntax. But it's not just pattern matching that has a strong desire for statement-expressions, this would be a broadly useful facility, so we should have an orthogonal language feature that supports statement-expressions in a way that would allow pattern matching to simplify its grammar to:
-
-::: std
-```
-$pattern$ => $expr-or-braced-init-list$;
-```
-:::
-
-Indeed, as of [@P2688R5]{.title}, the `{ $statement$ }` production is gone and the `$braced-init-list$` case is now supported. Pattern matching now relies upon `do` expressions to support multiple statements.
+This is functionality that immediately invoked lambda expressions _cannot_ provide, but something we want to add a new kind of expression to support — in a way that is orthogonal to the pattern matching feature (which otherwise previously attempted to solve this problem with a bespoke, pattern-matching-specific sort of block expression).
 
 # `do` expressions
 
@@ -81,11 +96,12 @@ In its simplest form:
 ::: std
 ```cpp
 int x = do { do_return 42; };
-int y = do { 42 }; // equivalent to above
 ```
 :::
 
-A `do` expression consists of a sequence of statements, but is still, itself, an expression (and thus has a value and a type). There are a lot of interesting rules that we need to discuss about how those statements behave.
+A `do` expression consists of a sequence of statements, but is still, itself, an expression (and thus has a value and a type). It is similar to an immediately invoked lambda with a capture of `[&]`, except using the `do_return` keyword to produce a value instead of `return`.
+
+There are a lot of interesting rules that we need to discuss about how those statements behave.
 
 ## Scope
 
@@ -149,7 +165,9 @@ In the simple cases, implicit last value (on the left) will be shorter than an e
 
 Which is to say — the `do_return` statement is still a valuable and necessary addition, given that we do not have `if` or loop expressions, and we are unlikely to add them.
 
-However, for many common uses of `do` expressions, we don't actually need early return, so paying the syntactic cost seems unnecessary. Which is why we're proposing both.
+However, for many common uses of `do` expressions, we don't actually need early return, so paying the syntactic cost might seem unnecessary. Which is why [@P2806R4] proposed both `do_return` and implicit last value.
+
+On the other hand, as you can tell from the above example, `do` expressions are useful precisely when you want to have at least one statement. Otherwise, you'd just write `E` — nobody is writing `do { E }`. And once you have at least one statement, you're likely formatting your `do` expression across multiple lines. Once you do that though, is there really any syntactic/visual noise benefit of being able to avoid the `do_return`? It's already on its own line. Making that line shorter doesn't seem like it has any value at all. Regardless of any other issues with this idea (such as inconsistency with lambdas, wherein being able to omit `return` actually does seem quite valuable). As such, this proposal now proposes that the only way to produce a value from a `do` expression is through the `do_return` statement.
 
 Note that Rust also allows both (you can label a block expression and then `break` out of it).
 
@@ -611,7 +629,7 @@ do [__r=expr] -> decltype(auto) {
     if (not __r) {
         return std::unexpected(__r.error());
     }
-    *FWD(__r)
+    do_return *FWD(__r);
 }
 ```
 
@@ -621,7 +639,7 @@ do (auto&& __r = expr;) -> decltype(auto) {
     if (not __r) {
         return std::unexpected(__r.error());
     }
-    *FWD(__r)
+    do_return *FWD(__r);
 }
 ```
 :::
@@ -630,13 +648,13 @@ Both syntaxes would provide declarations whose lifetime extends to the end of th
 
 Between these, we prefer the init-hoist approach (so named because it's kind of the opposite of an init-capture), since only one form of _init-statement_ even makes sense here. The downside is that we would need `auto&&` semantics here rather than `auto` semantics which lambda init-capture has. It's inconsistent, but with very strong motivation for the difference — since lambdas can actually escape but `do` expressions cannot.
 
-The proposed form [works](https://compiler-explorer.com/z/jcEGbEYnf).
+The proposed form [works](https://compiler-explorer.com/z/vMforYcGP).
 
 ### What about Pattern Matching?
 
 The primary motivation for having an init-hoist is largely around being able to define macros for expressions in ways that actually work properly and to be able to desugar the control flow operator ([@P2561R2]) into a `do` expression.
 
-But, interestingly enough, pattern matching ([@P2688R5]) offers a different way to solve both problems that wouldn't need such a feature:
+But, interestingly enough, pattern matching (a future revision) offers a different way to solve both problems that wouldn't need such a feature:
 
 ::: cmptable
 ### Init-Hoist
@@ -645,18 +663,18 @@ do [__r=expr] -> decltype(auto) {
     if (not __r) {
         return std::unexpected(__r.error());
     }
-    *FWD(__r)
+    do_return *FWD(__r);
 }
 ```
 
 ### Pattern Matching
 ```cpp
 expr match -> decltype(auto) {
-    let __r => do -> decltype(auto) {
+    auto&& __r => do -> decltype(auto) {
         if (not __r) {
             return std::unexpected(__r.error());
         }
-        *FWD(__r)
+        do_return *FWD(__r);
     }
 }
 ```
@@ -666,7 +684,7 @@ On the right, `expr` is obviously evaluated outside of the `do` expression, and 
 
 The question is: do we need to add an init-hoist feature for `do` expressions (a feature in no small part motivated by pattern matching) if pattern matching could solve it for us?
 
-We think it's probably a good hedge to do it anyway. We'll probably ship `do` expressions first, so the pattern matching paper can simply remove it.
+We think it's probably a good hedge to do it anyway. We'll probably ship `do` expressions first, so the pattern matching paper can simply remove it. Hopefully we just get both in C++29.
 
 
 ### Conditional Lifetime Extension
@@ -800,7 +818,9 @@ The reason we're not simply proposing to standardize the existing extension is t
 
 For (1), there is simply no obvious place to put the `$trailing-return-type$`. For (2), you can't turn `if`s into expressions in any meaningful way. It is fairly straightforward to answer both questions for our proposed form.
 
-With allowing [implicit last value](#implicit-last-value), the simple translation from gcc statement-expression to `do` expression is just a matter of swapping parentheses for a leading `do` (and dropping the `;` on the last statement). We're just generalizing to make the feature more flexible.
+Moreover, as discussed in the [implicit last value](#implicit-last-value) section, there simply isn't much value to supporting implicit last value. The specific form of the statement expression extension is particularly problematic as something like `do { std::cout << "hi"; }` would become ill-formed due to trying to copy the `ostream`.
+
+We're just generalizing to make the feature more flexible.
 
 ## What About Reflection?
 
@@ -833,9 +853,9 @@ In short: `do` expressions should be usable in any expression context.
 
 ## Implementation Experience
 
-This is implemented in clang and can be seen on [compiler explorer](https://compiler-explorer.com/z/jcEGbEYnf). This example shows the combination of a `do` expression with an init-hoist and `TRY` macro with the correct lifetime semantics.
+This is [implemented in clang](https://github.com/brevzin/llvm-project/commit/ca322b0267ba042db01b111e1380bc7352c2a57d) and can be seen on [compiler explorer](https://compiler-explorer.com/z/vMforYcGP). This example shows the combination of a `do` expression with an init-hoist and `TRY` macro with the correct lifetime semantics.
 
-[Here](https://compiler-explorer.com/z/3v9xGTvWE) is a more involved example showing a more complicated `TRY` macro illustrating that clang can still warn on dangling references in the right places.
+[Here](https://compiler-explorer.com/z/4nnbGGxKn) is a more involved example showing a more complicated `TRY` macro illustrating that clang can still warn on dangling references in the right places.
 
 # Wording
 
@@ -958,16 +978,6 @@ $init-hoist$:
     $identifier$ $initializer$
 ```
 
-A `$do-result-expression$` in the `$compound-statement$` of a `$do-expression$` is treated as a `do_return` statement associated with that `$do-expression$` ([stmt.do.return]) and with an operand that is the `$expression$`.
-
-::: example
-```cpp
-int a = do { 42 };                 // OK, equivalent to do { do_return 42; }
-int b = do { int x = 2; x + 3 };   // OK, equivalent to do { int x = 2; do_return x + 3; }
-int c = do [x=2] { x + 3 };        // OK, init-hoist followed by implicit do_return
-```
-:::
-
 [#]{.pnum} The `$init-hoist-introducer$`, if any, of a `$do-expression$` allows declarations to be introduced within an expression. A `$do-expression$` with an `$init-hoist-introducer$` introduces a block scope ([basic.scope.block]) that includes the `$init-hoist-list$` and the `$compound-statement$`. Each `$init-hoist$` declares a variable; its type is deduced as if from a declaration of the form `auto&& $init-hoist$ ;` ([dcl.spec.auto]), and the variable is so initialized. The point of declaration of the `$identifier$` of an `$init-hoist$` is immediately after its `$initializer$` ([basic.scope.pdecl]). The variables declared by the `$init-hoist-list$` are initialized in order before the `$compound-statement$` is executed.
 
 [#]{.pnum} The constituent expressions of the `$initializer$` of an `$init-hoist$` are part of the full-expression ([intro.execution]) that contains the `$do-expression$`.
@@ -1008,7 +1018,7 @@ A `co_return`, `co_await`, or `co_yield` statement or expression appearing in a 
 
 * [#.#]{.pnum} If there is a `$trailing-return-type$` that does not contain a placeholder type ([dcl.spec.auto]), then `$DO-TYPE$` is the type specified by that `$trailing-return-type$`.
 * [#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced from the non-discarded `do_return` statements associated with the `$do-expression$`:
-    * [#.#.#]{.pnum} If there is no non-discarded `do_return` statement associated with the `$do-expression$` (including no `$do-result-expression$`), or every non-discarded `do_return` statement associated with the `$do-expression$` has no operand, `$DO-TYPE$` is `void`.
+    * [#.#.#]{.pnum} If there is no non-discarded `do_return` statement associated with the `$do-expression$`, or every non-discarded `do_return` statement associated with the `$do-expression$` has no operand, `$DO-TYPE$` is `void`.
     * [#.#.#]{.pnum} Otherwise, `$DO-TYPE$` is deduced as if from a `return` statement using the rules in [dcl.spec.auto.general]. All non-discarded `do_return` statements associated with the `$do-expression$` shall deduce to the same type; otherwise, the program is ill-formed.
 
 ::: example
@@ -1090,29 +1100,6 @@ $expression-statement$:
 The expression is a *discarded-value expression* ([expr.context]). All side effects from an expression statement are completed before the next statement is executed. An expression statement with the expression missing is called a *null statement*. [The `$expression$` shall not be a `$do-expression$`.]{.addu}
 
 [A statement beginning with the keyword `do` is always parsed as a `do`-`while` statement ([stmt.do]). A `$do-expression$` used as a statement must be parenthesized.]{.note .addu}
-:::
-
-Change [stmt.block]{.sref} to allow a `$compound-statement$` to end in an expression in the context of a `$do-expression$`:
-
-::: {.std .wording}
-[1]{.pnum} A *compound statement* (also known as a block) groups a sequence of statements into a single statement.
-
-```diff
- $compound-statement$:
-     { $statement-seq$@~opt~@ $label-seq$@~opt~@ }
-+    { $statement-seq$@~opt~@ $do-result-expression$ }
-
-+$do-result-expression$:
-+    $expression$
-```
-
-A label at the end of a compound-statement is treated as if it were followed by a null statement.
-
-::: addu
-[*]{.pnum} A `$do-result-expression$` shall appear only in the `$compound-statement$` of a `$do-expression$` ([expr.prim.do]).
-:::
-
-[2]{.pnum} [A compound statement defines a block scope ([basic.scope]).]{.note}
 :::
 
 Add to the grammar in [stmt.jump.general]{.sref}:
