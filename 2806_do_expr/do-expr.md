@@ -270,7 +270,7 @@ For a `do` expression, we have two different directions where we can escape (in 
 1. `return` from the enclosing function (or `co_return` from the enclosing coroutine)
 2. `break` or `continue` from the innermost enclosing loop (if any, ill-formed otherwise)
 
-Additionally, for point (4) while we could simply (for consistency) propagate the same rules for falling-off-the-end as functions, then lambdas (C++11), then coroutines (C++20), we would like to consider not introducing another case for undefined behavior here and enforcing that the user provides more information themselves.
+Additionally, for point (4) while we could simply (for consistency) propagate the same rules for falling-off-the-end as functions, then lambdas (C++11), then coroutines (C++20), we would like to consider not introducing another case for undefined behavior here. We would prefer that if an implementation cannot prove that control doesn't fall off the end of a function, that the user simply provide more information themselves (e.g. in the form of a call to `std::unreachable()`, which worst-case just adds clarity to the situation explicitly).
 
 That is, the rule we propose is that the implementation form a control flow graph of the `do` expression and consider each one of the six escaping kinds described above. All (non-discarded) `do_return` statements (including the implicit `do_return;` introduced by falling off the end, if the implementation cannot prove that it does not happen) need to either have the same type (if no `$trailing-return-type$`) or be compatible with the provided return type (if provided). Anything else is ill-formed.
 
@@ -525,24 +525,6 @@ int main() {
 }
 ```
 :::
-
-### Should falling off the end be undefined behavior?
-
-Consider:
-
-::: std
-```cpp
-int i = do {
-    if ($cond$) {
-        do_return 0;
-    }
-};
-```
-:::
-
-Is this statement ill-formed (because there is a control path that falls off the end of the `do` expression, as discussed in this section) or should this statement be undefined behavior? The latter would be consistent with functions, lambdas, and coroutines (and not an if-you-squint-enough kind of consistency either, this would be exactly identical).
-
-It would make for a simpler design if we adopted undefined behavior here, but we think it's a better design to force the user to cover all control paths themselves.
 
 ## Lifetime
 
@@ -1011,8 +993,6 @@ A `co_return`, `co_await`, or `co_yield` statement or expression appearing in a 
 [#]{.pnum} A `break` or `continue` statement appearing in a `$do-expression$` refers to an enclosing `$iteration-statement$` or `switch` statement that contains the `$do-expression$`. [A `break` or `continue` statement cannot be used to exit a `$do-expression$` itself.]{.note}
 
 [#]{.pnum} A `$do-expression$` that is not within a function shall not contain a `return` statement, a `co_return` statement, a `co_await` expression, or a `co_yield` expression.
-
-[#]{.pnum} A `goto` statement ([stmt.goto]) shall not transfer control into a `$do-expression$` from outside that `$do-expression$`.
 
 [#]{.pnum} The type `$DO-TYPE$` of a `$do-expression$` is determined as follows:
 
