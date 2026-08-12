@@ -880,8 +880,9 @@ to encode in the result of that lambda both the actual value we wanted
 to produce and also any control flow we wanted to have, and then act on
 it.</p>
 <p>This problem surfaces especially brightly in the context of <span class="title"><span class="citation" data-cites="P2688R4"><a href="https://wg21.link/P2688R4">[P2688R4] (Pattern Matching:
-<code class="sourceCode cpp">match</code> Expression)</a></span></span>,
-where the current design is built upon a sequence of:</p>
+<code class="sourceCode cpp"><span class="cf">match</span></code>
+Expression)</a></span></span>, where the current design is built upon a
+sequence of:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb4"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><em>pattern</em> =&gt; <em>expression</em>;</span></code></pre></div>
@@ -1030,12 +1031,12 @@ naturally:</p>
 </thead>
 <tbody>
 <tr>
-<td><div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>x match <span class="op">{</span></span>
+<td><div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>x <span class="cf">match</span> <span class="op">{</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span><span class="op">;</span> <span class="op">};</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span><span class="op">;</span> <span class="op">};</span></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    _ <span class="op">=&gt;</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span><span class="op">;</span> <span class="op">};</span></span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>x match <span class="op">{</span></span>
+<td><div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>x <span class="cf">match</span> <span class="op">{</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got zero&quot;</span><span class="op">;</span> <span class="op">};</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span> <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;got one&quot;</span><span class="op">;</span> <span class="op">};</span></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    _ <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">{</span> cout <span class="op">&lt;&lt;</span> <span class="st">&quot;don&#39;t care&quot;</span><span class="op">;</span> <span class="op">};</span></span>
@@ -1043,8 +1044,9 @@ naturally:</p>
 </tr>
 </tbody>
 </table>
-<p>Here, the whole <code class="sourceCode cpp">match</code> expression
-has type
+<p>Here, the whole
+<code class="sourceCode cpp"><span class="cf">match</span></code>
+expression has type
 <code class="sourceCode cpp"><span class="dt">void</span></code> because
 each arm has type
 <code class="sourceCode cpp"><span class="dt">void</span></code> because
@@ -1082,13 +1084,13 @@ expression just in this one spot.</p>
 <tbody>
 <tr>
 <td><div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i match <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i <span class="cf">match</span> <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">};</span>          <span class="co">// ill-formed</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        _ <span class="op">=&gt;</span> std<span class="op">::</span>pair<span class="op">{</span><span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">};</span> <span class="co">// ok</span></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i match <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> i <span class="cf">match</span> <span class="op">-&gt;</span> std<span class="op">::</span>pair<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dt">int</span><span class="op">&gt;</span> <span class="op">{</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="dv">0</span> <span class="op">=&gt;</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">};</span>          <span class="co">// ok</span></span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        _ <span class="op">=&gt;</span> std<span class="op">::</span>pair<span class="op">{</span><span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">};</span> <span class="co">// ok</span></span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
@@ -1846,7 +1848,7 @@ feature:</p>
 <span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">do_return</span> <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
 <span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>expr match <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<td><div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>expr <span class="cf">match</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> __r <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
@@ -2944,7 +2946,8 @@ attributes. <a href="https://wg21.link/p2552r2"><div class="csl-indent">https://
 </div>
 <div id="ref-P2688R4" class="csl-entry" role="listitem">
 [P2688R4] Michael Park. 2024-12-17. Pattern Matching:
-<code class="sourceCode cpp">match</code> Expression. <a href="https://wg21.link/P2688R4"><div class="csl-indent">https://wg21.link/P2688R4</div></a>
+<code class="sourceCode cpp"><span class="cf">match</span></code>
+Expression. <a href="https://wg21.link/P2688R4"><div class="csl-indent">https://wg21.link/P2688R4</div></a>
 </div>
 <div id="ref-P2806R0" class="csl-entry" role="listitem">
 [P2806R0] Barry Revzin, Bruno Cardoso Lopez, Zach Laine, Michael Park.
