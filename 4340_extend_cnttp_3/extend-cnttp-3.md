@@ -253,7 +253,7 @@ public:
 
 We'll want defaulting behavior for `reflect_constant` to be similar to defaulting behavior for other functions, like the copy constructor and the comparison operators: for dependent types, if one of the subobjects isn't usable as a constant template parameter (whether it's not C++20 structural or doesn't customize `reflect_constant`), the resulting customization is `delete`d rather than being ill-formed. That means that for a class template like `std::tuple`, we can simply `default` the implementation and not have to worry about providing suitable constraints.
 
-Note that a consequence of being able to `default` this function is that you can also be able to `delete` it too, which means that a type could (if so desired) simply opt out of being usable as a constant template parameter.
+Note that a consequence of being able to `default` this function is that you should also be able to `delete` it, which means that a type could (if so desired) simply opt out of being usable as a constant template parameter.
 
 Also, the actual implementation details of defaulting `reflect_constant` would differ from those of explicitly providing it. If it is user-provided, the implementation will of course invoke and use that result as the template parameter object. But if it is defaulted, then effectively the implementation just tracks an extra bit on the type that tells it to ignore the usual access rule for C++20 class types as non-type template parameters. It wouldn't have to change the rules for template-argument-equivalence for that case.
 
@@ -276,7 +276,7 @@ In order for that to be viable, we need to impose strict (albeit obvious) restri
 
 * `O` has static storage duration,
 * `O` is usable in constant expressions,
-* `O` has linkage (with internal linkage we would end up with a TU-local specialization),
+* `O` has the same linkage as `T` (with internal linkage we would end up with a TU-local specialization),
 * `O` has type `T const` (this also guards against inheriting a customization — `Base`'s implementation would have to return a `Base const` object, which would be incompatible with the rules for a `Derived`).
 
 `reflect_constant` must also be deterministic (same value in, same object out) and idempotent (given a value `x`, `x.reflect_constant()` and `[: x.reflect_constant() :].reflect_constant()` must be the same object). Idempotence we can actually check as part of the implementation, in the same way that template variable construction does an extra copy right now.
@@ -466,6 +466,31 @@ class string_view {
 
 In the above initialization, `string_view("hello"sv)` would have two pointers into the same string literal — so that needs to transform into `(p, p + 5)` where `p` points to a static storage duration array. It *cannot* turn into two pointers into *different* arrays. That would be horribly broken.
 
+## Naming
+
+The name I'm choosing for the customization point here is `reflect_constant`, since we're basically customizing `std::meta::reflect_constant`. There is precedent for using regular identifiers in language customization points already (`begin`, `end`, `get`, plus all the coroutine stuff). But with `= default`, it's possible that this might just be a bit too much — and we'll want to use a name that is decidedly not just an identifier.
+
+The first paper in my constant template parameter trilogy, [@P2848R0]{.title}, used the name `operator template()`. Richard Smith also suggests the name `operator<>()`. Both are perfectly fine, and express what they do reasonably enough. Here are what those three (well, four, if I show `reflect_constant` both with and without an explicit return type) might look like in the wild in their typical usage (i.e. `default`ed):
+
+::: std
+```cpp
+class string_view {
+  char const* ptr_;
+  size_t size_;
+
+public:
+  consteval auto reflect_constant() const -> std::meta::info = default;
+  consteval auto reflect_constant() const = default;
+  consteval operator template() const = default;
+  consteval operator<>() const = default;
+}
+```
+:::
+
+In the original paper, `operator template()` was not invokable, which was something that some people didn't like, since it meant that you had to contrive some other way to test the function directly if that's what you wanted to do. In this case, `operator template()` would still be a customization point for `std::meta::reflect_constant()`, so there would still be an easy way to test the implication directly.
+
+So those options exist as well, if preferred. I have a mild preference for sticking with `reflect_constant`, simply because it matches the reflection function name, but only mild, and would be quite happy with any name whatsoever as long as it means we get the feature.
+
 ## Implementation Experience
 
-This has been implemented in [my fork](https://github.com/brevzin/llvm-project/commit/750c1763c183d9fb1bc0e6bb1c6a4adde11c9094) of Clang, and you can see it on [compiler explorer](https://compiler-explorer.com/z/P8WccrYP4).
+This has been implemented in [my fork](https://github.com/brevzin/llvm-project/commit/750c1763c183d9fb1bc0e6bb1c6a4adde11c9094) of Clang, and you can see it on [compiler explorer](https://compiler-explorer.com/z/WbYjs5EaK).

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-08-09" />
+  <meta name="dcterms.date" content="2026-08-11" />
   <title>Extending constant template parameter support by customizing
 `std::meta::reflect_constant`</title>
   <style>
@@ -700,7 +700,7 @@ parameter support by customizing
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-08-09</td>
+    <td>2026-08-11</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -737,7 +737,8 @@ Extensions</a></li>
 Containers</a></li>
 <li><a href="#string-literals" id="toc-string-literals"><span class="toc-section-number">2.6</span> String Literals</a></li>
 <li><a href="#normalization-ii" id="toc-normalization-ii"><span class="toc-section-number">2.7</span> Normalization II</a></li>
-<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">2.8</span> Implementation Experience</a></li>
+<li><a href="#naming" id="toc-naming"><span class="toc-section-number">2.8</span> Naming</a></li>
+<li><a href="#implementation-experience" id="toc-implementation-experience"><span class="toc-section-number">2.9</span> Implementation Experience</a></li>
 </ul></li>
 <li><a href="#bibliography" id="toc-bibliography"><span class="toc-section-number">3</span> References</a></li>
 </ul>
@@ -1085,10 +1086,10 @@ implementation and not have to worry about providing suitable
 constraints.</p>
 <p>Note that a consequence of being able to
 <code class="sourceCode cpp"><span class="cf">default</span></code> this
-function is that you can also be able to
-<code class="sourceCode cpp"><span class="kw">delete</span></code> it
-too, which means that a type could (if so desired) simply opt out of
-being usable as a constant template parameter.</p>
+function is that you should also be able to
+<code class="sourceCode cpp"><span class="kw">delete</span></code> it,
+which means that a type could (if so desired) simply opt out of being
+usable as a constant template parameter.</p>
 <p>Also, the actual implementation details of defaulting
 <code class="sourceCode cpp">reflect_constant</code> would differ from
 those of explicitly providing it. If it is user-provided, the
@@ -1147,8 +1148,9 @@ the object defined by that variable:</p>
 duration,</li>
 <li><code class="sourceCode cpp">O</code> is usable in constant
 expressions,</li>
-<li><code class="sourceCode cpp">O</code> has linkage (with internal
-linkage we would end up with a TU-local specialization),</li>
+<li><code class="sourceCode cpp">O</code> has the same linkage as
+<code class="sourceCode cpp">T</code> (with internal linkage we would
+end up with a TU-local specialization),</li>
 <li><code class="sourceCode cpp">O</code> has type
 <code class="sourceCode cpp">T <span class="kw">const</span></code>
 (this also guards against inheriting a customization
@@ -1428,9 +1430,63 @@ transform into
 where <code class="sourceCode cpp">p</code> points to a static storage
 duration array. It <em>cannot</em> turn into two pointers into
 <em>different</em> arrays. That would be horribly broken.</p>
-<h2 data-number="2.8" id="implementation-experience"><span class="header-section-number">2.8</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
+<h2 data-number="2.8" id="naming"><span class="header-section-number">2.8</span> Naming<a href="#naming" class="self-link"></a></h2>
+<p>The name I’m choosing for the customization point here is
+<code class="sourceCode cpp">reflect_constant</code>, since we’re
+basically customizing
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_constant</code>.
+There is precedent for using regular identifiers in language
+customization points already (<code class="sourceCode cpp">begin</code>,
+<code class="sourceCode cpp">end</code>,
+<code class="sourceCode cpp">get</code>, plus all the coroutine stuff).
+But with
+<code class="sourceCode cpp"><span class="op">=</span> <span class="cf">default</span></code>,
+it’s possible that this might just be a bit too much — and we’ll want to
+use a name that is decidedly not just an identifier.</p>
+<p>The first paper in my constant template parameter trilogy, <span class="title"><span class="citation" data-cites="P2848R0"><a href="https://wg21.link/p2848r0">[P2848R0]
+(std::is_uniqued)</a></span></span>, used the name
+<code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span></code>.
+Richard Smith also suggests the name
+<code class="sourceCode cpp"><span class="kw">operator</span><span class="op">&lt;&gt;()</span></code>.
+Both are perfectly fine, and express what they do reasonably enough.
+Here are what those three (well, four, if I show
+<code class="sourceCode cpp">reflect_constant</code> both with and
+without an explicit return type) might look like in the wild in their
+typical usage
+(i.e. <code class="sourceCode cpp"><span class="cf">default</span></code>ed):</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> string_view <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span> <span class="kw">const</span><span class="op">*</span> ptr_<span class="op">;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">size_t</span> size_<span class="op">;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> std<span class="op">::</span>meta<span class="op">::</span>info <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">auto</span> reflect_constant<span class="op">()</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> <span class="kw">operator</span><span class="op">&lt;&gt;()</span> <span class="kw">const</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<p>In the original paper,
+<code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span></code>
+was not invokable, which was something that some people didn’t like,
+since it meant that you had to contrive some other way to test the
+function directly if that’s what you wanted to do. In this case,
+<code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span></code>
+would still be a customization point for
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_constant<span class="op">()</span></code>,
+so there would still be an easy way to test the implication
+directly.</p>
+<p>So those options exist as well, if preferred. I have a mild
+preference for sticking with
+<code class="sourceCode cpp">reflect_constant</code>, simply because it
+matches the reflection function name, but only mild, and would be quite
+happy with any name whatsoever as long as it means we get the
+feature.</p>
+<h2 data-number="2.9" id="implementation-experience"><span class="header-section-number">2.9</span> Implementation Experience<a href="#implementation-experience" class="self-link"></a></h2>
 <p>This has been implemented in <a href="https://github.com/brevzin/llvm-project/commit/750c1763c183d9fb1bc0e6bb1c6a4adde11c9094">my
-fork</a> of Clang, and you can see it on <a href="https://compiler-explorer.com/z/P8WccrYP4">compiler
+fork</a> of Clang, and you can see it on <a href="https://compiler-explorer.com/z/WbYjs5EaK">compiler
 explorer</a>.</p>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
 References<a href="#bibliography" class="self-link"></a></h1>
@@ -1446,6 +1502,9 @@ Template Parameters. <a href="https://wg21.link/p0732r2"><div class="csl-indent"
 <div id="ref-P2484R0" class="csl-entry" role="listitem">
 [P2484R0] Richard Smith. 2021-11-17. Extending class types as non-type
 template parameters. <a href="https://wg21.link/p2484r0"><div class="csl-indent">https://wg21.link/p2484r0</div></a>
+</div>
+<div id="ref-P2848R0" class="csl-entry" role="listitem">
+[P2848R0] Arthur O’Dwyer, Enrico Mauro. 2023-04-24. std::is_uniqued. <a href="https://wg21.link/p2848r0"><div class="csl-indent">https://wg21.link/p2848r0</div></a>
 </div>
 <div id="ref-P2996R13" class="csl-entry" role="listitem">
 [P2996R13] Barry Revzin, Wyatt Childers, Peter Dimov, Andrew Sutton,
