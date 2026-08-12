@@ -1823,8 +1823,8 @@ properly and to be able to desugar the control flow operator (<span class="citat
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression.</p>
 <p>But, interestingly enough, pattern matching (a future revision)
-offers a different way to solve both problems that wouldn’t need such a
-feature:</p>
+offers a <a href="https://godbolt.org/z/fTxWc1ssb">different way</a> to
+solve both problems that wouldn’t need such a feature:</p>
 <table class="cmptable">
 <colgroup>
 <col style="width: 50%" />
@@ -1849,7 +1849,7 @@ feature:</p>
 <span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">do_return</span> <span class="op">*</span>FWD<span class="op">(</span>__r<span class="op">);</span></span>
 <span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>expr <span class="cf">match</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">&amp;&amp;</span> __r <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> __r <span class="op">=&gt;</span> <span class="cf">do</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> __r<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> std<span class="op">::</span>unexpected<span class="op">(</span>__r<span class="op">.</span>error<span class="op">());</span></span>
 <span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
@@ -1863,7 +1863,8 @@ feature:</p>
 evaluated outside of the
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expression, and so any temporaries within it obviously last until the
-end of the full-expression.</p>
+end of the full-expression. We don’t need anything special to make that
+work, it just falls out.</p>
 <p>The question is: do we need to add an init-hoist feature for
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions (a feature in no small part motivated by pattern matching)

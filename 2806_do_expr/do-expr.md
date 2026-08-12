@@ -586,7 +586,7 @@ The proposed form [works](https://compiler-explorer.com/z/vMforYcGP).
 
 The primary motivation for having an init-hoist is largely around being able to define macros for expressions in ways that actually work properly and to be able to desugar the control flow operator ([@P2561R2]) into a `do` expression.
 
-But, interestingly enough, pattern matching (a future revision) offers a different way to solve both problems that wouldn't need such a feature:
+But, interestingly enough, pattern matching (a future revision) offers a [different way](https://godbolt.org/z/fTxWc1ssb) to solve both problems that wouldn't need such a feature:
 
 ::: cmptable
 ### Init-Hoist
@@ -602,7 +602,7 @@ do [__r=expr] -> decltype(auto) {
 ### Pattern Matching
 ```cpp
 expr match -> decltype(auto) {
-    auto&& __r => do -> decltype(auto) {
+    case auto&& __r => do -> decltype(auto) {
         if (not __r) {
             return std::unexpected(__r.error());
         }
@@ -612,7 +612,7 @@ expr match -> decltype(auto) {
 ```
 :::
 
-On the right, `expr` is obviously evaluated outside of the `do` expression, and so any temporaries within it obviously last until the end of the full-expression.
+On the right, `expr` is obviously evaluated outside of the `do` expression, and so any temporaries within it obviously last until the end of the full-expression. We don't need anything special to make that work, it just falls out.
 
 The question is: do we need to add an init-hoist feature for `do` expressions (a feature in no small part motivated by pattern matching) if pattern matching could solve it for us?
 
