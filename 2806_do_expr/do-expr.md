@@ -1,6 +1,6 @@
 ---
 title: "`do` expressions"
-document: P2806R5
+document: P2806R6
 date: today
 audience: EWG
 author:
@@ -14,6 +14,11 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 status: progress
+highlighting:
+  keywords:
+    cpp:
+      - match
+      - do_return
 ---
 
 # Revision History
