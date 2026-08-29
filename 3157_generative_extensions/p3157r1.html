@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2024-05-22" />
+  <meta name="dcterms.date" content="2024-06-01" />
   <title>Generative Extensions for Reflection</title>
   <style>
       code{white-space: pre-wrap;}
@@ -561,7 +561,7 @@ Reflection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2024-05-22</td>
+    <td>2024-06-01</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -641,53 +641,57 @@ Languages<span></span></a></li>
 Introduction<a href="#introduction" class="self-link"></a></h1>
 <p>Since the recent implementation of the reflection facilities proposed
 in <span class="citation" data-cites="P2996R3">[<a href="https://wg21.link/p2996r3" role="doc-biblioref">P2996R3</a>]</span>, we explored how the proposal
-would help fundamental challenges we are facing today. We believe
-reflection has great potential to solve important problems that we and
-the C++ community at large both face, and that a few specific
-enhancements on top of P2996 would help realize that potential. Based on
-our initial experience, this document (and its companions <span class="citation" data-cites="P3294R0">[<a href="https://wg21.link/p3294r0" role="doc-biblioref">P3294R0</a>]</span> and <span class="citation" data-cites="P3289R0">[<a href="https://wg21.link/p3289r0" role="doc-biblioref">P3289R0</a>]</span>) builds function synthesis
-capability on the foundation of P2996 that we think will help C++
-reflection have a stronger and more timely positive impact on the state
-of affairs in the C++ language. We anticipate that C++ reflection, if
-sufficiently powerful, could dramatically reduce costs of developing and
-maintaining C++ code while at the same time improving code size,
-readability, compilation time, and execution speed. We expect to have a
-proof-of-concept implementation of our design available shortly.</p>
-<p>C++ code from a variety of domains naturally leads to boilerplate.
-Proxy classes are commonplace, whether to interface different codebases
-or as an organic part of design. The guideline <a href="https://en.wikipedia.org/wiki/Composition_over_inheritance">“prefer
+would help addressing fundamental challenges we are facing today. We
+believe reflection has great potential to solve important problems that
+the C++ community faces at large and that a few specific enhancements on
+top of P2996 would help realize that potential. We anticipate that C++
+reflection, if sufficiently powerful, could dramatically reduce costs of
+developing and maintaining C++ code while at the same time reducing code
+size, improving readability, compilation time, and execution speed.
+Based on our initial experience, this document and its companions <span class="citation" data-cites="P3294R0">[<a href="https://wg21.link/p3294r0" role="doc-biblioref">P3294R0</a>]</span> (Code Injection with Token
+Sequences) and <span class="citation" data-cites="P3289R0">[<a href="https://wg21.link/p3289r0" role="doc-biblioref">P3289R0</a>]</span> (consteval blocks) build
+function synthesis capabilities on the foundation of P2996 that we think
+will help C++ reflection have an even stronger and more timely positive
+impact. We expect to have a proof-of-concept implementation of our
+design available shortly.</p>
+<p>C++ code from a variety of domains naturally leads to boilerplate: *
+Proxy classes, for example, are commonplace, whether to interface
+different codebases or as an organic part of design. * The guideline <a href="https://en.wikipedia.org/wiki/Composition_over_inheritance">“prefer
 composition over inheritance”</a> leads to many forward-to-member
-functions. Other useful <a href="https://en.wikipedia.org/wiki/Design_Patterns">design patterns</a>
+functions. * Other useful <a href="https://en.wikipedia.org/wiki/Design_Patterns">design patterns</a>
 such as Visitor, Observer, Decorator, Adapter, and <a href="https://www.slideshare.net/tcab22/null-object-design-pattern-presentation">Null
-Object</a> require de facto maintenance of parallel class hierarchies
-and/or parallel function declarations (plus in many cases mechanical
-definitions). Foreign language/API interfaces typically consist of large
-swaths of code following repetitive patterns. Implementing
-high-performance parallel algorithms typically requires specialized
-patterns for a variety of size, stride, and type combinations. All of
-these instances feature enough irregularities and variations to make
-existing template metaprogramming techniques difficult to deploy, and if
-deployed, difficult to understand and maintain.</p>
-<p>The rest of this paper is structured as follows. Section “Function
+Object</a> require the replication of another type’s interface and thus
+de facto maintenance of parallel class hierarchies and/or parallel
+function declarations (plus in many cases mechanical definitions). *
+Foreign language/API interfaces typically consist of large swaths of
+code following repetitive patterns. * Implementing high-performance
+parallel algorithms typically requires specialized patterns for a
+variety of size, stride, and type combinations. * …</p>
+<p>All of these instances feature enough irregularities and variations
+to make existing template metaprogramming techniques cumbersome to
+deploy, and if deployed, difficult to understand and maintain.</p>
+<p>The rest of this paper is structured as follows: * Section “Function
 Descriptor Metafunctions” proposes a design for manipulating the
 reflection of functions, with an emphasis on generation capabilities.
-These capabilities—in conjunction with P2996, P3294, P3289, and <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3096r0.pdf">P3096</a>—provide
-a mechanism for querying and synthesizing function definitions in a
-powerful and flexible manner that makes reflection-based code simple and
-intuitive. Section “Proxy Classes and Instrumented Classes” defines
-essential use cases of reflection metaprogramming that motivate and
-inform the design and implementation of function synthesis. We consider
-strong use cases essential to setting goals for reflective
-metaprogramming. To be compelling, use cases must demonstrate
-meaningful, desirable functionality (albeit in a simplistic,
-proof-of-concept style) that is impossible or prohibitively difficult
-within the current C++. Section “Embedded Domain Specific Languages” is
-even more forward-looking, setting up the long-range trajectory of our
+These capabilities—in conjunction with P2996, P3294, P3289, and <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3096r0.pdf">P3096</a>
+(Function Parameter Reflection)—provide a mechanism for querying and
+synthesizing function definitions in a powerful and flexible manner that
+makes reflection-based code simple and intuitive. * Section “Proxy
+Classes and Instrumented Classes” defines essential use cases of
+reflection metaprogramming that motivate and inform the design and
+implementation of function synthesis. We consider strong use cases
+essential to setting goals for reflection-based metaprogramming. To be
+compelling, use cases must demonstrate meaningful, desirable
+functionality (albeit in a simplistic, proof-of-concept style) that is
+impossible or prohibitively difficult within the current state of the
+C++ language. * Section “Embedded Domain Specific Languages” is even
+more forward-looking, setting up a long-range trajectory of our
 proposal.</p>
 <h1 data-number="2" style="border-bottom:1px solid #cccccc" id="function-descriptor-metafunctions"><span class="header-section-number">2</span> Function Descriptor
 Metafunctions<a href="#function-descriptor-metafunctions" class="self-link"></a></h1>
-<p>This proposal is a companion to <a href="https://brevzin.github.io/cpp_proposals/3294_code_injection/p3294r0.html">P3294</a>
-and meant to complement and work in conjunction with it. P3294 uses
+<p>This proposal accompanies the code injection facilities proposed in
+<a href="https://brevzin.github.io/cpp_proposals/3294_code_injection/p3294r0.html">P3294</a>
+and is meant to complement and work in conjunction with it. P3294 uses
 <code class="sourceCode cpp">decl_of<span class="op">(</span>info<span class="op">)</span></code>
 (where <code class="sourceCode cpp">info</code> is the reflection of a
 function) as a key mechanism to expand reflections of existing functions
@@ -695,15 +699,18 @@ into declarations, to which user code can subsequently attach
 definitions. This proposal focuses on creating and manipulating
 reflections of functions, to be later used with <code class="sourceCode cpp">decl_of<span class="op">(</span>info<span class="op">)</span></code>
 as per P3294.</p>
-<p>Given an existing function, we propose a number of <em>function
-descriptor metafunctions</em> that allow querying all aspects of it.
-Similar functions can be used to synthesize new functions.</p>
+<p>We propose a number of <em>function descriptor metafunctions</em>
+that allow querying and mutating all aspects of an existing function,
+leading to similar functions which can be used to synthesize new
+functions.</p>
 <p>Given a function declaration <code class="sourceCode cpp">f</code>,
 its reflection
 <code class="sourceCode cpp"><span class="op">^</span>f</code> is a
-mutable object that can be subsequently modified. That does not affect
-the initial declaration in any way, but can be used to generate new
-declarations and definitions. Using
+mutable object of type <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>info</code>
+that can be subsequently modified. Modifications do not affect the
+initial declaration in any way, but can be used to generate new
+declarations and definitions. These can be injecte using the facilities
+described in P3294, or similar injection mechanisms. Evaluating
 <code class="sourceCode cpp"><span class="op">^</span>f</code> once
 again returns a new copy of its reflection, so there is no loss of
 information.</p>
@@ -948,16 +955,16 @@ language’s reflective metaprogramming capabilities, similar to how the
 identity function evaluates a language’s functional programming
 features.</p>
 <p>As a simple example, consider the Null Object design pattern, a safe
-alternative to the dreaded null pointer. Given an interface
-<code class="sourceCode cpp">T</code> that defines several pure virtual
-member functions, <code class="sourceCode cpp">null_object<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
+alternative to the dreaded null pointer. Given a type
+<code class="sourceCode cpp">T</code> defining an interface via several
+pure virtual member functions, <code class="sourceCode cpp">null_object<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 would yield an implementation of <code class="sourceCode cpp">T</code>
-that defines all of its virtuals to either throw an exception or return
-a default-constructed value of their result type. Defining a null object
-for a given interface is tediously simple, yet maintaining it is an
-exercise in frustration and a source of aggravation. Reflection should
-allow defining <code class="sourceCode cpp">null_object</code> for any
-type and behavior with ease.</p>
+that defines all of its virtual functions to either throw an exception
+or return a default-constructed value of their result type. Defining a
+null object for a given interface is tediously simple, yet maintaining
+it is an exercise in frustration and a source of aggravation. Reflection
+should allow defining <code class="sourceCode cpp">null_object</code>
+for any type and behavior with ease.</p>
 <p>A more involved example would be defining a class such as <code class="sourceCode cpp">instrumented_vector<span class="op">&lt;</span>T, A<span class="op">&gt;</span></code>
 that wraps an <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span>T, A<span class="op">&gt;</span></code>
 and adds instrumentation (e.g., bounds checking) to some or all of its
@@ -965,18 +972,18 @@ methods. The key here is to make
 <code class="sourceCode cpp">instrumented_vector</code> a drop-in
 replacement for
 <code class="sourceCode cpp">std<span class="op">::</span>vector</code>
-without incurring the cost of copying all of its member function
-declarations. Needless to say, defining such a proxy class by hand is
-quite discouraging, and reflective metaprogramming should offer a
-complete and flexible solution.</p>
+without incurring the programming effort of copying all of its member
+function declarations. Needless to say, defining such a proxy class by
+hand is quite discouraging, and reflective metaprogramming should offer
+a complete and flexible solution.</p>
 <p>The ability to create proxy classes would also put to rest the
 unpleasantness of following the adage “prefer composition over
 inheritance” in C++. As mentioned, in many composition situations,
 numerous forward-to-member functions must be written and maintained;
-automating these stubs would make it much easier to follow the guideline
-therefore improving code quality without adding to its bulk. Making
-valuable programming idioms more accessible has repeatedly proven to be
-a wise investment.</p>
+automating these stubs would make it much easier to follow the
+guideline, therefore improving code quality without adding to its bulk.
+Making valuable programming idioms more accessible has repeatedly proven
+to be a wise investment.</p>
 <p>An important part of defining instrumented classes is querying all
 members of an existing class (static and nonstatic data member, regular
 and special member functions,
@@ -996,8 +1003,8 @@ reflective metaprogramming feature for C++. Here are a few key
 components needed:</p>
 <ul>
 <li>Signatures of all functions must be accessible for introspection,
-and primitives for accessing full information of a function’s signature
-must be defined.</li>
+and primitives for accessing the full information of a function’s
+signature must be defined.</li>
 <li>Synthesis of function signatures must be possible, e.g. a library
 may need to build a signature from scratch, or from a similar signature
 (e.g., create a new signature from a given signature by adding or
@@ -1025,13 +1032,13 @@ to <code class="sourceCode cpp">define_class</code>.</li>
 to compile a reflected function template under different constraints
 (e.g. different concepts and attributes). As an example, this aspect is
 important to CUDA C++ libraries that need to add
-<code class="sourceCode cpp">__device__</code> attributes to all methods
-of replicas of standard types—such as
+<code class="sourceCode cpp">__device__</code> attributes to all
+functions of replicas of standard types—such as
 <code class="sourceCode cpp">std<span class="op">::</span>pair</code>,
 <code class="sourceCode cpp">std<span class="op">::</span>tuple</code>,
 and <code class="sourceCode cpp">std<span class="op">::</span>optional</code>—and
-subsequently compile the resulting code for use on the device. The
-alternative—copying and pasting code with minute changes—is a
+subsequently compile the annotated functions into device code for use on
+GPUs. The alternative—copying and pasting code with minute changes—is a
 proverbially bad practice.</p>
 <h1 data-number="4" style="border-bottom:1px solid #cccccc" id="embedded-domain-specific-languages"><span class="header-section-number">4</span> Embedded Domain Specific
 Languages<a href="#embedded-domain-specific-languages" class="self-link"></a></h1>
@@ -1045,7 +1052,7 @@ aspect of reflective metaprogramming. For example, an aspirational EDSL
 way of doing things for GPU-accelerated code could take in an algorithm
 written concisely in a high-level array language and generate during
 compilation specialized CUDA C++ code implementing the algorithm with
-the same efficiency as if this low-level code were written by hand.</p>
+the same efficiency as if this low-level code was written by hand.</p>
 <p>The utility of EDSLs is, of course, much broader. An EDSL essentially
 allows the programmer to author a high-level expressive specification
 adapted to the problem domain (function differentiation, relational
