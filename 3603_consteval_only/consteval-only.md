@@ -10,7 +10,7 @@ author:
       email: <pdimov@gmail.com>
 toc: true
 tag: constexpr
-status: progress
+status: rejected
 ---
 
 # Abstract
