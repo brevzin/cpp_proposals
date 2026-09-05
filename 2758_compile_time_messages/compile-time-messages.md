@@ -154,24 +154,9 @@ There's simply no way I'm aware of today to emit messages at compile-time other 
 
 In short, the kind of facility I'm reviving here were already previously discussed and received _extremely favorably_. 15-1, 24-0, and 20-0. It's just that then the papers disappeared, so I'm bringing them back.
 
-# To `std::format` or not to `std::format`?
-
-That is the question. Basically, when it comes to emitting some kind of text (via whichever mechanism - whether `static_assert` or a compile-time print or a compile-time error), we have to decide whether or not to bake `std::format` into the API. The advantage of doing so would be ergonomics, the disadvantage would be that it's a complex library to potential bake into the language - and some people might want these facilities in a context where they're not using `std::format`, for hwatever reason.
-
-But there's also a bigger issue: while I said above that we have a useful `format` in `constexpr`, that wasn't _entirely_ accurate. The parsing logic is completely `constexpr` (to great effect), but the formatting logic currently is not. Neither `std::format` nor `fmt::format` are declared `constexpr` today. In order to be able to even consider the question of using `std::format` for generating compile-time strings, we have to first ask to what extent this is even feasible.
-
-Initially (as of R0 of this paper), I think there were currently two limitations (excluding just adding `constexpr` everywhere and possibly dealing with some algorithms that happen to not be `constexpr`-friendly):
-
-1. formatting floating-point types is not possible right now (we made the integral part of `std::to_chars()` `constexpr` [@P2291R3], but not the floating point).
-2. `fmt::format` and `std::format` rely on type erasing user-defined types, which was not possible to do at compile time due to needing to cast back from `void*`.
-
-I am not in a position to say how hard the first of the two is (it's probably pretty hard?), but the second has already been resolved with the adoption of [@P2738R1] (and already implemented in at least gcc and clang). That's probably not too much work to get the rest of format working - even if we ignore floating point entirely. Without compile-time type erasure, it's still possible to write just a completely different consteval formatting API - but I doubt people would be too happy about having to redo all that work.
-
-We will eventually have `constexpr std::format`, I'm just hoping that we can do so with as little overhead on the library implementation itself (in terms of lines of code) as possible.
-
 # Improving compile-time diagnostics
 
-While in `static_assert`, I'm not sure that we can adopt a `std::format()`-based API [^ynot], for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this (see [this section](#warnings-and-tagging) for the motivation for tagging):
+Within in `static_assert`, I'm not sure that we can adopt a `std::format()`-based API [^ynot]. But for compile-time diagnostics, I think we should. In particular, the user-facing API should probably be something like this (see [this section](#warnings-and-tagging) for the motivation for tagging):
 
 [^ynot]: A previous revision of the paper [explained why](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2758r2.html#improving-static_assert): `static_assert(cond, "T{} must be valid expression")` is a valid assertion today. Adopting the `format` API would break this assertion - were it to fire. However, given that this is a static assertion, perhaps there's room to maneuver here.
 
@@ -661,7 +646,7 @@ constexpr bool attempt_to(F f) {
   }
 }
 
-static_assert(attempt_to([]{ throw_up(); }));
+static_assert(attempt_to(throw_up));
 ```
 :::
 
@@ -688,7 +673,7 @@ This paper proposes the following:
 
 3. Introduce a new compile time warning API that only has effect if manifestly constant evaluated: `std::constexpr_warning_str(tag, msg)`. This will emit a warning containing the provided message under the provided tag, which can be used in an implementation-defined way to control whether the diagnostic is emitted.
 
-4. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with `std::format`-friendly alternatives.
+4. Pursue `constexpr std::format(fmt_str, args...)`, which would then allow us to extend the above API with `std::format`-friendly alternatives. This is [@P4364R0]{.title}.
 
 5. Introduce the concept of constexpr-erroneous expressions to help word this.
 
@@ -757,17 +742,17 @@ This is acceptable behavior, both in terms of number of and ordering of messages
 
 # Wording
 
-We don't quite have `constexpr std::format` yet (although with the addition of [@P2738R1] we're probably nearly the whole way there), so the wording here only includes (1) and (2) above - with the understanding that a separate paper will materialize to produce a `constexpr std::format` and then another separate paper will add `std::constexpr_print` and `std::constexpr_error` (the nicer names, with the more user-friendly semantics).
+We now have `constexpr std::format` in C++26 ([@P3391R2]), but the wording here will only add the low level `std::string_view`-taking functions. The higher level API will be provided by [@P4364R0]{.title}.
 
 Alter how static initialization works to ensure there's no fallback to runtime initialization in some cases, in [basic.start.static]{.sref}:
 
-::: std
+::: {.std .wording}
 [2]{.pnum} *Constant initialization* is performed if a variable with static or thread storage duration is constant-initialized ([expr.const]). [If the full-expression of the initialization of the variable is a constexpr-erroneous expression ([expr.const]), the program is ill-formed. Otherwise, if]{.addu} [If]{.rm} constant initialization is not performed, a variable with static storage duration ([basic.stc.static]) or thread storage duration ([basic.stc.thread]) is zero-initialized ([dcl.init]).
 :::
 
 Say that a program is ill-formed if an expression is constexpr-erroneous in [expr.const.defns]{.sref}:
 
-::: std
+::: {.std .wording}
 [3]{.pnum} An object `a` is said to have constant destruction if [...]
 
 ::: addu
@@ -793,7 +778,7 @@ int y = foo(0); // error: reject-zero, can't call with a == 0
 
 Make constexpr-erroneous immediate expressions hard errors, so they don't escalate, in [expr.const.imm]/2:
 
-::: std
+::: {.std .wording}
 [2]{.pnum} A potentially evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and [...]
 
 ::: addu
@@ -811,7 +796,7 @@ An immediate-escalating expression shall appear only in an immediate-escalating 
 
 Add to [meta.type.synop]{.sref}:
 
-::: std
+::: {.std .wording}
 ```diff
 // all freestanding
 namespace std {
@@ -839,7 +824,7 @@ namespace std {
 
 Add a new clause after [meta.const.eval]{.sref} named "Emitting messages during program translation":
 
-::: std
+::: {.std .wording}
 ::: addu
 [1]{.pnum} The facilities in this subclause are used to emit messages during program translation. The ordering and number of diagnostics emitted by the functions defined in this subclause are unspecified.
 
@@ -940,15 +925,15 @@ Add to [version.syn]{.sref}:
 
 ---
 references:
-    - id: P2747R0
-      citation-label: P2747R0
-      title: Limited support for `constexpr void*`
+    - id: P4364R0
+      citation-label: P4364R0
+      title: Emitting messages at compile time with `std::format`
       author:
         - family: Barry Revzin
       issued:
         date-parts:
-        - - 2022
-          - 12
-          - 16
-      URL: https://wg21.link/p2747r0
+        - - 2026
+          - 09
+          - 05
+      URL: https://wg21.link/p4364r0
 ---
