@@ -13,7 +13,7 @@ status: progress
 
 # Revision History
 
-For [@P2758R5]: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request, rebased wording on working draft. Noted GCC [implementation](#implementation-experience) and discussed the interesting question of [diagnostic ordering](#ordering-in-diagnostics).
+For [@P2758R5]: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request, rebased wording on working draft. Noted GCC [implementation](#implementation-experience), discussed the interesting question of [diagnostic ordering](#ordering-in-diagnostics), and moved the utilities into `<debugging>` (see [what header?](#what-header)).
 
 For [@P2758R4]: wording. Re-targeting towards CWG and LEWG. Introduced concept of constexpr-erroneous both for proper wording and to handle an escalating issue.
 
@@ -677,6 +677,32 @@ This paper proposes the following:
 
 5. Introduce the concept of constexpr-erroneous expressions to help word this.
 
+## What Header?
+
+This proposal is introducing a set of functions that look like this (plus another set of overloads taking `u8string_view`). What header should they go in?
+
+::: std
+```cpp
+namespace std {
+  constexpr void constexpr_print_str(string_view);
+  constexpr void constexpr_print_str($tag-string$, string_view);
+  constexpr void constexpr_warn_str($tag-string$, string_view);
+  constexpr void constexpr_error_str($tag-string$, string_view);
+}
+```
+:::
+
+Earlier revisions of this paper put them in `<type_traits>`, which on the one hand makes sense (they are low-level compiler interaction facilities) and on the other hand does not (they use `string_view`, which isn't currently provided by `<type_traits>`).
+
+There are a few other things we could do.
+
+* Put them in `<meta>`, which already requires `string_view`. Although this isn't strictly speaking a metaprogramming facility.
+* Put them in a new header `<consteval>`.
+* Change the API to take either just `char const*` or `char const*` and `size_t` (relying on [@P4364R0] to provide the more user-friendly interface).
+* Change the API to take a shape that is more like the `static_assert` rule: either a `char const*` or some type `M` where `M.data()` is convertible to `char const*` and `M.size()` is convertible to `size_t`. That's basically what is implemented in GCC (see below), but feels quite un-library-y.
+
+Instead, I'm proposing we put them into `<debugging>`. Which... isn't entirely wrong. These are utilities to help catch/understand problems with your program. Just at compile time rather than runtime.
+
 ## Implementation Experience
 
 This proposal is implemented in GCC 16. Or rather, GCC now provides builtins that can be used to implement the library façade of this paper. [This program](https://compiler-explorer.com/z/rrrq3GnGY) fails to compile as desired:
@@ -794,19 +820,18 @@ Make constexpr-erroneous immediate expressions hard errors, so they don't escala
 An immediate-escalating expression shall appear only in an immediate-escalating function.
 :::
 
-Add to [meta.type.synop]{.sref}:
+Add to [debugging.syn]{.sref}:
 
 ::: {.std .wording}
 ```diff
 // all freestanding
 namespace std {
-  // ...
+  // [debugging.utility], utility
+  void breakpoint() noexcept;
+  void breakpoint_if_debugging() noexcept;
+  bool is_debugger_present() noexcept;
 
-  // [meta.const.eval], constant evaluation context
-  constexpr bool is_constant_evaluated() noexcept;
-  consteval bool is_within_lifetime(const auto*) noexcept;
-
-+ // [meta.const.msg], emitting messages during program translation
++ // [debugging.consteval], emitting messages during program translation
 + struct $tag-string$; // exposition-only
 +
 + constexpr void constexpr_print_str(string_view) noexcept;
@@ -817,12 +842,11 @@ namespace std {
 + constexpr void constexpr_warning_str($tag-string$, u8string_view) noexcept;
 + constexpr void constexpr_error_str($tag-string$, string_view) noexcept;
 + constexpr void constexpr_error_str($tag-string$, u8string_view) noexcept;
-
 }
 ```
 :::
 
-Add a new clause after [meta.const.eval]{.sref} named "Emitting messages during program translation":
+Add a new clause after [debugging.utility]{.sref} named "Emitting messages during program translation":
 
 ::: {.std .wording}
 ::: addu
@@ -917,7 +941,7 @@ Add to [version.syn]{.sref}:
 ::: bq
 ::: addu
 ```
-#define __cpp_lib_compile_time_messages 2026XX // freestanding, also in <meta>
+#define __cpp_lib_compile_time_messages 2026XX // freestanding, also in <debugging>
 ```
 :::
 :::
