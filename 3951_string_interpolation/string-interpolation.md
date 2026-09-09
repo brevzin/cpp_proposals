@@ -1,6 +1,6 @@
 ---
 title: "String Interpolation with Template Strings"
-document: P3951R1
+document: D3951R2
 date: 2026-03-15
 audience: EWG
 author:
@@ -26,148 +26,13 @@ The `std::format` approach to formatting offers many significant benefits over t
 
 The solution to this problem is string interpolation: the ability to put the expression to be formatted inside of the format string. This lets us preserve all of the advantages of `std::format`, while also regaining ordering. String interpolation is a wildly popular language feature due to the ease with which it allows users to express complex ideas. It's not surprising that a huge number of modern languages support this to some degree or another. A non-exhaustive list includes: C#, D, Elixir, F#, Groovy, Kotlin, JavaScript, Perl, PHP, Python, Ruby, Rust, Scala, Swift, and VB.
 
-## Prior Work in C++
-
-There have been two prior WG21 papers pursuing string interpolation as a C++ language feature: [@P1819R0]{.title} and [@P3412R3]{.title}. The two proposals are quite different, so let's consider an example to work through the details:
-
-::: std
-```cpp
-auto get_result() -> int { return 42; }
-
-auto example() -> void {
-    auto interp = f"The result is {get_result()}\n";     // #1
-    std::print(interp);                                  // #2
-    std::print(f"The result is {get_result()}\n");       // #3
-}
-```
-:::
-
-In P1819, the `interp` is an object that is roughly equivalent to:
-
-::: std
-```cpp
-auto interp = [&](auto&& f) -> decltype(auto) {
-    return f("The result is ", get_result(), "\n");
-};
-```
-:::
-
-So line `#1` does approximately nothing. The call to `get_result()` does not happen yet. Instead, the library would provide new overloads of `std::print` and friends so that in line `#2`, the library would invoke `interp` with the appropriate function to do the printing. The call to `get_result()` happens at that point. Line `#3` does the same things as lines `#1` and `#2`, just together.
-
-In P3412, the behavior is very different. `interp` is already a `std::string`, which is evaluated as:
-
-::: std
-```cpp
-auto interp = std::format("The result is {}\n", get_result());
-```
-:::
-
-This makes the call in line `#2` ill-formed, since `std::print` cannot accept a `std::string`. However, the call in line `#3` is valid — by way of a change to overload resolution that recognizes this case as special and instead evaluates the call directly as:
-
-:::std
-```cpp
-std::print("The result is {}\n", get_result());
-```
-:::
-
-In short, P1819 gives us an object (that doesn't evaluate any of the expressions) while P3412 gives us either a `std::string` or an argument list, depending on context.
-
-Of the two, I think P1819 is significantly better. We get a simple object that can allow for a wide variety of potential functionality. It has two big problems though. The first is that it evaluates lazily and stores its data opaquely — which leads to more surprising behavior, the potential for dangling references, and arbitrarily limited usage. The other is its breakup into pieces doesn't actually play very well with `std::format` — where we would want there to be a format string and we don't have one. The original motivation for the lambda approach was ease of use — get all the expressions in one convenient format. But the language has evolved since 2019. We have both reflection and packs in structured bindings now, so we don't need the lambda approach anymore.
-
-On the other hand, P3412 is actually not one but two different language features — and it's worth taking some time to evaluate this. This is more explicit in [@P3412R1]:
-
-::: cmptable
-### Expression
-```cpp
-std::print(x"The result is {get_result()}");
-```
-
-### Evaluates As
-```cpp
-std::print("The result is {}", get_result());
-```
-
----
-
-```cpp
-auto s = f"The result is {get_result()}");
-```
-
-```cpp
-auto s = std::format(x"The result is {get_result()}");
-auto s = std::format("The result is {}", get_result());
-```
-:::
-
-The x-literal did string interpolation — it evaluated as an expression-list. That's the workhorse that provides the value of the feature. In contrast, the f-literal was simply syntax sugar for a call to `std::format` with the appropriate x-literal. It's a language feature for simply calling `std::format`. Not precisely `std::format` — since not everybody uses `std::format` so instead this was introduced as a language customization mechanism. But we're really just abbreviating a function call.
-
-In [@P3412R3], this becomes significantly more complicated because both of those features (the string interpolation part, and the just-calling-`std::format` part) converge to the same spelling as an f-literal. This is I think inherently suspect because the same expression now means different things in different contexts. Because the spelling is the same, there needs to be a way for the language to differentiate which one the user meant — and that mechanism is overload resolution coupled very strongly to the current implementation strategy of formatting. The call
-
-::: std
-```cpp
-std::print(f"The result is {get_result()}");
-```
-:::
-
-Works by relying on the first parameter to `std::print` having a consteval constructor. But what if someday we get `constexpr` function parameters and it turns out to be better to implement `basic_format_string<char, Args...>` as taking a `constexpr string_view` instead of it being a `consteval` constructor? What if we someday get a different/better macro system such that `std::print("x={}", x)` evaluates not as a call to a function template but rather directly as the expression `std::vprint(validate_fmt_string<int>("x={}"), std::make_format_args(x))`?
-
-It's not infeasible that some future language change gives us a better way to solve this problem. But with the P3412R3 design, we wouldn't be able to adopt those changes to the formatting functions because they would break string interpolation (unless we come up with a new, more complicated interpolation design, which would now have to recognize multiple implementation strategies).
-
-All this complexity buys us is the ability to create a `std::string` in a single character. However, I don't think that's even a good goal for C++ — we shouldn't hide an operation as costly as string formatting in a single character — and spelling `std::format` is not itself a huge burden. Now, without that aspect of the design, the P3412 approach of having string interpolation emit an expression-list is a lot simpler — I will do a comparison of the two approaches [later in this paper](#object-vs-expression-list).
-
-Instead, this paper proposes an idea much closer to the P1819 model.
-
-## Prior Art in Other Languages
-
-Python 3.6 introduced literal string interpolation (`f"..."`) in [@PEP-498], which was later extended in Python 3.14 by template strings (`t"..."`) in [@PEP-750]. The former directly produces a `string`, while the latter gives a template string — an object with enough information in it to be formatted later.
-
-Rust's `format_args!` is similar to Python's template string — it gives you a completely opaque object (unlike Python's which is completely specified). Both languages gives you a facility to take an interpolated string and produce an object for future work (similar to P1819).
-
-JavaScript also has [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals), which support tagging. A tagged template literal is quite similar to what [@P3412R3] proposes:
-
-::: cmptable
-### Code
-```js
- myTag`That ${person} is a ${age}.`
-```
-
-### Evaluates as
-```js
-myTag(["That ", " is a ", "."], person, age)
-```
-:::
-
-This would be similar to P3412's having `myTag(f"That {person} is a {age}")` evaluate the transformed call `myTag("That {} is a {}", person, age)`. Here, the literal is _not_ an object.
-
-C#'s [interpolated strings](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) can produce a `string` directly, But if they are bound to a `FormattableString`, you can get the string parts and objects separately for future work. Similar to Python template strings and Rust's facility, except type erased. C# also has a more complicated facility on top of string interpolation called an [`InterpolatedStringHandler`](https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/performance/interpolated-string-handler), which allows for more efficient and even conditional (lazy) formatting.
-
-Swift's string interpolation, similar to C#, can also either directly produce a string or go through a separate, builder path: the protocol `ExpressibleByStringInterpolation`. That [allows](https://davedelong.com/blog/2021/03/04/exploiting-string-interpolation-for-fun-and-for-profit/) the expression:
-
-::: cmptable
-### Code
-```swift
-let value: MyType = "Hello, \(name)!"
-```
-
-### Evaluates as
-```swift
-var builder = MyType.StringInterpolation(
-    literalCapacity: 8, interpolationCount: 1)
-builder.appendLiteral("Hello, ")
-builder.appendInterpolation(name)
-builder.appendLiteral("!")
-let value = MyType(stringInterpolation: builder)
-```
-:::
-
-This paper's design is along the lines of Python's template strings, Rust's `format_args!`, and C#'s `FormattableString` idea. Just presented in a package that is more, well, C++.
-
+Prior work in this space, both in C++ and in other languages, will be discussed [later](#prior-art-and-alternate-approaches).
 
 # Design
 
-This paper proposes that we introduce string interpolation for C++ following the same idea as Python's template strings. We'll have to come up with a better name than "template string" for this, but for now I'm going to stick with it. A template string literal will eagerly evaluate all of the expressions and produce a new object with all of the relevant pieces, such that it will be suitable for both formatting APIs (like `std::format` and `std::print`) and other APIs that have nothing to do with formatting.
+This paper proposes that we introduce string interpolation for C++ following the same idea as Python's template strings ([@PEP-750], see also the section on [prior art](#prior-art-in-other-languages)). We'll have to come up with a better name than "template string" for this, but for now I'm going to stick with it. A template string literal will eagerly evaluate all of the expressions and produce a new object with all of the relevant pieces, such that it will be suitable for both formatting APIs (like `std::format` and `std::print`) and other APIs that have nothing to do with formatting.
 
-Our example from earlier:
+Here is a simple example:
 
 ::: std
 ```cpp
@@ -196,6 +61,10 @@ auto example() -> void {
             return data[i];
         }
 
+        constexpr auto exprs() const -> $Template$ const& {
+            return *this;
+        }
+
         int $_0$;
     };
 
@@ -204,308 +73,7 @@ auto example() -> void {
 ```
 :::
 
-Let's go through all of these pieces in order. A template string will generate an instance of a not-necessarily-unique type (unlike a lambda expression, which always has a unique type) by parsing the replacement fields of the string literal. The parsing logic here is very basic and does not need to understand very much about either the format specifier mini-language or C++ expressions more broadly. The interpolation type will have five public pieces of information in it:
-
-* `fmt()` is a static member function that returns the format string,
-* `num_interpolations()` is a static member function that returns the number of interpolations (possibly 0),
-* `string(i)` is a static member function that returns the `i`th string part
-* `interpolation(i)` is a static member function that returns the `i`th [interpolation information](#interpolation-information), and then lastly
-* one non-static [data member](#data-members) for each (possibly-nested) expression. The name of the member is unspecified, but the order and types are.
-
-With this structure, we can easily add additional overloads to the format library to handle template strings:
-
-::: std
-```cpp
-template <TemplateString S>
-auto print(S&& s) -> void {
-    auto& [...exprs] = s;
-    std::print(s.fmt(), exprs...);
-}
-```
-:::
-
-Note that there is no difference in handling between lines `#1-2` and line `#3` in the example (like the P1819 design and unlike the P3412 one). A template string is just an object, that contains within it all the relevant information. So whether we construct the object separately doesn't matter.
-
-The rest of the paper will go through details on first on how the parsing works and then into other examples to help motivate the structure.
-
-Keep in mind that since a template string object is _just an object_, where most of the information are static data members, this ends up being a very embedded-friendly design too.
-
-## Lexing
-
-A template string is conceptually an alternating sequence of string literals and interpolations. The string literal parts are just normal string literals — we look ahead until we find a non-escaped `{` to start the next replacement field (`"{{"` in a format string is used to print the single character `'{'`). A replacement-field comes in two forms:
-
-::: std
-```cpp
-$replacement-field$:
-  { $expr$ }
-  { $expr$ : $format-spec$ }
-```
-:::
-
-For example, a template string like `t"The price of {id:x} is {price}."` needs to be lexed into these five pieces:
-
-<table>
-<tr><td>String Literal</td><td>`"The price of "`</td></tr>
-<tr><td>Interpolation</td><td>`"{:x}"` with expression `id`</td></tr>
-<tr><td>String Literal</td><td>`" is "`</td></tr>
-<tr><td>Interpolation</td><td>`"{}"` with expression `price`</td></tr>
-<tr><td>String Literal</td><td>`"."`</td></tr>
-</table>
-
-The first and last piece are always (possibly-empty) string literals — for `$N$` interpolations there will be `$N$+1` strings. Even for the template string `t"{expr}"` which entirely consists of an expression, there will be two empty string pieces.
-
-However, C++ expressions can be arbitrary complicated. Notably, they can also include `:` or `}`. both of which are significant in formatting and indicate the end of the expression. So how do we know when we're done with the `$expr$` part here?
-
-One approach would be to simply limit the kinds of expressions that can appear in template strings. Rust, for instance, _only_ supports identifiers. That obviously makes parsing quite easy, but it also is very limiting. On the other extreme, supporting _all_ expressions can easily lead to indecipherable code. I think on balance, supporting only identifiers is far too restrictive. But once you start adding what other kinds of expressions to allow (surely, at least class member access), it quickly becomes too difficult to keep track of what is allowed (indexing? function calls? splices?) and ironically makes both the implementation more difficult (to enforce what is and isn't allowed) and harder to understand for the user (to know which expressions are and aren't allowed).
-
-I think it's best to simply allow anything in the expression (as Python does) and trust the user to refactor their expressions to be as legible as they desire. This allows us to take a very simple approach: we simply lex `$expr$` as a balanced token sequence (just counting `{}`s, `()`s, and `[]`s), so that colons and braces inside of any of the bracket kinds are treated as part of an expression. But the first `:` or `}` encountered when we're at a brace depth of zero means we're done with `$expr$`.
-
-Here are some examples of template string formatting calls and how they would be evaluated. The first column will show a template string that consists entirely of an expression. The second column will show how the format string for that expression will be lexed and the third column will show the expression.
-
-|template string|lexed format string|lexed expression|
-|-|-|-|
-|`t"{x}"`|`"{}"`|`x`|
-|`t"{[]{ return 42; }()}"`|`"{}"`|`[]{ return 42; }()`|
-|`t"{co_await f(x) + g(y) / z}"`|`"{}"`|`co_await f(x) + g(y) / z`|
-|`t"{a::b}"`|`"{::b}"`|`a`|
-|`t"{(a::b)}"`|`"{}"`|`a::b`|
-|`t"{cond ? a : b}"`|`"{:b}"`|`cond ? a` ❌|
-|`t"{(cond ? a : b)}"`|`"{}"`|`(cond ? a : b)`|
-
-Two important things to note here. First, it is possible to lex an invalid expression due to finding a `:` first, as in the penultimate line. The lexing won't know about this though.
-
-## Looking for `:`
-
-The first problem we run into, as evidenced in the above table, is deciding what it means to find the separator between the `$expression$` and the `$format-spec$` . How do we find the `:`? A this point, we will be lexing an `$expression$` — and there are multiple ways in which a colon can appear here:
-
-* `:`
-* `::`
-* `[:`
-* `:]`
-* `<:` (the digraph for `[`)
-* `:>` (the digraph for `]`)
-* `%:` (the digraph for `#`)
-* `\u003a` (the UCN for `:`)
-
-One consideration is what format specifiers exist today. Notably, `"{::x}"` is a valid format specifier (e.g. used to format a range of integers in hex) and `"{:>5}"` is a valid format specifier (e.g. used to right-align a field with width `5`). Indeed, any sequence of characters _can_ be a valid format specifier. I think it is important that any existing format specifier be usable with string interpolation, otherwise users would find it surprising when something they try to do randomly doesn't work.
-
-To this end, I think the right design is to look for the _character_ `:`, not the _token_ `:`. That is, `"{a::b}"` should lex as the expression `a`, not `a::b`. If the latter is desired, it has to be parenthesized. This is a difference in the logic proposed in [@P3412R3], which looks specifically for the _token_ (not character) `:`. This is important because it allows for the most functionality:
-
-::: std
-```cpp
-namespace v { int x = 2; }
-
-auto example() -> void {
-    std::vector<int> v = {10, 20, 30};
-    std::println(t"{v::x}");    // [a, 14, 1e]
-    std::println(t"{(v::x)}");  // 2
-}
-```
-:::
-
-In order to format expressions that use scoping or the conditional operator, you'll just have to write parentheses. That seems easy enough to both understand and use. Otherwise, anything goes.
-
-Now, this approach incurs the burden that you just have to parenthesize any expression with top-level scoping. But the benefit is that all format specifiers just work — we have a formatting design that is flexible, so it would be nice not restrict that. The logic laid out in P3412 effectively forbids any format specifier that starts with a `:` since that `::` would always be interpreted as a scope operator.
-
-An alternative rule would: look for the character `:`, unless it's the token `::`, _except_ when it is immediately following a `)`. That would lead to this behavior:
-
-|template string|lexed format string|lexed expression|
-|-|-|-|
-|`t"{a::b}"`|`"{}"`|`a::b`|
-|`t"{(a)::b}"`|`"{::b}"`|`(a)`|
-
-This raises the question of how to handle whitespace like `t"{(a) ::b}"`. It's a more complex rule, and it depends on how frequently we expect top-level `::` and how good the error recovery is. It might be worthwhile, since I would expect top-level scoping to be significantly more common than having a format specifier that starts with a colon. Note that expressions like `decltype(a)::b` exist, which would have to be top-level parenthesized too, but that's a rare construction, so requiring it to be parenthesized is at best a minor inconvenience.
-
-Lastly, there's the question of UCNs. I'll deal with that in its own section.
-
-## Looking for `{` and `}`
-
-As with the question of `:`, there are multiple different ways to spell `{` and `}`, because of course there is:
-
-|Character|Digraph|UCN|
-|-|-|-|
-|`{`|`<%`|`\u007b`|
-|`}`|`%>`|`\u007d`|
-
-Which of these spellings can start a reflection-field and which of these spellings can end one? Let's start with other languages. Given a variable `v` with value `42`, what happens in...
-
-|Language|Expression|Result|
-|-|-|-|
-|Python|`f"\u007bv\u007d"`|`"{v}"`|
-|Rust|`format!("\u{007b}v\u{007d}");`{.rust}|`"42"`|
-|Ruby|`"#\u007bv\u007d"`|`"#{v}"`|
-
-In Rust, interpolation only accepts _identifiers_. But in Python and Ruby, *any* expression can be interpolated, the same as I'm proposing here. This makes the question of looking for `}` more complicated, since what do you do when you see the `\`? In an expression context, UCNs _can_ appear — but not to name characters in the basic character set. Like `}`.
-
-To me, the `{` and `}` that start and end a replacement-field is more akin to the braces around a compound-statement (in which a UCN is not allowed) than braces within a string. Which I suppose is an argument for supporting the digraph spellings too. But why? What is the point of supporting this? The goal is to be legible.
-
-To that end, this paper proposes that only literally the characters `{` and `}` start and end a replacement-field. Not the digraphs `<%` and `%>` and not the UCNs `\u007b` and `\u007d`. It is certainly implementable to support a different option. But there isn't a benefit to doing it, and other languages don't either.
-
-## Handling Macro Expansion
-
-While lexing expressions, macro expansion occurs too (although at a later phase, [see below](#more-formal-lexing-specification)). This is both what users expect and is important to support, otherwise we're not actually meeting the claim of supporting all expressions. There are even standard utilities that are defined as macros, like `errno`. The one thing to note is that looking for the terminating `:` or `}` of an expression will _not_ consider such a character from macros. Otherwise, the macros wouldn't actually be usable properly and also the format string itself would become illegible.
-
-Extending the previous example:
-
-::: std
-```cpp
-namespace v { int x = 2; }
-
-auto example() -> void {
-    std::vector<int> v = {10, 20, 30};
-    std::println(t"{v::x}");    // [a, 14, 1e]
-    std::println(t"{(v::x)}");  // 2
-
-    #define SCOPED v::x
-    std::println(t"{SCOPED}");  // 2, not [a, 14, 1e]
-}
-```
-:::
-
-## Lexing Trailing Equals
-
-One nice debugging feature that Python's f-strings (and template strings) have is the equals suffix:
-
-::: std
-```python
->>> f"{x=}, {y=}, {z=}"
-"x=5, y=7, z='hello world'"
-```
-:::
-
-Concretely, an expression that ends with an `=` (surrounded by any amount of whitespace) has that suffix appended to the previous string literal piece. Occasionally, there are requests to support `std::print(x, y, z)` to just concatenate those three elements — but that's not as useful as it initially seems since you quickly forget what variables you're printing in what order. The ability to support this on the other hand is _very_ useful for debugging:
-
-::: std
-```cpp
-std::println(t"{x=}, {y=}, {z=:?}");
-```
-:::
-
-It is also quite easy to implement, since it's just a matter of checking if the last lexed token of the expression was an `=`. And, if so, dropping that from the expression (since no valid C++ expression ends with `=`) and instead adding the stringified expression to the previous string part.
-
-Concretely: `t"Hello {name=}"` behaves exactly equivalently to `t"Hello name={name}"`.
-
-Note that this isn't _quite_ what Python does — as you might notice from the Python example. In Python, it behaves like `t"Hello name={name!r}`, which is basically calling `repr(name)` instead of `str(name)`. It would be really nice if we actually had a real answer for debug formatting — but neither `std::format` nor `fmt::format` really have one. There is a `?` specifier which is used to help ensure that range formatting properly works ([@P2286R8]), but it's not valid across all types, and there's no special handling for it. So we can't really make `t"{name=}"` evaluate as `t"name={name:?}"`, since that would only work for a small set of types. Instead, this paper proposes not to add any format specifier here.
-
-## Lexing Nested Expressions
-
-Consider the template string:
-
-::: std
-```cpp
-t"{name:>{width}}"
-```
-:::
-
-There are two expressions here: `name` and `width`. Or rather, we know `name` is an expression, but how do we know that `width` is? In the format model, the format specifiers can be _anything_. There really are no rules — as long as the type's formatter can handle it. Having nested braces in a format specifier commonly refers to another argument, but it need not actually mean that.
-
-In my CppCon 2022 talk [The Surprising Complexity of Formatting Ranges](https://youtu.be/EQELdyecZlU?t=2397), I work through an example of how one might add underlying specifiers to `std::pair` and `std::tuple`, [where](https://godbolt.org/z/vPfE7er3M):
-
-::: std
-```cpp
-int main() {
-    auto elems = std::tuple(10, 20, 30);
-    fmt::print("{}\n", elems);                  // (10, 20, 30)
-    fmt::print("{:{x}{#x}{-^4}}\n", elems);     // (a, 0x14, -30-)
-    fmt::print("{:{x}{}{x}}\n", elems);         // (a, 20, 1e)
-}
-```
-:::
-
-There, `{x}` doesn't refer to the expression `x`, it was just chosen as notational convenience. So how can we get this to work?
-
-::: std
-```cpp
-fmt::print(t"{elems:{x}{}{x}}\n");
-```
-:::
-
-The short answer is: we cannot. We need to make sense of the template string literal separate from type information, and even if we had type information, it's not like we have a way for the `formatter` API to signal when it's expecting an expression. We just have to make a choice up front for what to do here. I think we have three options:
-
-1. We could explicitly opt _in_ to a nested expression. That is, maybe something like `t"{elems:{x}{}${x}}"` signals that the first `{x}` is just a string but the second `{x}` is actually the expression `x`. So in the above example, we simply wouldn't use the `$`{.op}.
-2. We could explicitly opt _out_ of being a nested expression with added escaping. Which in this case would be `t"{elems:{{x}}{{}}{{x}}}"`.
-3. We could say that in a format specifier, encountering a `{` _always_ begins an expression that ends at `:` or `}` (same as top-level) and that there is neither opt-in nor opt-out. Meaning that the approach to format specifiers that I demonstrated in that talk wouldn't work, and would instead have to be `t"{elems:{:x}{}{:x}}"`.
-
-I think the third option here is the best. It is at most a minor burden on users as I doubt this approach is in widespread use, and allows for a design that is as simple as possible.
-
-Getting back to our original example:
-
-::: std
-```cpp
-t"{name:>{width}}"
-```
-:::
-
-This would lex as:
-
-<table>
-<tr><td>String Literal</td><td>`""`</td></tr>
-<tr><td>Interpolation</td><td>`"{:>{}}"` with two expressions: `name` and `width`</td></tr>
-<tr><td>String Literal</td><td>`""`</td></tr>
-</table>
-
-And [this works](https://godbolt.org/z/r7rKdWMhb) because we recognize `{:x}` as not being a nested expression:
-
-::: std
-```cpp
-fmt::print(t"as template: {elems:{:x}{}{:x}}\n"); // as template: (a, 20, 1e)
-```
-:::
-
-If we simply stored the expressions and the format string, that would be straightforward: we just have two [data members](#data-members). But we can do better than that. But before we get into the [interpolation information](#interpolation-information), I'll talk about the data members.
-
-## Concatenating Consecutive String Literals
-
-Consecutive string literals are concatenated during preprocessing. The same should hold true for template string literals — which can be concatenated with each other and also with regular string literals, in any order. In the table below, imagine we are initializing a variable `s` to the token sequence shown in the first column and examining the resulting `s.fmt()` and the expressions being lexed:
-
-|Tokens|`s.fmt()`|expressions|
-|-|-|-|
-|`"Hello, " "World"`|n/a|n/a|
-|`"Hello, " t"{name}"`|`"Hello, {}"`|1: `name`|
-|`t"{greeting}, " t"{name}"`|`"{}, {}"`|2: `greeting`, `name`|
-|`t"{greeting}, " "World"`|`"{}, World"`|1: `greeting`|
-|`t"{greeting}, " "{}"`|`"{}, {}"`|1: `greeting` ❌|
-
-Note the last line. We're concatenating a template string literal and a regular string literal — that simply concatenates the contents of the 2nd string literal onto the last string piece of the 1st — there is no implicit escaping of the braces, so the resulting format string would be incomplete — it has 2 replacement fields but only one expression.
-
-We could consider implicitly escaping the braces for regular string literals that are concatenated to template string literals. I don't know if that's a good idea though.
-
-
-## Data Members
-
-For any expression, `$E$` (including nested expressions — so there may be more expressions than interpolations), a non-static data member will be generated (and then initialized from `$E$`) having type `decltype(($E$))`. This ensures that we get the right type, but also that we're not copying anything unnecessarily. For instance:
-
-::: std
-```cpp
-auto verb() -> std::string;
-
-auto example(std::string const& name, std::string relation) -> void {
-    auto tmpl = t"Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb()}.";
-}
-```
-:::
-
-The object `tmpl` will have three members:
-
-* the first, corresponding to `name`, has type `std::string const&`
-* the second, corresponding to `relation`, has type `std::string&`
-* the third, corresponding to `verb()`, has type `std::string`
-
-These are all public, non-static data members. If we want to copy all of the members (e.g. because we want to serialize them), we can easily do so. It's just that there is no need for the template string itself to do so directly. Note that the call to `verb()` happens immediately and the result is stored in `tmpl`. We are not lazily holding onto the expression `verb()`.
-
-This _does_ open up the opportunity for dangling if you write something like this:
-
-::: std
-```cpp
-auto oops(int value) { return t"{value}"; }
-```
-:::
-
-That template string object will have an `int&` member, refer to the parameter that will be destroyed when we return from the function. I don't think this is a huge use-case of template strings, but it's something to keep in mind. The `decltype(($E$))` logic is essential for ensuring no overhead for template strings in the expected use-cases. We could consider something like a _leading_ `=` to capture by value instead of by reference, but users can already write `"t{auto(value)}"` there too.
-
-## Interpolation Information
-
-A template string will have a `static consteval` member function which returns objects of type `std::interpolation`, which is a simple aggregate with four members:
+where `std::interpolation` is the simple aggregate:
 
 ::: std
 ```cpp
@@ -518,37 +86,32 @@ struct interpolation {
 ```
 :::
 
-`expression` is a string literal that is the stringified version of the expression (before macro expansion). `fmt` is the full format specifier with the expression removed, that you would need in order to format this specific expression. Then, we need both `index` and `count` in order to support nested replacement expressions, as we just went through. That gives us both the first non-static data member and the amount of non-static data members this interpolation is associated with.
+Let's go through all of these pieces in order. A template string will generate an instance of a not-necessarily-unique type (unlike a lambda expression, which always has a unique type) by parsing the replacement fields of the string literal. The parsing logic here is very basic and does not need to understand very much about either the format specifier mini-language or C++ expressions more broadly. The interpolation type will have five public pieces of information in it:
 
-The template string literal `t"{name=:>{width}}"` would generate the object
+* `fmt()` is a static member function that returns the format string,
+* `num_interpolations()` is a static member function that returns the number of interpolations (possibly 0),
+* `string(i)` is a static member function that returns the `i`th string part (note that there are `num_interpolations() + 1` string parts),
+* `interpolation(i)` is a static member function that returns the `i`th [interpolation information](#interpolation-information), and then lastly,
+* one non-static [data member](#data-members) for each (possibly-nested) expression. The name of the member is unspecified, but the order and types are.
+* `exprs()` is a getter that returns something destructurable. For a compiler-generated template string object, that's just `*this`. But for [user-defined ones](#the-templatestring-concept), it could be something else.
+
+With this structure, we can easily add additional overloads to the format library to handle template strings:
 
 ::: std
 ```cpp
-struct $Template$ {
-    static consteval auto fmt() -> char const* { return "name={:>{}}"; }
-    static consteval auto num_interpolations() -> size_t { return 1; }
-    static consteval auto string(size_t n) -> char const* {
-        constexpr char const* data[] = {"name=", ""};
-        return data[n];
-    }
-    static consteval auto interpolation(size_t n) -> std::interpolation {
-        consteval std::interpolation data[] = {{
-            .expression = "name",  // note that "name" is preserved
-            .fmt = "{:>{}}",       // but "width" is not
-            .index = 0,
-            .count = 2
-        }};
-        return data[n];
-    }
-
-    std::string const& $_0$;
-    int const& $_1$;
-};
+template <TemplateString S>
+auto print(S&& s) -> void {
+    auto& [...exprs] = s.exprs();
+    std::print(s.fmt(), exprs...);
+}
 ```
 :::
 
+Note that a template string is just an object, that contains within it all the relevant information. So whether you directly invoke `std::print(t"...")` or first bind the result of the template string literal to an object doesn't matter.
 
-Why do we go through the trouble of proving `string(n)` and `interpolation(n)`?  Let's look at some examples...
+The rest of the paper will go through some examples first, and then work through the details, after the design will have been motivated better.
+
+Keep in mind that since a template string object is _just an object_, where most of the information are static data members, this ends up being a very embedded-friendly design too.
 
 ## Examples
 
@@ -556,21 +119,25 @@ There are many things you can do with a template string, so let's just run throu
 
 ### Basic Formatting
 
-Consider again our example from earlier:
+Here is a fun example:
 
 ::: std
 ```cpp
-auto tmpl = t"Hello, my name is {name}. You killed my {relation}. Prepare to {verb():*^{width}}.";
+auto verb() -> std::string;
+
+auto example(std::string const& name, std::string relation) -> void {
+    auto tmpl = t"Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb()}.";
+}
 ```
 :::
 
-I already showed how we could print this normally, which didn't use either of those two arrays:
+I already showed how we could print this directly:
 
 ::: std
 ```cpp
 template <TemplateString S>
 auto print(S&& s) -> void {
-    auto& [...exprs] = s;
+    auto& [...exprs] = s.exprs();
     std::print(s.fmt(), exprs...);
 }
 ```
@@ -582,7 +149,7 @@ All of the regular formatting facilities (`std::format`, `std::format_to`, `spdl
 ```cpp
 template <TemplateString S>
 auto println(S&& s) -> void {
-    auto& [...exprs] = s;
+    auto& [...exprs] = s.exprs();
     [[maybe_unused]] constexpr auto check = std::format_string<decltype(exprs)...>(s.fmt());
     std::__print::__vprint_unicode(stdout, s.fmt(), std::make_format_args(exprs...), true);
 }
@@ -601,7 +168,7 @@ template <TemplateString S>
 auto highlight_print(S&& s) -> void {
     constexpr size_t N = s.num_interpolations();
 
-    auto& [...exprs] = s;
+    auto& [...exprs] = s.exprs();
 
     template for (constexpr int I : std::views::indices(N)) {
         fmt::print(s.string(I));
@@ -626,7 +193,7 @@ A completely different example would be to turn it into the JSON object `{"name"
 ```cpp
 template <TemplateString S>
 auto into_json(S&& s) -> boost::json::object {
-    auto& [...exprs] = s;
+    auto& [...exprs] = s.exprs();
 
     boost::json::object o;
     template for (constexpr int I : std::views::indices(N)) {
@@ -678,12 +245,50 @@ auto with_printf(S&& s) -> void {
         }
     };
 
-    auto& [...exprs] = s;
+    auto& [...exprs] = s.exprs();
     constexpr auto [...Is] = std::make_index_seequence<s.num_interpolations()>();
     std::printf(fmt_string, adjust(exprs...[s.interpolation(Is).index])...);
 }
 ```
 :::
+
+### Multiple Reuse
+
+The important thing is to expose all the relevant information to users to let them do whatever they want with it. Note that `highlighted_print` uses the `fmt`, `index`, and `count` fields of the interpolation, since it is formatting all of them, but not the `expression` field. Meanwhile, `into_json` uses only `expression` and `index` — it doesn't need any of the format specifier logic, since it isn't actually doing formatting. The `printf` example uses `string` to build up its own format specifier. The SQL likewise builds up its own formatter, and binds arguments with a different API.
+
+And of course, _all_ of these operations can be performed on the same object (which is particularly useful in the case of wanting to do both regular and structured logging):
+
+::: std
+```cpp
+auto verb() -> std::string { return "die"; }
+
+auto main() -> int {
+    std::string name = "Inigo Montoya";
+    int width = 5;
+
+    auto msg = t"Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb():*^{width}}.\n";
+    std::print(msg);
+    highlighted_print(msg);
+    std::println("{}", into_json(msg));
+    with_printf(msg);
+}
+```
+:::
+
+will print (note that `highlighted_print` uses the format specifiers, so the name is quoted):
+
+::: std
+```
+Hello, my name is "Inigo Montoya". You killed my father. Prepare to *die*.
+Hello, my name is @<span style="color:green;font-weight:bold">"Inigo Montoya"</span>@. You killed my @<span style="color:green;font-weight:bold">father</span>@. Prepare to @<span style="color:green;font-weight:bold">\*die\*</span>@.
+{"name":"Inigo Montoya","relation":"father","verb()":"die"}
+Hello, my name is "Inigo Montoya". You killed my father. Prepare to die.
+```
+:::
+
+Having both `interp.index` and `interp.count` is a little clunky, especially since `interp.count` will almost always be `1`. But I think it's better to put the clunkiness there and maintain the trivial formatting implementations (where you can just unpack the template string object).
+
+You can see this example on [compiler explorer](https://compiler-explorer.com/z/WP3Y7z41q). Note that the implementations there are slightly different, since Clang doesn't yet implement `constexpr` structured bindings and the implementations of pack indexing and expansion statements had a few bugs so I came up with workarounds.
 
 ### SQL Statements
 
@@ -741,136 +346,524 @@ auto makeStatement(Database& db, S&& s) -> Statement {
 
 And now you get the same nice string formatting syntax for SQL queries as you do for strings.
 
-### Summary
+### Internationalization / Translation
 
-The important thing is to expose all the relevant information to users to let them do whatever they want with it. Note that `highlighted_print` uses the `fmt`, `index`, and `count` fields of the interpolation, since it is formatting all of them, but not the `expression` field. Meanwhile, `into_json` uses only `expression` and `index` — it doesn't need any of the format specifier logic, since it isn't actually doing formatting. The `printf` example uses `string` to build up its own format specifier. The SQL likewise builds up its own formatter, and binds arguments with a different API.
+Translation is a much harder example to fit in a small scope, but [here](https://compiler-explorer.com/z/EqTTja47n) is an abbreviated demonstration, that actually shows off many important aspects of translation.
 
-And of course, _all_ of these operations can be performed on the same object (which is particularly useful in the case of wanting to do both regular and structured logging):
+First, as part of the build process itself (not a separate script or tool), the example is generating a `.pot` file for translators to use. This contains all the text that we need to translate, along with all of the types of the arguments. The `.pot` itself is also embedded in the binary, which is the first thing the program prints:
+
+::: std
+```
+=== extracted .pot (from the binary itself) ===
+#. placeholders: retries: int
+msgid "Connection lost, retrying ({retries} attempts left)..."
+msgstr ""
+
+#. placeholders: name: std::string
+msgid "Hello, {name}!"
+msgstr ""
+
+#. placeholders: name: std::string, post: std::string
+msgid "{name} commented on {post}."
+msgstr ""
+
+#. placeholders: n: long
+msgid "Removed {n} files."
+msgstr ""
+
+#. placeholders: user: std::string
+msgid "Hi, {user}!"
+msgstr ""
+
+#. placeholders: price: double
+msgid "Total: {price:.2f}"
+msgstr ""
+```
+:::
+
+It then also validates the catalogue:
+
+::: std
+```
+=== catalog validation ===
+error: [de] message "Hello, {name}!": no placeholder named 'naem'
+```
+:::
+
+And shows that we can also properly pluralize:
 
 ::: std
 ```cpp
-auto verb() -> std::string { return "die"; }
-
-auto main() -> int {
-    std::string name = "Inigo Montoya";
-    int width = 5;
-
-    auto msg = t"Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb():*^{width}}.\n";
-    std::print(msg);
-    highlighted_print(msg);
-    std::println("{}", into_json(msg));
-    with_printf(msg);
+for (auto loc : {"en", "fr", "pl"}) {
+    i18n::set_locale(loc);
+    std::print("[{}]", loc);
+    for (long n : {0L, 1L, 2L, 5L, 22L}) {
+        std::print("  {}", std::format(i18n::translate(t"Removed {n} files.")));
+    }
+    std::println("");
 }
 ```
 :::
 
-will print (note that `highlighted_print` uses the format specifiers, so the name is quoted):
+which prints:
 
 ::: std
 ```
-Hello, my name is "Inigo Montoya". You killed my father. Prepare to *die*.
-Hello, my name is @<span style="color:green;font-weight:bold">"Inigo Montoya"</span>@. You killed my @<span style="color:green;font-weight:bold">father</span>@. Prepare to @<span style="color:green;font-weight:bold">\*die\*</span>@.
-{"name":"Inigo Montoya","relation":"father","verb()":"die"}
-Hello, my name is "Inigo Montoya". You killed my father. Prepare to die.
+[en]  Removed 0 files.  Removed 1 file.  Removed 2 files.  Removed 5 files.  Removed 22 files.
+[fr]  0 fichier supprimé.  1 fichier supprimé.  2 fichiers supprimés.  5 fichiers supprimés.  22 fichiers supprimés.
+[pl]  Usunięto 0 plików.  Usunięto 1 plik.  Usunięto 2 pliki.  Usunięto 5 plików.  Usunięto 22 pliki.
+
 ```
 :::
 
-Having both `interp.index` and `interp.count` is a little clunky, especially since `interp.count` will almost always be `1`. But I think it's better to put the clunkiness there and maintain the trivial formatting implementations (where you can just unpack the template string object).
+That way this works is that `i18n::translate` registers the string so that it can be looked up by locale, where each locale will then both define the appropriate translations and plurals. For instance, the Polish file looks like this:
 
-You can see this example on [compiler explorer](https://compiler-explorer.com/z/hKer7vE9r). Note that the implementations there are slightly different, since Clang doesn't yet implement `constexpr` structured bindings and the implementations of pack indexing and expansion statements had a few bugs so I came up with workarounds.
+::: std
+```
+# Polish catalog: the classic three-way plural, driven by the real
+# gettext Plural-Forms formula below.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2;\n"
 
-## The `TemplateString` Concept
+msgid "Removed {n} files."
+msgstr ""
+"{n, plural,"
+" 0 {Usunięto # plik.}"
+" 1 {Usunięto # pliki.}"
+" 2 {Usunięto # plików.}}"
+```
+:::
+
+What makes this example especially interesting and exciting is that eagerly-interpolating string designs simply do not work for localization. The .NET documentation tells you not to use `$"Hello {name}"`{.csharp}, the Python docs tell you that `_(f"Hello {name}")` is a bug. This is why many languages have deferred designs: C#'s `FormattableString`, JavaScript's tagged templates, and Python template strings. However, each of those designs is missing some part of the source text. Two relevant points of interest here:
+
+* Extraction. A runtime object can't be used by the extractor, since the extractor doesn't run the program. Python t-string internationalization still needs a source parser. Lingui on JavaScript needs a Babel macro because the tag function (at runtime) never sees expression text.
+* Validation: Checking a French catalog's `{count}` against the actual argument requires the argument's type at catalog-build time. But this is boxed away in C#, and Python and JavaScript never had it. The impact here would be examples like... the translator wrote `%d`, but code passed a string, and it crashes at runtime in Polish.
+
+Deferred interpolation objects are not new, and the design in this paper is heavily inspired by them. But each carries only part of the surface and all three are runtime-only values. This is the first design to my knowledge that both produces a complete object retaining all information and even allows access to much of that information during compile time, which moves the translation tooling to "extraction and per-message validation performed by the compiler and build" rather than some sort of separate tooling or runtime interception.
+
+## Language Design Specifics
+
+Now that we've gone through some cool examples, let's go through all the design specifics to work through all of the details.
+
+### Lexing
+
+A template string is conceptually an alternating sequence of string literals and interpolations. The string literal parts are just normal string literals — we look ahead until we find a non-escaped `{` to start the next replacement field (`"{{"` in a format string is used to print the single character `'{'`). A replacement-field comes in two forms:
+
+::: std
+```cpp
+$replacement-field$:
+  { $expr$ }
+  { $expr$ : $format-spec$ }
+```
+:::
+
+For example, a template string like `t"The price of {id:x} is {price}."` needs to be lexed into these five pieces:
+
+<table>
+<tr><td>String Literal</td><td>`"The price of "`</td></tr>
+<tr><td>Interpolation</td><td>`"{:x}"` with expression `id`</td></tr>
+<tr><td>String Literal</td><td>`" is "`</td></tr>
+<tr><td>Interpolation</td><td>`"{}"` with expression `price`</td></tr>
+<tr><td>String Literal</td><td>`"."`</td></tr>
+</table>
+
+The first and last piece are always (possibly-empty) string literals — for `$N$` interpolations there will be `$N$+1` strings. Even for the template string `t"{expr}"` which entirely consists of an expression, there will be two empty string pieces.
+
+However, C++ expressions can be arbitrary complicated. Notably, they can also include `:` or `}`. both of which are significant in formatting and indicate the end of the expression. So how do we know when we're done with the `$expr$` part here?
+
+One approach would be to simply limit the kinds of expressions that can appear in template strings. Rust, for instance, _only_ supports identifiers. That obviously makes parsing quite easy, but it also is very limiting. On the other extreme, supporting _all_ expressions can easily lead to indecipherable code. I think on balance, supporting only identifiers is far too restrictive. But once you start adding what other kinds of expressions to allow (surely, at least class member access), it quickly becomes too difficult to keep track of what is allowed (indexing? function calls? splices?) and ironically makes both the implementation more difficult (to enforce what is and isn't allowed) and harder to understand for the user (to know which expressions are and aren't allowed).
+
+I think it's best to simply allow anything in the expression (as Python does) and trust the user to refactor their expressions to be as legible as they desire. This allows us to take a very simple approach: we simply lex `$expr$` as a balanced token sequence (just counting `{}`s, `()`s, and `[]`s), so that colons and braces inside of any of the bracket kinds are treated as part of an expression. But the first `:` or `}` encountered when we're at a brace depth of zero means we're done with `$expr$`.
+
+Here are some examples of template string formatting calls and how they would be evaluated. The first column will show a template string that consists entirely of an expression. The second column will show how the format string for that expression will be lexed and the third column will show the expression.
+
+|template string|lexed format string|lexed expression|
+|-|-|-|
+|`t"{x}"`|`"{}"`|`x`|
+|`t"{[]{ return 42; }()}"`|`"{}"`|`[]{ return 42; }()`|
+|`t"{co_await f(x) + g(y) / z}"`|`"{}"`|`co_await f(x) + g(y) / z`|
+|`t"{a::b}"`|`"{}"`|`a::b`|
+|`t"{cond ? a : b}"`|`"{:b}"`|`cond ? a` ❌|
+|`t"{(cond ? a : b)}"`|`"{}"`|`(cond ? a : b)`|
+
+Two important things to note here. First, it is possible to lex an invalid expression due to finding a `:` first, as in the penultimate line. The lexing won't know about this though.
+
+### Looking for `:`
+
+The first problem we run into, as evidenced in the above table, is deciding what it means to find the separator between the `$expression$` and the `$format-spec$` . How do we find the `:`? A this point, we will be lexing an `$expression$` — and there are multiple ways in which a colon can appear here:
+
+* `:`
+* `::`
+* `[:`
+* `:]`
+* `<:` (the digraph for `[`)
+* `:>` (the digraph for `]`)
+* `%:`{.rust} (the digraph for `#`{.rust})
+* `\u003a` (the UCN for `:`)
+
+One consideration is what format specifiers exist today. Notably, `"{::x}"` is a valid format specifier (e.g. used to format a range of integers in hex) and `"{:>5}"` is a valid format specifier (e.g. used to right-align a field with width `5`). Indeed, any sequence of characters _can_ be a valid format specifier. I think it is important that any existing format specifier be usable with string interpolation, otherwise users would find it surprising when something they try to do randomly doesn't work.
+
+However, if we try to simply search for the _character_ `:` rather than the _token_ `:`, we run into a different problem. The string `"{a::b}"` would lex as the expression `a` (with format specifier `"::b"`), which would suggest needing to parenthesize as `"{(a::b)}"` to get the expression `a::b`. That would be pretty surprising, given that _any_ top-level use of scoping wouldn't work as intending. Up to and including `"{::global}"`, which would parse as no expression at all.
+
+I think we need to both support the ability to use `::x` as a format specifier _and also_ use top-level scoping conveniently. In order to do that, we need a slightly more involved rule, but one which will just do the right thing most of the time. Let's walk through a table first before discussing the rule:
+
+|template string|lexed format string|lexed expression|
+|-|-|-|
+|`t"{::global}"`|`"{}"`|`::global`|
+|`t"{v::x}"`|`"{}"`|`v::x`|
+|`t"{(v)::x}"`|`"{::x}"`|`(v)`|
+|`t"{decltype(a)::b}"`|`"{}"`|`decltype(a)::b`|
+|`t"{cond ? a : b}"`|`"{: b}"`|`cond ? a`|
+|`t"{(cond ? a : b)}"`|`"{}"`|`(cond ? a : b)`|
+
+The most convenient differentiator between wanting to use the expression `v::x` and to use the expression `v` with the format specifier `::x` is to parenthesize `v` (as in the difference between the 2nd and 3rd lines above). `)::` can only appear in an expression in a few rare contexts, like `decltype(x)::y`.
+
+Hence the rule proposed is: top-level `:` starts the format specifier, except if it's `::`, except after a non-`decltype` `)`. So if the specifier needs to start with `:`, parenthesize the expression. This allows us to support all format specifiers while also ensuring that users don't have to add surprising and unexpected parentheses:
+
+::: std
+```cpp
+int global = 3;
+namespace v { int x = 2; }
+
+auto example() -> void {
+    std::vector<int> v = {10, 20, 30};
+    std::println(t"{(v)::x}");   // [a, 14, 1e]
+    std::println(t"{v::x}");     // 2
+    std::println(t"{::global}")l // 3
+}
+```
+:::
+
+Lastly, there's the question of UCNs. I'll deal with that in its own section.
+
+### Looking for `{` and `}`
+
+As with the question of `:`, there are multiple different ways to spell `{` and `}`, because of course there are:
+
+|Character|Digraph|UCN|
+|-|-|-|
+|`{`|`<%`|`\u007b`|
+|`}`|`%>`|`\u007d`|
+
+Which of these spellings can start a reflection-field and which of these spellings can end one? Let's start with other languages. Given a variable `v` with value `42`, what happens in...
+
+|Language|Expression|Result|
+|-|-|-|
+|Python|`f"\u007bv\u007d"`|`"{v}"`|
+|Rust|`format!("\u{007b}v\u{007d}");`{.rust}|`"42"`|
+|Ruby|`"#\u007bv\u007d"`|`"#{v}"`|
+
+In Rust, interpolation only accepts _identifiers_. But in Python and Ruby, *any* expression can be interpolated, the same as I'm proposing here. This makes the question of looking for `}` more complicated, since what do you do when you see the `\`? In an expression context, UCNs _can_ appear — but not to name characters in the basic character set. Like `}`.
+
+To me, the `{` and `}` that start and end a replacement-field is more akin to the braces around a compound-statement (in which a UCN is not allowed) than braces within a string. Which I suppose is an argument for supporting the digraph spellings too. But why? What is the point of supporting this? The goal is to be legible.
+
+To that end, this paper proposes that only literally the characters `{` and `}` start and end a replacement-field. Not the digraphs `<%` and `%>` and not the UCNs `\u007b` and `\u007d`. It is certainly implementable to support a different option. But there isn't a benefit to doing it, and other languages don't either.
+
+### Handling Macro Expansion
+
+While lexing expressions, macro expansion occurs too (although at a later phase, [see below](#more-formal-lexing-specification)). This is both what users expect and is important to support, otherwise we're not actually meeting the claim of supporting all expressions. There are even standard utilities that are defined as macros, like `errno`. The one thing to note is that looking for the terminating `:` or `}` of an expression will _not_ consider such a character from macros. Otherwise, the macros wouldn't actually be usable properly and also the format string itself would become illegible.
+
+For instance:
+
+::: std
+```cpp
+#define MIN(a, b) (a) < (b) ? (a) : (b)
+
+auto example() -> void {
+    int x = 3, y = 4;
+    std::println(t"{(x < y ? x : y)}"); // 3, parentheses required
+    std::println(t"{MIN(x, y)}");       // 3, no additional parentheses required.
+}
+```
+:::
+
+### Lexing Trailing Equals
+
+One nice debugging feature that Python's f-strings (and template strings) have is the equals suffix:
+
+::: std
+```python
+>>> f"{x=}, {y=}, {z=}"
+"x=5, y=7, z='hello world'"
+```
+:::
+
+Concretely, an expression that ends with an `=` (surrounded by any amount of whitespace) has that suffix appended to the previous string literal piece. Occasionally, there are requests to support `std::print(x, y, z)` to just concatenate those three elements — but that's not as useful as it initially seems since you quickly forget what variables you're printing in what order. The ability to support this on the other hand is _very_ useful for debugging:
+
+::: std
+```cpp
+std::println(t"{x=}, {y=}, {z=:?}");
+```
+:::
+
+It is also quite easy to implement, since it's just a matter of checking if the last lexed token of the expression was an `=`. And, if so, dropping that from the expression (since no valid C++ expression ends with `=`) and instead adding the stringified expression to the previous string part.
+
+Concretely: `t"Hello {name=}"` behaves exactly equivalently to `t"Hello name={name}"`.
+
+Note that this isn't _quite_ what Python does — as you might notice from the Python example. In Python, it behaves like `t"Hello name={name!r}`, which is basically calling `repr(name)` instead of `str(name)`. It would be really nice if we actually had a real answer for debug formatting — but neither `std::format` nor `fmt::format` really have one. There is a `?` specifier which is used to help ensure that range formatting properly works ([@P2286R8]), but it's not valid across all types, and there's no special handling for it. So we can't really make `t"{name=}"` evaluate as `t"name={name:?}"`, since that would only work for a small set of types. Instead, this paper proposes not to add any format specifier here.
+
+### Lexing Nested Expressions
+
+Consider the template string:
+
+::: std
+```cpp
+t"{name:>{width}}"
+```
+:::
+
+There are two expressions here: `name` and `width`. Or rather, we know `name` is an expression, but how do we know that `width` is? In the format model, the format specifiers can be _anything_. There really are no rules — as long as the type's formatter can handle it. Having nested braces in a format specifier commonly refers to another argument, but it need not actually mean that.
+
+In my CppCon 2022 talk [The Surprising Complexity of Formatting Ranges](https://youtu.be/EQELdyecZlU?t=2397), I work through an example of how one might add underlying specifiers to `std::pair` and `std::tuple`, [where](https://godbolt.org/z/vPfE7er3M):
+
+::: std
+```cpp
+int main() {
+    auto elems = std::tuple(10, 20, 30);
+    fmt::print("{}\n", elems);                  // (10, 20, 30)
+    fmt::print("{:{x}{#x}{-^4}}\n", elems);     // (a, 0x14, -30-)
+    fmt::print("{:{x}{}{x}}\n", elems);         // (a, 20, 1e)
+}
+```
+:::
+
+There, `{x}` doesn't refer to the expression `x`, it was just chosen as notational convenience. So how can we get this to work?
+
+::: std
+```cpp
+fmt::print(t"{elems:{x}{}{x}}\n");
+```
+:::
+
+The short answer is: we cannot. We need to make sense of the template string literal separate from type information, and even if we had type information, it's not like we have a way for the `formatter` API to signal when it's expecting an expression. We just have to make a choice up front for what to do here. I think we have three options:
+
+1. We could explicitly opt _in_ to a nested expression. That is, maybe something like `t"{elems:{x}{}${x}}"` signals that the first `{x}` is just a string but the second `{x}` is actually the expression `x`. So in the above example, we simply wouldn't use the `$`{.rust}.
+2. We could explicitly opt _out_ of being a nested expression with added escaping. Which in this case would be `t"{elems:{{x}}{{}}{{x}}}"`.
+3. We could say that in a format specifier, encountering a `{` _always_ begins an expression that ends at `:` or `}` (same as top-level) and that there is neither opt-in nor opt-out. Meaning that the approach to format specifiers that I demonstrated in that talk wouldn't work, and would instead have to be `t"{elems:{:x}{}{:x}}"`.
+
+I think the third option here is the best. It is at most a minor burden on users as I doubt this approach is in widespread use, and allows for a design that is as simple as possible.
+
+Getting back to our original example:
+
+::: std
+```cpp
+t"{name:>{width}}"
+```
+:::
+
+This would lex as:
+
+<table>
+<tr><td>String Literal</td><td>`""`</td></tr>
+<tr><td>Interpolation</td><td>`"{:>{}}"` with two expressions: `name` and `width`</td></tr>
+<tr><td>String Literal</td><td>`""`</td></tr>
+</table>
+
+And [this works](https://godbolt.org/z/63K5bKWhc) because we recognize `{:x}` as not being a nested expression:
+
+::: std
+```cpp
+fmt::print(t"as template: {elems:{:x}{}{:x}}\n"); // as template: (a, 20, 1e)
+```
+:::
+
+If we simply stored the expressions and the format string, that would be straightforward: we just have two [data members](#data-members). But we can do better than that. But before we get into the [interpolation information](#interpolation-information), I'll talk about the data members.
+
+### Concatenating Consecutive String Literals
+
+Consecutive string literals are concatenated during preprocessing. The same should hold true for template string literals — which can be concatenated with each other and also with regular string literals, in any order. In the table below, imagine we are initializing a variable `s` to the token sequence shown in the first column and examining the resulting `s.fmt()` and the expressions being lexed:
+
+|Tokens|`s.fmt()`|expressions|
+|-|-|-|
+|`"Hello, " "World"`|n/a|n/a|
+|`"Hello, " t"{name}"`|`"Hello, {}"`|1: `name`|
+|`t"{greeting}, " t"{name}"`|`"{}, {}"`|2: `greeting`, `name`|
+|`t"{greeting}, " "World"`|`"{}, World"`|1: `greeting`|
+|`t"{greeting}, " "{}"`|`"{}, {}"`|1: `greeting` ❌|
+
+Note the last line. We're concatenating a template string literal and a regular string literal — that simply concatenates the contents of the 2nd string literal onto the last string piece of the 1st — there is no implicit escaping of the braces, so the resulting format string would be incomplete — it has 2 replacement fields but only one expression.
+
+We could consider implicitly escaping the braces for regular string literals that are concatenated to template string literals. I don't know if that's a good idea though.
+
+
+### Data Members
+
+For any expression, `$E$` (including nested expressions — so there may be more expressions than interpolations), a non-static data member will be generated (and then initialized from `$E$`) having type `decltype(($E$))`. This ensures that we get the right type, but also that we're not copying anything unnecessarily. For instance:
+
+::: std
+```cpp
+auto verb() -> std::string;
+
+auto example(std::string const& name, std::string relation) -> void {
+    auto tmpl = t"Hello, my name is {name:?}. You killed my {relation}. Prepare to {verb()}.";
+}
+```
+:::
+
+The object `tmpl` will have three members:
+
+* the first, corresponding to `name`, has type `std::string const&`
+* the second, corresponding to `relation`, has type `std::string&`
+* the third, corresponding to `verb()`, has type `std::string`
+
+These are all public, non-static data members. If we want to copy all of the members (e.g. because we want to serialize them), we can easily do so. It's just that there is no need for the template string itself to do so directly. Note that the call to `verb()` happens immediately and the result is stored in `tmpl`. We are not lazily holding onto the expression `verb()`.
+
+This _does_ open up the opportunity for dangling if you write something like this:
+
+::: std
+```cpp
+auto oops(int value) { return t"{value}"; }
+```
+:::
+
+That template string object will have an `int&` member, refer to the parameter that will be destroyed when we return from the function. I don't think this is a huge use-case of template strings, but it's something to keep in mind. The `decltype(($E$))` logic is essential for ensuring no overhead for template strings in the expected use-cases. We could consider something like a _leading_ `=` to capture by value instead of by reference, but users can already write `"t{auto(value)}"` there too.
+
+### Interpolation Information
+
+A template string will have a `static consteval` member function which returns objects of type `std::interpolation`, which is a simple aggregate with four members:
+
+::: std
+```cpp
+struct interpolation {
+    char const* expression;
+    char const* fmt;
+    size_t index;
+    size_t count;
+};
+```
+:::
+
+This means that using string interpolation will require including a header that defines this type, similar to how you need `<initializer_list>` or `<compare>` when using initializer lists or three-way comparisons. This probably shouldn't go into `<format>` directly since it has broader use than that, maybe a new header named `<interpolation>`?
+
+`expression` is a string literal that is the stringified version of the expression (before macro expansion). `fmt` is the full format specifier with the expression removed, that you would need in order to format this specific expression. Then, we need both `index` and `count` in order to support nested replacement expressions, as we just went through. That gives us both the first non-static data member and the amount of non-static data members this interpolation is associated with.
+
+The template string literal `t"{name=:>{width}}"` would generate the object
+
+::: std
+```cpp
+struct $Template$ {
+    static consteval auto fmt() -> char const* { return "name={:>{}}"; }
+    static consteval auto num_interpolations() -> size_t { return 1; }
+    static consteval auto string(size_t n) -> char const* {
+        constexpr char const* data[] = {"name=", ""};
+        return data[n];
+    }
+    static consteval auto interpolation(size_t n) -> std::interpolation {
+        consteval std::interpolation data[] = {{
+            .expression = "name",  // note that "name" is preserved
+            .fmt = "{:>{}}",       // but "width" is not
+            .index = 0,
+            .count = 2
+        }};
+        return data[n];
+    }
+
+    std::string const& $_0$;
+    int const& $_1$;
+};
+```
+:::
+
+
+Why do we go through the trouble of proving `string(n)` and `interpolation(n)`?  Let's look at some examples...
+
+### The `TemplateString` Concept
 
 In these examples, I've been using this `TemplateString` concept to identify a template string object. The question is, what does that concept look like? This one I'm not sure about yet. It can't be a built-in, since users might need to create one of these objects. Consider a logger:
 
 ::: std
 ```cpp
-log::info(t"Got a trade for in {symbol}: {side} {qty} @ {price}");
+log::info(t"Got a trade for {symbol}: {side} {qty} @ {price}");
 ```
 :::
 
-The expressions here are all cheap to copy, but formatting is expensive — so I might want to serialize all of the data into a background thread to do my formatting there. I don't want to just copy the template string object, since it might have references. With reflection, I can create a new type that has only value members, and then keep the same `fmt`, `strings`, and `interpolations`:
+The expressions here are all cheap to copy, but formatting is expensive — so I might want to serialize all of the data into a background thread to do my formatting there. I don't want to just copy the template string object, since it might have references. So we can create a version that only has value members, with all other operations preserved:
 
 ::: std
 ```cpp
 template <TemplateString S, class F>
 auto map(S s, F f) {
-    struct Base;
-    consteval {
-        vector<meta::info> specs;
-        for (meta::info m : nonstatic_data_members_of(^^S)) {
-            specs.push_back(data_member_spec({
-                .type=invoke_result(^^F, {type_of(m)}),
-                .name=identifier_of(m),
-            }));
-        }
-        define_aggregate(^^Base, specs);
-    }
-    struct R : Base {
-        static constexpr auto fmt = S::fmt;
-        static constexpr auto string = S::string;
-        static constexpr auto interpolation = S::interpolation;
-        static constexpr auto num_interpolations = S::num_interpolations;
+    auto& [...pieces] = s.exprs();
+
+    struct R {
+        static consteval auto fmt()                   { return S::fmt(); }
+        static consteval auto string(size_t n)        { return S::string(n); }
+        static consteval auto num_interpolations()    { return S::num_interpolations(); }
+        static consteval auto interpolation(size_t n) { return S::interpolation(n); }
+
+        std::tuple<std::invoke_result_t<F, decltype(pieces)>...> values;
+        auto exprs const() -> auto const& { return values; }
     };
 
-    auto& [...pieces] = s;
-    return R{{f(FWD(pieces))...}};
+    return R{.values{std::invoke(f, FWD(pieces))...}};
 }
 ```
 :::
 
 Which allows the implementation of all of the logging functions to `map` their provided template string object to decay or otherwise transform every member into something that won't dangle.
 
-I'd want to make sure this `R` here is also considered a template string for all of these purposes. There are a few options here, not really sure which would be best:
+I'd want to make sure this `R` here is also considered a template string for all of these purposes. So probably the best approach here (which is what I've implemented) is structural conformance: `std::template_string` is a concept that checks for the presence of `fmt`, `string`, `num_interpolations`, `interpolation`, and `exprs` with suitable shapes?
 
-* an attribute
-* an annotation
-* structural conformance: simply check for the presence of `fmt`, `string`, `num_interpolations`, and `interpolation`?
+### Supporting `gettext`
 
-## Supporting `gettext`
+Let's consider the [translation example](#internationalization--translation) in slightly more detail.
 
-One question that comes up is the question of translation. How do we support `gettext`? This is a difficult one for me to answer given my complete lack of any familiarity with `gettext`, but my understanding is there are two aspects to support: the tooling to pull out strings from the source code and the runtime translation layer.
-
-On the tooling side, without interpolation, `_("Hello {}")` is easily toolable since the macro wraps a string literal and this can be pulled out. However, with interpolation, `_(t"Hello {name}")` now wraps an _object_ (or an [expression-list](#object-vs-expression-list)), and either way that is more difficult to deal with. The preprocessing step will have to produce something useful here — or the tooling itself will have to parse the interpolated string. Now, the parsing rules aren't very complicated, so that's not a huge problem — but there will have to be changes on that side no matter what.
-
-On the runtime translation side, it raises the question of how exactly to design this facility. This paper throughout assumes that a template string object, `t"..."`, is produced by the implementation, and thus has its format string as a constant (proposed specifically as a `static consteval` function returning a `char const*`). Of course, if we're doing runtime translation, we're not going to end up with a constant... anything. If we want to support this syntax:
+In that example, we have a variable template that builds up a single pot entry:
 
 ::: std
 ```cpp
-std::println(_(t"You have {count} new messages."));
+template <std::template_string S, class... Args>
+[[gnu::used, gnu::section("i18n_messages")]]
+inline constexpr auto pot_entry = build_pot_record<S, Args...>();
 ```
 :::
 
-Then the result is that macro has to take in a template string object and produce a new object that `std::println` understands and can directly format. Note that this differs from the [gettext guidance](https://www.gnu.org/software/gettext/manual/gettext.html#How-Marks-Appear-in-Sources) which tells you to use `std::vformat` directly instead of `std::format`. I'd like to aim higher.
+That is built entirely at compile time, using the shape of template strings that have already been described. This is great since there's no _other tooling_ needed in order to produce all this information. Just compile your program.
 
-Now, the implementation I showed for `std::print` earlier was:
+But at runtime, we have to do translation. That's the whole point. This paper throughout assumes that a template string object, `t"..."`, is produced by the implementation, and thus has its format string as a constant (proposed specifically as a `static consteval` function returning a `char const*`). Of course, if we're doing *runtime* translation, we're not going to end up with a constant... anything. If we want to support this syntax:
+
+::: std
+```cpp
+std::print(i18n::translate(t"Removed {n} files."));
+```
+:::
+
+Then we need the ability to have some sort of runtime template string. Note that this differs from the [gettext guidance](https://www.gnu.org/software/gettext/manual/gettext.html#How-Marks-Appear-in-Sources) which tells you to use `std::vformat` directly instead of `std::format`. I'd like to aim higher, we can certainly do better.
+
+Now, the implementation I showed for `std::print` earlier was this:
 
 ::: std
 ```cpp
 template <TemplateString S>
 auto println(S&& s) -> void {
-    auto& [...exprs] = s;
+    auto& [...exprs] = s.exprs();
     std::println(s.fmt(), exprs...);
 }
 ```
 :::
 
-This... doesn't actually _require_ `fmt()` to be a constant. It either has to be constant or be the result of a call to `std::runtime_format`. One option ([example](https://compiler-explorer.com/z/Kf47P3E4n)) is to have the gettext macro do something like this:
+This... doesn't actually _require_ `fmt()` to be a constant. It either has to be constant or be the result of a call to `std::dynamic_format`. One option is do something like this:
 
 ::: std
 ```cpp
 template <std::template_string S>
-auto translate(S ts, Language lang) {
+auto translate(S ts) {
+    // this figures out the right thing to do, and is a complicated function
+    // but its complexity isn't that interesting for our purposes
+    std::string translated = lookup_translation(ts);
+
     struct Translated {
-        std::string_view translated_fmt;
+        std::string translated_fmt;
         S s;
 
-        auto fmt() const { return std::runtime_format(translated_fmt); }
+        auto fmt() const { return std::dynamic_format(translated_fmt); }
         auto exprs() const -> S const& { return s; }
     };
 
     return Translated{
-        .translated_fmt = lookup_translation(ts.fmt(), lang),
+        .translated_fmt = std::move(translated),
         .s = std::move(ts),
     };
 }
@@ -883,7 +876,7 @@ And thus have two layers of concept:
 <tr><th>Dynamic Template String</th><th>Static Template String</th></tr>
 <tr><td>
 
-* `s.fmt()` returns either `char const*` or `std::runtime_format`
+* `s.fmt()` returns either `char const*` or `std::dynamic_format`
 * `s.exprs()` returns some destructurable object
 
 </td><td>
@@ -899,31 +892,39 @@ And thus have two layers of concept:
 
 Note that the static template string concept would subsume the dynamic one. The formatting use-cases (like `std::format`, `std::print`, and `spdlog::info`) only require a dynamic template string. Some of the more complex ones (like SQL and printf) require a static template string.
 
-There is something nice about this model. We make the objects more opaque. Instead of talking about the non-static data members of template string objects, we instead just say there's an `exprs()` member function that gives them to you. And this approach does make the runtime support for `gettext` (and possibly similar kinds of transformations) fairly straightforward, as you can see here and on compiler explorer.
+However, once we recognize the need for a dynamic template string concept, it's basically always going to look exactly the same. So rather than push that down to users, we can just provide it in the library, tentatively under the name `std::rebind_format`:
 
-But also it adds inherent complexity. Now we have two kinds of template string objects that users have to reason about. But as far as I can tell, the only way to support runtime translation like this is to either introduce two kinds of template string objects or simply weaken the only one. Which reduces functionality.
-
-I cannot answer this question without a better understanding of `gettext`, how important it is to support for string interpolation, and whether this approach I've come up with even supports it.
-
-For this problem, [@P3412R3] has an easier path to supporting `gettext`, since in that paper an f-literal is an expression-list, and so it should be possible to preprocess your way to wrapping just the format string part. Given a function `translate` which returns a call to `std::runtime_format`, this would work:
-
-::: cmptable
-### Example Preprocessing Implementation
+::: std
 ```cpp
-#define _2(fmt, ...) \
-    translate(fmt) __VA_OPT__(,) __VA_ARGS__
-#define _(...) _2(__VA_ARGS__)
-#define FSTRING "You have {} new messages.", count
-std::println(_(FSTRING));
-```
+template <std::template_string S>
+auto translate(S ts) {
+    // same as above
+    std::string translated = lookup_translation(ts);
 
-### Preprocesses Into
-```cpp
-std::println(translate("You have {} new messages.") , count);
+    // ... now just rebind
+    return std::rebind_format(std::move(translated), std::move(ts));
+}
 ```
 :::
 
-## Support for User-Defined Literals
+No need for users creating their own thin type wrappers that all have the same exact shape.
+
+We specify:
+
+::: std
+```cpp
+template <template_string S, class Pattern>
+struct $rebound-format$; // exposition-only
+
+template <template_string S, class Pattern>
+    requires convertible_to<Pattern const&, string_view>
+$rebound-format<S, Pattern>$ rebind_format(Pattern pattern, S s);
+```
+:::
+
+And then constrain all the formatting functions to take either a `template_string` or a specialization of `$rebound-format$`.
+
+### Support for User-Defined Literals
 
 Consider the expression:
 
@@ -946,15 +947,33 @@ That actually gives people the terse string construction that they want, _withou
 
 The rules of which user-defined literal operator is even looked for is based on the kind of the literal. So `t"x={x}"s` will never even attempt to look for the existing `operator"" s` and, similarly, adding a new one to the standard library will never affect code that currently does `"hello"s`, since the literal operator template would not even be a candidate.
 
-This extension is very narrow, and is effectively specific to template strings.
+This extension is very narrow, and is effectively specific to template strings. But there is high demand for a terse facility to just produce a `std::string`, so we should provide the ability to do so.
 
 ## Standard Library Design
 
 For the standard library, we need several pieces:
 
-* a `std::template_string` concept, [of some sort](#the-templatestring-concept)
-* additional overloads of the formatting function templates (`std::format`, `std::format_to`, `std::format_to_n`, `std::print`, and `std::println`) that take a template string and do the right thing with it.
-* a [new UDL](#support-for-user-defined-literals) for making a string.
+* a `std::interpolation` type which gives us [interpolation info](#interpolation-information)
+* a `std::template_string` concept, [which structurally checks conformance](#the-templatestring-concept)
+* a `std::rebind_format` function, for handling [runtime format strings](#supporting-gettext)
+* additional overloads of the formatting function templates (`std::format`, `std::format_to`, `std::format_to_n`, `std::print`, and `std::println` — including those versions that take a `FILE*` and `ostream&`) that take a type which either models `std::template_string` or is a specialization of `$rebound-format$` and do the right thing with it.
+* a [new UDL](#support-for-user-defined-literals) for making a `std::string`.
+
+I think we should add a new header `<interpolation>` that puts the interpolation utilities that don't strictly require `std::format` altogether, namely:
+
+::: std
+```cpp
+// <interpolation>
+namespace std {
+    struct interpolation { /* ... */  };
+
+    template <class S>
+    concept template_string = /* ... */;
+}
+```
+:::
+
+`std::rebind_format` and the new `operator"" s` UDL will both go into `<format>`. The other overloads will go in the same place as the already-existing ones.
 
 The last piece that's potentially worth considering is adding a string constructor. Conceptually, these two declarations are equivalent:
 
@@ -969,15 +988,11 @@ So is it worth touching `std::string`? I don't think it actually is. In direct c
 
 ## Implementation Experience
 
-I implemented this in Clang, on top of the p2996 reflection branch. Code can be found in my fork in the `template-strings`{.op} branch [here](https://github.com/brevzin/llvm-project/tree/template-strings) (you can see the diff against p2996 [here](https://github.com/bloomberg/clang-p2996/compare/p2996...brevzin:llvm-project:template-strings)) I'm sure there are better ways to do some of what I did. The implementation includes the design laid out in this section, including UDL support, and also the library support — the concept, new overloads of formatting function templates, a new `s` literal operator for `string`, and a new `string` constructor (but only for `std::string` specifically).
+I implemented this in Clang, on top of the p2996 reflection branch. Code can be found in my fork in the `compiler-explorer/barry`{.op} branch: [here](https://github.com/brevzin/llvm-project/tree/compiler-explorer/barry). I'm sure there are better ways to do some of what I did. The implementation includes the design laid out in this section, including UDL support, and also the library support — the concept, new overloads of formatting function templates, a new `s` literal operator for `string`, and a new `string` constructor (but only for `std::string` specifically).
 
-It can also be used on [compiler explorer](https://compiler-explorer.com/z/hKer7vE9r).
+It can also be used on [compiler explorer](https://compiler-explorer.com/z/bM3W8fedY).
 
-The only difference between this paper and the implementation is that instead of introducing the type `std::interpolation`, I just made `_Interpolation` implicitly defined at global scope for convenience.
-
-This does raise the question of how `std::interpolation` should be defined. Should this facility really require a new header? Maybe it's a sufficiently trivial type (an aggregate with no member functions and just four data members, each of scalar type) that the compiler can just generate it? Maybe we don't care about additional headers because `import std;` anyway?
-
-The same question goes for if we want to implement the [concept](#the-templatestring-concept) by way of annotation. That annotation would be an empty type, could the compiler just create it?
+The only difference between the implementation and what's being proposed is that I didn't add a new `<interpolation>` header. All the interpolation stuff is defined in `<format>` (or rather, in implementation-defined, smaller headers that are exposed via `<format>`).
 
 ## More Formal Lexing Specification
 
@@ -1125,9 +1140,146 @@ $template-string$
 ```
 :::
 
-# Alternate Approaches
+# Prior Art and Alternate Approaches
 
 This proposal is definitely not the only way to do string interpolation in C++. I've [already discussed](#prior-work-in-c) two previous proposals in this space and why I think what I'm proposing is a better design. But it's worth talking about other approaches as well.
+
+
+## Prior Work in C++
+
+There have been two prior WG21 papers pursuing string interpolation as a C++ language feature: [@P1819R0]{.title} and [@P3412R3]{.title}. The two proposals are quite different, so let's consider an example to work through the details:
+
+::: std
+```cpp
+auto get_result() -> int { return 42; }
+
+auto example() -> void {
+    auto interp = f"The result is {get_result()}\n";     // #1
+    std::print(interp);                                  // #2
+    std::print(f"The result is {get_result()}\n");       // #3
+}
+```
+:::
+
+In P1819, the `interp` is an object that is roughly equivalent to:
+
+::: std
+```cpp
+auto interp = [&](auto&& f) -> decltype(auto) {
+    return f("The result is ", get_result(), "\n");
+};
+```
+:::
+
+So line `#1` does approximately nothing. The call to `get_result()` does not happen yet. Instead, the library would provide new overloads of `std::print` and friends so that in line `#2`, the library would invoke `interp` with the appropriate function to do the printing. The call to `get_result()` happens at that point. Line `#3` does the same things as lines `#1` and `#2`, just together.
+
+In P3412, the behavior is very different. `interp` is already a `std::string`, which is evaluated as:
+
+::: std
+```cpp
+auto interp = std::format("The result is {}\n", get_result());
+```
+:::
+
+This makes the call in line `#2` ill-formed, since `std::print` cannot accept a `std::string`. However, the call in line `#3` is valid — by way of a change to overload resolution that recognizes this case as special and instead evaluates the call directly as:
+
+:::std
+```cpp
+std::print("The result is {}\n", get_result());
+```
+:::
+
+In short, P1819 gives us an object (that doesn't evaluate any of the expressions) while P3412 gives us either a `std::string` or an argument list, depending on context.
+
+Of the two, I think P1819 is significantly better. We get a simple object that can allow for a wide variety of potential functionality. It has two big problems though. The first is that it evaluates lazily and stores its data opaquely — which leads to more surprising behavior, the potential for dangling references, and arbitrarily limited usage. The other is its breakup into pieces doesn't actually play very well with `std::format` — where we would want there to be a format string and we don't have one. The original motivation for the lambda approach was ease of use — get all the expressions in one convenient format. But the language has evolved since 2019. We have both reflection and packs in structured bindings now, so we don't need the lambda approach anymore.
+
+On the other hand, P3412 is actually not one but two different language features — and it's worth taking some time to evaluate this. This is more explicit in [@P3412R1]:
+
+::: cmptable
+### Expression
+```cpp
+std::print(x"The result is {get_result()}");
+```
+
+### Evaluates As
+```cpp
+std::print("The result is {}", get_result());
+```
+
+---
+
+```cpp
+auto s = f"The result is {get_result()}");
+```
+
+```cpp
+auto s = std::format(x"The result is {get_result()}");
+auto s = std::format("The result is {}", get_result());
+```
+:::
+
+The x-literal did string interpolation — it evaluated as an expression-list. That's the workhorse that provides the value of the feature. In contrast, the f-literal was simply syntax sugar for a call to `std::format` with the appropriate x-literal. It's a language feature for simply calling `std::format`. Not precisely `std::format` — since not everybody uses `std::format` so instead this was introduced as a language customization mechanism. But we're really just abbreviating a function call.
+
+In [@P3412R3], this becomes significantly more complicated because both of those features (the string interpolation part, and the just-calling-`std::format` part) converge to the same spelling as an f-literal. This is I think inherently suspect because the same expression now means different things in different contexts. Because the spelling is the same, there needs to be a way for the language to differentiate which one the user meant — and that mechanism is overload resolution coupled very strongly to the current implementation strategy of formatting. The call
+
+::: std
+```cpp
+std::print(f"The result is {get_result()}");
+```
+:::
+
+Works by relying on the first parameter to `std::print` having a consteval constructor. But what if someday we get `constexpr` function parameters and it turns out to be better to implement `basic_format_string<char, Args...>` as taking a `constexpr string_view` instead of it being a `consteval` constructor? What if we someday get a different/better macro system such that `std::print("x={}", x)` evaluates not as a call to a function template but rather directly as the expression `std::vprint(validate_fmt_string<int>("x={}"), std::make_format_args(x))`?
+
+It's not infeasible that some future language change gives us a better way to solve this problem. But with the P3412R3 design, we wouldn't be able to adopt those changes to the formatting functions because they would break string interpolation (unless we come up with a new, more complicated interpolation design, which would now have to recognize multiple implementation strategies).
+
+All this complexity buys us is the ability to create a `std::string` in a single character. However, I don't think that's even a good goal for C++ — we shouldn't hide an operation as costly as string formatting in a single character — and spelling `std::format` is not itself a huge burden. Now, without that aspect of the design, the P3412 approach of having string interpolation emit an expression-list is a lot simpler — I will do a comparison of the two approaches [later in this paper](#object-vs-expression-list).
+
+Instead, this paper proposes an idea much closer to the P1819 model.
+
+## Prior Art in Other Languages
+
+Python 3.6 introduced literal string interpolation (`f"..."`) in [@PEP-498], which was later extended in Python 3.14 by template strings (`t"..."`) in [@PEP-750]. The former directly produces a `string`, while the latter gives a template string — an object with enough information in it to be formatted later.
+
+Rust's `format_args!` is similar to Python's template string — it gives you a completely opaque object (unlike Python's which is completely specified). Both languages gives you a facility to take an interpolated string and produce an object for future work (similar to P1819).
+
+JavaScript also has [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals), which support tagging. A tagged template literal is quite similar to what [@P3412R3] proposes:
+
+::: cmptable
+### Code
+```js
+ myTag`That ${person} is a ${age}.`
+```
+
+### Evaluates as
+```js
+myTag(["That ", " is a ", "."], person, age)
+```
+:::
+
+This would be similar to P3412's having `myTag(f"That {person} is a {age}")` evaluate the transformed call `myTag("That {} is a {}", person, age)`. Here, the literal is _not_ an object.
+
+C#'s [interpolated strings](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) can produce a `string` directly, But if they are bound to a `FormattableString`, you can get the string parts and objects separately for future work. Similar to Python template strings and Rust's facility, except type erased. C# also has a more complicated facility on top of string interpolation called an [`InterpolatedStringHandler`](https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/performance/interpolated-string-handler), which allows for more efficient and even conditional (lazy) formatting.
+
+Swift's string interpolation, similar to C#, can also either directly produce a string or go through a separate, builder path: the protocol `ExpressibleByStringInterpolation`. That [allows](https://davedelong.com/blog/2021/03/04/exploiting-string-interpolation-for-fun-and-for-profit/) the expression:
+
+::: cmptable
+### Code
+```swift
+let value: MyType = "Hello, \(name)!"
+```
+
+### Evaluates as
+```swift
+var builder = MyType.StringInterpolation(
+    literalCapacity: 8, interpolationCount: 1)
+builder.appendLiteral("Hello, ")
+builder.appendInterpolation(name)
+builder.appendLiteral("!")
+let value = MyType(stringInterpolation: builder)
+```
+:::
+
+This paper's design is along the lines of Python's template strings, Rust's `format_args!`, and C#'s `FormattableString` idea. Just presented in a package that is more, well, C++.
 
 ## Object vs Expression-List
 
