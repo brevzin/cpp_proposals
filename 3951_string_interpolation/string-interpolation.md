@@ -599,7 +599,16 @@ auto s = t"{ANSWER}";
 ```
 :::
 
-It's an essential part of tooling that compiling and preprocessing then compiling are equivalent. So what does this preprocess into? If it preprocess into this:
+It's an essential part of tooling that compiling and preprocessing then compiling are equivalent. That whichever of these two paths we take, we end up with the same object file:
+
+```mermaid
+graph LR
+    I[source.cxx] -->|compile| O[source.o]
+    I -->|preprocess| E[source.cxx.pp]
+    E -->|compile| O
+```
+
+So what does this preprocess into? If it preprocess into this:
 
 ::: std
 ```cpp
