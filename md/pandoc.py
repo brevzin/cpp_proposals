@@ -2,7 +2,7 @@
 import panflute as pf
 import os
 import sys
-import subprocess
+import html
 # import pygraphviz
 import hashlib
 
@@ -60,38 +60,16 @@ def graphviz(elem, doc):
 
 def mermaid(elem, doc):
     if isinstance(elem, pf.CodeBlock) and 'mermaid' in elem.classes:
-        code = elem.text
-        caption = elem.attributes.get('caption', '')
-        filename = sha1(code)
-
-        mermaid_dir = f'{MD_DIR}/mermaid-images'
-        src_file = f'{mermaid_dir}/{filename}.mmd'
-        dst_img = f'{mermaid_dir}/{filename}.png'
-        if not os.path.isfile(src_file):
-            try:
-                os.mkdir(mermaid_dir)
-                sys.stderr.write(f'Created directory {mermaid_dir}\n')
-            except OSError:
-                pass
-
-            with open(src_file, 'w') as f:
-                f.write(code)
-
-            args = ['mmdc', '-i', src_file, '-o', dst_img]
-            for attr in ['height', 'width']:
-                value = elem.attributes.get(attr)
-                if value is not None:
-                    args.extend([f'--{attr}', value])
-
-            subprocess.check_call(args,
-                stderr=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL
-                )
-        return pf.Para(pf.Image(pf.Str(caption),
-                                url=dst_img,
-                                title=caption,
-                                attributes={attr: elem.attributes[attr] for attr in ['height', 'width'] if attr in elem.attributes}
-        ))
+        # Let mermaid render the diagram natively in the browser. The
+        # script itself is injected into header-includes in finalize(),
+        # only if the document actually has any diagrams.
+        doc.has_mermaid = True
+        block = f'<pre class="mermaid">\n{html.escape(elem.text)}\n</pre>'
+        caption = elem.attributes.get('caption')
+        if caption:
+            block = (f'<figure>\n{block}\n'
+                     f'<figcaption>{html.escape(caption)}</figcaption>\n</figure>')
+        return pf.RawBlock(block, format='html')
 
 def op(elem, doc):
     if isinstance(elem, pf.Code) and 'op' in elem.classes:
@@ -116,7 +94,25 @@ def std(elem, doc):
         return pf.Div(pf.BlockQuote(elem), classes=["std"])
 
 
+def prepare(doc):
+    doc.has_mermaid = False
+
+def finalize(doc):
+    if doc.has_mermaid:
+        MERMAID_SCRIPT = """<script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+        </script>"""
+
+        include = pf.MetaBlocks(pf.RawBlock(MERMAID_SCRIPT, format='html'))
+        existing = doc.metadata.content.get('header-includes')
+        if existing is None:
+            doc.metadata['header-includes'] = pf.MetaList(include)
+        elif isinstance(existing, pf.MetaList):
+            existing.append(include)
+        else:
+            doc.metadata['header-includes'] = pf.MetaList(existing, include)
+
+
 if __name__ == '__main__':
-    # pf.run_filters([h1hr, bq, graphviz, mermaid, op])
-    pf.run_filters([h1hr, bq, std, mermaid, op])
-    # pf.run_filters([h1hr, bq, op])
+    pf.run_filters([h1hr, bq, std, mermaid, op], prepare=prepare, finalize=finalize)
