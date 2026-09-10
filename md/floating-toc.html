@@ -1,0 +1,192 @@
+<style>
+/* Floating table of contents. On wide viewports, the static "Contents"
+   block becomes a fixed sidebar on the right, scrollspy-highlighted and
+   unfolded along the path to the current section (see the script below).
+   On narrow viewports everything stays as it was. */
+@media (min-width: 85em) {
+  :root {
+    --sidebar-width: 18rem;
+    --sidebar-right: 1rem;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Shift the main column left to make room for the sidebar. */
+  body:has(#TOC) {
+    margin-right: calc(var(--sidebar-right) + var(--sidebar-width) + 2.5rem);
+  }
+
+  /* Park the view-controls pill at the top of the sidebar area,
+     above the table of contents, aligned to its left edge. */
+  body:has(#TOC) .view-controls {
+    position: fixed;
+    top: 1.25rem;
+    right: calc(var(--sidebar-right) + var(--sidebar-width));
+    transform: translateX(100%);
+    margin: 0;
+  }
+
+  #TOC {
+    position: fixed;
+    top: 6rem;
+    right: var(--sidebar-right);
+    width: var(--sidebar-width);
+    max-height: calc(100vh - 7.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    font-family: sans-serif;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    text-align: left;
+    hyphens: none;
+  }
+
+  #TOC #toctitle {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a939b;
+    border-bottom: none !important;
+    margin: 0 0 0.5em;
+    padding-left: 0.75em;
+  }
+
+  #TOC > ul {
+    padding-left: 0;
+    margin: 0;
+  }
+
+  #TOC ul ul {
+    padding-left: 1em;
+  }
+
+  /* Fold up nested sections; the script unfolds the active path. */
+  #TOC li > ul {
+    display: none;
+  }
+
+  #TOC li.active-path > ul {
+    display: block;
+  }
+
+  #TOC li {
+    margin: 0;
+  }
+
+  #TOC a {
+    display: block;
+    padding: 0.15em 0.5em 0.15em 0.65em;
+    border-left: 2px solid #dbe1e6;
+    color: #57606a;
+    text-decoration: none;
+  }
+
+  #TOC a:hover {
+    color: #4183C4;
+  }
+
+  #TOC a.active {
+    color: #4183C4;
+    border-left-color: #4183C4;
+    font-weight: 600;
+  }
+
+  #TOC .toc-section-number {
+    color: #9aa4ad;
+    font-weight: 400;
+    margin-right: 0.15em;
+  }
+
+  #TOC a.active .toc-section-number {
+    color: inherit;
+  }
+}
+
+@media (min-width: 85em) and (prefers-color-scheme: dark) {
+  #TOC #toctitle {
+    color: #8a939b;
+  }
+
+  #TOC a {
+    border-left-color: #3d4650;
+    color: #9aa4ad;
+  }
+
+  #TOC a:hover,
+  #TOC a.active {
+    color: #6cb6ff;
+  }
+
+  #TOC a.active {
+    border-left-color: #6cb6ff;
+  }
+
+  #TOC .toc-section-number {
+    color: #6e7781;
+  }
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const toc = document.getElementById('TOC');
+  if (!toc) return;
+
+  const entries = Array.from(toc.querySelectorAll('a[href^="#"]'))
+    .map(link => ({
+      link,
+      target: document.getElementById(
+        decodeURIComponent(link.getAttribute('href')).slice(1))
+    }))
+    .filter(e => e.target);
+  if (entries.length === 0) return;
+
+  const sidebar = window.matchMedia('(min-width: 85em)');
+  let active = null;
+
+  function update() {
+    // Current section: the last heading at or above the reading line.
+    const threshold = Math.min(window.innerHeight * 0.25, 150);
+    let current = null;
+    for (const e of entries) {
+      // TOC entries are in document order, so stop at the first
+      // heading below the reading line.
+      if (e.target.getBoundingClientRect().top > threshold) break;
+      current = e;
+    }
+    if (current === active) return;
+
+    if (active) active.link.classList.remove('active');
+    for (const li of toc.querySelectorAll('li.active-path')) {
+      li.classList.remove('active-path');
+    }
+
+    active = current;
+    if (active) {
+      active.link.classList.add('active');
+      for (let n = active.link.parentElement; n && n !== toc; n = n.parentElement) {
+        if (n.tagName === 'LI') n.classList.add('active-path');
+      }
+      if (sidebar.matches) {
+        active.link.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }
+
+  let queued = false;
+  function onScroll() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; update(); });
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  // Late layout shifts (images, MathJax, mermaid) move the headings.
+  window.addEventListener('load', update);
+  update();
+});
+</script>

@@ -97,21 +97,28 @@ def std(elem, doc):
 def prepare(doc):
     doc.has_mermaid = False
 
+def add_header_include(doc, text):
+    include = pf.MetaBlocks(pf.RawBlock(text, format='html'))
+    existing = doc.metadata.content.get('header-includes')
+    if existing is None:
+        doc.metadata['header-includes'] = pf.MetaList(include)
+    elif isinstance(existing, pf.MetaList):
+        existing.append(include)
+    else:
+        doc.metadata['header-includes'] = pf.MetaList(existing, include)
+
 def finalize(doc):
+    if doc.format == 'html':
+        # Turn the static table of contents into a floating, scrollspy
+        # sidebar on wide viewports.
+        with open(f'{MD_DIR}/floating-toc.html') as f:
+            add_header_include(doc, f.read())
+
     if doc.has_mermaid:
-        MERMAID_SCRIPT = """<script type="module">
+        add_header_include(doc, """<script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
         mermaid.initialize({ startOnLoad: true });
-        </script>"""
-
-        include = pf.MetaBlocks(pf.RawBlock(MERMAID_SCRIPT, format='html'))
-        existing = doc.metadata.content.get('header-includes')
-        if existing is None:
-            doc.metadata['header-includes'] = pf.MetaList(include)
-        elif isinstance(existing, pf.MetaList):
-            existing.append(include)
-        else:
-            doc.metadata['header-includes'] = pf.MetaList(existing, include)
+        </script>""")
 
 
 if __name__ == '__main__':
