@@ -299,6 +299,34 @@ Having both `interp.index` and `interp.count` is a little clunky, especially sin
 
 You can see this example on [compiler explorer](https://compiler-explorer.com/z/WP3Y7z41q). Note that the implementations there are slightly different, since Clang doesn't yet implement `constexpr` structured bindings and the implementations of pack indexing and expansion statements had a few bugs so I came up with workarounds.
 
+### Asynchronous/Background Logging
+
+In many logging utilities, copies arguments is significantly cheaper than formatting them, so formatting itself is deferred to a background thread. In order to do that safely, we need to be able to make sure that we're not serializing any references — which means that we need to be able to transform the members of a template string object as appropriate. This design [supports that](https://compiler-explorer.com/z/65jsc49Wh). The example is illustrating that:
+
+::: std
+```cpp
+auto main() -> int {
+    auto logger = Logger();
+
+    int age = 17;
+    std::string name = "Bob";
+
+    // this template string object is holding references into age and name
+    // (which you can see in the debug output)
+    logger.info(t"My name is {name} and I am {age} years old.");
+
+    // which I'm now mutating (as a proxy for destruction or other race conditions)
+    age = 42;
+    name = "Carol";
+
+    // but this prints fine, because we're not holding any references
+    logger.flush(); // prints: My name is Bob and I am 17 years old.
+}
+```
+:::
+
+
+
 ### SQL Statements
 
 One of the most famous SQL injection examples is, of course, [Little Bobby Tables](https://xkcd.com/327/). We can use template strings to make it easy to build up a statement properly. This example uses [SQLiteCpp](https://github.com/SRombauts/SQLiteCpp), but the same idea can be used for any other SQL library really. All you need to know about the library is that it works as follows (assuming we have a `std::string name`):
@@ -904,7 +932,7 @@ Which allows the implementation of all of the logging functions to `map` their p
 
 I'd want to make sure this `R` here is also considered a template string for all of these purposes. So probably the best approach here (which is what I've implemented) is structural conformance: `std::template_string` is a concept that checks for the presence of `fmt`, `string`, `num_interpolations`, `interpolation`, and `exprs` with suitable shapes.
 
-You can see a heavily simplified example of what a background-formatted asynchronous logger would look like [here](https://compiler-explorer.com/z/hGKsjcc5b).
+You can see a heavily simplified example of what a background-formatted asynchronous logger would look like [here](https://compiler-explorer.com/z/65jsc49Wh).
 
 ### Runtime Format Strings
 
