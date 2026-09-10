@@ -297,11 +297,11 @@ Hello, my name is "Inigo Montoya". You killed my father. Prepare to die.
 
 Having both `interp.index` and `interp.count` is a little clunky, especially since `interp.count` will almost always be `1`. But I think it's better to put the clunkiness there and maintain the trivial formatting implementations (where you can just unpack the template string object).
 
-You can see this example on [compiler explorer](https://compiler-explorer.com/z/WP3Y7z41q). Note that the implementations there are slightly different, since Clang doesn't yet implement `constexpr` structured bindings and the implementations of pack indexing and expansion statements had a few bugs so I came up with workarounds.
+You can see this example on [compiler explorer](https://compiler-explorer.com/z/sE8rfTqq4).
 
 ### Asynchronous/Background Logging
 
-In many logging utilities, copies arguments is significantly cheaper than formatting them, so formatting itself is deferred to a background thread. In order to do that safely, we need to be able to make sure that we're not serializing any references — which means that we need to be able to transform the members of a template string object as appropriate. This design [supports that](https://compiler-explorer.com/z/65jsc49Wh). The example is illustrating that:
+In many logging utilities, copies arguments is significantly cheaper than formatting them, so formatting itself is deferred to a background thread. In order to do that safely, we need to be able to make sure that we're not serializing any references — which means that we need to be able to transform the members of a template string object as appropriate. This design [supports that](https://compiler-explorer.com/z/d65s8qhdr). The example is illustrating that:
 
 ::: std
 ```cpp
@@ -385,7 +385,7 @@ And now you get the same nice string formatting syntax for SQL queries as you do
 
 ### Internationalization / Translation
 
-Translation is a much harder example to fit in a small scope, but [here](https://compiler-explorer.com/z/EqTTja47n) is an abbreviated demonstration, that actually shows off many important aspects of translation.
+Translation is a much harder example to fit in a small scope, but [here](https://compiler-explorer.com/z/zE43vKafs) is an abbreviated demonstration, that actually shows off many important aspects of translation.
 
 First, as part of the build process itself (not a separate script or tool), the example is generating a `.pot` file for translators to use. This contains all the text that we need to translate, along with all of the types of the arguments. The `.pot` itself is also embedded in the binary, which is the first thing the program prints:
 
@@ -932,7 +932,7 @@ Which allows the implementation of all of the logging functions to `map` their p
 
 I'd want to make sure this `R` here is also considered a template string for all of these purposes. So probably the best approach here (which is what I've implemented) is structural conformance: `std::template_string` is a concept that checks for the presence of `fmt`, `string`, `num_interpolations`, `interpolation`, and `exprs` with suitable shapes.
 
-You can see a heavily simplified example of what a background-formatted asynchronous logger would look like [here](https://compiler-explorer.com/z/65jsc49Wh).
+You can see a heavily simplified example of what a background-formatted asynchronous logger would look like [here](https://compiler-explorer.com/z/d65s8qhdr).
 
 ### Runtime Format Strings
 
@@ -1118,7 +1118,7 @@ So is it worth touching `std::string`? I don't think it actually is. In direct c
 
 I implemented this in Clang, on top of the p2996 reflection branch. Code can be found in my fork in the `compiler-explorer/barry`{.op} branch: [here](https://github.com/brevzin/llvm-project/tree/compiler-explorer/barry). I'm sure there are better ways to do some of what I did. The implementation includes the design laid out in this section, including UDL support, and also the library support — the concept, new overloads of formatting function templates, and a new `s` literal operator for `string`.
 
-It can also be used on [compiler explorer](https://compiler-explorer.com/z/bM3W8fedY).
+It can also be used on [compiler explorer](https://compiler-explorer.com/z/sE8rfTqq4).
 
 The only difference between the implementation and what's being proposed is that I didn't add a new `<interpolation>` header. All the interpolation stuff is defined in `<format>` (or rather, in implementation-defined, smaller headers that are exposed via `<format>`).
 
