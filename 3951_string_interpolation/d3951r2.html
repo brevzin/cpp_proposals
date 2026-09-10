@@ -974,6 +974,32 @@ display: none;
 html {
 scroll-behavior: smooth;
 }
+html,
+body {
+max-width: 100%;
+overflow-x: hidden;
+overflow-x: clip;
+}
+.wrapper {
+max-width: 100%;
+overflow-x: hidden;
+overflow-x: clip;
+}
+.wrapper div.sourceCode {
+max-width: 100%;
+box-sizing: border-box;
+}
+
+.wrapper table {
+display: block;
+max-width: 100%;
+overflow-x: auto;
+overscroll-behavior-inline: contain;
+}
+.wrapper #title-block-header > table {
+display: table;
+overflow: visible;
+}
 body.toc-menu-ready #TOC {
 display: none;
 }
@@ -1064,9 +1090,9 @@ inset: 0;
 z-index: 1200;
 display: flex;
 flex-direction: column;
-width: min(32rem, calc(var(--toc-visual-width, 100vw) - 2rem));
+width: min(32rem, calc(100vw - 2rem));
 max-width: none;
-max-height: min(46rem, calc(var(--toc-visual-height, 100dvh) - 2rem));
+max-height: min(46rem, calc(100dvh - 2rem));
 box-sizing: border-box;
 margin: auto;
 padding: 0;
@@ -1222,8 +1248,8 @@ border: 0;
 padding-inline: 0.6rem;
 }
 .toc-dialog[open] {
-width: calc(var(--toc-visual-width, 100vw) - 1rem);
-max-height: calc(var(--toc-visual-height, 100dvh) - 1rem);
+width: calc(100vw - 1rem);
+max-height: calc(100dvh - 1rem);
 border-radius: 0.875rem;
 }
 }
@@ -1577,56 +1603,10 @@ transition: none;
     const sidebar = window.matchMedia('(min-width: 85em)');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let active = null;
-    let mobileBar = null;
     let mobileDialog = null;
     let mobileTrigger = null;
     let mobileLinks = [];
     let expansionPreference = null;
-
-    // Wide tables and code can make a mobile browser's layout viewport much
-    // wider than its visible viewport. Fixed elements use that wider containing
-    // block, so pin their geometry explicitly to the visual viewport instead.
-    function syncMobileViewport() {
-      if (!mobileBar) return;
-
-      const viewport = window.visualViewport;
-      const width = viewport?.width ?? document.documentElement.clientWidth;
-      const height = viewport?.height ?? window.innerHeight;
-      const left = viewport?.offsetLeft ?? 0;
-      const top = viewport?.offsetTop ?? 0;
-
-      mobileBar.style.left = `${left}px`;
-      mobileBar.style.right = 'auto';
-      mobileBar.style.top = `${top}px`;
-      mobileBar.style.width = `${width}px`;
-
-      if (mobileDialog) {
-        mobileDialog.style.setProperty('--toc-visual-width', `${width}px`);
-        mobileDialog.style.setProperty('--toc-visual-height', `${height}px`);
-
-        if (mobileDialog.open) {
-          const rect = mobileDialog.getBoundingClientRect();
-          const gutter = width <= 480 ? 8 : 16;
-          mobileDialog.style.margin = '0';
-          mobileDialog.style.right = 'auto';
-          mobileDialog.style.bottom = 'auto';
-          mobileDialog.style.left = `${left + Math.max(gutter,
-            (width - rect.width) / 2)}px`;
-          mobileDialog.style.top = `${top + Math.max(gutter,
-            (height - rect.height) / 2)}px`;
-        }
-      }
-    }
-
-    let mobileViewportQueued = false;
-    function queueMobileViewportSync() {
-      if (mobileViewportQueued) return;
-      mobileViewportQueued = true;
-      requestAnimationFrame(() => {
-        mobileViewportQueued = false;
-        syncMobileViewport();
-      });
-    }
 
     const hasNestedSections = Boolean(sourceList?.querySelector('li > ul'));
     expandToggle.hidden = !hasNestedSections;
@@ -1709,7 +1689,7 @@ transition: none;
         'C++ paper'
       ).trim().replace(/\s+/g, ' ');
 
-      mobileBar = document.createElement('header');
+      const mobileBar = document.createElement('header');
       mobileBar.className = 'toc-mobile-bar';
 
       const mobileTitle = document.createElement('div');
@@ -1778,7 +1758,6 @@ transition: none;
 
       document.body.prepend(mobileBar);
       document.body.appendChild(mobileDialog);
-      syncMobileViewport();
       document.body.classList.add('toc-menu-ready');
 
       mobileTrigger.addEventListener('click', () => {
@@ -1790,7 +1769,6 @@ transition: none;
         } else {
           mobileDialog.setAttribute('open', '');
         }
-        syncMobileViewport();
         syncMobileActive(true);
       });
       closeButton.addEventListener('click', closeMobileDialog);
@@ -1799,7 +1777,25 @@ transition: none;
         if (event.target === mobileDialog) closeMobileDialog();
       });
       dialogNav.addEventListener('click', event => {
-        if (event.target.closest('a[href^="#"]')) closeMobileDialog();
+        const link = event.target.closest('a[href^="#"]');
+        if (!link) return;
+
+        const target = document.getElementById(
+          decodeURIComponent(link.getAttribute('href')).slice(1));
+        if (!target) return;
+
+        event.preventDefault();
+        closeMobileDialog();
+        const href = link.getAttribute('href');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          history.pushState(null, '', href);
+          const top = target.getBoundingClientRect().top + window.scrollY - 72;
+          window.scrollTo({
+            top: Math.max(0, top),
+            left: 0,
+            behavior: reduceMotion.matches ? 'auto' : 'smooth'
+          });
+        }));
       });
     }
 
@@ -1867,7 +1863,6 @@ transition: none;
 
     let queued = false;
     function onScroll() {
-      queueMobileViewportSync();
       if (queued) return;
       queued = true;
       requestAnimationFrame(() => { queued = false; update(); });
@@ -1886,10 +1881,6 @@ transition: none;
 
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize, { passive: true });
-    window.visualViewport?.addEventListener('scroll', queueMobileViewportSync,
-      { passive: true });
-    window.visualViewport?.addEventListener('resize', queueMobileViewportSync,
-      { passive: true });
     sidebar.addEventListener('change', () => {
       if (sidebar.matches) closeMobileDialog();
       update();
