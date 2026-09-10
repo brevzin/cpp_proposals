@@ -41,8 +41,8 @@ table tr {
 table tr:nth-child(2n) {
     background-color: #f6f8fa;
 }
-#title-block-header > table tr:nth-child(2n) {
-    background-color: white;
+#title-block-header > table tr {
+    background-color: transparent;
 }
 td > div.sourceCode {
     background-color: inherit;
@@ -183,4 +183,153 @@ span.orange {
 }
 span.yellow {
   background-color: #ffff00;
+}
+
+/* Dark mode additions for local styling layered on top of mpark/wg21.
+   Keep the document metadata transparent, use the code palette from
+   brevzin.github.io, and give proposal diffs dark surfaces of their own. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --diff-ins: hsla(137, 100%, 55%, 0.15);
+    --diff-strongins: hsla(137, 100%, 55%, 0.28);
+    --diff-del: hsla(353, 100%, 66%, 0.15);
+    --diff-strongdel: hsla(353, 100%, 66%, 0.28);
+  }
+
+  table tr {
+    background-color: #171717;
+  }
+  table tr:nth-child(2n) {
+    background-color: #202020;
+  }
+  #title-block-header > table tr {
+    background-color: transparent;
+  }
+  table td,
+  table th {
+    border-color: #555;
+  }
+  table th {
+    border-bottom-color: #e0e0e0;
+  }
+  table tbody tr:first-child td {
+    border-top-color: #e0e0e0;
+  }
+
+  body[data-syntax-highlighting="on"] div.sourceCode,
+  body[data-syntax-highlighting="on"] pre.sourceCode {
+    background-color: #2d2d29;
+    color: #ccc;
+  }
+
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) {
+    color: #ccc;
+  }
+
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.al,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.er,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.wa {
+    color: #e2777a;
+  }
+
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.an,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.at,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.cn,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.dt,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.pp {
+    color: #f8c555;
+  }
+
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.bn,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.dv,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.fl,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.ex,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.fu {
+    color: #f08d49;
+  }
+
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.bu,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.cf,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.im,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.kw {
+    color: #cc99cd;
+  }
+
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.ch,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.sc,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.ss,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.st,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.va,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.vs {
+    color: #7ec699;
+  }
+
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.op {
+    color: #67cdcc;
+  }
+
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.co,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.cv,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.do,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.in {
+    color: #008000;
+  }
+
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.ot,
+  body[data-syntax-highlighting="on"] code.sourceCode:not(.diff) span.re {
+    color: #ccc;
+  }
+
+  div.add,
+  div.add pre,
+  div.addu,
+  div.addu pre,
+  span.addu {
+    color: #d0fddd;
+    background-color: var(--diff-ins);
+  }
+
+  div.rm,
+  div.rm pre,
+  div.rm li,
+  div.std blockquote del {
+    color: #ff9b98;
+    background-color: var(--diff-del);
+  }
+
+  div.add div.sourceCode,
+  div.add pre.sourceCode,
+  div.addu div.sourceCode,
+  div.addu pre.sourceCode,
+  div.rm div.sourceCode,
+  div.rm pre.sourceCode,
+  div.std div.sourceCode,
+  div.std pre.sourceCode {
+    background-color: inherit;
+  }
+
+  div.addu blockquote {
+    color: #d0fddd;
+  }
+
+  div.std blockquote,
+  div.quote {
+    color: #e0e0e0;
+    background-color: #252525;
+    border-color: #555;
+  }
+
+  div.std.ins blockquote,
+  div.ins > div.example {
+    color: #d0fddd;
+    background-color: var(--diff-ins);
+    border-color: rgba(85, 255, 125, 0.35);
+  }
+
+  code.diff span.va {
+    color: #d0fddd;
+  }
+  code.diff span.st {
+    color: #ff9b98;
+  }
 }

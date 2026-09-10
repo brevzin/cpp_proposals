@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 import panflute as pf
+import base64
 import os
 import sys
 import html
+import math
+import re
+import subprocess
 # import pygraphviz
 import hashlib
 
@@ -58,18 +62,86 @@ def graphviz(elem, doc):
             sys.stderr.write(f'Created image {src}\n')
         return pf.Para(pf.Image(pf.Str(caption), url=src, title=caption))
 
+MERMAID_CLI_VERSION = '11.16.0'
+MERMAID_CACHE_VERSION = (
+    f'mermaid-cli:{MERMAID_CLI_VERSION};themes:default,dark;transparent;v1'
+)
+
+def render_mermaid(code, digest, variant, theme):
+    imagedir = f'{MD_DIR}/mermaid-images'
+    os.makedirs(imagedir, exist_ok=True)
+    path = f'{imagedir}/{digest}.{variant}.svg'
+
+    if not os.path.isfile(path):
+        result = subprocess.run([
+            'mmdc',
+            '--quiet',
+            '--input', '-',
+            '--output', '-',
+            '--outputFormat', 'svg',
+            '--theme', theme,
+            '--backgroundColor', 'transparent',
+            '--svgId', f'mermaid-{digest}-{variant}',
+        ], input=code.encode('utf-8'), stdout=subprocess.PIPE,
+           stderr=subprocess.PIPE)
+
+        svg = result.stdout.lstrip()
+        if result.returncode != 0 or not svg.startswith(b'<svg'):
+            details = result.stderr.decode('utf-8', errors='replace').strip()
+            if not details:
+                details = result.stdout.decode('utf-8', errors='replace').strip()
+            raise RuntimeError(
+                f'Mermaid CLI failed while rendering the {variant} diagram:\n'
+                f'{details}'
+            )
+
+        tmp = f'{path}.tmp.{os.getpid()}'
+        with open(tmp, 'wb') as f:
+            f.write(svg)
+        os.replace(tmp, path)
+        sys.stderr.write(f'Created image {path}\n')
+
+    with open(path, 'rb') as f:
+        return f.read()
+
+def svg_data_uri(svg):
+    return 'data:image/svg+xml;base64,' + base64.b64encode(svg).decode('ascii')
+
+def svg_dimensions(svg):
+    match = re.search(
+        rb'\bviewBox="[-+\d.]+\s+[-+\d.]+\s+([\d.]+)\s+([\d.]+)"',
+        svg[:1024]
+    )
+    if match:
+        return tuple(math.ceil(float(value)) for value in match.groups())
+    return (800, 600)
+
 def mermaid(elem, doc):
     if isinstance(elem, pf.CodeBlock) and 'mermaid' in elem.classes:
-        # Let mermaid render the diagram natively in the browser. The
-        # script itself is injected into header-includes in finalize(),
-        # only if the document actually has any diagrams.
         doc.has_mermaid = True
-        block = f'<pre class="mermaid">\n{html.escape(elem.text)}\n</pre>'
+        code = elem.text
+        digest = sha1(f'{MERMAID_CACHE_VERSION}\0{code}')
+        light = render_mermaid(code, digest, 'light', 'default')
+        dark = render_mermaid(code, digest, 'dark', 'dark')
+        width, height = svg_dimensions(light)
+
         caption = elem.attributes.get('caption')
+        alt = elem.attributes.get('alt') or caption or 'Mermaid diagram'
+        picture = (
+            '<picture class="mermaid-diagram">\n'
+            f'<source media="screen and (prefers-color-scheme: dark)" '
+            f'srcset="{svg_data_uri(dark)}">\n'
+            f'<img src="{svg_data_uri(light)}" '
+            f'alt="{html.escape(alt, quote=True)}" '
+            f'width="{width}" height="{height}">\n'
+            '</picture>'
+        )
         if caption:
-            block = (f'<figure>\n{block}\n'
-                     f'<figcaption>{html.escape(caption)}</figcaption>\n</figure>')
-        return pf.RawBlock(block, format='html')
+            picture = (
+                f'<figure class="mermaid-figure">\n{picture}\n'
+                f'<figcaption>{html.escape(caption)}</figcaption>\n</figure>'
+            )
+        return pf.RawBlock(picture, format='html')
 
 def op(elem, doc):
     if isinstance(elem, pf.Code) and 'op' in elem.classes:
@@ -108,17 +180,32 @@ def add_header_include(doc, text):
         doc.metadata['header-includes'] = pf.MetaList(existing, include)
 
 def finalize(doc):
-    if doc.format == 'html':
-        # Turn the static table of contents into a floating, scrollspy
-        # sidebar on wide viewports.
-        with open(f'{MD_DIR}/floating-toc.html') as f:
-            add_header_include(doc, f.read())
+    # Turn the static table of contents into a floating, scrollspy
+    # sidebar on wide viewports.
+    with open(f'{MD_DIR}/floating-toc.html') as f:
+        add_header_include(doc, f.read())
 
     if doc.has_mermaid:
-        add_header_include(doc, """<script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ startOnLoad: true });
-        </script>""")
+        add_header_include(doc, """<style>
+        .mermaid-diagram {
+          display: block;
+          margin: 1.5em auto;
+          text-align: center;
+        }
+        .mermaid-diagram img {
+          display: block;
+          max-width: 100%;
+          height: auto;
+          margin: auto;
+        }
+        .mermaid-figure {
+          margin: 1.5em auto;
+          text-align: center;
+        }
+        .mermaid-figure .mermaid-diagram {
+          margin: 0 auto;
+        }
+        </style>""")
 
 
 if __name__ == '__main__':
