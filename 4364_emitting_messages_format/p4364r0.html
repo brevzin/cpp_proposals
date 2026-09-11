@@ -974,6 +974,32 @@ display: none;
 html {
 scroll-behavior: smooth;
 }
+html,
+body {
+max-width: 100%;
+overflow-x: hidden;
+overflow-x: clip;
+}
+.wrapper {
+max-width: 100%;
+overflow-x: hidden;
+overflow-x: clip;
+}
+.wrapper div.sourceCode {
+max-width: 100%;
+box-sizing: border-box;
+}
+
+.wrapper table {
+display: block;
+max-width: 100%;
+overflow-x: auto;
+overscroll-behavior-inline: contain;
+}
+.wrapper #title-block-header > table {
+display: table;
+overflow: visible;
+}
 body.toc-menu-ready #TOC {
 display: none;
 }
@@ -982,9 +1008,6 @@ scroll-margin-top: 4.5rem;
 }
 body.toc-menu-open {
 overflow: hidden;
-}
-body.toc-menu-ready .view-controls {
-top: 4.25rem;
 }
 .toc-mobile-bar {
 position: fixed;
@@ -1004,6 +1027,55 @@ box-shadow: 0 0.25rem 1rem rgba(30, 55, 75, 0.08);
 backdrop-filter: blur(0.85rem);
 font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
 sans-serif;
+}
+.toc-mobile-bar .view-controls {
+position: static;
+z-index: auto;
+flex-direction: row;
+align-items: center;
+gap: 0.35rem;
+width: auto;
+margin: 0;
+padding: 0;
+border: 0;
+border-radius: 0;
+background: transparent;
+color: var(--floating-toc-muted);
+box-shadow: none;
+font: 600 0.72rem/1 ui-sans-serif, -apple-system, BlinkMacSystemFont,
+"Segoe UI", sans-serif;
+}
+.toc-mobile-bar .view-controls:hover {
+background: transparent;
+}
+.toc-mobile-bar .view-controls label {
+gap: 0.35rem;
+padding: 0.45rem 0.55rem;
+border: 1px solid var(--floating-toc-border);
+border-radius: 0.6rem;
+background: transparent;
+cursor: pointer;
+}
+.toc-mobile-bar .view-controls label:hover {
+border-color: #bdc9d2;
+background: #f2f6f8;
+color: #244d6b;
+}
+.toc-mobile-bar .view-controls input {
+accent-color: var(--floating-toc-accent);
+}
+.toc-mobile-bar .view-controls input:focus-visible {
+outline: 2px solid var(--floating-toc-accent);
+outline-offset: 2px;
+}
+body[data-syntax-highlighting="off"]
+.toc-mobile-bar label[for="no-syntax-highlighting-toggle"],
+body[data-deleted-text="hide"]
+.toc-mobile-bar label[for="hide-deleted-text-toggle"] {
+border-color: color-mix(in srgb,
+var(--floating-toc-accent) 35%, var(--floating-toc-border));
+background: var(--floating-toc-active);
+color: #175f91;
 }
 .toc-mobile-title {
 min-width: 0;
@@ -1064,9 +1136,9 @@ inset: 0;
 z-index: 1200;
 display: flex;
 flex-direction: column;
-width: min(32rem, calc(var(--toc-visual-width, 100vw) - 2rem));
+width: min(32rem, calc(100vw - 2rem));
 max-width: none;
-max-height: min(46rem, calc(var(--toc-visual-height, 100dvh) - 2rem));
+max-height: min(46rem, calc(100dvh - 2rem));
 box-sizing: border-box;
 margin: auto;
 padding: 0;
@@ -1222,9 +1294,36 @@ border: 0;
 padding-inline: 0.6rem;
 }
 .toc-dialog[open] {
-width: calc(var(--toc-visual-width, 100vw) - 1rem);
-max-height: calc(var(--toc-visual-height, 100dvh) - 1rem);
+width: calc(100vw - 1rem);
+max-height: calc(100dvh - 1rem);
 border-radius: 0.875rem;
+}
+}
+@media screen and (max-width: 47.999em) {
+.toc-mobile-title {
+display: none;
+}
+.toc-mobile-bar .view-controls {
+min-width: 0;
+flex: 1;
+}
+.toc-mobile-bar .view-controls label {
+justify-content: center;
+min-width: 0;
+flex: 1;
+}
+}
+@media screen and (max-width: 35.999em) {
+.toc-mobile-bar .view-controls span {
+font-size: 0;
+}
+.toc-mobile-bar label[for="no-syntax-highlighting-toggle"] span::after {
+content: "No highlight";
+font-size: 0.72rem;
+}
+.toc-mobile-bar label[for="hide-deleted-text-toggle"] span::after {
+content: "Hide deleted";
+font-size: 0.72rem;
 }
 }
 @media (prefers-color-scheme: dark) {
@@ -1244,9 +1343,20 @@ border-radius: 0.875rem;
 color: #dce4e9;
 }
 .toc-mobile-trigger:hover,
+.toc-mobile-bar .view-controls label:hover,
 .toc-dialog-close:hover,
 .toc-dialog a:hover {
 background: rgba(255, 255, 255, 0.055);
+}
+.toc-mobile-bar .view-controls label:hover {
+border-color: #59636c;
+color: #dceaf4;
+}
+body[data-syntax-highlighting="off"]
+.toc-mobile-bar label[for="no-syntax-highlighting-toggle"],
+body[data-deleted-text="hide"]
+.toc-mobile-bar label[for="hide-deleted-text-toggle"] {
+color: #84c7f5;
 }
 .toc-dialog-close {
 color: #abb5bd;
@@ -1279,19 +1389,60 @@ body:has(#TOC) .view-controls,
 body.has-toc .view-controls {
 position: fixed;
 top: 1rem;
-right: calc(var(--floating-toc-right) + var(--floating-toc-width));
-transform: translateX(100%);
+right: var(--floating-toc-right);
+width: var(--floating-toc-width);
+box-sizing: border-box;
 margin: 0;
+padding: 0.6rem 0.75rem;
 border-color: var(--floating-toc-border);
-border-radius: 0.75rem;
-box-shadow: 0 0.35rem 1.25rem rgba(30, 55, 75, 0.09);
+border-radius: 0.875rem;
+background: var(--floating-toc-surface);
+color: var(--floating-toc-muted);
+box-shadow:
+0 0.75rem 2.25rem rgba(30, 55, 75, 0.08),
+0 0.125rem 0.4rem rgba(30, 55, 75, 0.05);
+backdrop-filter: blur(0.75rem);
+font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+sans-serif;
+font-size: 0.825rem;
+font-weight: 400;
+line-height: 1.38;
+}
+body:has(#TOC) .view-controls:hover,
+body.has-toc .view-controls:hover {
+background: var(--floating-toc-surface);
+}
+body:has(#TOC) .view-controls label,
+body.has-toc .view-controls label {
+align-self: stretch;
+padding: 0.3rem 0.55rem 0.3rem 0.6rem;
+border-left: 2px solid transparent;
+border-radius: 0 0.4rem 0.4rem 0;
+cursor: pointer;
+transition:
+background-color 120ms ease,
+color 120ms ease;
+}
+body:has(#TOC) .view-controls label:hover,
+body.has-toc .view-controls label:hover {
+background: #f2f6f8;
+color: #244d6b;
+}
+body:has(#TOC) .view-controls input,
+body.has-toc .view-controls input {
+accent-color: var(--floating-toc-accent);
+}
+body:has(#TOC) .view-controls input:focus-visible,
+body.has-toc .view-controls input:focus-visible {
+outline: 2px solid var(--floating-toc-accent);
+outline-offset: 2px;
 }
 #TOC {
 position: fixed;
-top: 6.25rem;
+top: 7rem;
 right: var(--floating-toc-right);
 width: var(--floating-toc-width);
-max-height: calc(100vh - 7.75rem);
+max-height: calc(100vh - 8.5rem);
 box-sizing: border-box;
 overflow-y: auto;
 overscroll-behavior: contain;
@@ -1511,6 +1662,11 @@ body.has-toc .view-controls {
 border-color: var(--floating-toc-border);
 box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.28);
 }
+body:has(#TOC) .view-controls label:hover,
+body.has-toc .view-controls label:hover {
+background: rgba(255, 255, 255, 0.055);
+color: #dceaf4;
+}
 }
 @media (min-width: 85em) and (prefers-reduced-motion: reduce) {
 html {
@@ -1583,49 +1739,17 @@ transition: none;
     let mobileLinks = [];
     let expansionPreference = null;
 
-    // Wide tables and code can make a mobile browser's layout viewport much
-    // wider than its visible viewport. Fixed elements use that wider containing
-    // block, so pin their geometry explicitly to the visual viewport instead.
-    function syncMobileViewport() {
-      if (!mobileBar) return;
+    const viewControls = document.querySelector('.view-controls');
+    const viewControlsHome = document.createComment('view-controls-home');
+    if (viewControls) viewControls.after(viewControlsHome);
 
-      const viewport = window.visualViewport;
-      const width = viewport?.width ?? document.documentElement.clientWidth;
-      const height = viewport?.height ?? window.innerHeight;
-      const left = viewport?.offsetLeft ?? 0;
-      const top = viewport?.offsetTop ?? 0;
-
-      mobileBar.style.left = `${left}px`;
-      mobileBar.style.right = 'auto';
-      mobileBar.style.top = `${top}px`;
-      mobileBar.style.width = `${width}px`;
-
-      if (mobileDialog) {
-        mobileDialog.style.setProperty('--toc-visual-width', `${width}px`);
-        mobileDialog.style.setProperty('--toc-visual-height', `${height}px`);
-
-        if (mobileDialog.open) {
-          const rect = mobileDialog.getBoundingClientRect();
-          const gutter = width <= 480 ? 8 : 16;
-          mobileDialog.style.margin = '0';
-          mobileDialog.style.right = 'auto';
-          mobileDialog.style.bottom = 'auto';
-          mobileDialog.style.left = `${left + Math.max(gutter,
-            (width - rect.width) / 2)}px`;
-          mobileDialog.style.top = `${top + Math.max(gutter,
-            (height - rect.height) / 2)}px`;
-        }
+    function placeViewControls() {
+      if (!viewControls || !mobileBar) return;
+      if (sidebar.matches) {
+        viewControlsHome.before(viewControls);
+      } else {
+        mobileBar.insertBefore(viewControls, mobileTrigger);
       }
-    }
-
-    let mobileViewportQueued = false;
-    function queueMobileViewportSync() {
-      if (mobileViewportQueued) return;
-      mobileViewportQueued = true;
-      requestAnimationFrame(() => {
-        mobileViewportQueued = false;
-        syncMobileViewport();
-      });
     }
 
     const hasNestedSections = Boolean(sourceList?.querySelector('li > ul'));
@@ -1732,6 +1856,7 @@ transition: none;
       triggerLabel.textContent = 'Contents';
       mobileTrigger.append(menuIcon, triggerLabel);
       mobileBar.append(mobileTitle, mobileTrigger);
+      placeViewControls();
 
       mobileDialog = document.createElement('dialog');
       mobileDialog.id = 'toc-dialog';
@@ -1778,7 +1903,6 @@ transition: none;
 
       document.body.prepend(mobileBar);
       document.body.appendChild(mobileDialog);
-      syncMobileViewport();
       document.body.classList.add('toc-menu-ready');
 
       mobileTrigger.addEventListener('click', () => {
@@ -1790,7 +1914,6 @@ transition: none;
         } else {
           mobileDialog.setAttribute('open', '');
         }
-        syncMobileViewport();
         syncMobileActive(true);
       });
       closeButton.addEventListener('click', closeMobileDialog);
@@ -1799,7 +1922,25 @@ transition: none;
         if (event.target === mobileDialog) closeMobileDialog();
       });
       dialogNav.addEventListener('click', event => {
-        if (event.target.closest('a[href^="#"]')) closeMobileDialog();
+        const link = event.target.closest('a[href^="#"]');
+        if (!link) return;
+
+        const target = document.getElementById(
+          decodeURIComponent(link.getAttribute('href')).slice(1));
+        if (!target) return;
+
+        event.preventDefault();
+        closeMobileDialog();
+        const href = link.getAttribute('href');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          history.pushState(null, '', href);
+          const top = target.getBoundingClientRect().top + window.scrollY - 72;
+          window.scrollTo({
+            top: Math.max(0, top),
+            left: 0,
+            behavior: reduceMotion.matches ? 'auto' : 'smooth'
+          });
+        }));
       });
     }
 
@@ -1867,7 +2008,6 @@ transition: none;
 
     let queued = false;
     function onScroll() {
-      queueMobileViewportSync();
       if (queued) return;
       queued = true;
       requestAnimationFrame(() => { queued = false; update(); });
@@ -1886,12 +2026,9 @@ transition: none;
 
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize, { passive: true });
-    window.visualViewport?.addEventListener('scroll', queueMobileViewportSync,
-      { passive: true });
-    window.visualViewport?.addEventListener('resize', queueMobileViewportSync,
-      { passive: true });
     sidebar.addEventListener('change', () => {
       if (sidebar.matches) closeMobileDialog();
+      placeViewControls();
       update();
       updateDefaultExpansion();
     });
