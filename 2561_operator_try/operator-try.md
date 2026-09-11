@@ -1,6 +1,6 @@
 ---
 title: "A control flow operator"
-document: P2561R2
+document: D2561R3
 date: today
 audience: EWG
 author:
@@ -11,6 +11,8 @@ status: progress
 ---
 
 # Revision History
+
+Since [@P2561R2], added implementation experience, other syntax options, and discussion of lowering to a `do` expression.
 
 The title of [@P2561R1] was "An error propagation operator", but this feature is much more general than simply propagating errors - it's really about control flow. So renaming to a control flow operator (and a bunch of other renames of the customization points). The operator itself was renamed from `e??` to `e.try?`.
 
@@ -30,7 +32,7 @@ We should try to improve such uses too.
 
 Let's start with a fairly small example of a series of functions that can generate errors, but don't themselves handle them - they just need to propagate them up. With exceptions, this might look like:
 
-::: bq
+::: std
 ```cpp
 auto foo(int i) -> int; // might throw an E
 auto bar(int i) -> int; // might throw an E
@@ -47,7 +49,7 @@ There's a lot to like about exceptions. One nice advantage is the zero syntactic
 
 We don't even need to declare variables to hold the results of `foo` and `bar`, we can even use those expressions inline, knowing that we'll only call `format` if neither function throws an exception:
 
-::: bq
+::: std
 ```cpp
 auto foo(int i) -> int; // might throw an E
 auto bar(int i) -> int; // might throw an E
@@ -60,7 +62,7 @@ auto strcat(int i) -> std::string {
 
 But with the newly adopted `std::expected<T, E>`, it's not quite so nice:
 
-::: bq
+::: std
 ```cpp
 auto foo(int i) -> std::expected<int, E>;
 auto bar(int i) -> std::expected<int, E>;
@@ -87,9 +89,9 @@ This is significantly longer and more tedious because we have to do manual error
 * we're giving a name, `f`, to the `expected` object, not the success value. The error case is typically immediately handled, but the value case could be used multiple times and now has to be used as `*f` (which is pretty weird for something that is decidedly not a pointer or even, unlike iterators, a generalization of pointer) or `f.value()`
 * the "nice" syntax for propagation - `return std::unexpected(e)` - is inefficient - if `E` is something more involved than `std::error_code`, we really should `std::move(f).error()` into that. And even then, we're moving the error twice when we optimally could move it just once. The ideal would be: `return {std::unexpect, std::move(f).error()};`, which is something I don't expect a lot of people to actually write.
 
-In an effort to avoid... that... many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html), [mediapipe](https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h), [SerenityOS](https://github.com/SerenityOS/serenity/blob/50642f85ac547a3caee353affcb08872cac49456/Documentation/Patterns.md#try-error-handling), etc. Although not all do, neither `folly`'s `fb::Expected` nor `tl::expected` nor `llvm::Expected` provide such):
+In an effort to avoid... that... many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html), [mediapipe](https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h), [SerenityOS](https://github.com/SerenityOS/serenity/blob/50642f85ac547a3caee353affcb08872cac49456/Documentation/Patterns.md#try-error-handling), [TensorFlow](https://github.com/tensorflow/tensorflow/blob/master/third_party/xla/xla/tsl/platform/statusor.h), [Abseil](https://github.com/abseil/abseil-cpp/blob/master/absl/status/status_macros.h?utm_source=chatgpt.com), etc. Although not all do, neither `folly`'s `fb::Expected` nor `tl::expected` nor `llvm::Expected` provide such):
 
-::: bq
+::: std
 ```cpp
 auto strcat(int i) -> std::expected<std::string, E>
 {
@@ -104,7 +106,7 @@ Which avoids all those problems, though each such library type will have its own
 
 Some more adventurous macros take advantage of the statement-expression extension, which would allow you to do this:
 
-::: bq
+::: std
 ```cpp
 auto strcat(int i) -> std::expected<std::string, E>
 {
@@ -123,7 +125,7 @@ Both macros also suffer when the function in question returns `expected<void, E>
 
 To that end, in search for nice syntax, some people turn to coroutines:
 
-::: bq
+::: std
 ```cpp
 auto strcat(int i) -> std::expected<std::string, E>
 {
@@ -229,7 +231,7 @@ But to those people who write code using types like `std::expected` today, who m
 
 Before diving too much into semantics, let's just start by syntax. Unfortunately, C++ cannot simply grab the Rust syntax of a postfix `?` here, because we also have the conditional operator `?:`, with which it can be ambiguous:
 
-::: bq
+::: std
 ```cpp
 auto res = a ? * b ? * c : d;
 ```
@@ -237,7 +239,7 @@ auto res = a ? * b ? * c : d;
 
 That could be parsed two ways:
 
-::: bq
+::: std
 ```cpp
 auto res1 = a ? (*(b?) * c) : d;
 auto res2 = ((a?) * b) ? (*c) : d;
@@ -256,7 +258,7 @@ So if `expr?` is not viable, what can we choose instead? There's a bunch of thin
 
 For the purposes of this section, let's stick with `?` as the token, and talk about whether this should be a prefix operator or postfix operator. Now, `?` would be viable as a prefix operator whereas it's not viable as a postfix operator, but it's still worth going through an example nevertheless:
 
-::: bq
+::: std
 ```cpp
 struct U { ... };
 
@@ -479,7 +481,7 @@ Since the extractors are only invoked on an `O` directly, you can safely assume 
 
 The choice of desugaring based specifically on the return type (rather than relying on each object to produce some kind of construction disambiguator like `nullopt_t` or `unexpected<E>`) is not only that we can be more performant, but also we can allow conversions between different kinds of error types, which is useful when joining various libraries together:
 
-::: bq
+::: std
 ```cpp
 auto foo(int i) -> tl::expected<int, E>;
 auto bar(int i) -> std::expected<int, E>;
@@ -498,7 +500,7 @@ As long as each of these various error types opts into `try_traits` so that they
 
 Let's consider some function declarations, where `T`, `U`, `V`, and `E` are some well-behaved object types.
 
-::: bq
+::: std
 ```cpp
 auto foo(T const&) -> V;
 auto bar() -> std::expected<T, E>;
@@ -508,7 +510,7 @@ auto quux() -> std::expected<U, E>;
 
 Now, consider the following fragment:
 
-::: bq
+::: std
 ```cpp
 auto a = foo(bar().try?);
 ```
@@ -518,7 +520,7 @@ The lifetime implications here should follow from the rest of the rules of the l
 
 Note that this behavior is not really possible to express today using a statement rewrite. The inline macros for `bar().try?` would do something like this:
 
-::: bq
+::: std
 ```cpp
 auto a = foo(
     ({
@@ -533,7 +535,7 @@ auto a = foo(
 
 Using the statement-expression extension, the `std::expected<T, E>` will actually be destroyed _before_ the call to `foo`. This would give us a dangling reference, except that statement-expressions are always prvalues, so this would incur an extra (unnecessary) move of `T`. This can be seen more explicitly using the proposed `do`-expression propsoal [@P2806R1]:
 
-::: bq
+::: std
 ```cpp
 auto a = foo(do -> $TYPE$ {
     auto __tmp = bar();
@@ -548,7 +550,7 @@ Here, a `do` expression can actually be a glvalue, so if `$TYPE$` were `T&&`, th
 
 The coroutine rewrite wouldn't have this problem, for the same reason the suggested `bar().try?` approach doesn't:
 
-::: bq
+::: std
 ```cpp
 auto a = foo(co_await bar());
 ```
@@ -556,7 +558,7 @@ auto a = foo(co_await bar());
 
 Now consider:
 
-::: bq
+::: std
 ```cpp
 auto&& b = quux().try?;
 ```
@@ -566,7 +568,7 @@ Here, extracting the value from `quux()` will give us a `U&&` that `b` binds to.
 
 If this does not do lifetime extension, then the `std::expected<U, E>` is destroyed at the end of the statement. And we, once again, get a dangling reference. Note that this problem shows up either either of the macro propagation versions, all for the same reasons:
 
-::: bq
+::: std
 ```cpp
 TRY(auto&& b, quux());  // dangles
 auto&& b = TRY(quux()); // doesn't dangle, but incurs an extra move of T
@@ -579,7 +581,7 @@ But a better way would be to recognize this pattern in the language itself, and 
 
 That is:
 
-::: bq
+::: std
 ```cpp
 TRY(U&& a, quux());  // dangles
 U&& b = TRY(quux()); // extra move
@@ -595,7 +597,7 @@ What does `decltype(E.try?)` evaluate to? Even though there's complex machinery 
 
 It is:
 
-::: bq
+::: std
 ```cpp
 decltype(std::try_traits<std::remove_cvref_t<decltype(E)>>::extract_continue(E))
 ```
@@ -607,7 +609,7 @@ As such, while `decltype(co_await E)` is ill-formed, `decltype(E.try?)` should b
 
 Consider this concept:
 
-::: bq
+::: std
 ```cpp
 template <class T>
 concept Try = requires (t t) { t.try?; }
@@ -616,7 +618,7 @@ concept Try = requires (t t) { t.try?; }
 
 With `decltype`, the type of `E.try?` is a function only of `E`. But in a broader context, the validity of the expression `E.try?` is based on both `E` and the return type of the function. For instance:
 
-::: bq
+::: std
 ```cpp
 auto try_something() -> std::optional<int>;
 
@@ -650,7 +652,7 @@ One of the algorithms considered in the `ranges::fold` paper ([@P2322R5]) was a 
 
 But with this facility, there is a clear direction for how to write a generic, short-circuiting fold:
 
-::: bq
+::: std
 ```cpp
 template <typename T>
 concept Try = requires (T t) {
@@ -696,7 +698,7 @@ There's an algorithm in Haskell called `sequence` which takes a `t (m a)` and yi
 
 With the same `Try` concept from a above, this can be generalized to also work for `optional<T>` or any number of other `Result`-like types:
 
-::: bq
+::: std
 ```cpp
 template <ranges::input_range R,
           Try T = remove_cvref_t<ranges::range_reference_t<R>>,
@@ -826,7 +828,7 @@ The `try_traits` facility very nearly gives us the tools necessary to support su
 
 We mostly need one more customization point: to put the types back together. What I mean is, consider:
 
-::: bq
+::: std
 ```cpp
 auto f(int) -> std::expected<std::string, E>;
 
@@ -836,7 +838,7 @@ auto x = f(42)?.size();
 
 The type of `x` needs to be `std::expected<size_t, E>`, since that's what the value case ends up being here. If we call that customization point `rebind`, as in:
 
-::: bq
+::: std
 ```cpp
 template <typename T, typename E>
 struct try_traits<expected<T, E>> {
@@ -850,7 +852,7 @@ struct try_traits<expected<T, E>> {
 
 Then the above can be desugared into:
 
-::: bq
+::: std
 ```cpp
 using $_Traits$ = try_traits<remove_cvref_t<decltype(f(42))>>;
 using $_R$ = $_Traits$::rebind<decltype($_Traits$::extract_continue(f(42)).size())>;
@@ -866,7 +868,7 @@ That may seem like a mouthful. Because it is a mouthful. But it's a mouthful tha
 
 At least, this mostly does the right thing. We still have to talk about copy elision. Consider this version:
 
-::: bq
+::: std
 ```cpp
 struct X {
     auto f() -> std::mutex;
@@ -881,7 +883,7 @@ Presumably, `n` is a `Result<std::mutex, E>`, but in order for this to work, we 
 
 The only way for this to work today is be able to pass a callable all the way through into this `Result`'s constructor. Which is to say, we desugar like so:
 
-::: bq
+::: std
 ```cpp
 auto&& $e$ = g();
 auto n = $_Traits$::should_continue($e$)
@@ -940,7 +942,7 @@ But this doesn't seem as valuable as `.try?` or even `e?.x` since this case is e
 
 Moreover, any of the kinds of behavior you want can be written as a free function:
 
-::: bq
+::: std
 ```cpp
 template <class T, Try U = std::remove_cvref_t<T>>
 auto narrow_value(T&& t) -> decltype(auto) {
