@@ -2108,7 +2108,10 @@ Rust</a></li>
 <li><a href="#handling-void" id="toc-handling-void"><span class="toc-section-number">4.1.4</span> Handling
 <code class="sourceCode cpp"><span class="dt">void</span></code></a></li>
 <li><a href="#unevaluated-contexts" id="toc-unevaluated-contexts"><span class="toc-section-number">4.1.5</span> Unevaluated Contexts</a></li>
-<li><a href="#lifetime-and-value-category" id="toc-lifetime-and-value-category"><span class="toc-section-number">4.1.6</span> Lifetime and Value
+<li><a href="#where-is-expr.try-valid" id="toc-where-is-expr.try-valid"><span class="toc-section-number">4.1.6</span> Where is
+<code class="sourceCode cpp">expr<span class="op">.</span><span class="cf">try</span><span class="op">?</span></code>
+valid?</a></li>
+<li><a href="#lifetime-and-value-category" id="toc-lifetime-and-value-category"><span class="toc-section-number">4.1.7</span> Lifetime and Value
 Category</a></li>
 </ul></li>
 <li><a href="#syntax-for-c" id="toc-syntax-for-c"><span class="toc-section-number">4.2</span> Syntax for C++</a>
@@ -2621,51 +2624,53 @@ omitted to fit):</p>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> continue_type <span class="op">=</span> T<span class="op">;</span></span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> break_type <span class="op">=</span> nullopt_t<span class="op">;</span></span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> should_continue<span class="op">(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> o<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> o<span class="op">.</span>has_value<span class="op">();</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">// extractors</span></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> extract_continue<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> o<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">*</span>FWD<span class="op">(</span>o<span class="op">);</span></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> extract_break<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> error_type <span class="op">{</span></span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> nullopt<span class="op">;</span></span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  <span class="co">// factories</span></span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> from_continue<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> optional<span class="op">&lt;</span>T<span class="op">&gt;(</span>in_place<span class="op">,</span> FWD<span class="op">(</span>v<span class="op">));</span></span>
-<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> from_break<span class="op">(</span>nullopt_t<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">{};</span></span>
-<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div></td>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> should_continue<span class="op">(</span>optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> o<span class="op">)</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>      <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> o<span class="op">.</span>has_value<span class="op">();</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">// extractors</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> extract_continue<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> o<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">*</span>FWD<span class="op">(</span>o<span class="op">);</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> extract_break<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;)</span> <span class="op">-&gt;</span> break_type <span class="op">{</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> nullopt<span class="op">;</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="co">// factories</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> from_continue<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> optional<span class="op">&lt;</span>T<span class="op">&gt;(</span>in_place<span class="op">,</span> FWD<span class="op">(</span>v<span class="op">));</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> from_break<span class="op">(</span>nullopt_t<span class="op">)</span> <span class="op">-&gt;</span> optional<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">{};</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div></td>
 <td><div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">,</span> <span class="kw">class</span> E<span class="op">&gt;</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> try_traits<span class="op">&lt;</span>expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;&gt;</span> <span class="op">{</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> continue_type <span class="op">=</span> T<span class="op">;</span></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">using</span> break_type <span class="op">=</span> E<span class="op">;</span></span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> should_continue<span class="op">(</span>expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> e<span class="op">.</span>has_value<span class="op">();</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">// extractors</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> extract_continue<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">*</span>FWD<span class="op">(</span>e<span class="op">);</span></span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> extract_break<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> FWD<span class="op">(</span>e<span class="op">).</span>error<span class="op">();</span></span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  <span class="co">// factories</span></span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> from_continue<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;(</span>in_place<span class="op">,</span> FWD<span class="op">(</span>v<span class="op">));</span></span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  <span class="kw">auto</span> from_break<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span> <span class="op">{</span></span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;(</span>unexpect<span class="op">,</span> FWD<span class="op">(</span>e<span class="op">));</span></span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div></td>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> should_continue<span class="op">(</span>expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;</span> e<span class="op">)</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>      <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> e<span class="op">.</span>has_value<span class="op">();</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">// extractors</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> extract_continue<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">*</span>FWD<span class="op">(</span>e<span class="op">);</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> extract_break<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">{</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> FWD<span class="op">(</span>e<span class="op">).</span>error<span class="op">();</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="co">// factories</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> from_continue<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> v<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;(</span>in_place<span class="op">,</span> FWD<span class="op">(</span>v<span class="op">));</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>  <span class="kw">static</span> <span class="kw">auto</span> from_break<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;&amp;</span> e<span class="op">)</span> <span class="op">-&gt;</span> expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;(</span>unexpect<span class="op">,</span> FWD<span class="op">(</span>e<span class="op">));</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -2879,7 +2884,19 @@ actually useful to make this work. I think, though, that shipping (1)
 now doesn’t necessarily prevent changing to (2) later, as it would be
 largely a matter of taking ill-formed expressions and making them
 well-formed with their desired meaning.</p>
-<h3 data-number="4.1.6" id="lifetime-and-value-category"><span class="header-section-number">4.1.6</span> Lifetime and Value Category<a href="#lifetime-and-value-category" class="self-link"></a></h3>
+<h3 data-number="4.1.6" id="where-is-expr.try-valid"><span class="header-section-number">4.1.6</span> Where is
+<code class="sourceCode cpp">expr<span class="op">.</span><span class="cf">try</span><span class="op">?</span></code>
+valid?<a href="#where-is-expr.try-valid" class="self-link"></a></h3>
+<p>Following on from the previous section, I’m proposing that
+<code class="sourceCode cpp">expr<span class="op">.</span><span class="cf">try</span><span class="op">?</span></code>
+is valid specifically in function bodies with a declared return type
+whose return type has a <code class="sourceCode cpp">try_traits</code>
+specialization. That is, not in
+<code class="sourceCode cpp">main<span class="op">()</span></code>, not
+in a <code class="sourceCode cpp"><span class="dt">void</span></code>
+function, not a namespace scope, not in a default argument, not in a
+coroutine, etc.</p>
+<h3 data-number="4.1.7" id="lifetime-and-value-category"><span class="header-section-number">4.1.7</span> Lifetime and Value Category<a href="#lifetime-and-value-category" class="self-link"></a></h3>
 <p>Consider this fragment:</p>
 <div class="std">
 <blockquote>
@@ -2929,10 +2946,10 @@ cause of dangling references. That seems like a good thing. The
 disadvantage of forcing materialization is that we force a completely
 unnecessary move, if you’re directly passing the result of
 <code class="sourceCode cpp">expr<span class="op">.</span><span class="cf">try</span><span class="op">?</span></code>
-into a function. Which to choose? I think, if the dangling reference can
-be reliably diagnosed, then avoiding it in the language seems like pure
-cost. And initial experimentation with this feature <a href="https://compiler-explorer.com/z/554YMqaaW">implemented as a
-macro</a> suggests that it <em>can</em> be reliably diagnosed:</p>
+into a function. Which to choose?</p>
+<p>Initial experimentation with this feature <a href="https://compiler-explorer.com/z/554YMqaaW">implemented as a
+macro</a> suggests that such dangling references <em>can</em> be
+reliably diagnosed:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> <span class="kw">class</span> E <span class="op">{</span> <span class="op">};</span></span>
@@ -2952,7 +2969,12 @@ macro</a> suggests that it <em>can</em> be reliably diagnosed:</p>
 <span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>As a result, I think the formulation I showed is the way to go.</p>
+<p>If it can be reliably diagnosed with the macro formulation, then it
+can surely be reliably diagnosed with a proper first-class
+implementation. As a result, preventing dangling references seems like
+less important a priority than avoiding unnecessary performance costs —
+so I’m proposing the forwarding model rather than the never-xvalue
+model.</p>
 <h2 data-number="4.2" id="syntax-for-c"><span class="header-section-number">4.2</span> Syntax for C++<a href="#syntax-for-c" class="self-link"></a></h2>
 <p>Now that we’ve established the semantics, let’s talk about the
 syntax. Unfortunately, C++ cannot simply grab the Rust syntax of a
@@ -3013,14 +3035,10 @@ viable, what can we choose instead? There’s a bunch of things to
 consider.</p>
 <h3 data-number="4.2.1" id="postfix-is-better-than-prefix"><span class="header-section-number">4.2.1</span> Postfix is better than
 Prefix<a href="#postfix-is-better-than-prefix" class="self-link"></a></h3>
-<p>For the purposes of this section, let’s stick with
-<code class="sourceCode cpp"><span class="op">?</span></code> as the
-token, and talk about whether this should be a prefix operator or
-postfix operator. Now,
+<p>Should this be a prefix operator or a postfix operator? Now,
 <code class="sourceCode cpp"><span class="op">?</span></code> would be
 viable as a prefix operator whereas it’s not viable as a postfix
-operator, but it’s still worth going through an example
-nevertheless:</p>
+operator. Let’s compare what those look like:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> U <span class="op">{</span> <span class="op">...</span> <span class="op">};</span></span>
@@ -3033,7 +3051,7 @@ nevertheless:</p>
 <span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> func<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>expected<span class="op">&lt;</span>U<span class="op">,</span> E<span class="op">&gt;</span> <span class="op">{</span></span>
 <span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// as postfix</span></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    U u <span class="op">=</span> lookup<span class="op">()?.</span>next<span class="op">()?;</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    U u <span class="op">=</span> lookup<span class="op">().</span><span class="cf">try</span><span class="op">?.</span>next<span class="op">().</span><span class="cf">try</span><span class="op">?;</span></span>
 <span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// using the monadic operations</span></span>
 <span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    U u <span class="op">=</span> lookup<span class="op">().</span>and_then<span class="op">(&amp;</span>T<span class="op">::</span>next<span class="op">);</span></span>
@@ -3059,17 +3077,19 @@ you need to propagate is even slightly complicated.</p>
 as needing propagation:</p>
 <ul>
 <li>Accessing a member after propagating:
-<code class="sourceCode cpp">x<span class="op">?.</span>y</code> vs
+<code class="sourceCode cpp">x<span class="op">.</span><span class="cf">try</span><span class="op">?.</span>y</code>
+vs
 <code class="sourceCode cpp"><span class="op">(?</span>x<span class="op">).</span>y</code></li>
 <li>Propagating after accessing a member:
-<code class="sourceCode cpp">x<span class="op">.</span>y<span class="op">?</span></code>
+<code class="sourceCode cpp">x<span class="op">.</span>y<span class="op">.</span><span class="cf">try</span><span class="op">?</span></code>
 vs
 <code class="sourceCode cpp"><span class="op">?</span>x<span class="op">.</span>y</code>
 or
 <code class="sourceCode cpp"><span class="op">?(</span>x<span class="op">.</span>y<span class="op">)</span></code></li>
 </ul>
-<p>The postfix operator is quite a bit easier to understand, since it’s
-always right next to the expression that is potentially failing.</p>
+<p>The postfix operator is quite a bit easier to understand, even if
+more verbose, since it’s always right next to the expression that is
+potentially failing.</p>
 <h3 data-number="4.2.2" id="postfix"><span class="header-section-number">4.2.2</span> Postfix
 <code class="sourceCode cpp"><span class="op">??</span></code><a href="#postfix" class="self-link"></a></h3>
 <p>While postfix
@@ -3233,9 +3253,9 @@ or
 <td><code class="sourceCode cpp">e<span class="op">!?</span></code></td>
 <td>Lauri Vasama’s suggestion and what he implemented. The benefit is
 being a very terse syntax, even shorter than
-<code class="sourceCode cpp"><span class="op">!?</span></code>. The main
-downside for me is that because it’s just two characters, you have to
-remember what order they go in, and
+<code class="sourceCode cpp">e<span class="op">.</span><span class="cf">try</span><span class="op">?</span></code>.
+The main downside for me is that because it’s just two characters, you
+have to remember what order they go in, and
 <code class="sourceCode cpp">e<span class="op">?!</span></code> could be
 the beginning of a conditional expression.</td>
 </tr>
@@ -3288,21 +3308,22 @@ generic, short-circuiting fold:</p>
 <span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>input_iterator I<span class="op">,</span></span>
 <span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>          sentinel_for<span class="op">&lt;</span>I<span class="op">&gt;</span> S<span class="op">,</span></span>
 <span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>          <span class="kw">class</span> T<span class="op">,</span></span>
-<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>          invocable<span class="op">&lt;</span>T<span class="op">,</span> iter_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span> F<span class="op">,</span></span>
-<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>          Try Return <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;,</span> T<span class="op">,</span> iter_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;</span></span>
-<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">requires</span> same_as<span class="op">&lt;</span></span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>        <span class="kw">typename</span> try_traits<span class="op">&lt;</span>Return<span class="op">&gt;::</span>continue_type<span class="op">,</span></span>
-<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>        T<span class="op">&gt;</span></span>
-<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> try_fold<span class="op">(</span>I first<span class="op">,</span> S last<span class="op">,</span> T init<span class="op">,</span> F accum<span class="op">)</span> <span class="op">-&gt;</span> Ret</span>
-<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(;</span> first <span class="op">!=</span> last<span class="op">;</span> <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>        init <span class="op">=</span> std<span class="op">::</span>invoke<span class="op">(</span>accum<span class="op">,</span></span>
-<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>move<span class="op">(</span>init<span class="op">),</span></span>
-<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>first<span class="op">).</span><span class="cf">try</span><span class="op">?;</span></span>
-<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> init<span class="op">;</span></span>
-<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>          invocable<span class="op">&lt;</span>T<span class="op">,</span> iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;</span> F<span class="op">,</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>          Try Return <span class="op">=</span> invoke_result_t<span class="op">&lt;</span>F<span class="op">&amp;,</span> T<span class="op">,</span> iter_reference_t<span class="op">&lt;</span>I<span class="op">&gt;&gt;</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>          <span class="op">&gt;</span></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">requires</span> same_as<span class="op">&lt;</span></span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>        <span class="kw">typename</span> try_traits<span class="op">&lt;</span>Return<span class="op">&gt;::</span>continue_type<span class="op">,</span></span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>        T<span class="op">&gt;</span></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="kw">auto</span> try_fold<span class="op">(</span>I first<span class="op">,</span> S last<span class="op">,</span> T init<span class="op">,</span> F accum<span class="op">)</span> <span class="op">-&gt;</span> Return</span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(;</span> first <span class="op">!=</span> last<span class="op">;</span> <span class="op">++</span>first<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>        init <span class="op">=</span> std<span class="op">::</span>invoke<span class="op">(</span>accum<span class="op">,</span></span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>            std<span class="op">::</span>move<span class="op">(</span>init<span class="op">),</span></span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>first<span class="op">).</span><span class="cf">try</span><span class="op">?;</span></span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> try_traits<span class="op">&lt;</span>Return<span class="op">&gt;::</span>from_continue<span class="op">(</span>std<span class="op">::</span>move<span class="op">(</span>init<span class="op">));</span></span>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>This <code class="sourceCode cpp">try_fold</code> can be used with an
@@ -3346,10 +3367,10 @@ types:</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span>ranges<span class="op">::</span>input_range R<span class="op">,</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>          Try T <span class="op">=</span> remove_cvref_t<span class="op">&lt;</span>ranges<span class="op">::</span>range_reference_t<span class="op">&lt;</span>R<span class="op">&gt;&gt;,</span></span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>          <span class="kw">typename</span> Traits <span class="op">=</span> try_traits<span class="op">&lt;</span>T<span class="op">&gt;,</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>          <span class="kw">typename</span> Result <span class="op">=</span> Traits<span class="op">::</span>rebind<span class="op">&lt;</span>vector<span class="op">&lt;</span><span class="kw">typename</span> Traits<span class="op">::</span>value_type<span class="op">&gt;&gt;&gt;</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>          <span class="kw">typename</span> Result <span class="op">=</span> Traits<span class="op">::</span>rebind<span class="op">&lt;</span>vector<span class="op">&lt;</span><span class="kw">typename</span> Traits<span class="op">::</span>continue_type<span class="op">&gt;&gt;&gt;</span></span>
 <span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> sequence<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">)</span> <span class="op">-&gt;</span> Result</span>
 <span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span><span class="kw">typename</span> Traits<span class="op">::</span>value_type<span class="op">&gt;</span> results<span class="op">;</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span><span class="kw">typename</span> Traits<span class="op">::</span>continue_type<span class="op">&gt;</span> results<span class="op">;</span></span>
 <span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> it <span class="op">=</span> ranges<span class="op">::</span>begin<span class="op">(</span>r<span class="op">);</span> it <span class="op">!=</span> ranges<span class="op">::</span>end<span class="op">(</span>r<span class="op">);</span> <span class="op">++</span>it<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>        results<span class="op">.</span>push_back<span class="op">((*</span>it<span class="op">).</span><span class="cf">try</span><span class="op">?);</span></span>
 <span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
@@ -3730,7 +3751,7 @@ free function:</p>
 <span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">,</span> Try U <span class="op">=</span> std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;</span></span>
 <span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> wide_value<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">not</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span>U<span class="op">&gt;::</span>should_continue<span class="op">(</span>t<span class="op">))</span> <span class="op">{</span></span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">[[</span><span class="at">unlikely</span><span class="op">]]</span> <span class="cf">throw</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span>U<span class="op">&gt;::</span>extact_error<span class="op">(</span>FWD<span class="op">(</span>t<span class="op">));</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">[[</span><span class="at">unlikely</span><span class="op">]]</span> <span class="cf">throw</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span>U<span class="op">&gt;::</span>extract_break<span class="op">(</span>FWD<span class="op">(</span>t<span class="op">));</span></span>
 <span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> std<span class="op">::</span>try_traits<span class="op">&lt;</span>U<span class="op">&gt;::</span>extract_continue<span class="op">(</span>FWD<span class="op">(</span>t<span class="op">));</span></span>
 <span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>

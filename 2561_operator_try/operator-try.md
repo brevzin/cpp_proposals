@@ -289,23 +289,24 @@ struct try_traits<optional<T>> {
   using continue_type = T;
   using break_type = nullopt_t;
 
-  auto should_continue(optional<T> const& o) -> bool {
+  static auto should_continue(optional<T> const& o)
+      -> bool {
     return o.has_value();
   }
 
   // extractors
-  auto extract_continue(auto&& o) -> auto&& {
+  static auto extract_continue(auto&& o) -> auto&& {
     return *FWD(o);
   }
-  auto extract_break(auto&&) -> error_type {
+  static auto extract_break(auto&&) -> break_type {
     return nullopt;
   }
 
   // factories
-  auto from_continue(auto&& v) -> optional<T> {
+  static auto from_continue(auto&& v) -> optional<T> {
     return optional<T>(in_place, FWD(v));
   }
-  auto from_break(nullopt_t) -> optional<T> {
+  static auto from_break(nullopt_t) -> optional<T> {
     return {};
   }
 };
@@ -317,23 +318,24 @@ struct try_traits<expected<T, E>> {
   using continue_type = T;
   using break_type = E;
 
-  auto should_continue(expected<T, E> const& e) -> bool {
+  static auto should_continue(expected<T, E> const& e)
+      -> bool {
     return e.has_value();
   }
 
   // extractors
-  auto extract_continue(auto&& e) -> auto&& {
+  static auto extract_continue(auto&& e) -> auto&& {
     return *FWD(e);
   }
-  auto extract_break(auto&& e) -> auto&& {
+  static auto extract_break(auto&& e) -> auto&& {
     return FWD(e).error();
   }
 
   // factories
-  auto from_continue(auto&& v) -> expected<T, E> {
+  static auto from_continue(auto&& v) -> expected<T, E> {
     return expected<T, E>(in_place, FWD(v));
   }
-  auto from_break(auto&& e) -> expected<T, E> {
+  static auto from_break(auto&& e) -> expected<T, E> {
     return expected<T, E>(unexpect, FWD(e));
   }
 };
@@ -437,6 +439,10 @@ The two interesting unevaluated contexts are: what is `decltype(expr.try?)` and 
 
 We do have precedent for other operators not being easily used in unevaluated contexts (`co_await`, `co_yield`), so this wouldn't be the first one. It's unclear to me yet whether it is actually useful to make this work. I think, though, that shipping (1) now doesn't necessarily prevent changing to (2) later, as it would be largely a matter of taking ill-formed expressions and making them well-formed with their desired meaning.
 
+### Where is `expr.try?` valid?
+
+Following on from the previous section, I'm proposing that `expr.try?` is valid specifically in function bodies with a declared return type whose return type has a `try_traits` specialization. That is, not in `main()`, not in a `void` function, not a namespace scope, not in a default argument, not in a coroutine, etc.
+
 ### Lifetime and Value Category
 
 Consider this fragment:
@@ -463,7 +469,9 @@ What should the types of `v1` and `v2` be? I think `v2` basically has to be `str
 
 Note that even if the language always just returns what `extract_continue` returns, users can still choose `extract_continue` to never return an xvalue.
 
-The advantage of never returning an xvalue is that we avoid a common cause of dangling references. That seems like a good thing. The disadvantage of forcing materialization is that we force a completely unnecessary move, if you're directly passing the result of `expr.try?` into a function. Which to choose? I think, if the dangling reference can be reliably diagnosed, then avoiding it in the language seems like pure cost. And initial experimentation with this feature [implemented as a macro](https://compiler-explorer.com/z/554YMqaaW) suggests that it _can_ be reliably diagnosed:
+The advantage of never returning an xvalue is that we avoid a common cause of dangling references. That seems like a good thing. The disadvantage of forcing materialization is that we force a completely unnecessary move, if you're directly passing the result of `expr.try?` into a function. Which to choose?
+
+Initial experimentation with this feature [implemented as a macro](https://compiler-explorer.com/z/554YMqaaW) suggests that such dangling references _can_ be reliably diagnosed:
 
 ::: std
 ```cpp
@@ -485,7 +493,7 @@ auto f2() -> std::expected<int, E> {
 ```
 :::
 
-As a result, I think the formulation I showed is the way to go.
+If it can be reliably diagnosed with the macro formulation, then it can surely be reliably diagnosed with a proper first-class implementation. As a result, preventing dangling references seems like less important a priority than avoiding unnecessary performance costs — so I'm proposing the forwarding model rather than the never-xvalue model.
 
 ## Syntax for C++
 
@@ -516,7 +524,7 @@ So if `expr?` is not viable, what can we choose instead? There's a bunch of thin
 
 ### Postfix is better than Prefix
 
-For the purposes of this section, let's stick with `?` as the token, and talk about whether this should be a prefix operator or postfix operator. Now, `?` would be viable as a prefix operator whereas it's not viable as a postfix operator, but it's still worth going through an example nevertheless:
+Should this be a prefix operator or a postfix operator? Now, `?` would be viable as a prefix operator whereas it's not viable as a postfix operator. Let's compare what those look like:
 
 ::: std
 ```cpp
@@ -530,7 +538,7 @@ auto lookup() -> std::expected<T, E>;
 
 auto func() -> std::expected<U, E> {
     // as postfix
-    U u = lookup()?.next()?;
+    U u = lookup().try?.next().try?;
 
     // using the monadic operations
     U u = lookup().and_then(&T::next);
@@ -553,10 +561,10 @@ The prefix version is borderline illegible to me once the expression you need to
 
 Even if we consider only one or the other side of the member access as needing propagation:
 
-* Accessing a member after propagating: `x?.y` vs `(?x).y`
-* Propagating after accessing a member: `x.y?` vs `?x.y` or `?(x.y)`
+* Accessing a member after propagating: `x.try?.y` vs `(?x).y`
+* Propagating after accessing a member: `x.y.try?` vs `?x.y` or `?(x.y)`
 
-The postfix operator is quite a bit easier to understand, since it's always right next to the expression that is potentially failing.
+The postfix operator is quite a bit easier to understand, even if more verbose, since it's always right next to the expression that is potentially failing.
 
 ### Postfix `??`
 
@@ -594,7 +602,7 @@ Here is a list of other potential syntaxes I've considered:
 |`e!`|Viable, but seems like the wrong punctuation for something that may or may not continue|
 |`e.continue?`|Viable, and not completely terrible, but doesn't seem as nice as `e.try?`|
 |`e.or_return?`|Clearly expresses behavior, but seems strictly worse than using `try?` or `continue?`|
-|`e!?`|Lauri Vasama's suggestion and what he implemented. The benefit is being a very terse syntax, even shorter than `!?`. The main downside for me is that because it's just two characters, you have to remember what order they go in, and `e?!` could be the beginning of a conditional expression.|
+|`e!?`|Lauri Vasama's suggestion and what he implemented. The benefit is being a very terse syntax, even shorter than `e.try?`. The main downside for me is that because it's just two characters, you have to remember what order they go in, and `e?!` could be the beginning of a conditional expression.|
 |`e.?`|Also a terse syntax, with the added benefit of the ordering of the two characters being arguably more obvious. Would heavily clash if we ever wanted to pursue [optional chaining](#potential-directions-to-go-from-here).|
 
 The other problem with the punctuation syntaxes is needing a name for traits. If we don't like `e.try?` because of the keyword `try`, then we probably don't like `try_traits` either. That particular name doesn't actually have to be super terse, so we could always go for the longer `continuation_traits` or something.
@@ -623,12 +631,13 @@ concept Try = requires (T t) {
 template <input_iterator I,
           sentinel_for<I> S,
           class T,
-          invocable<T, iter_reference_t<R>> F,
-          Try Return = invoke_result_t<F&, T, iter_reference_t<R>>
+          invocable<T, iter_reference_t<I> F,
+          Try Return = invoke_result_t<F&, T, iter_reference_t<I>>
+          >
     requires same_as<
         typename try_traits<Return>::continue_type,
         T>
-constexpr auto try_fold(I first, S last, T init, F accum) -> Ret
+constexpr auto try_fold(I first, S last, T init, F accum) -> Return
 {
     for (; first != last; ++first) {
         init = std::invoke(accum,
@@ -636,7 +645,7 @@ constexpr auto try_fold(I first, S last, T init, F accum) -> Ret
             *first).try?;
     }
 
-    return init;
+    return try_traits<Return>::from_continue(std::move(init));
 }
 ```
 :::
@@ -656,10 +665,10 @@ With the same `Try` concept from a above, this can be generalized to also work f
 template <ranges::input_range R,
           Try T = remove_cvref_t<ranges::range_reference_t<R>>,
           typename Traits = try_traits<T>,
-          typename Result = Traits::rebind<vector<typename Traits::value_type>>>
+          typename Result = Traits::rebind<vector<typename Traits::continue_type>>>
 auto sequence(R&& r) -> Result
 {
-    vector<typename Traits::value_type> results;
+    vector<typename Traits::continue_type> results;
     for (auto it = ranges::begin(r); it != ranges::end(r); ++it) {
         results.push_back((*it).try?);
     }
@@ -906,7 +915,7 @@ auto narrow_value(T&& t) -> decltype(auto) {
 template <class T, Try U = std::remove_cvref_t<T>>
 auto wide_value(T&& t) -> decltype(auto) {
     if (not std::try_traits<U>::should_continue(t)) {
-        [[unlikely]] throw std::try_traits<U>::extact_error(FWD(t));
+        [[unlikely]] throw std::try_traits<U>::extract_break(FWD(t));
     }
     return std::try_traits<U>::extract_continue(FWD(t));
 }
