@@ -8,11 +8,16 @@ author:
       email: <barry.revzin@gmail.com>
 toc: true
 status: progress
+highlighting:
+  keywords:
+    cpp:
+      - match
+      - do_return
 ---
 
 # Revision History
 
-Since [@P2561R2], added implementation experience, other syntax options, and discussion of lowering to a `do` expression.
+Since [@P2561R2], rewrote [semantics section](#semantics-for-c), added [implementation experience](#implementation-experience), and some more [syntax options](#other-potential-syntaxes-considered).
 
 The title of [@P2561R1] was "An error propagation operator", but this feature is much more general than simply propagating errors - it's really about control flow. So renaming to a control flow operator (and a bunch of other renames of the customization points). The operator itself was renamed from `e??` to `e.try?`.
 
@@ -89,39 +94,45 @@ This is significantly longer and more tedious because we have to do manual error
 * we're giving a name, `f`, to the `expected` object, not the success value. The error case is typically immediately handled, but the value case could be used multiple times and now has to be used as `*f` (which is pretty weird for something that is decidedly not a pointer or even, unlike iterators, a generalization of pointer) or `f.value()`
 * the "nice" syntax for propagation - `return std::unexpected(e)` - is inefficient - if `E` is something more involved than `std::error_code`, we really should `std::move(f).error()` into that. And even then, we're moving the error twice when we optimally could move it just once. The ideal would be: `return {std::unexpect, std::move(f).error()};`, which is something I don't expect a lot of people to actually write.
 
-In an effort to avoid... that... many libraries or code bases that use this sort approach to error handling provide a macro, which usually looks like this ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_ASSIGN), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/try.html), [mediapipe](https://github.com/google/mediapipe/blob/master/mediapipe/framework/deps/status_macros.h), [SerenityOS](https://github.com/SerenityOS/serenity/blob/50642f85ac547a3caee353affcb08872cac49456/Documentation/Patterns.md#try-error-handling), [TensorFlow](https://github.com/tensorflow/tensorflow/blob/master/third_party/xla/xla/tsl/platform/statusor.h), [Abseil](https://github.com/abseil/abseil-cpp/blob/master/absl/status/status_macros.h?utm_source=chatgpt.com), etc. Although not all do, neither `folly`'s `fb::Expected` nor `tl::expected` nor `llvm::Expected` provide such):
+In an effort to avoid... that... many libraries or code bases that use this sort of approach to error handling provide a macro, which either comes in a statement form or an expression form:
 
-::: std
+::: cmptable
+### Statement Macro
 ```cpp
 auto strcat(int i) -> std::expected<std::string, E>
 {
-    SOMETHING_TRY(int f, foo(i));
-    SOMETHING_TRY(int b, bar(i));
+    SOMETHING_STMT(int f, foo(i));
+    SOMETHING_STMT(int b, bar(i));
+    return std::format("{}{}", f, b);
+}
+```
+
+### Expression Macro
+```cpp
+auto strcat(int i) -> std::expected<std::string, E>
+{
+    int f = SOMETHING_EXPR(foo(i));
+    int b = SOMETHING_EXPR(bar(i));
     return std::format("{}{}", f, b);
 }
 ```
 :::
 
-Which avoids all those problems, though each such library type will have its own corresponding macro. Also these `TRY` macros (not all of them have `TRY` in the name) need to be written on their own line, since they are declarations - thus the one-line version of `strcat` in the exception version isn't possible.
+Not every library provides such, but here is a non-exhaustive list of those that do:
 
-Some more adventurous macros take advantage of the statement-expression extension, which would allow you to do this:
+| Library / project | Statement form                                    | Expression form         |
+| ----------------- | ------------------------------------------------- | ----------------------- |
+| Boost.Outcome     | `BOOST_OUTCOME_TRY` / `BOOST_OUTCOME_TRYV`        | `BOOST_OUTCOME_TRYX`    |
+| Boost.LEAF        | `BOOST_LEAF_AUTO` / `BOOST_LEAF_CHECK`            | `BOOST_LEAF_CHECK`      |
+| Abseil            | `ABSL_ASSIGN_OR_RETURN` / `ABSL_RETURN_IF_ERROR`  | —                       |
+| Apache Arrow      | `ARROW_ASSIGN_OR_RAISE` / `ARROW_RETURN_NOT_OK`   | —                       |
+| TensorFlow/TSL    | `TF_ASSIGN_OR_RETURN` / `TF_RETURN_IF_ERROR`      | —                       |
+| Mozilla Gecko     | —                                                 | `MOZ_TRY`               |
+| SerenityOS        | —                                                 | `TRY`                   |
 
-::: std
-```cpp
-auto strcat(int i) -> std::expected<std::string, E>
-{
-    int f = SOMETHING_TRY_EXPR(foo(i));
-    int b = SOMETHING_TRY_EXPR(bar(i));
-    return std::format("{}{}", f, b);
-}
-```
-:::
+These macros certainly avoid some of these problems and allow the code to focus more on the logic than the specific control flow, though each such library type will have its own corresponding macro. Also these statement macros (the more common ones, since they don't rely on the statement-expression extension) need to be written on their own line, since they are declarations - thus the one-line version of `strcat` in the exception version isn't possible. The expression version allows you to write both macros inline, but isn't as efficient as it could be — and in particular it doesn't move when it should.
 
-And thus also write both macros inline. But this relies on compiler extensions, and this particular extension isn't quite as efficient as it could be - and in particular it doesn't move when it should.
-
-Both macros also suffer when the function in question returns `expected<void, E>`, since you cannot declare (or assign to) a variable to hold that value, so the macro needs to emit different code to handle this case ([Boost.LEAF](https://www.boost.org/doc/libs/1_75_0/libs/leaf/doc/html/index.html#BOOST_LEAF_CHECK), [Boost.Outcome](https://www.boost.org/doc/libs/develop/libs/outcome/doc/html/reference/macros/tryv.html) [^outcome], etc.)
-
-[^outcome]: Outcome's `TRY` macro uses preprocessor overloading so void results don't get assigned e.g. `TRY(auto x, expr)` sets `x` to `expr.value()` while `TRY(expr)` ignores `expr.value()`. `TRVA` and `TRYV` *require* `expr` to have a value or for the value to be ignored respectively. One of them gets called by `TRY()`depending on argument count supplied.
+The statement macros suffer from when the function in question returns something like `expected<void, E>`, where there's no _value_ to be returned, so the macro needs to emit different code to handle this — hence the pairs of macros above.
 
 To that end, in search for nice syntax, some people turn to coroutines:
 
@@ -227,9 +238,258 @@ Importantly, one character per expression is still actually an enormous amount m
 
 But to those people who write code using types like `std::expected` today, who may use the kinds of macros I showed earlier or foray into coroutines, this is kind of a dream?
 
+## Semantics for C++
+
+Let's talk about semantics first. I'm going to define the propagation operator in terms of two other features that don't actually exist in C++29 yet: `do` expressions ([@P2806R5]{.title}) and pattern matching ([@P2688R6]{.title}). Specifically, the expression (and I'll talk about [syntax later](#syntax-for-c)):
+
+::: std
+```cpp
+expr.try?
+```
+:::
+
+will lower to:
+
+::: std
+```cpp
+match (expr) -> decltype(auto) {
+    case auto&& $__e$ => do -> decltype(auto) {
+        using $ETraits$ = std::try_traits<std::remove_cvref_t<decltype($__e$)>>;
+        using $RTraits$ = std::try_traits<
+			typename [: return_type_of(std::meta::current_function()) :]>;
+
+		if (not $ETraits$::should_continue($__e$)) {
+            return $RTraits$::from_break($ETraits$::extract_break(FWD($__e$)));
+		}
+
+		do_return $ETraits$::extract_continue(FWD($__e$));
+    };
+}
+```
+:::
+
+### Introducing `std::try_traits`
+
+The functionality here is driven by a new traits type called `std::try_traits`, such that a given specialization supports:
+
+* telling us when the object is truthy: `should_continue`
+* extracting the continue type (`extract_continue`) or break type (`extract_break`) from it
+* constructing a new object from either the continuation type (`from_continue`, not necessary in the above example, but will demonstrate a use later) or the break type (`from_break`)
+
+Note that this does not support deducing return type, since we need the return type in order to know how construct it - the above desugaring uses the return type of `std::expected<std::string, E>` to know how to re-wrap the potential error that `foo(i)` or `bar(i)` could return. This is important because it avoids the overhead that nicer syntax like `std::unexpected` or `outcome::failure` introduces (neither of which allow for deducing return type anyway, at least unless the function unconditionally fails), while still allowing nicer syntax.
+
+This isn't really a huge loss, since in these contexts, you can't really deduce the return type anyway - since you'll have some error type and some value type. So this restriction isn't actually restrictive in practice.
+
+These functions are all very easy to implement for the kinds of types that would want to support a facility like `try?`. Here are examples for `optional` and `expected` (with `constexpr` omitted to fit):
+
+::: cmptable
+```cpp
+template <class T>
+struct try_traits<optional<T>> {
+  using continue_type = T;
+  using break_type = nullopt_t;
+
+  auto should_continue(optional<T> const& o) -> bool {
+    return o.has_value();
+  }
+
+  // extractors
+  auto extract_continue(auto&& o) -> auto&& {
+    return *FWD(o);
+  }
+  auto extract_break(auto&&) -> error_type {
+    return nullopt;
+  }
+
+  // factories
+  auto from_continue(auto&& v) -> optional<T> {
+    return optional<T>(in_place, FWD(v));
+  }
+  auto from_break(nullopt_t) -> optional<T> {
+    return {};
+  }
+};
+```
+
+```cpp
+template <class T, class E>
+struct try_traits<expected<T, E>> {
+  using continue_type = T;
+  using break_type = E;
+
+  auto should_continue(expected<T, E> const& e) -> bool {
+    return e.has_value();
+  }
+
+  // extractors
+  auto extract_continue(auto&& e) -> auto&& {
+    return *FWD(e);
+  }
+  auto extract_break(auto&& e) -> auto&& {
+    return FWD(e).error();
+  }
+
+  // factories
+  auto from_continue(auto&& v) -> expected<T, E> {
+    return expected<T, E>(in_place, FWD(v));
+  }
+  auto from_break(auto&& e) -> expected<T, E> {
+    return expected<T, E>(unexpect, FWD(e));
+  }
+};
+```
+:::
+
+### What's with the pattern match?
+
+I'm proposing that `expr.try?` lower into something that starts with `match (expr) { case auto&& $__e$ => /* ... */ }`. Why that pattern match wrapper? After all, it doesn't actually seem like we need pattern matching, since we're only using one pattern that matches everything?
+
+The motivation here is to handle temporaries properly. We need any temporaries that exist as part of `expr` to last until the end of the full-expression containing `expr` — which is the current C++ rule and what everybody would expect the behavior to be. That `match` formulation allows `expr` to be evaluated _outside of_ the `do` expression, and thus have temporaries handled properly simply as a consequence of the existing language rules.
+
+You can see more in the [lifetime section](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p2806r5.html#lifetime) of the `do` expression paper.
+
+### Difference in Semantics vs Rust
+
+In Rust's [try-v2](https://rust-lang.github.io/rfcs/3058-try-trait-v2.html) model, the semantics are slightly different. Using the same `$ETraits$` and `$RTraits$` definitions from above (the `try_traits` specialization for our current expression and the return type, respectively), the semantic difference is:
+
+::: cmptable
+### Proposed
+```cpp
+match (expr) -> decltype(auto) {
+    case auto&& $__e$ => do -> decltype(auto) {
+		if (not $ETraits$::should_continue($__e$)) {
+            return $RTraits$::from_break(
+                $ETraits$::extract_break(FWD($__e$)));
+		}
+
+		do_return $ETraits$::extract_continue(FWD($__e$));
+    };
+}
+```
+
+### Rust
+```cpp
+match ($ETraits$::branch(expr)) -> decltype(auto) {
+    case { .Continue: auto&& $v$ }
+        => FWD($v$);
+    case { .Break: auto&& $r$ }
+        => return $RTraits$::from_residual(FWD($r$));
+}
+```
+:::
+
+In Rust, `Try::branch(expr)` takes an expression and turns it into some [`ControlFlow`](https://doc.rust-lang.org/beta/std/ops/enum.ControlFlow.html), which is another Rust `enum` (which we'd think of as a language variant in C++ terms). In a sense, this type erases our input (that we don't know anything about) into a variant whose shape we understand. `ControlFlow` has two alternatives named `Continue` and `Break`, and we handle those in the obvious way (`Continue` gives us a value, `Break` means we return from the function).
+
+There's good reason for the Rust shape to look like this, since if you have language variants, then obviously you will design your language features around using them. But C++ doesn't have language variants — so producing that intermediate `ControlFlow` object is both unergonomic for us and also inefficient, since it requires doing more work (to be hopefully optimized out later). The shape I'm proposing is conceptually identical, except just cuts out the middle man.
+
+Another difference is something that Rust does not (and does not need to) support, but my shape does: allowing for convertibility between different library expected-like types. In Rust, `Result` has always existed, everyone uses `Result`. But in C++, this model is fairly new (on the timeline of C++) and there is a proliferation of types in different libraries that behave like this. Being able to use multiple libraries together is pretty valuable, hence wanting a shape that allows this kind of cross conversion:
+
+::: std
+```cpp
+auto foo(int i) -> tl::expected<int, E>;
+auto bar(int i) -> std::expected<int, E>;
+
+auto strcat(int i) -> Result<string, E>
+{
+    // this works
+    return std::format("{}{}", foo(i).try?, bar(i).try?);
+}
+```
+:::
+
+Note that in Rust the "residual" of `Result<T, E>` isn't `E`, it's `Result<!, E>`. That's important for some Rust-specific reasons that don't really apply to us either.
+
+### Handling `void`
+
+The one aspect in the lowering earlier that isn't quite right is handling `void`. Now, if the `continue` type is `void`, this works fine, the whole expression will just have type `void` because of special rules we have in the language to just make this work. But if the `break` type is `void`, that's not going to work, because we don't have regular `void`. Now, `std::optional<void>` and `std::expected<T, void>` aren't supported in the standard library — but they are supported by some third party libraries (including mine), so I would like it to be able to work as well.
+
+This is straightforward to express in the lowering, we simply replace this part:
+
+::: std
+```cpp
+return $RTraits$::from_break($ETraits$::extract_break(FWD($__e$)));
+```
+:::
+
+With this (which is honestly peak C++):
+
+::: std
+```cpp
+template for (auto _ : "") {
+    if constexpr (std::is_void_v<typename $ETraits$::break_type>) {
+        $ETraits$::extract_break(FWD($__e$));
+        return $RTraits$::from_break();
+    } else {
+        return $RTraits$::from_break($ETraits$::extract_break(FWD($__e$)));
+    }
+}
+```
+:::
+
+The expansion statement here is the C++26 approach to explicit implicit template regions ([@P3525R0]), which we need because we need `if constexpr` to actually discard the non-instantiated branch. Once we have a template region, we just do the right thing based on `void` — which is just calling `extract_break` and `from_break` separately, the latter with no arguments.
+
+### Unevaluated Contexts
+
+The two interesting unevaluated contexts are: what is `decltype(expr.try?)` and what happens if you write `expr.try?` in a `$requires-expression$`. With the lowering I provided above, those would be valid within the context of a function in which you could write the expression `expr.try?`, otherwise they would be invalid (due to the `return` present in the `do` expression). There are two options I think for how to handle this operator in such contexts:
+
+1. Exactly as would fall out from the `do` expression lowering: sometimes valid, sometimes not. This is arguably unsurprising, since we're defining this expression to mean this other expression, so you get the behavior of that other expression. Seems justifiable.
+2. Treat `expr.try?` in an evaluated context as basically meaning `std::try_traits<std::remove_cvref_t<decltype(expr)>>::extract_continue(expr)`. This would actually be the value of the expression you would get, so it at least makes some sense.
+
+We do have precedent for other operators not being easily used in unevaluated contexts (`co_await`, `co_yield`), so this wouldn't be the first one. It's unclear to me yet whether it is actually useful to make this work. I think, though, that shipping (1) now doesn't necessarily prevent changing to (2) later, as it would be largely a matter of taking ill-formed expressions and making them well-formed with their desired meaning.
+
+### Lifetime and Value Category
+
+Consider this fragment:
+
+::: std
+```cpp
+auto f() -> expected<string, E>;
+
+auto g() -> expected<string, E> {
+    decltype(auto) v1 = f().try?;
+
+    auto r = f();
+    decltype(auto) v2 = r.try?;
+
+    // ...
+}
+```
+:::
+
+What should the types of `v1` and `v2` be? I think `v2` basically has to be `string&` — `r` is an lvalue, we don't want this to have to be a copy. But what about `v1`? There, we have two options:
+
+1. We just follow the forwarding principle, and this would have whatever type `*f()` / `f().value()` have — which is `string&&`. In this particular case, that means we would have a dangling reference, since the temporary `expected` object that we are referring into would get destroyed at the end of the statement.
+2. We could ensure as a language rule that we always decay xvalues. That is, instead of `do_return expr;` we do `do_return static_cast<remove_rvalue_reference_t<decltype((expr))>>(expr);`
+
+Note that even if the language always just returns what `extract_continue` returns, users can still choose `extract_continue` to never return an xvalue.
+
+The advantage of never returning an xvalue is that we avoid a common cause of dangling references. That seems like a good thing. The disadvantage of forcing materialization is that we force a completely unnecessary move, if you're directly passing the result of `expr.try?` into a function. Which to choose? I think, if the dangling reference can be reliably diagnosed, then avoiding it in the language seems like pure cost. And initial experimentation with this feature [implemented as a macro](https://compiler-explorer.com/z/554YMqaaW) suggests that it _can_ be reliably diagnosed:
+
+::: std
+```cpp
+enum class E { };
+template <class T>
+auto get_data() -> std::expected<T, E>;
+
+auto f1() -> std::expected<int, E> {
+    auto&& data = TRY(get_data<int>()); // <== warning about dangling reference on this line
+    return data;
+}
+
+auto consume(int x) -> int { return x; }
+
+auto f2() -> std::expected<int, E> {
+    auto&& data = consume(TRY(get_data<int>())); // <== no warning here
+    return data;
+}
+```
+:::
+
+As a result, I think the formulation I showed is the way to go.
+
 ## Syntax for C++
 
-Before diving too much into semantics, let's just start by syntax. Unfortunately, C++ cannot simply grab the Rust syntax of a postfix `?` here, because we also have the conditional operator `?:`, with which it can be ambiguous:
+Now that we've established the semantics, let's talk about the syntax. Unfortunately, C++ cannot simply grab the Rust syntax of a postfix `?` here, because we also have the conditional operator `?:`, with which it can be ambiguous:
 
 ::: std
 ```cpp
@@ -312,13 +572,15 @@ It certainly would be nice to have both, but given a choice between a null coale
 
 ### Why `e.try?`
 
-For those libraries that provide this operation as a macro, the name is usually `TRY` and [@P0779R0] previously suggested this sort of facility under the name `operator try`. As mentioned, Rust previously had an error propagation macro named `try!` and multiple other languages have such an error propagation operator ([Zig](https://ziglang.org/documentation/master/#try), [Swift](https://docs.swift.org/swift-book/LanguageGuide/ErrorHandling.html), [Midori](http://joeduffyblog.com/2016/02/07/the-error-model/), etc.).
+There is quite a bit of existing practice for this facility under this name. Several C++ macros as shown above use `TRY` as the name. [@P0779R0]{.title} previously suggested this sort of facility under the name `operator try`. As mentioned, Rust previously had an error propagation macro named `try!` and multiple other languages have such an error propagation operator ([Zig](https://ziglang.org/documentation/master/#try), [Swift](https://docs.swift.org/swift-book/LanguageGuide/ErrorHandling.html), [Midori](http://joeduffyblog.com/2016/02/07/the-error-model/), etc.).
 
 The problem is, in C++, `try` is strongly associated with _exceptions_. That's what a `try` block is for: to catch exceptions. In [@P0709R4], there was a proposal for a `try` expression (in §4.5.1). That, too, was tied in with exceptions. Not only for us is it tied into exceptions, but it's used to _not_ propagate the exception - `try` blocks are for handling errors.
 
 Having a facility for error propagation in C++ which has nothing to do with exceptions still use the keyword `try`  and do the opposite of a what a `try` block does today (i.e. propagate the error, instead of handling it) would be, I think, potentially misleading. And the goal here isn't to interact with exceptions at all - it's simply to provide automated error propagation for those error handling cases that _don't_ use exceptions.
 
 That said, postfix `.try?` is viable syntax (it's ill-formed today) and would be better than prefix `try e` or `try? e` (as discussed [earlier](#postfix-is-better-than-prefix)), and despite being unrelated to exceptions, it is quite commonly used in practice for this functionality in C++ anyway. It seems like a pretty reasonable choice, all things considered.
+
+Plus, we need a name for the traits for all the functionality to implement, and `std::try_traits` mirrors `expr.try?` really nicely.
 
 ### Other potential syntaxes considered
 
@@ -332,319 +594,14 @@ Here is a list of other potential syntaxes I've considered:
 |`e!`|Viable, but seems like the wrong punctuation for something that may or may not continue|
 |`e.continue?`|Viable, and not completely terrible, but doesn't seem as nice as `e.try?`|
 |`e.or_return?`|Clearly expresses behavior, but seems strictly worse than using `try?` or `continue?`|
+|`e!?`|Lauri Vasama's suggestion and what he implemented. The benefit is being a very terse syntax, even shorter than `!?`. The main downside for me is that because it's just two characters, you have to remember what order they go in, and `e?!` could be the beginning of a conditional expression.|
+|`e.?`|Also a terse syntax, with the added benefit of the ordering of the two characters being arguably more obvious. Would heavily clash if we ever wanted to pursue [optional chaining](#potential-directions-to-go-from-here).|
 
-
-## Semantics
-
-Regardless of what the right choice of syntax is (which admittedly keeps changing in every revision of this paper), we do have to talk about semantics.
-
-This paper suggests that `try?` evaluate roughly as follows:
-
-::: cmptable
-```cpp
-auto strcat(int i) -> std::expected<std::string, E>
-{
-
-
-    int f = foo(i).try?;
-
-
-
-
-
-
-
-
-
-    int b = bar(i).try?;
-
-
-
-
-
-
-
-
-    return std::format("{}{}", f, b);
-}
-```
-
-```cpp
-auto strcat(int i) -> std::expected<std::string, E>
-{
-    using $_Return$ = std::try_traits<
-        std::expected<std::string, E>>;
-
-    auto&& $__f$ = foo(i);
-    using $_TraitsF$ = std::try_traits<
-        std::remove_cvref_t<decltype($__f$)>>;
-    if (not $_TraitsF$::should_continue($__f$)) {
-        return $_Return$::from_break(
-            $_TraitsF$::extract_break(FWD($__f$)));
-    }
-    int f = $_TraitsF$::extract_continue(FWD($__f$));
-
-    auto&& $__b$ = bar(i);
-    using $_TraitsB$ = std::try_traits<
-        std::remove_cvref_t<decltype($__b$)>>;
-    if (not $_TraitsB$::should_continue(__b)) {
-        return $_Return$::from_break(
-            $_TraitsB$::extract_break(FWD($__b$)));
-    }
-    int b = $_TraitsB$::extract_continue(FWD($__b$));
-
-    return std::format("{}{}", f, b);
-}
-```
-:::
-
-The functionality here is driven by a new traits type called `std::try_traits`, such that a given specialization supports:
-
-* telling us when the object is truthy: `should_continue`
-* extracting the continue type (`extract_continue`) or break type (`extract_break`) from it
-* constructing a new object from either the continuation type (`from_continue`, not necessary in the above example, but will demonstrate a use later) or the break type (`from_break`)
-
-Note that this does not support deducing return type, since we need the return type in order to know how construct it - the above desugaring uses the return type of `std::expected<std::string, E>` to know how to re-wrap the potential error that `foo(i)` or `bar(i)` could return. This is important because it avoids the overhead that nicer syntax like `std::unexpected` or `outcome::failure` introduces (neither of which allow for deducing return type anyway, at least unless the function unconditionally fails), while still allowing nicer syntax.
-
-This isn't really a huge loss, since in these contexts, you can't really deduce the return type anyway - since you'll have some error type and some value type. So this restriction isn't actually restrictive in practice.
-
-These functions are all very easy to implement for the kinds of types that would want to support a facility like `try?`. Here are examples for `optional` and `expected` (with `constexpr` omitted to fit):
-
-::: cmptable
-```cpp
-template <class T>
-struct try_traits<optional<T>> {
-  using continue_type = T;
-  using break_type = nullopt_t;
-
-  auto should_continue(optional<T> const& o) -> bool {
-    return o.has_value();
-  }
-
-  // extractors
-  auto extract_continue(auto&& o) -> auto&& {
-    return *FWD(o);
-  }
-  auto extract_break(auto&&) -> error_type {
-    return nullopt;
-  }
-
-  // factories
-  auto from_continue(auto&& v) -> optional<T> {
-    return optional<T>(in_place, FWD(v));
-  }
-  auto from_break(nullopt_t) -> optional<T> {
-    return {};
-  }
-};
-```
-
-```cpp
-template <class T, class E>
-struct try_traits<expected<T, E>> {
-  using continue_type = T;
-  using break_type = E;
-
-  auto should_continue(expected<T, E> const& e) -> bool {
-    return e.has_value();
-  }
-
-  // extractors
-  auto extract_continue(auto&& e) -> auto&& {
-    return *FWD(e);
-  }
-  auto extract_break(auto&& e) -> auto&& {
-    return FWD(e).error();
-  }
-
-  // factories
-  auto from_continue(auto&& v) -> expected<T, E> {
-    return expected<T, E>(in_place, FWD(v));
-  }
-  auto from_break(auto&& e) -> expected<T, E> {
-    return expected<T, E>(unexpect, FWD(e));
-  }
-};
-```
-:::
-
-This also helps demonstrate the requirements for what `try_traits<O>` have to return:
-
-* `should_continue` is invoked on an lvalue of type `O` and returns `bool`
-* `extract_continue` takes some kind of `O` and returns a type that, after stripping qualifiers, is `value_type`
-* `extract_break` takes some kind of `O` and returns a type that, after stripping qualifiers, is `error_type`
-* `from_continue` and `from_break` each returns an `O` (though their arguments need not be specifically a `value_type` or an `error_type`)
-
-In the above case, `try_traits<expected<T, E>>::extract_break` will always give some kind of reference to `E` (either `E&`, `E const&`, `E&&`, or `E const&&`, depending on the value category of the argument), while `try_traits<optional<T>>::extract_break` will always be `std::nullopt_t`, by value. Both are fine, it simply depends on the type.
-
-Since the extractors are only invoked on an `O` directly, you can safely assume that the object passed in is basically a forwarding reference to `O`, so `auto&&` is fine (at least pending something like [@P2481R1]). The extractors have the implicit precondition that the object is in the state specified (e.g. `extract_continue(o)` should only be called if `should_continue(o)`, with the converse for `extract_break(o)`). The factories can accept anything though, and should probably be constrained.
-
-The choice of desugaring based specifically on the return type (rather than relying on each object to produce some kind of construction disambiguator like `nullopt_t` or `unexpected<E>`) is not only that we can be more performant, but also we can allow conversions between different kinds of error types, which is useful when joining various libraries together:
-
-::: std
-```cpp
-auto foo(int i) -> tl::expected<int, E>;
-auto bar(int i) -> std::expected<int, E>;
-
-auto strcat(int i) -> Result<string, E>
-{
-    // this works
-    return std::format("{}{}", foo(i).try?, bar(i).try?);
-}
-```
-:::
-
-As long as each of these various error types opts into `try_traits` so that they can properly be constructed from an error, this will work just fine.
-
-### Lifetime
-
-Let's consider some function declarations, where `T`, `U`, `V`, and `E` are some well-behaved object types.
-
-::: std
-```cpp
-auto foo(T const&) -> V;
-auto bar() -> std::expected<T, E>;
-auto quux() -> std::expected<U, E>;
-```
-:::
-
-Now, consider the following fragment:
-
-::: std
-```cpp
-auto a = foo(bar().try?);
-```
-:::
-
-The lifetime implications here should follow from the rest of the rules of the languages. Temporaries are destroyed at the end of the full-expression, temporaries bound to references do lifetime extension. In this case, `bar()` is a temporary of type `std::expected<T, E>`, which lasts until the end of the statement, `bar().try?` gives you a `T&&` which refers into that temporary - which will be bound to the parameter of `foo()` - but that's safe because the `T` itself isn't going to be destroyed until the `std::expected<T, E>` is destroyed, which is after the call to `foo()` ends.
-
-Note that this behavior is not really possible to express today using a statement rewrite. The inline macros for `bar().try?` would do something like this:
-
-::: std
-```cpp
-auto a = foo(
-    ({
-        auto __tmp = bar();
-        if (not __tmp) return std::move(__tmp).error();
-        *__tmp;
-        // __tmp destroyed here
-    })
-);
-```
-:::
-
-Using the statement-expression extension, the `std::expected<T, E>` will actually be destroyed _before_ the call to `foo`. This would give us a dangling reference, except that statement-expressions are always prvalues, so this would incur an extra (unnecessary) move of `T`. This can be seen more explicitly using the proposed `do`-expression propsoal [@P2806R1]:
-
-::: std
-```cpp
-auto a = foo(do -> $TYPE$ {
-    auto __tmp = bar();
-    if (not __tmp) return std::move(__tmp).error();
-    do return *std::move(__tmp);
-    // __tmp destroyed here
-});
-```
-:::
-
-Here, a `do` expression can actually be a glvalue, so if `$TYPE$` were `T&&`, then this would be a dangling reference. If `$TYPE$` were `T`, then this would be fine - except that we're incurring an extra move of `T` that wouldn't strictly be necessary if we just held onto the `expected<T, E>` for a little bit longer.
-
-The coroutine rewrite wouldn't have this problem, for the same reason the suggested `bar().try?` approach doesn't:
-
-::: std
-```cpp
-auto a = foo(co_await bar());
-```
-:::
-
-Now consider:
-
-::: std
-```cpp
-auto&& b = quux().try?;
-```
-:::
-
-Here, extracting the value from `quux()` will give us a `U&&` that `b` binds to.
-
-If this does not do lifetime extension, then the `std::expected<U, E>` is destroyed at the end of the statement. And we, once again, get a dangling reference. Note that this problem shows up either either of the macro propagation versions, all for the same reasons:
-
-::: std
-```cpp
-TRY(auto&& b, quux());  // dangles
-auto&& b = TRY(quux()); // doesn't dangle, but incurs an extra move of T
-```
-:::
-
-One way to avoid this issue is to have `extract_continue`, when given an rvalue, return a temporary instead of an rvalue reference. This has performance implications though - you get an extra move that may not be necessary.
-
-But a better way would be to recognize this pattern in the language itself, and allow lifetime extension for this case. Because we can recognize this situation (binding a reference to the result of `E.try?`), we probably should.
-
-That is:
-
-::: std
-```cpp
-TRY(U&& a, quux());  // dangles
-U&& b = TRY(quux()); // extra move
-U&& c = quux().try?; // lifetime-extends the temporary quux(), no extra move
-```
-:::
-
-Yet another advantage of the language feature.
-
-### `decltype`
-
-What does `decltype(E.try?)` evaluate to? Even though there's complex machinery going on here for actually propagating the error, the value type of `E.try?` itself isn't based on the return type of the function, it is based solely on `E`:
-
-It is:
-
-::: std
-```cpp
-decltype(std::try_traits<std::remove_cvref_t<decltype(E)>>::extract_continue(E))
-```
-:::
-
-As such, while `decltype(co_await E)` is ill-formed, `decltype(E.try?)` should be fine.
-
-### `requires`
-
-Consider this concept:
-
-::: std
-```cpp
-template <class T>
-concept Try = requires (t t) { t.try?; }
-```
-:::
-
-With `decltype`, the type of `E.try?` is a function only of `E`. But in a broader context, the validity of the expression `E.try?` is based on both `E` and the return type of the function. For instance:
-
-::: std
-```cpp
-auto try_something() -> std::optional<int>;
-
-auto f() -> std::optional<std::string> {
-    return std::format("Got {}\n", try_something().try?);
-}
-
-auto g() -> int {
-    return try_something().try?;
-}
-
-auto h() -> std::expected<int, std::string> {
-    return try_something().try?;
-}
-```
-:::
-
-The usage in `f()` is fine, because both `optional<int>` and `optional<string>` opt in to `try_traits`, and `try_traits<optional<string>>::from_break(try_traits<optional<int>>::extract_break(try_something()))` is valid. Yes, that's a mouthful.
-
-But `int` doesn't opt-in to `try_traits` at all, and while `std::expected<int, std::string>` does, its `from_break` would take a require something convertible to `std::string`, which `std::nullopt_t` is not. So both `g()` and `h()` must be ill-formed. Context is everything.
-
-What does this say about what `Try<optional<int>>` should mean? I think it probably should be valid.
+The other problem with the punctuation syntaxes is needing a name for traits. If we don't like `e.try?` because of the keyword `try`, then we probably don't like `try_traits` either. That particular name doesn't actually have to be super terse, so we could always go for the longer `continuation_traits` or something.
 
 ## Other use-cases
 
-While the bulk of this paper up to this point is focused on the specific use case if propagating errors, there are several other uses for this kind of operator, which is part of why calling it an _error_-propagation operator specifically is not a good name.
+While the bulk of this paper up to this point is focused on the specific use case of propagating errors, there are several other uses for this kind of operator, which is part of why calling it an _error_-propagation operator specifically is not a good name.
 
 ### Short-circuiting fold
 
@@ -679,7 +636,7 @@ constexpr auto try_fold(I first, S last, T init, F accum) -> Ret
             *first).try?;
     }
 
-    return try_traits<Ret>::from_continue(std::move(init));
+    return init;
 }
 ```
 :::
@@ -687,10 +644,6 @@ constexpr auto try_fold(I first, S last, T init, F accum) -> Ret
 This `try_fold` can be used with an accumulation function that returns `optional<T>` or `expected<T, E>` or `boost::outcome::result<T>` or ... Any type that opts into being a `Try` will work.
 
 Note that this may not be exactly the way we'd specify this algorithm, since we probably want to return something like a `pair<I, Ret>` instead, so the body wouldn't be able to use `.try?` and would have to go through `try_traits` manually for the error propogation. But that's still okay, since the important part was being able to have a generic algorithm to begin with.
-
-### Pattern Matching
-
-One of the patterns proposed in the pattern matching papers [@P1371R3] [@P2688R0] is the dereference pattern (spelled `(*?) $pattern$` in the first paper and `? $pattern$` in the second). Rather than having that pattern be built on contextual conversion to bool and then dereference, it could be built on top of the customization point presented here as well.
 
 ### Range of `expected` to `expected` of Range
 
@@ -710,10 +663,12 @@ auto sequence(R&& r) -> Result
     for (auto it = ranges::begin(r); it != ranges::end(r); ++it) {
         results.push_back((*it).try?);
     }
-    return Result::from_continue(std::move(results));
+    return results;
 }
 ```
 :::
+
+This would require some way of doing rebinding the type — from `RangeOf<expected<T, E>>` to `expected<vector<T>, E>`. Just assuming that first template parameter is the value type probably gets you a lot of the way there.
 
 ### Internal iteration
 
@@ -894,11 +849,9 @@ auto n = $_Traits$::should_continue($e$)
 ```
 :::
 
-By default, `try_traits<R>::from_continue_func(f)` would just be `try_traits<R>::from_continue(f())`.
+By default, `try_traits<R>::from_continue_func(f)` would just be `try_traits<R>::from_continue(f())`. This is weird, but it's something to think about. Note also error continuation would only help in the member function or member variable cases. If we want to continue into a non-member function, you'd need the sort of `.transform()` member function anyway.
 
-This is weird, but it's something to think about.
-
-Note also error continuation would only help in the member function or member variable cases. If we want to continue into a non-member function, you'd need the sort of `.transform()` member function anyway.
+Note that Rust has an error propagation operator (`?`) but does not support optional chaining. And indeed, since we have `optional<T>::transform`, it's worth asking if all of this complexity is worth it for such a small syntactic benefit. I don't think it is.
 
 ### Not propagating errors
 
@@ -964,19 +917,24 @@ auto wide_value(T&& t) -> decltype(auto) {
 
 Which further demonstrates the utility of the proposed facility.
 
+## Implementation Experience
+
+There are two kinds of implementation experience I can point to with this facility:
+
+1. Lauri Vasama implemented this paper directly in his fork of clang, using the syntax `expr!?` for the operator. His implementation can be found on compiler explorer [here](https://godbolt.org/z/8EMoGEEcK).
+2. I implemented `do` expressions in my fork of clang, which Michael Park cherry-picked and implemented pattern matching in his fork of clang. While I don't have an implementation of `expr.try?`, I can implement this proposal as a C macro. Our implementation can be found on compiler explorer [here](https://compiler-explorer.com/z/554YMqaaW).
 
 ---
 references:
-  - id: P2881R0
-    citation-label: P2881R0
-    title: "Generator-based for loop"
+  - id: P2688R6
+    citation-label: P2688R6
+    title: "Pattern Matching: `match` expression"
     author:
-      - family: Jonathan Müller
-      - family: Barry Revzin
+      - family: Michael Park
     issued:
       date-parts:
-      - - 2023
-        - 05
-        - 18
-    URL: https://isocpp.org/files/papers/P2881R0.html
+      - - 2026
+        - 09
+        - 22
+    URL: https://wg21.link/p2688r6
 ---
