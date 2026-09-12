@@ -1,6 +1,6 @@
 ---
 title: "A control flow operator"
-document: D2561R3
+document: P2561R3
 date: today
 audience: EWG
 author:

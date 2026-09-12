@@ -1,6 +1,6 @@
 ---
 title: "String Interpolation with Template Strings"
-document: D3951R2
+document: P3951R2
 date: 2026-03-15
 audience: EWG
 author:
