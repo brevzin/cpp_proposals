@@ -1657,79 +1657,79 @@ As with Reflection, it comes with a decently sized library surface to help facil
 ::: std
 ```cpp
 namespace std::meta {
-  // [meta.tokseq.general], token sequences
-  using token_sequence = decltype(^^{ });         // consteval-only
 
-  // [meta.tokseq.range], token sequences as ranges
+  // ── Token sequences ────────────────────────────────────────────────────
+  using token_sequence = decltype(^^{ });
   struct token_iterator;
   consteval auto begin(token_sequence) -> token_iterator;
-  consteval auto end(token_sequence) -> token_iterator;
-  consteval auto size(token_sequence) -> size_t;
+  consteval auto end  (token_sequence) -> token_iterator;
+  consteval auto size (token_sequence) -> size_t;
   consteval auto empty(token_sequence) -> bool;
 
-  // [meta.tokseq.classify], token classification
-  enum class token_kind {
-    identifier, keyword, literal, punctuator, annotation, unknown
-  };
-  consteval auto token_kind_of(token_sequence tok) -> token_kind;
-  consteval auto identifier_of(token_sequence tok) -> string_view;
-  consteval auto operator_of(token_sequence tok) -> operators;
-
-  // [meta.tokseq.make], producing token sequences
-  template <class... Ts>
-    consteval auto id(Ts const&...) -> token_sequence;
-  template <class... Ts>
-    consteval auto str_lit(Ts const&...) -> token_sequence;
-  template <class... Ts>
-    consteval auto tokenize(Ts const&...) -> token_sequence;
+  template <class... Ts> consteval auto id      (Ts const&...) -> token_sequence;  // one identifier token
+  template <class... Ts> consteval auto str_lit (Ts const&...) -> token_sequence;  // one string literal
+  template <class... Ts> consteval auto tokenize(Ts const&...) -> token_sequence;  // lex text
   consteval auto stringize(token_sequence) -> char const*;
 
-  class list_builder {
-  public:
+  class list_builder {                               // delimited concatenation
     consteval explicit list_builder(token_sequence delim = ^^{ });
-    consteval auto operator+=(token_sequence tok) -> void;
+    consteval auto operator+=(token_sequence) -> void;    // empty pieces are skipped
     consteval operator token_sequence() const;
   };
 
-  // [meta.tokseq.inject], injection
-  consteval auto queue_injection(token_sequence tokens) -> void;
-  consteval auto queue_injection(info target_ns, token_sequence tokens) -> void;
+  // ── Token classification ───────────────────────────────────────────────
+  enum class token_kind { identifier, keyword, literal, punctuator, annotation, unknown };
+  consteval auto token_kind_of (token_sequence tok) -> token_kind;   // unknown: empty or >1 token
+  consteval auto operator_of   (token_sequence tok) -> operators;    // a complete operator token
+  consteval auto identifier_of (token_sequence tok) -> string_view;  // a single identifier token,
 
+  // ── Injection ──────────────────────────────────────────────────────────
+  consteval auto queue_injection(token_sequence) -> void;                  // into the current context
+  consteval auto queue_injection(info target_ns, token_sequence) -> void;  // into target_ns
 
-  // [meta.macro], expression-macro support
-  consteval auto is_constant_expression(info r) -> bool;
-  consteval auto as_lvalue(info r) -> info;
-  consteval auto macro_expansion_context() -> info;  // enclosing function, class,
-                                                     // or namespace of the invocation;
-                                                     // only during macro expansion
+  // ── Expression macros: queries on a typed parameter (a reflection of the
+  //    bound argument expression) ───────────────────────────────────────────
+  consteval auto type_of            (info e) -> info;        // == decltype(arg as written)
+  consteval auto source_text_of     (info e) -> string_view; // the argument's spelling
+  consteval auto source_location_of (info e) -> source_location;
+  consteval auto is_binary_operation(info e) -> bool;
+  consteval auto operator_of        (info e) -> operators;
+  consteval auto operands_of        (info e) -> vector<info>; // as written, each interpolable
+  consteval auto is_constant_expression(info e) -> bool;      // constant_of(e) would succeed
+  consteval auto as_lvalue          (info e) -> info;         // view as if bound to auto&& and named
+  consteval auto macro_expansion_context() -> info;   // the function / class / namespace the
+                                                      //   expansion lands in (macro bodies only)
 
-  // [meta.decl.clone], declaration descriptions
+  // ── Declaration cloning ────────────────────────────────────────────────
   struct clone_naming {
-    token_sequence name = ^^{ };                   // empty: keep the source's name
-    string_view template_parameter_prefix = "T";   // -> T0, T1, ...
-    string_view parameter_prefix = "p";            // -> p0, p1, ...
+    token_sequence name = ^^{ };                    // replacement name; empty keeps the source's
+    string_view template_parameter_prefix = "T";    // T0, T1, ...
+    string_view parameter_prefix          = "p";    // p0, p1, ...
   };
-
-  consteval auto declaration_of(info fn, clone_naming naming = {}) -> info;
+  consteval auto declaration_of(info fn, clone_naming = {}) -> info;
   consteval auto is_declaration_spec(info r) -> bool;
 
-  // [meta.decl.transform], declaration transformations
-  consteval auto make_override(info d) -> info;
-  consteval auto make_noexcept(info d) -> info;
+  // Transformations: description in, new description out (composable).
+  consteval auto make_override(info d) -> info;    // clone declared 'override' (not for templates)
+  consteval auto make_noexcept(info d) -> info;    // clone declared noexcept
 
-  // [meta.decl.fragment], head fragments
-  struct template_list_options {
-    bool defaults = true;                          // false: drop default template
-                                                   // arguments (partial specializations)
-  };
+  // Fragments (each usable only in the position it names).
+  struct template_list_options { bool defaults = true; };
   consteval auto template_parameter_list_for(info d, template_list_options = {})
       -> token_sequence;                           // 'class T0, size_t T1, class... T2'
-  consteval auto template_argument_list_for(info d)
-      -> token_sequence;                           // 'T0, T1, T2...'
+                                                   //   (inside a written template<...>)
+  consteval auto template_argument_list_for(info d) -> token_sequence;
+                                                   // 'T0, T1, T2...' (refused: nonterminal pack)
 
-  // [meta.decl.forward], forwarding
-  consteval auto forwarding_call_for(info d, token_sequence receiver)
-      -> token_sequence;
+  struct argument_list_options { bool forward = true; };
+  consteval auto argument_list_for(info d, argument_list_options = {})
+      -> token_sequence;                           // 'static_cast<decltype(p0)&&>(p0), p1...'
+                                                   //   or 'p0, p1...' with {.forward = false}
+  consteval auto forwarding_call_for(info d,
+                                     token_sequence receiver,
+                                     argument_list_options = {}) -> token_sequence;
+                                                   // '(receiver).name<T0...>(args...)', receiver
+                                                   //   cast to the member's cv/ref-qualifiers
 }
 ```
 :::
