@@ -12,6 +12,12 @@ author:
       email: <daveed@edg.com>
 toc: true
 status: progress
+highlighting:
+  keywords:
+    cpp:
+      - match
+      - do_return
+      - __macro
 ---
 
 # Introduction
@@ -1174,3 +1180,587 @@ inline constexpr inject_bindings_t inject_bindings{};
 For `wide_result<T>`, `template_parameter_list_for(d)` will give us precisely `class T0` and `template_argument_list_for(d)` will give us `T0`. This now will work for all template shapes, even without having universal template parameters.
 
 # Token Sequence Macros
+
+We are proposing a new form of macro to give us a lot more power and flexibility over C macros, avoiding all of their issues. The macros described here are heavily inspired by [Swift's Expression Macros](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0382-expression-macros.md).
+
+A macro declaration has the same shape as a C++ function or function template. A simple integer identity macro might look like this:
+
+::: std
+```cpp
+__macro id(int x) {
+    return ^^{ \(x) };
+}
+
+static_assert(id!(1 + 2) * 3 == 9);
+static_assert(std::same_as<decltype(id!(1)), int>);
+static_assert(std::same_as<decltype(id!(2L)), int>);
+```
+:::
+
+`__macro` is just a placeholder for now.
+
+From the call side, this macro looks like a function call (except with the `!` suffix indicating that it is a macro invocation). However, inside of the macro definition, `x` is not an `int`. It is actually a reflection representing an expression. Properties of this expression can be observed, or even decomposed. A macro returns a token sequence, which is what the macro invocation is replaced with.
+
+Importantly, expression identity is preserved. In the above examples, we are interpolating `x`, which gives us a token whose meaning is the expression that the macro was invoked with. In the first check, `id!(1 + 2) * 3`, we are not producing the _tokens_ `1 + 2` but rather the _expression_ `1 + 2`. Thus, the result of that full expression is `9`, not `7`. This avoids the need to constantly parenthesize that we're familiar with from C macros. Also, because the macro parameter has type `int`, the expression `x` will also always have type `int` — conversions happen on the way in. So `id!(2L)` is still an `int`, even though the argument has type `long`.
+
+Macros can have two argument forms:
+
+1. regular C++ functions or function templates — with real parameter types.
+2. pure token sequence macros — where the parameter has explicit type `std::meta::token_sequence`.
+
+In the latter case, no attempt at parsing happens at the call site — the tokens are just slurped up and passed through. Both forms are valuable, so we want to support both.
+
+## fwd
+
+Perhaps the most obvious macro is simple forwarding. This is one that already works fine as a C macro, which probably exists in lots and lots of code bases already. There are two ways to implement it — typed and untyped:
+
+::: std
+```cpp
+// typed
+template <class T>
+__macro fwd(T&& t) {
+    return ^^{ static_cast<\(type_of(t))&&>(\(t)) };
+}
+
+// untyped
+__macro fwd(std::meta::token_sequence toks) {
+    return ^^{ static_cast<decltype(\(toks))&&>(\(toks)) };
+}
+```
+:::
+
+Note that we need to be careful that in the typed case that we don't try to return `^^{ static_cast<T&&>(\(t)) }`. That would produce the literal tokens `static_cast<T&&>(e)`, where the type `T&&` very likely isn't the intended type (although it might happen to be right a decent amount of the time). We specifically need to cast to the type of `t`. This macro will show up in a bunch of our examples.
+
+## check
+
+The popular [Catch2](https://github.com/catchorg/catch2) test framework has a `CHECK` macro that allows for nice, fluent syntax that decomposes comparisons:
+
+::: std
+```cpp
+CHECK(f() == g());
+```
+:::
+
+might fail with:
+
+::: std
+```cpp
+/app/example.cpp:8: FAILED:
+  CHECK( f() == g() )
+with expansion:
+  1 == 2
+```
+:::
+
+Catch2 can only decompose one layer of top-level comparison, and tries to catch misuses if users try to do more than that. But with better macros, we can produce exactly the same output while allowing much more flexibility. For now, this implementation just illustrates the same thing that Catch2 does, but hopefully illustrates what else is possible. Note that this implementation also relies on [@P2806R5]{.title}.
+
+[Demo](https://compiler-explorer.com/z/qj46xT3Yq):
+
+::: std
+```cpp
+consteval auto is_comparison(std::meta::operators op) -> bool {
+    switch (op) {
+        using enum std::meta::operators;
+        case op_equals_equals:
+        case op_exclamation_equals:
+        case op_less:
+        case op_greater:
+        case op_less_equals:
+        case op_greater_equals:
+            return true;
+        default:
+            return false;
+    }
+}
+
+template <class T, class U>
+auto check_fail(char const* text, std::source_location sloc, T const& lhs, char const* op, U const& rhs) -> void {
+    std::println("{}:{}: FAILED:", sloc.file_name(), sloc.line());
+    std::println("  CHECK( {} )", text);
+    std::println("with expansion:");
+    std::println("  {} {} {}", lhs, op, rhs);
+}
+
+template <class T>
+auto check_fail(char const* text, std::source_location sloc, T const& expr) -> void {
+    std::println("{}:{}: FAILED:", sloc.file_name(), sloc.line());
+    std::println("  CHECK( {} )", text);
+    std::println("with expansion:");
+    std::println("  {}", expr);
+}
+
+template <class T>
+__macro check(T&& cond) {
+    auto const text = std::meta::str_lit(source_text_of(cond));
+    auto const sloc = source_location_of(cond);
+
+    if (is_binary_operation(cond) and is_comparison(operator_of(cond))) {
+        auto ops = operands_of(cond);
+        char const* op = stringize(^^{ \(operator_of(cond)) });
+
+        return ^^{
+            do {
+                auto&& lhs = \(ops[0]);
+                auto&& rhs = \(ops[1]);
+                if (not (fwd!(lhs) \(operator_of(cond)) fwd!(rhs))) {
+                    ::check_fail(\(text), \(sloc), lhs, \(op), rhs);
+                }
+            }
+        };
+    }
+
+    return ^^{
+        do {
+            auto&& expr = \(cond);
+            if (!static_cast<bool>(expr)) {
+                ::check_fail(\(text), \(sloc), expr);
+            }
+        }
+    };
+}
+```
+:::
+
+Note that `check` takes `T&&` and not `bool` both because we want to support explicit conversions to bool (like `std::optional<T>`) and also because we don't want to have to walk up through that boolean conversion in the expression.
+
+Now, one important consequence of the macro model here interpolating expressions rather than raw tokens is that they are partially _hygienic_. Meaning that the above implementation, which introduces local variables `lhs`, `rhs`, and `expr` in the two branches, is perfectly fine — those will never conflict with names that might appear in the expression passed into `check!`.
+
+## Abbreviated Lambdas
+
+One of the things Barry has wanted for some time are abbreviated lambdas, which he attempted back in [@P0573R2]{.title}. As a proper macro that can actually look at its own input, this is actually very easy to implement: walk the provided token sequence looking for identifiers of the form `_X` and use that to determine the arity. Then simply paste the body in with the right number of parameters.
+
+This macro is called an anaphoric macro — it is necessarily unhygienic.
+
+::: std
+```cpp
+consteval auto placeholder_index(std::string_view id) -> std::optional<int> {
+    if (id.size() == 2 and id[0] == '_' and '1' <= id[1] and id[1] <= '9') {
+        return id[1] - '0';
+    }
+    return std::nullopt;
+}
+
+__macro λ(std::meta::token_sequence body) {
+    auto arity = std::optional<int>();
+    for (std::meta::token_sequence tok : body) {
+        if (token_kind_of(tok) == std::meta::token_kind::identifier) {
+            arity = std::max(arity, placeholder_index(identifier_of(tok)));
+        }
+    }
+
+    auto params = std::meta::list_builder(^^{ , });
+    for (int i = 1; i <= arity.value_or(0); ++i) {
+        params += ^^{ auto&& \(std::meta::id("_", i)) };
+    }
+
+    return ^^{ [&](\(params)) -> decltype(auto) { return \(body); } };
+}
+```
+:::
+
+Coupled with some of our other utilities, that gives us the ability to write [this](https://compiler-explorer.com/z/PnGTPjr1d):
+
+::: std
+```cpp
+struct [[=derive_debug]] Point {
+    int x;
+    int y;
+    auto operator==(Point const&) const -> bool = default;
+};
+
+auto main() -> int {
+    std::vector<Point> points = {{1, 2}, {3, 1}};
+    std::ranges::sort(points, λ!(_1.y < _2.y));
+    check!(points == std::vector<Point>{{3, 2}, {1, 2}});
+}
+```
+:::
+
+Which is an incredible way to write that predicate and check the result. Which of course fails, since that's not how sorting works, and gives us the nice output we want:
+
+::: std
+```
+/app/example.cpp:154: FAILED:
+  CHECK( points == std::vector<Point>{{3, 2}, {1, 2}} )
+with expansion:
+  [Point{.x=3, .y=1}, Point{.x=1, .y=2}] == [Point{.x=3, .y=2}, Point{.x=1, .y=2}]
+```
+:::
+
+## try_
+
+[@P2561R3]{.title} proposes a dedicated language operator for control flow operations. Well, in Rust, this operator originated as a macro. The proposed design in that paper would look like this:
+
+::: std
+```cpp
+template <class T>
+__macro try_(T&& e) {
+    namespace m = std::meta;
+
+    // `try_` only means anything inside a function: it early-returns from one.
+    m::info where = m::macro_expansion_context();
+    if (!m::is_function(where))
+        std::constexpr_error_str("bad-try-context",
+                                 "try_ must be invoked inside a function");
+
+    // Computed in the macro body -- NOT injected as `using` aliases.
+    m::info CT = m::substitute(^^try_traits, {m::remove_cvref(m::type_of(e))});
+    m::info RT = m::substitute(^^try_traits, {m::return_type_of(where)});
+
+    return ^^{
+        do [__r=\(e)] -> decltype(auto) {
+            if (not \(CT)::should_continue(__r)) [[unlikely]] {
+                return \(RT)::from_break(\(CT)::extract_break(fwd!(__r)));
+            }
+            do_return \(CT)::extract_continue(fwd!(__r));
+        }
+    };
+}
+```
+:::
+
+This uses the awkward init-hoist feature of `do` expressions rather than pattern matching, because that's what we have available. In any case, here we're using a new function `macro_expansion_context()` to get the top-level entry point into this macro. We need that to get the return type of the function we're in, which is the P2561 design.
+
+## define_op
+
+[Boost.Lambda2](https://www.boost.org/doc/libs/latest/libs/lambda2/doc/html/lambda2.html) is a small library that, among other things, declares a whole bunch of function objects for the operators that don't have standard library equivalents. This is pure boilerplate, since this is very straightforward repetitive code, so the implementation uses macros.
+
+We can make a much nicer macro for this, which takes two parameters: the identifier for the type we're introducing, and a mini-DSL actually showing the operator being used:
+
+::: std
+```cpp
+define_op!(left_shift, x << y);
+define_op!(negate, -x);
+define_op!(post_inc, x++);
+
+static_assert(left_shift{}(1, 4) == 16);
+static_assert(negate{}(1) == -1);
+```
+:::
+
+Just a single macro defines all three forms: binary, prefix, and postfix. Note that none of those parameters are valid expressions in this context — the names aren't declared yet, neither are `x` nor `y`. So these are `token_sequence` parameters. We just allow you to provide more than one of them, automatically parsing at the comma.
+
+The implementation is [quite straightforward](https://compiler-explorer.com/z/T53xMj614):
+
+::: std
+```cpp
+__macro define_op(std::meta::token_sequence name,
+                  std::meta::token_sequence pattern) {
+    // id op id
+    if (size(pattern) == 3) {
+        return ^^{
+            struct \(name) {
+                template <class L, class R>
+                constexpr decltype(auto) operator()(L&& l, R&& r) const {
+                    return fwd!(l) \(pattern[1]) fwd!(r);
+                }
+            };
+        };
+    }
+
+    // id op or op id
+    auto body = token_kind_of(pattern[0]) == std::meta::token_kind::identifier
+        ? ^^{ fwd!(x) \(pattern[1]) }
+        : ^^{ \(pattern[0]) fwd!(x) };
+
+    return ^^{
+        struct \(name) {
+            template <class T>
+            constexpr decltype(auto) operator()(T&& x) const {
+                return \(body);
+            }
+        };
+    };
+}
+```
+:::
+
+Note that in this case, the macro is invoked at declaration scope and returns a token sequence which is a declaration. That's novel — but it's not quite having arbirtary expressions at class or namespace scope, only macro invocations. This saves otherwise having to implement macros like this as a `consteval` block where the macro returns an expression which itself invokes `queue_injection`. Just a lot of unnecessary extra ceremony.
+
+## Tuple Indexing and Short Circuiting
+
+`std::tuple` does not currently have an index operator, as in `elems[0]`. Of course, it couldn't have a _normal_ index operator, since the type of the result would depend on which index is being acccessed. This would call for `constexpr` function parameters, or something like it. However, we don't really need that — all we want is the ability to rewrite teh call `elems[0]` into the call `std::get<0>(elems)`. That's just [a macro](https://compiler-explorer.com/z/vYTvxqfGE):
+
+::: std
+```cpp
+template <class... Ts>
+struct my_tuple : std::tuple<Ts...> {
+    using std::tuple<Ts...>::tuple;
+
+    template <class Self>
+    __macro operator[](this Self&& self, size_t idx) {
+        return ^^{
+            std::get<\(idx)>(fwd!(\(self)))
+        };
+    }
+};
+
+constexpr auto elems = my_tuple<int, std::string>(1, std::string("hello"));
+static_assert(elems[0] == 1);
+static_assert(elems[1] == "hello");
+```
+:::
+
+For member function macros, we require an explicit object parameter so that there is actually an object parameter to interpolate. For operators though, we don't require the extra `!` syntax, since there's not really anywhere to put it.
+
+Similarly, macro operators allow for the ability to have real short-circuiting, so that you could properly declare `operator or()` and `operator and()`:
+
+::: std
+```cpp
+struct Bool {
+    bool b;
+
+    __macro operator or(this Bool self, bool rhs) {
+        return ^^{ \(self).b or \(rhs) };
+    }
+
+    __macro operator and(this Bool self, bool rhs) {
+        return ^^{ \(self).b or \(rhs) };
+    }
+};
+```
+:::
+
+Which, as you can see, [does short circuit](https://compiler-explorer.com/z/YK16Pxs9Y):
+
+::: std
+```cpp
+auto call() -> bool {
+    std::println("call()");
+    return true;
+}
+
+auto main() -> int {
+    bool const a = Bool{true} or call();   // no print
+    std::println("a = {}", a);
+    bool const b = Bool{false} or call();  // prints "call()"
+    std::println("b = {}", b);
+    bool const c = Bool{true} and call();  // prints "call()"
+    std::println("c = {}", c);
+    bool const d = Bool{false} and call(); // no print
+    std::println("d = {}", d);
+}
+```
+:::
+
+## `ranges::begin`
+
+`ranges::begin` is [specified](https://eel.is/c++draft/range.access.begin) as a sequence of potential operations linearly, like so:
+
+::: {.std .wording}
+[2]{.pnum} Given a subexpression `E` with type `T`, let `t` be an lvalue that denotes the reified object for `E`.
+Then:
+
+* [#.#]{.pnum} If `E` is an rvalue and `enable_borrowed_range<remove_cv_t<T>>` is `false`, `ranges​::​begin(E)` is ill-formed.
+* [#.#]{.pnum} Otherwise, if `T` is an array type ([dcl.array]) and `remove_all_extents_t<T>` is an incomplete type, `ranges​::​begin(E)` is ill-formed with no diagnostic required.
+* [#.#]{.pnum} Otherwise, if `T` is an array type, `ranges​::​begin(E)` is expression-equivalent to `t + 0`.
+* [#.#]{.pnum} Otherwise, if `auto(t.begin())` is a valid expression whose type models `input_or_output_iterator`, `ranges​::​begin(E)` is expression-equivalent to `auto(t.begin())`.
+* [#.#]{.pnum} Otherwise, if `T` is a class or enumeration type and `auto(begin(t))` is a valid expression whose type models `input_or_output_iterator` where the meaning of begin is established as-if by performing argument-dependent lookup only ([basic.lookup.argdep]), then `ranges​::​begin(E)` is expression-equivalent to that expression.
+* [#.#]{.pnum} Otherwise, `ranges​::​begin(E)` is ill-formed.
+:::
+
+So it would be pretty nice if we could implement it with the [same linear sequence](https://compiler-explorer.com/z/MWhneP666):
+
+::: std
+```cpp
+namespace impl {
+    void begin() = delete;
+
+    template <class R>
+    constexpr auto adl_begin(R&& r) noexcept(noexcept(auto(begin(r)))) -> decltype(auto(begin(r))) {
+        return auto(begin(r));
+    }
+}
+
+inline constexpr struct begin_fn {
+    template <class R>
+    __macro operator()(this begin_fn, R&& r) {
+        if (not std::is_lvalue_reference_v<R>
+            and not std::ranges::enable_borrowed_range<std::remove_cv_t<R>>) {
+            std::constexpr_error_str("no-begin", "rvalue range is not borrowed");
+        }
+        else if (std::is_array_v<std::remove_reference_t<R>>) {
+            if (not is_complete_type(remove_all_extents(^^std::remove_reference_t<R>))) {
+                std::constexpr_error_str("no-begin", "T is an array with incomplete element type");
+            } else {
+                return ^^{ (\(as_lvalue(r)) + 0) };
+            }
+        }
+        else if (requires(R&& t) { { auto(t.begin()) } -> std::input_or_output_iterator; }) {
+            return ^^{ auto(\(as_lvalue(r)).begin()) };
+        }
+        else if (requires(R&& t) { { impl::adl_begin(t) } -> std::input_or_output_iterator; }) {
+            return ^^{ ::my::impl::adl_begin(\(as_lvalue(r))) };
+        }
+        else {
+            std::constexpr_error_str("no-begin", "no viable begin for this type");
+        }
+
+        return ^^{};  // unreachable: the error produces no expansion
+    }
+} begin{};
+```
+:::
+
+The above implementation relies on [@P2758R5]{.title} to have some of those paths fail, and [meets the requirements](https://compiler-explorer.com/z/MWhneP666).
+
+## `vec`
+
+Rust doesn't have `initializer_list`, it instead has a macro `vec!` that can be used. We can do the same — implementing it in such a way that noncopyable types are supported as well:
+
+::: std
+```cpp
+template <class... Args>
+__macro vec(Args&&... args) {
+    using T = std::remove_cvref_t<Args...[0]>;
+
+    auto emplace_back_loop = std::meta::list_builder();
+    for (std::meta::info expr : {args...}) {
+        emplace_back_loop += ^^{
+            vec.__emplace_back_assume_capacity(fwd!(\(expr)));
+        };
+    }
+
+    return ^^{
+        do {
+            auto vec = ::std::vector<\(T)>();
+            vec.reserve(\(sizeof...(Args)));
+            \(emplace_back_loop);
+            do_return vec;
+        }
+    };
+}
+```
+:::
+
+We're using `__emplace_back_assume_capacity()`, which is a public helper in libc++'s `std::vector` implementation, because we know we have the capacity here, to avoid the extra checks. This macro finally supports what people have wanted for a while:
+
+::: std
+```cpp
+auto vec = vec!{
+    std::make_unique<int>(1),
+    std::make_unique<int>(2),
+};
+```
+:::
+
+Note also that macro invocation can use any bracket: `()`, `[]`, or `{}`. In this case, `{}` seems most appropriate on the call site, so that's what we do.
+
+# Summary
+
+We proposing a new fundamental kind in the language, `std::meta::token_sequence`. We think this actually merits being a distinct type from `std::meta::info` because basically all of the usage patterns are disjoint and making it its own type allows us to provide a suitable API shape for it — indexing, concatentation, iteration. We're proposing a single interpolator `\(e)` (see [syntax discussion](#choice-of-interpolator)). And then on top of that we're proposing expression/declaration macros which interact with the compiler by returning a token sequence that the input expression is replaced with.
+
+As with Reflection, it comes with a decently sized library surface to help facilitate all the desired behavior:
+
+## Library API
+
+::: std
+```cpp
+namespace std::meta {
+  // [meta.tokseq.general], token sequences
+  using token_sequence = decltype(^^{ });         // consteval-only
+
+  // [meta.tokseq.range], token sequences as ranges
+  struct token_iterator;
+  consteval auto begin(token_sequence) -> token_iterator;
+  consteval auto end(token_sequence) -> token_iterator;
+  consteval auto size(token_sequence) -> size_t;
+  consteval auto empty(token_sequence) -> bool;
+
+  // [meta.tokseq.classify], token classification
+  enum class token_kind {
+    identifier, keyword, literal, punctuator, annotation, unknown
+  };
+  consteval auto token_kind_of(token_sequence tok) -> token_kind;
+  consteval auto identifier_of(token_sequence tok) -> string_view;
+  consteval auto operator_of(token_sequence tok) -> operators;
+
+  // [meta.tokseq.make], producing token sequences
+  template <class... Ts>
+    consteval auto id(Ts const&...) -> token_sequence;
+  template <class... Ts>
+    consteval auto str_lit(Ts const&...) -> token_sequence;
+  template <class... Ts>
+    consteval auto tokenize(Ts const&...) -> token_sequence;
+  consteval auto stringize(token_sequence) -> char const*;
+
+  class list_builder {
+  public:
+    consteval explicit list_builder(token_sequence delim = ^^{ });
+    consteval auto operator+=(token_sequence tok) -> void;
+    consteval operator token_sequence() const;
+  };
+
+  // [meta.tokseq.inject], injection
+  consteval auto queue_injection(token_sequence tokens) -> void;
+  consteval auto queue_injection(info target_ns, token_sequence tokens) -> void;
+
+
+  // [meta.macro], expression-macro support
+  consteval auto is_constant_expression(info r) -> bool;
+  consteval auto as_lvalue(info r) -> info;
+  consteval auto macro_expansion_context() -> info;  // enclosing function, class,
+                                                     // or namespace of the invocation;
+                                                     // only during macro expansion
+
+  // [meta.decl.clone], declaration descriptions
+  struct clone_naming {
+    token_sequence name = ^^{ };                   // empty: keep the source's name
+    string_view template_parameter_prefix = "T";   // -> T0, T1, ...
+    string_view parameter_prefix = "p";            // -> p0, p1, ...
+  };
+
+  consteval auto declaration_of(info fn, clone_naming naming = {}) -> info;
+  consteval auto is_declaration_spec(info r) -> bool;
+
+  // [meta.decl.transform], declaration transformations
+  consteval auto make_override(info d) -> info;
+  consteval auto make_noexcept(info d) -> info;
+
+  // [meta.decl.fragment], head fragments
+  struct template_list_options {
+    bool defaults = true;                          // false: drop default template
+                                                   // arguments (partial specializations)
+  };
+  consteval auto template_parameter_list_for(info d, template_list_options = {})
+      -> token_sequence;                           // 'class T0, size_t T1, class... T2'
+  consteval auto template_argument_list_for(info d)
+      -> token_sequence;                           // 'T0, T1, T2...'
+
+  // [meta.decl.forward], forwarding
+  consteval auto forwarding_call_for(info d, token_sequence receiver)
+      -> token_sequence;
+}
+```
+:::
+
+
+## Choice of Interpolator
+
+One of the things that becomes clear when working through macro examples is that it does come up that we want to interpolate an argument into a function call, which ends up looking like `foo(\(arg))`. Those are two very different kinds of parentheses — the outer pair is a token in our output, while the inner pair is part of the interpolation operator. The stacking of parentheses makes the code a little challenging to parse. For a human that is, machines don't care .
+
+However, there really aren't many options available to us for interpolation, since we _must_ support all C++ syntax. Other potential options here are:
+
+|Syntax|Notes|
+|-|----|
+|`\{e}`|Braces instead of Parentheses.  This would help for the expression case, but there are plenty of examples where we're building up things next to real braces, so not sure this moves the needle much.|
+|`${e}`|This would help a little because `$` is actually a frequent choice for interpolator in several other programming languages, so is somewhat familiar. Unlike `\(e)` which is only used by Swift. But `$` is a valid character to use in an identifier. So we would have to special case single `$` in the lexer when inside of a token sequence? That might also prevent `$e` without braces.|
+|`@e` or `@{e}`|Unlike `$`, `@` isn't really a frequent choice for interpolator, but it does stand out. And single `@` is probably something we could take, although allowing `@e` without the braces runs the risk of clashing with Objective C.|
+
+## Comparison with P2826
+
+We've gone this far without mentioning [@P2826R4]{.title}. That proposal can handle some of the [macro use-cases](#token-sequence-macros) presented, but none of the raw token sequence inputs, and it's unclear if that direction can handle macros that want to observe the incoming expression and output different expressions based on input properties — like [`check!`](#check). Since that paper supports a strict subset of what we're proposing here, we think our approach is superior. Several examples in that paper require _less typing_ than they would in the model that we're proposing, but we don't actually think that matters at all.
+
+---
+references:
+    - id: P2561R3
+      citation-label: P2561R3
+      title: A control flow operator
+      author:
+        - family: Barry Revzin
+      issued:
+        - year: 2026
+          month: 09
+          day: 12
+      URL: https://isocpp.org/files/papers/P2561R3.html
+---
