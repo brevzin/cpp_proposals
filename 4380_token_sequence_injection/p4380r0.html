@@ -2263,7 +2263,7 @@ version) can look as follows. Note that there are ways to do this more
 directly, and we can always provide better library utilities, but we
 wanted to show that even with just the basics, we can achieve a lot,
 even if it’s mildly tedious.</p>
-<p>This example can be viewed on <a href="https://compiler-explorer.com/z/36bGhsa88">compiler explorer</a>,
+<p>This example can be viewed on <a href="https://compiler-explorer.com/z/xxbxMo7je">compiler explorer</a>,
 which is basically an implementation of <span class="title"><span class="citation" data-cites="P4148R2"><a href="https://wg21.link/p4148r2">[P4148R2] (protocol: Structural
 Subtyping for C++)</a></span></span>’s
 <code class="sourceCode cpp">protocol_view</code>. An owning version is
@@ -2279,7 +2279,7 @@ shortly.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> I<span class="op">&gt;</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Dyn <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DynRef <span class="op">{</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// see below</span></span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
@@ -2290,8 +2290,8 @@ shortly.</p>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">// We actually do validate that the types conform to the interface</span></span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">// int isn&#39;t even a class type, Wrong::draw is non-const</span></span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Wrong <span class="op">{</span> <span class="kw">auto</span> draw<span class="op">(</span>std<span class="op">::</span>ostream<span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">void</span><span class="op">;</span> <span class="op">};</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>std<span class="op">::</span>constructible_from<span class="op">&lt;</span>Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;,</span> <span class="dt">int</span><span class="op">&gt;);</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>std<span class="op">::</span>constructible_from<span class="op">&lt;</span>Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;,</span> Wrong<span class="op">&gt;);</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>std<span class="op">::</span>constructible_from<span class="op">&lt;</span>DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;,</span> <span class="dt">int</span><span class="op">&gt;);</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(!</span>std<span class="op">::</span>constructible_from<span class="op">&lt;</span>DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;,</span> Wrong<span class="op">&gt;);</span></span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Constant <span class="op">{</span></span>
 <span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> draw<span class="op">(</span>std<span class="op">::</span>ostream<span class="op">&amp;</span> out<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
@@ -2312,7 +2312,7 @@ shortly.</p>
 <span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> v1 <span class="op">=</span> Variable<span class="op">{</span><span class="dv">10</span><span class="op">};</span></span>
 <span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> v2 <span class="op">=</span> Variable<span class="op">{</span><span class="dv">20</span><span class="op">};</span></span>
 <span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> stuff <span class="op">=</span> std<span class="op">::</span>vector<span class="op">&lt;</span>Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;&gt;{</span>c<span class="op">,</span> v1<span class="op">,</span> v2<span class="op">};</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> stuff <span class="op">=</span> std<span class="op">::</span>vector<span class="op">&lt;</span>DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;&gt;{</span>c<span class="op">,</span> v1<span class="op">,</span> v2<span class="op">};</span></span>
 <span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> d <span class="op">:</span> stuff<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>        std<span class="op">::</span>cout <span class="op">&lt;&lt;</span> <span class="st">&quot;* &quot;</span><span class="op">;</span></span>
 <span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>        d<span class="op">.</span>draw<span class="op">(</span>std<span class="op">::</span>cout<span class="op">);</span></span>
@@ -2322,7 +2322,7 @@ shortly.</p>
 </blockquote>
 </div>
 <p>The type
-<code class="sourceCode cpp">Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;</span></code>
+<code class="sourceCode cpp">DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;</span></code>
 is code-generated such that it has the interface from
 <code class="sourceCode cpp">Interface</code> and forwards calls through
 a manually-constructed vtable. The implementation is:</p>
@@ -2492,16 +2492,16 @@ a manually-constructed vtable. The implementation is:</p>
 <span id="cb4-162"><a href="#cb4-162" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> inject_erasing_ctor<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
 <span id="cb4-163"><a href="#cb4-163" aria-hidden="true" tabindex="-1"></a>    queue_injection<span class="op">(^^{</span></span>
 <span id="cb4-164"><a href="#cb4-164" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb4-165"><a href="#cb4-165" aria-hidden="true" tabindex="-1"></a>            <span class="kw">requires</span> <span class="op">(!</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;,</span> Dyn<span class="op">&gt;)</span></span>
+<span id="cb4-165"><a href="#cb4-165" aria-hidden="true" tabindex="-1"></a>            <span class="kw">requires</span> <span class="op">(!</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;,</span> DynRef<span class="op">&gt;)</span></span>
 <span id="cb4-166"><a href="#cb4-166" aria-hidden="true" tabindex="-1"></a>                 <span class="kw">and</span> <span class="op">(</span>satisfies_interface<span class="op">&lt;</span>std<span class="op">::</span>remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;())</span></span>
-<span id="cb4-167"><a href="#cb4-167" aria-hidden="true" tabindex="-1"></a>        Dyn<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span></span>
+<span id="cb4-167"><a href="#cb4-167" aria-hidden="true" tabindex="-1"></a>        DynRef<span class="op">(</span>T<span class="op">&amp;&amp;</span> t <span class="op">[[</span><span class="ex">clang::lifetimebound</span><span class="op">]])</span></span>
 <span id="cb4-168"><a href="#cb4-168" aria-hidden="true" tabindex="-1"></a>            <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span><span class="op">*)(&amp;</span>t<span class="op">))</span></span>
 <span id="cb4-169"><a href="#cb4-169" aria-hidden="true" tabindex="-1"></a>            <span class="op">,</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;)</span></span>
 <span id="cb4-170"><a href="#cb4-170" aria-hidden="true" tabindex="-1"></a>        <span class="op">{}</span></span>
 <span id="cb4-171"><a href="#cb4-171" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span></span>
 <span id="cb4-172"><a href="#cb4-172" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb4-173"><a href="#cb4-173" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-174"><a href="#cb4-174" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Iface<span class="op">&gt;</span> <span class="kw">class</span> Dyn <span class="op">{</span></span>
+<span id="cb4-174"><a href="#cb4-174" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Iface<span class="op">&gt;</span> <span class="kw">class</span> DynRef <span class="op">{</span></span>
 <span id="cb4-175"><a href="#cb4-175" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="op">*</span>data<span class="op">;</span></span>
 <span id="cb4-176"><a href="#cb4-176" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="op">{</span></span>
 <span id="cb4-177"><a href="#cb4-177" aria-hidden="true" tabindex="-1"></a>        inject_Vtable<span class="op">(^^</span>Iface<span class="op">);</span></span>
@@ -2515,8 +2515,8 @@ a manually-constructed vtable. The implementation is:</p>
 <span id="cb4-185"><a href="#cb4-185" aria-hidden="true" tabindex="-1"></a>        inject_erasing_ctor<span class="op">();</span></span>
 <span id="cb4-186"><a href="#cb4-186" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb4-187"><a href="#cb4-187" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-188"><a href="#cb4-188" aria-hidden="true" tabindex="-1"></a>    Dyn<span class="op">(</span>Dyn<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
-<span id="cb4-189"><a href="#cb4-189" aria-hidden="true" tabindex="-1"></a>    Dyn<span class="op">(</span>Dyn <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb4-188"><a href="#cb4-188" aria-hidden="true" tabindex="-1"></a>    DynRef<span class="op">(</span>DynRef<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb4-189"><a href="#cb4-189" aria-hidden="true" tabindex="-1"></a>    DynRef<span class="op">(</span>DynRef <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
 <span id="cb4-190"><a href="#cb4-190" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
@@ -2574,17 +2574,17 @@ sequences to inject. It’s not a very complicated facility:</p>
 </blockquote>
 </div>
 <p>Now, the Clang AST printer for
-<code class="sourceCode cpp">Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;</span></code>
+<code class="sourceCode cpp">DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;</span></code>
 prints this (starting on line 49,094):</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> Iface<span class="op">&gt;</span> <span class="kw">class</span> Dyn <span class="op">{</span></span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> Iface<span class="op">&gt;</span> <span class="kw">class</span> DynRef <span class="op">{</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="op">*</span>data<span class="op">;</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    Dyn<span class="op">&lt;</span>Iface<span class="op">&gt;(</span>Dyn<span class="op">&lt;</span>Iface<span class="op">&gt;</span> <span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    Dyn<span class="op">&lt;</span>Iface<span class="op">&gt;(</span><span class="kw">const</span> Dyn<span class="op">&lt;</span>Iface<span class="op">&gt;</span> <span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    DynRef<span class="op">&lt;</span>Iface<span class="op">&gt;(</span>DynRef<span class="op">&lt;</span>Iface<span class="op">&gt;</span> <span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    DynRef<span class="op">&lt;</span>Iface<span class="op">&gt;(</span><span class="kw">const</span> DynRef<span class="op">&lt;</span>Iface<span class="op">&gt;</span> <span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">class</span> Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;&gt;</span> <span class="kw">class</span> DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;</span> <span class="op">{</span></span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="op">*</span>data<span class="op">;</span></span>
 <span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> <span class="kw">struct</span> VTable <span class="op">{</span></span>
 <span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="dt">void</span> <span class="op">(*</span>f0<span class="op">)(</span><span class="kw">const</span> <span class="dt">void</span> <span class="op">*,</span> std<span class="op">::</span>ostream <span class="op">&amp;);</span></span>
@@ -2602,16 +2602,16 @@ prints this (starting on line 49,094):</p>
 <span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> draw<span class="op">(</span>std<span class="op">::</span>ostream <span class="op">&amp;</span>p0<span class="op">)</span> <span class="kw">const</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
 <span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">this</span><span class="op">-&gt;</span>vtable<span class="op">-&gt;</span>f0<span class="op">(</span><span class="kw">this</span><span class="op">-&gt;</span>data<span class="op">,</span> <span class="kw">static_cast</span><span class="op">&lt;</span>std<span class="op">::</span>ostream <span class="op">&amp;&gt;(</span>p0<span class="op">));</span></span>
 <span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(!</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;,</span> Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;&gt;)</span> <span class="op">&amp;&amp;</span> <span class="op">(</span>satisfies_interface<span class="op">&lt;</span>std<span class="op">::</span>remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;())</span> Dyn<span class="op">(</span>T <span class="op">&amp;&amp;</span>t<span class="op">)</span> <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span> <span class="op">*)(&amp;</span>t<span class="op">)),</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span> <span class="kw">requires</span> <span class="op">(!</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;,</span> DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;&gt;)</span> <span class="op">&amp;&amp;</span> <span class="op">(</span>satisfies_interface<span class="op">&lt;</span>std<span class="op">::</span>remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;())</span> DynRef<span class="op">(</span>T <span class="op">&amp;&amp;</span>t<span class="op">)</span> <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span> <span class="op">*)(&amp;</span>t<span class="op">)),</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;)</span> <span class="op">{</span></span>
 <span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;&gt;</span> Dyn<span class="op">&lt;</span>Constant <span class="op">&amp;&gt;(</span>Constant <span class="op">&amp;</span>t<span class="op">)</span> <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span> <span class="op">*)(&amp;</span>t<span class="op">)),</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>Constant <span class="op">&amp;&gt;&gt;)</span> <span class="op">{</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;&gt;</span> DynRef<span class="op">&lt;</span>Constant <span class="op">&amp;&gt;(</span>Constant <span class="op">&amp;</span>t<span class="op">)</span> <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span> <span class="op">*)(&amp;</span>t<span class="op">)),</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>Constant <span class="op">&amp;&gt;&gt;)</span> <span class="op">{</span></span>
 <span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;&gt;</span> Dyn<span class="op">&lt;</span>Variable <span class="op">&amp;&gt;(</span>Variable <span class="op">&amp;</span>t<span class="op">)</span> <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span> <span class="op">*)(&amp;</span>t<span class="op">)),</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>Variable <span class="op">&amp;&gt;&gt;)</span> <span class="op">{</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;&gt;</span> DynRef<span class="op">&lt;</span>Variable <span class="op">&amp;&gt;(</span>Variable <span class="op">&amp;</span>t<span class="op">)</span> <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span> <span class="op">*)(&amp;</span>t<span class="op">)),</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>Variable <span class="op">&amp;&gt;&gt;)</span> <span class="op">{</span></span>
 <span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;&gt;</span> Dyn<span class="op">&lt;</span><span class="kw">const</span> Variable <span class="op">&amp;&gt;(</span><span class="kw">const</span> Variable <span class="op">&amp;</span>t<span class="op">)</span> <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span> <span class="op">*)(&amp;</span>t<span class="op">)),</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">const</span> Variable <span class="op">&amp;&gt;&gt;)</span> <span class="op">{</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;&gt;</span> DynRef<span class="op">&lt;</span><span class="kw">const</span> Variable <span class="op">&amp;&gt;(</span><span class="kw">const</span> Variable <span class="op">&amp;</span>t<span class="op">)</span> <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span> <span class="op">*)(&amp;</span>t<span class="op">)),</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span><span class="kw">const</span> Variable <span class="op">&amp;&gt;&gt;)</span> <span class="op">{</span></span>
 <span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;&gt;</span> Dyn<span class="op">&lt;</span>Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;&gt;(</span>Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;</span> <span class="op">&amp;&amp;</span>t<span class="op">)</span>    Dyn<span class="op">(</span>Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;</span> <span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>    Dyn<span class="op">(</span><span class="kw">const</span> Dyn<span class="op">&lt;</span>Interface<span class="op">&gt;</span> <span class="op">&amp;)</span> <span class="kw">noexcept</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span>    <span class="kw">static</span> <span class="kw">constexpr</span> VTable vtable_for <span class="op">=</span> <span class="op">{+[](</span><span class="kw">const</span> <span class="dt">void</span> <span class="op">*</span>obj<span class="op">,</span> std<span class="op">::</span>ostream <span class="op">&amp;</span>p0<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span><span class="op">&lt;&gt;</span> DynRef<span class="op">&lt;</span>DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;&gt;(</span>DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;</span> <span class="op">&amp;&amp;</span>t<span class="op">)</span>    DynRef<span class="op">(</span>DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;</span> <span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>    DynRef<span class="op">(</span><span class="kw">const</span> DynRef<span class="op">&lt;</span>Interface<span class="op">&gt;</span> <span class="op">&amp;)</span> <span class="kw">noexcept</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span>    <span class="kw">static</span> <span class="kw">constexpr</span> VTable vtable_for <span class="op">=</span> <span class="op">{+[](</span><span class="kw">const</span> <span class="dt">void</span> <span class="op">*</span>obj<span class="op">,</span> std<span class="op">::</span>ostream <span class="op">&amp;</span>p0<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
 <span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="kw">const</span> Constant <span class="op">*&gt;(</span>obj<span class="op">)-&gt;</span>draw<span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span>std<span class="op">::</span>ostream <span class="op">&amp;&gt;(</span>p0<span class="op">));</span></span>
 <span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">}};</span></span>
 <span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static</span> <span class="kw">constexpr</span> VTable vtable_for <span class="op">=</span> <span class="op">{+[](</span><span class="kw">const</span> <span class="dt">void</span> <span class="op">*</span>obj<span class="op">,</span> std<span class="op">::</span>ostream <span class="op">&amp;</span>p0<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
@@ -2627,16 +2627,16 @@ Zooming in on this part of the implementation:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="kw">auto</span> inject_erasing_ctor<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    queue_injection<span class="op">(^^{</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">requires</span> <span class="op">(!</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;,</span> Dyn<span class="op">&gt;)</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">requires</span> <span class="op">(!</span>std<span class="op">::</span>same_as<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;,</span> DynRef<span class="op">&gt;)</span></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                 <span class="kw">and</span> <span class="op">(</span>satisfies_interface<span class="op">&lt;</span>std<span class="op">::</span>remove_reference_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;())</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        Dyn<span class="op">(</span>T<span class="op">&amp;&amp;</span> t<span class="op">)</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        DynRef<span class="op">(</span>T<span class="op">&amp;&amp;</span> t <span class="op">[[</span><span class="ex">clang::lifetimebound</span><span class="op">]])</span></span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            <span class="op">:</span> data<span class="op">((</span><span class="dt">void</span><span class="op">*)(&amp;</span>t<span class="op">))</span></span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            <span class="op">,</span> vtable<span class="op">(&amp;</span>vtable_for<span class="op">&lt;</span>std<span class="op">::</span>remove_cvref_t<span class="op">&lt;</span>T<span class="op">&gt;&gt;)</span></span>
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">{}</span></span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span></span>
 <span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Iface<span class="op">&gt;</span> <span class="kw">class</span> Dyn <span class="op">{</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Iface<span class="op">&gt;</span> <span class="kw">class</span> DynRef <span class="op">{</span></span>
 <span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="op">*</span>data<span class="op">;</span></span>
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="op">{</span></span>
 <span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        inject_Vtable<span class="op">(^^</span>Iface<span class="op">);</span></span>
@@ -2650,8 +2650,8 @@ Zooming in on this part of the implementation:</p>
 <span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        inject_erasing_ctor<span class="op">();</span>          <span class="co">// &lt;== why do we need this</span></span>
 <span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>    Dyn<span class="op">(</span>Dyn<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>    Dyn<span class="op">(</span>Dyn <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>    DynRef<span class="op">(</span>DynRef<span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>    DynRef<span class="op">(</span>DynRef <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
 <span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
@@ -3642,12 +3642,12 @@ just wrote both:</p>
 <span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>The <a href="https://compiler-explorer.com/z/qr1G1shEh">compiler
+<p>The <a href="https://compiler-explorer.com/z/bnYr19ovj">compiler
 error</a> is:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:71:40: error: cannot combine with previous &#39;type-name&#39; declaration specifier</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>   71 |         static inline constexpr VTable auto vtable_for = {</span>
+<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:90:40: error: cannot combine with previous &#39;type-name&#39; declaration specifier</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>   90 |         static inline constexpr VTable auto vtable_for = {</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>      |                                        ^</span></code></pre></div>
 </blockquote>
 </div>
@@ -3661,12 +3661,12 @@ let’s say I got one of the identifiers wrong and wrote
 <code class="sourceCode cpp"><span class="st">&quot;q&quot;</span></code>
 instead of
 <code class="sourceCode cpp"><span class="st">&quot;p&quot;</span></code>
-on <a href="https://compiler-explorer.com/z/Gaja5Kz7a">line 59</a>:</p>
+on <a href="https://compiler-explorer.com/z/hKE8fbnrr">line 77</a>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:59:27: error: use of undeclared identifier &#39;q0&#39;</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>   59 |             args += ^^{ \(id(&quot;q&quot;, k++)) };</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>      |                           ^~</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:77:23: error: use of undeclared identifier &#39;q0&#39;</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>   77 |             auto pN = id(&quot;q&quot;, k++);</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>      |                       ^~</span></code></pre></div>
 </blockquote>
 </div>
 <p>The error still points to the correct location. It is that identifier
@@ -3685,13 +3685,15 @@ print (using <span class="citation" data-cites="P2758R5"><a href="https://wg21.l
 <span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>inits <span class="op">+=</span> next_fn<span class="op">;</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>And when we do that, we will <a href="https://compiler-explorer.com/z/8Y993rsea">see this</a>:</p>
+<p>And when we do that, we will <a href="https://compiler-explorer.com/z/YG61Gda9x">see this</a>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb33"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>../examples/debug.cxx:69:9: note: constexpr message: +[]( void const* obj , std::ostream &amp; p0)-&gt; void { return static_cast&lt; T const*&gt;(obj)-&gt;draw(</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>      q0 ); }</span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>   69 |         std::constexpr_print_str(stringize(next_fn));</span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>      |         ^</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:87:9: note: constexpr message: +[]( void const* obj , std::ostream &amp; p0)-&gt; void { return static_cast&lt; T const*&gt;(obj)-&gt;draw( static_cast&lt;decltype(q0)&amp;&amp;&gt;(q0) ); }</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>   87 |         std::constexpr_print_str(stringize(next_fn));</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>      |         ^</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>&lt;source&gt;:77:23: error: use of undeclared identifier &#39;q0&#39;</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>   77 |             auto pN = id(&quot;q&quot;, k++);</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>      |                       ^~</span></code></pre></div>
 </blockquote>
 </div>
 <p>There is probably a better way to present that token stream, but it’s

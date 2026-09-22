@@ -69,7 +69,7 @@ That's probably enough to dive into the examples.
 
 Given a type, whose declaration only contains member functions that aren’t templates, it is possible to mechanically produce a type-erased version of that interface. That implementation (for a non-owning version) can look as follows. Note that there are ways to do this more directly, and we can always provide better library utilities, but we wanted to show that even with just the basics, we can achieve a lot, even if it's mildly tedious.
 
-This example can be viewed on [compiler explorer](https://compiler-explorer.com/z/36bGhsa88), which is basically an implementation of [@P4148R2]{.title}'s `protocol_view`. An owning version is easily supportable, just with some more boilerplate work. Note that the compiler explorer link contains two panes: the normal execution pane that shows that it works, and an AST printer. The AST printer is a useful way to see what code is actually injected. More on this shortly.
+This example can be viewed on [compiler explorer](https://compiler-explorer.com/z/xxbxMo7je), which is basically an implementation of [@P4148R2]{.title}'s `protocol_view`. An owning version is easily supportable, just with some more boilerplate work. Note that the compiler explorer link contains two panes: the normal execution pane that shows that it works, and an AST printer. The AST printer is a useful way to see what code is actually injected. More on this shortly.
 
 We'll start with the usage side, and the obligatory `draw` example:
 
@@ -78,7 +78,7 @@ We'll start with the usage side, and the obligatory `draw` example:
 #include <iostream>
 
 template <class I>
-class Dyn {
+class DynRef {
     // see below
 };
 
@@ -89,8 +89,8 @@ struct Interface {
 // We actually do validate that the types conform to the interface
 // int isn't even a class type, Wrong::draw is non-const
 struct Wrong { auto draw(std::ostream&) -> void; };
-static_assert(!std::constructible_from<Dyn<Interface>, int>);
-static_assert(!std::constructible_from<Dyn<Interface>, Wrong>);
+static_assert(!std::constructible_from<DynRef<Interface>, int>);
+static_assert(!std::constructible_from<DynRef<Interface>, Wrong>);
 
 struct Constant {
     auto draw(std::ostream& out) const -> void {
@@ -111,7 +111,7 @@ int main() {
     auto v1 = Variable{10};
     auto v2 = Variable{20};
 
-    auto stuff = std::vector<Dyn<Interface>>{c, v1, v2};
+    auto stuff = std::vector<DynRef<Interface>>{c, v1, v2};
     for (auto& d : stuff) {
         std::cout << "* ";
         d.draw(std::cout);
@@ -121,7 +121,7 @@ int main() {
 ```
 :::
 
-The type `Dyn<Interface>` is code-generated such that it has the interface from `Interface` and forwards calls through a manually-constructed vtable. The implementation is:
+The type `DynRef<Interface>` is code-generated such that it has the interface from `Interface` and forwards calls through a manually-constructed vtable. The implementation is:
 
 ::: std
 ```cpp
@@ -289,16 +289,16 @@ consteval auto inject_satisfies_for(std::meta::info interface) -> void {
 consteval auto inject_erasing_ctor() -> void {
     queue_injection(^^{
         template <class T>
-            requires (!std::same_as<std::remove_cvref_t<T>, Dyn>)
+            requires (!std::same_as<std::remove_cvref_t<T>, DynRef>)
                  and (satisfies_interface<std::remove_reference_t<T>>())
-        Dyn(T&& t)
+        DynRef(T&& t [[clang::lifetimebound]])
             : data((void*)(&t))
             , vtable(&vtable_for<std::remove_cvref_t<T>>)
         {}
     });
 }
 
-template<class Iface> class Dyn {
+template<class Iface> class DynRef {
     void *data;
     consteval {
         inject_Vtable(^^Iface);
@@ -312,8 +312,8 @@ public:
         inject_erasing_ctor();
     }
 
-    Dyn(Dyn&) = default;
-    Dyn(Dyn const&) = default;
+    DynRef(DynRef&) = default;
+    DynRef(DynRef const&) = default;
 };
 ```
 :::
@@ -359,17 +359,17 @@ public:
 ```
 :::
 
-Now, the Clang AST printer for `Dyn<Interface>` prints this (starting on line 49,094):
+Now, the Clang AST printer for `DynRef<Interface>` prints this (starting on line 49,094):
 
 ::: std
 ```cpp
-template <class Iface> class Dyn {
+template <class Iface> class DynRef {
     void *data;
 public:
-    Dyn<Iface>(Dyn<Iface> &) = default;
-    Dyn<Iface>(const Dyn<Iface> &) = default;
+    DynRef<Iface>(DynRef<Iface> &) = default;
+    DynRef<Iface>(const DynRef<Iface> &) = default;
 };
-template<> class Dyn<Interface> {
+template<> class DynRef<Interface> {
     void *data;
     const struct VTable {
         void (*f0)(const void *, std::ostream &);
@@ -387,16 +387,16 @@ public:
     auto draw(std::ostream &p0) const -> void {
         return this->vtable->f0(this->data, static_cast<std::ostream &>(p0));
     }
-    template <class T> requires (!std::same_as<std::remove_cvref_t<T>, Dyn<Interface>>) && (satisfies_interface<std::remove_reference_t<T>>()) Dyn(T &&t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<T>>) {
+    template <class T> requires (!std::same_as<std::remove_cvref_t<T>, DynRef<Interface>>) && (satisfies_interface<std::remove_reference_t<T>>()) DynRef(T &&t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<T>>) {
     }
-    template<> Dyn<Constant &>(Constant &t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<Constant &>>) {
+    template<> DynRef<Constant &>(Constant &t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<Constant &>>) {
     }
-    template<> Dyn<Variable &>(Variable &t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<Variable &>>) {
+    template<> DynRef<Variable &>(Variable &t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<Variable &>>) {
     }
-    template<> Dyn<const Variable &>(const Variable &t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<const Variable &>>) {
+    template<> DynRef<const Variable &>(const Variable &t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<const Variable &>>) {
     }
-    template<> Dyn<Dyn<Interface>>(Dyn<Interface> &&t)    Dyn(Dyn<Interface> &) = default;
-    Dyn(const Dyn<Interface> &) noexcept = default;    static constexpr VTable vtable_for = {+[](const void *obj, std::ostream &p0) -> void {
+    template<> DynRef<DynRef<Interface>>(DynRef<Interface> &&t)    DynRef(DynRef<Interface> &) = default;
+    DynRef(const DynRef<Interface> &) noexcept = default;    static constexpr VTable vtable_for = {+[](const void *obj, std::ostream &p0) -> void {
         return static_cast<const Constant *>(obj)->draw(static_cast<std::ostream &>(p0));
     }};
     static constexpr VTable vtable_for = {+[](const void *obj, std::ostream &p0) -> void {
@@ -413,16 +413,16 @@ There is one particularly notable aspect to the implementation. Zooming in on th
 consteval auto inject_erasing_ctor() -> void {
     queue_injection(^^{
         template <class T>
-            requires (!std::same_as<std::remove_cvref_t<T>, Dyn>)
+            requires (!std::same_as<std::remove_cvref_t<T>, DynRef>)
                  and (satisfies_interface<std::remove_reference_t<T>>())
-        Dyn(T&& t)
+        DynRef(T&& t [[clang::lifetimebound]])
             : data((void*)(&t))
             , vtable(&vtable_for<std::remove_cvref_t<T>>)
         {}
     });
 }
 
-template<class Iface> class Dyn {
+template<class Iface> class DynRef {
     void *data;
     consteval {
         inject_Vtable(^^Iface);
@@ -436,8 +436,8 @@ public:
         inject_erasing_ctor();          // <== why do we need this
     }
 
-    Dyn(Dyn&) = default;
-    Dyn(Dyn const&) = default;
+    DynRef(DynRef&) = default;
+    DynRef(DynRef const&) = default;
 };
 ```
 :::
@@ -1296,12 +1296,12 @@ consteval auto inject_vtable_for(std::meta::info interface) -> void {
 ```
 :::
 
-The [compiler error](https://compiler-explorer.com/z/qr1G1shEh) is:
+The [compiler error](https://compiler-explorer.com/z/bnYr19ovj) is:
 
 ::: std
 ```
-<source>:71:40: error: cannot combine with previous 'type-name' declaration specifier
-   71 |         static inline constexpr VTable auto vtable_for = {
+<source>:90:40: error: cannot combine with previous 'type-name' declaration specifier
+   90 |         static inline constexpr VTable auto vtable_for = {
       |                                        ^
 ```
 :::
@@ -1309,13 +1309,13 @@ The [compiler error](https://compiler-explorer.com/z/qr1G1shEh) is:
 
 The same idea holds for any error that is a syntax error within a single token sequence. The compiler error points you to the right spot within that token sequence.
 
-The harder cases are going to be cases where the syntax is initially correct but is wrong for a more complicated reason. Sticking with the same `inject_for_vtable` function, let's say I got one of the identifiers wrong and wrote `"q"` instead of `"p"` on [line 59](https://compiler-explorer.com/z/Gaja5Kz7a):
+The harder cases are going to be cases where the syntax is initially correct but is wrong for a more complicated reason. Sticking with the same `inject_for_vtable` function, let's say I got one of the identifiers wrong and wrote `"q"` instead of `"p"` on [line 77](https://compiler-explorer.com/z/hKE8fbnrr):
 
 ::: std
 ```
-<source>:59:27: error: use of undeclared identifier 'q0'
-   59 |             args += ^^{ \(id("q", k++)) };
-      |                           ^~
+<source>:77:23: error: use of undeclared identifier 'q0'
+   77 |             auto pN = id("q", k++);
+      |                       ^~
 ```
 :::
 
@@ -1335,14 +1335,16 @@ inits += next_fn;
 ```
 :::
 
-And when we do that, we will [see this](https://compiler-explorer.com/z/8Y993rsea):
+And when we do that, we will [see this](https://compiler-explorer.com/z/YG61Gda9x):
 
 ::: std
 ```
-../examples/debug.cxx:69:9: note: constexpr message: +[]( void const* obj , std::ostream & p0)-> void { return static_cast< T const*>(obj)->draw(
-      q0 ); }
-   69 |         std::constexpr_print_str(stringize(next_fn));
+<source>:87:9: note: constexpr message: +[]( void const* obj , std::ostream & p0)-> void { return static_cast< T const*>(obj)->draw( static_cast<decltype(q0)&&>(q0) ); }
+   87 |         std::constexpr_print_str(stringize(next_fn));
       |         ^
+<source>:77:23: error: use of undeclared identifier 'q0'
+   77 |             auto pN = id("q", k++);
+      |                       ^~
 ```
 :::
 
