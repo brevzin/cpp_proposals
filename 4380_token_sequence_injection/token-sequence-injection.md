@@ -69,7 +69,7 @@ That's probably enough to dive into the examples.
 
 Given a type, whose declaration only contains member functions that aren’t templates, it is possible to mechanically produce a type-erased version of that interface. That implementation (for a non-owning version) can look as follows. Note that there are ways to do this more directly, and we can always provide better library utilities, but we wanted to show that even with just the basics, we can achieve a lot, even if it's mildly tedious.
 
-This example can be viewed on [compiler explorer](https://compiler-explorer.com/z/nsPs5e6n9), which is basically an implementation of [@P4148R2]{.title}'s `protocol_view`. An owning version is easily supportable, just with some more boilerplate work. Note that the compiler explorer link contains two panes: the normal execution pane that shows that it works, and an AST printer. The AST printer is a useful way to see what code is actually injected. More on this shortly.
+This example can be viewed on [compiler explorer](https://compiler-explorer.com/z/36bGhsa88), which is basically an implementation of [@P4148R2]{.title}'s `protocol_view`. An owning version is easily supportable, just with some more boilerplate work. Note that the compiler explorer link contains two panes: the normal execution pane that shows that it works, and an AST printer. The AST printer is a useful way to see what code is actually injected. More on this shortly.
 
 We'll start with the usage side, and the obligatory `draw` example:
 
@@ -85,6 +85,12 @@ class Dyn {
 struct Interface {
     auto draw(std::ostream&) const -> void;
 };
+
+// We actually do validate that the types conform to the interface
+// int isn't even a class type, Wrong::draw is non-const
+struct Wrong { auto draw(std::ostream&) -> void; };
+static_assert(!std::constructible_from<Dyn<Interface>, int>);
+static_assert(!std::constructible_from<Dyn<Interface>, Wrong>);
 
 struct Constant {
     auto draw(std::ostream& out) const -> void {
@@ -353,7 +359,7 @@ public:
 ```
 :::
 
-Now, the Clang AST printer for `Dyn<Interface>` prints this (starting on line 49,083):
+Now, the Clang AST printer for `Dyn<Interface>` prints this (starting on line 49,094):
 
 ::: std
 ```cpp
