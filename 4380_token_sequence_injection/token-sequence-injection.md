@@ -4,12 +4,12 @@ document: P4380R0
 date: today
 audience: EWG
 author:
-    - name: Andrei Alexandrescu, NVIDIA
-      email: <andrei@nvidia.com>
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
     - name: Daveed Vandevoorde
       email: <daveed@edg.com>
+    - name: Andrei Alexandrescu, NVIDIA
+      email: <andrei@nvidia.com>
 toc: true
 status: progress
 highlighting:
@@ -24,11 +24,11 @@ highlighting:
 
 This is a follow-up to [@P3294R2]{.title}. In that paper, we argued that the right model for code generation in C++ is through token sequences by comparing to other potential models. In short, we believe that code generation in C++ must be C++-shaped, must be able to generate all of C++, and must allow for the full use of C++ in that generation. Hence, token sequences.
 
-In this paper, we will demonstrate the power of token sequence based injection by showing a number of examples of what we can do with it. All have been implemented in [Clang](https://github.com/brevzin/llvm-project/tree/compiler-explorer/barry) and are available on Compiler Explorer with the "barry prototypes" compiler. There are two categories of examples here: [direction injection](#direct-injection-of-token-sequences) and [token sequence macros](#token-sequence-macros).
+In this paper, we will demonstrate the power of token sequence-based injection by showing a number of examples of what we can do with it. All have been implemented in [Clang](https://github.com/brevzin/llvm-project/tree/compiler-explorer/barry) and are available on Compiler Explorer with the "barry prototypes" compiler. There are two categories of examples here: [direct injection](#direct-injection-of-token-sequences) and [token sequence macros](#token-sequence-macros).
 
 # Direct Injection of Token Sequences
 
-A token sequence literal is introduced via `^^{ ... }`. This has type `std::meta::token_sequence`. The contents between the braces are lexed — no parsing happens until injection. This may not be valid C++, but it is a [valid token sequence](https://x.com/ridiculous_fish/status/1001681073917620224):
+A token sequence literal is introduced via `^^{ ... }`. This has type `std::meta::token_sequence`. It, along with all other members mentioned in this paper, is intended to be declared in `<meta>`. The contents between the braces are lexed — no parsing happens until injection. This may not be valid C++, but it is a [valid token sequence](https://x.com/ridiculous_fish/status/1001681073917620224):
 
 ::: std
 ```cpp
@@ -41,7 +41,7 @@ constexpr auto poem = ^^{
 ```
 :::
 
-A token sequence can be explicitly via `std::meta::queue_injection` or implicitly through a number of hooks that we will walk through.
+A token sequence can be explicitly injected via `std::meta::queue_injection` or implicitly injected through a number of hooks that we will walk through.
 
 Two `token_sequence`s can be concatenated via `+` or `+=`. A `token_sequence` is a random access range of `token_sequence` and can be directly indexed. Two objects of type `token_sequence` can be compared for equality:
 
@@ -56,7 +56,7 @@ static_assert(std::ranges::size(poem) == 16);
 
 In order to add external content into a token sequence, interpolation is done via the `\(e)` operator. The parentheses are mandatory (otherwise `\u` could begin a UCN, this way it's always unambiguous). The meaning of interpolation depends on the type of `e` (done to minimize interpolation kinds):
 
-* If `e` is (or is convertible to) `token_sequence`, the tokens of `e` are directly concatenated in place.
+* If `e` is (or is convertible to) `token_sequence`, the tokens of `e` are directly inserted in place.
 * Otherwise, if `e` is (or is convertible to) `info`, then a single artificial token is inserted whose meaning is what `e` represents. For instance, `\(^^int)` interpolates a token which is the type `int` (note: it is not the keyword `int`).
 * Otherwise, a token is inserted whose meaning is the _value_ of `e`. `\(std::ranges::size(poem))` would be the value `16` (note: not an integer literal).
 
@@ -75,6 +75,11 @@ We'll start with the usage side, and the obligatory `draw` example:
 ::: std
 ```cpp
 #include <iostream>
+
+template <class I>
+class Dyn {
+    // see below
+};
 
 struct Interface {
     auto draw(std::ostream&) const -> void;
@@ -682,7 +687,7 @@ consteval auto iterator_interface(std::meta::info cls, IterConfig cfg) -> void {
 ```
 :::
 
-This is definitely an incomplete implementation still, as we're not really branching off of the `iterator_concept` as we should be. But it's demonstrating that the direction is possible. It probably also reveals the need to have more/better library machinery for doing name lookup, but this paper isn't proposing that. Also we don't have a way of observing hidden friend declarations at the moment (as the comment indicates).
+This is definitely an incomplete implementation still, as we're not really branching off of the `iterator_concept` as we should be. But it's demonstrating that the direction is possible. It probably also reveals the need to have more/better library machinery for doing name lookup, but this paper isn't proposing that. Also we don't have a way of observing hidden friend definitions at the moment (as the comment indicates).
 
 ## Push-Based Customization II (Structured Bindings)
 
@@ -761,7 +766,7 @@ However, another aspect of the above implementation that is a little unsatisfyin
 2. `annot.on_template_defined(r)` gets invoked when the class template represented by `r` is defined (before any specialization happens).
 3. `annot.inject_members(r)` gets invoked right before the `}` when the class represented by `r` is about to be complete. Before the special members become defined.
 
-The first two callbacks are `void`, their job is to perform work outside of the class — either injecting code into some namespace or by validating properties. But the third returns a `token_sequence`, it's job is to report what tokens to inject into the class represented by `r`.
+The first two callbacks are `void`, their job is to perform work outside of the class — either injecting code into some namespace or by validating properties. But the third returns a `token_sequence`, its job is to report what tokens to inject into the class represented by `r`.
 
 With that third hook, we get [this tighter implementation](https://compiler-explorer.com/z/qcsdrzqx6):
 
@@ -1179,9 +1184,55 @@ inline constexpr inject_bindings_t inject_bindings{};
 
 For `wide_result<T>`, `template_parameter_list_for(d)` will give us precisely `class T0` and `template_argument_list_for(d)` will give us `T0`. This now will work for all template shapes, even without having universal template parameters.
 
+## Debugging
+
+One important question to ask is: how debuggable is token sequence injection for a person? It might initially seem to be a daunting task, since the token sequences we're defining in this paper do not have any checking performed at the point of use, only at the point of injection. But, perhaps surprisingly, it's not so bad — precisely because they're just token sequences, the compiler already points us to _the_ tokens that are problematic.
+
+Consider the type erasure example and problems we could make. Let's say we couldn't decide between writing `auto` and writing `VTable` for our variable and just wrote both:
+
+::: std
+```cpp
+consteval auto inject_vtable_for(std::meta::info interface) -> void {
+    // ...
+
+    queue_injection(^^{
+        template <class T>
+        static inline constexpr VTable auto vtable_for = {
+            \(inits)
+        };
+    });
+}
+```
+:::
+
+The [compiler error](https://compiler-explorer.com/z/qr1G1shEh) is:
+
+::: std
+```
+<source>:71:40: error: cannot combine with previous 'type-name' declaration specifier
+   71 |         static inline constexpr VTable auto vtable_for = {
+      |                                        ^
+```
+:::
+
+
+The same idea holds for any error that is a syntax error within a single token sequence. The compiler error points you to the right spot within that token sequence.
+
+The harder cases are going to be cases where the syntax is initially correct but is wrong for a more complicated reason. Sticking with the same `inject_for_vtable` function, let's say I got one of the identifiers wrong and wrote `"q"` instead of `"p"` on [line 59](https://compiler-explorer.com/z/Gaja5Kz7a):
+
+::: std
+```
+<source>:59:27: error: use of undeclared identifier 'q0'
+   59 |             args += ^^{ \(id("q", k++)) };
+      |                           ^~
+```
+:::
+
+The error still points to the correct location. It is that identifier that's incorrect. But why?
+
 # Token Sequence Macros
 
-We are proposing a new form of macro to give us a lot more power and flexibility over C macros, avoiding all of their issues. The macros described here are heavily inspired by [Swift's Expression Macros](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0382-expression-macros.md).
+We are proposing well-behaved language macros to give us a lot more power and flexibility than preprocessor macros, avoiding all issues with the latter. The macros described here are heavily inspired by [Swift's Expression Macros](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0382-expression-macros.md).
 
 A macro declaration has the same shape as a C++ function or function template. A simple integer identity macro might look like this:
 
@@ -1387,6 +1438,8 @@ with expansion:
 ```
 :::
 
+Note we used `_1`, `_2`, etc., as the placeholders here. But could just as easily be `$1`. Or, if you really like Swift, `$0`.
+
 ## try_
 
 [@P2561R3]{.title} proposes a dedicated language operator for control flow operations. Well, in Rust, this operator originated as a macro. The proposed design in that paper would look like this:
@@ -1395,17 +1448,16 @@ with expansion:
 ```cpp
 template <class T>
 __macro try_(T&& e) {
-    namespace m = std::meta;
-
     // `try_` only means anything inside a function: it early-returns from one.
-    m::info where = m::macro_expansion_context();
-    if (!m::is_function(where))
+    std::meta::info where = std::meta::macro_expansion_context();
+    if (not is_function(where)) {
         std::constexpr_error_str("bad-try-context",
                                  "try_ must be invoked inside a function");
+    }
 
     // Computed in the macro body -- NOT injected as `using` aliases.
-    m::info CT = m::substitute(^^try_traits, {m::remove_cvref(m::type_of(e))});
-    m::info RT = m::substitute(^^try_traits, {m::return_type_of(where)});
+    std::meta::info CT = substitute(^^try_traits, {remove_cvref(type_of(e))});
+    std::meta::info RT = substitute(^^try_traits, {return_type_of(where)});
 
     return ^^{
         do [__r=\(e)] -> decltype(auto) {
@@ -1420,6 +1472,28 @@ __macro try_(T&& e) {
 :::
 
 This uses the awkward init-hoist feature of `do` expressions rather than pattern matching, because that's what we have available. In any case, here we're using a new function `macro_expansion_context()` to get the top-level entry point into this macro. We need that to get the return type of the function we're in, which is the P2561 design.
+
+And that gives us the behavior [we want](https://compiler-explorer.com/z/8aqrvPzxe):
+
+::: std
+```cpp
+enum class E { };
+template <class T>
+auto get_data() -> std::expected<T, E>;
+
+auto f1() -> std::expected<int, E> {
+    auto&& data = try_!(get_data<int>()); // <== warning about dangling reference on this line
+    return data;
+}
+
+auto consume(int x) -> int { return x; }
+
+auto f2() -> std::expected<int, E> {
+    auto&& data = consume(try_!(get_data<int>())); // <== no warning here
+    return data;
+}
+```
+:::
 
 ## define_op
 
@@ -1475,11 +1549,11 @@ __macro define_op(std::meta::token_sequence name,
 ```
 :::
 
-Note that in this case, the macro is invoked at declaration scope and returns a token sequence which is a declaration. That's novel — but it's not quite having arbirtary expressions at class or namespace scope, only macro invocations. This saves otherwise having to implement macros like this as a `consteval` block where the macro returns an expression which itself invokes `queue_injection`. Just a lot of unnecessary extra ceremony.
+Note that in this case, the macro is invoked at declaration scope and returns a token sequence which is a declaration. That's novel — but it's not quite having arbitrary expressions at class or namespace scope, only macro invocations. This saves otherwise having to implement macros like this as a `consteval` block where the macro returns an expression which itself invokes `queue_injection`. Just a lot of unnecessary extra ceremony.
 
 ## Tuple Indexing and Short Circuiting
 
-`std::tuple` does not currently have an index operator, as in `elems[0]`. Of course, it couldn't have a _normal_ index operator, since the type of the result would depend on which index is being acccessed. This would call for `constexpr` function parameters, or something like it. However, we don't really need that — all we want is the ability to rewrite teh call `elems[0]` into the call `std::get<0>(elems)`. That's just [a macro](https://compiler-explorer.com/z/vYTvxqfGE):
+`std::tuple` does not currently have an index operator, as in `elems[0]`. Of course, it couldn't have a _normal_ index operator, since the type of the result would depend on which index is being acccessed. This would call for `constexpr` function parameters, or something like it. However, we don't really need that — all we want is the ability to rewrite the call `elems[0]` into the call `std::get<0>(elems)`. That's just [a macro](https://compiler-explorer.com/z/x199rPPzW):
 
 ::: std
 ```cpp
@@ -1490,7 +1564,7 @@ struct my_tuple : std::tuple<Ts...> {
     template <class Self>
     __macro operator[](this Self&& self, size_t idx) {
         return ^^{
-            std::get<\(idx)>(fwd!(\(self)))
+            std::get<\(idx)>(\(self))
         };
     }
 };
@@ -1614,41 +1688,106 @@ template <class... Args>
 __macro vec(Args&&... args) {
     using T = std::remove_cvref_t<Args...[0]>;
 
-    auto emplace_back_loop = std::meta::list_builder();
+    auto emplace_back_loop = std::meta::token_sequence();
     for (std::meta::info expr : {args...}) {
         emplace_back_loop += ^^{
-            vec.__emplace_back_assume_capacity(fwd!(\(expr)));
+            res.__emplace_back_assume_capacity(\(expr));
         };
     }
 
     return ^^{
         do {
-            auto vec = ::std::vector<\(T)>();
-            vec.reserve(\(sizeof...(Args)));
+            auto res = ::std::vector<\(^^T)>();
+            res.reserve(\(sizeof...(Args)));
             \(emplace_back_loop);
-            do_return vec;
+            do_return res;
         }
     };
 }
 ```
 :::
 
-We're using `__emplace_back_assume_capacity()`, which is a public helper in libc++'s `std::vector` implementation, because we know we have the capacity here, to avoid the extra checks. This macro finally supports what people have wanted for a while:
+We're using `__emplace_back_assume_capacity()`, which is a public helper in libc++'s `std::vector` implementation, because we know we have the capacity here, to avoid the extra checks. This macro finally supports what people have wanted for a while, and [it works](https://compiler-explorer.com/z/vWTno56s5):
 
 ::: std
 ```cpp
-auto vec = vec!{
+auto v = vec!{
     std::make_unique<int>(1),
-    std::make_unique<int>(2),
+    std::make_unique<int>(2)
 };
 ```
 :::
 
 Note also that macro invocation can use any bracket: `()`, `[]`, or `{}`. In this case, `{}` seems most appropriate on the call site, so that's what we do.
 
+## Logging
+
+By now, it should be pretty clear how to write a basic logging macro. So we're going to take it up a notch or two. We're going to have a `Logger` type that is going to automatically define a logging *macro* for every `LogLevel` enum. That is, we're going to have a loop that itself injects macros:
+
+::: std
+```cpp
+enum class LogLevel { debug, info, error };
+
+struct Logger {
+    LogLevel min_level;
+
+    explicit Logger(LogLevel min_level) : min_level(min_level) { }
+
+    auto do_log(LogLevel level, std::string_view fmt, auto&&... args) -> void {
+        std::println("[{}] {}", level, std::vformat(fmt, std::make_format_args(args...)));
+    }
+
+    consteval {
+        for (std::meta::info e : enumerators_of(^^LogLevel)) {
+            auto name = std::meta::id(identifier_of(e));
+            queue_injection(^^{
+                template <class... Args>
+                __macro \(name)(this Logger& self, std::string_view raw, Args&&... args) {
+                    auto fs = substitute(^^::std::basic_format_string, {^^char, ^^Args...});
+                    constexpr auto level = ::LogLevel::\(name);
+
+                    auto call_args = std::meta::list_builder(^^{ , });
+                    call_args += ^^{ fmt };
+                    ((call_args += ^^{ \(args) }), ...);
+                    return ^^{
+                        do {
+                            constexpr std::string_view fmt = \(fs)(\(raw)).get();
+                            auto& self = \(self);
+                            if (\(level) >= self.min_level) {
+                                self.do_log(\(level), \(call_args));
+                            }
+                        }
+                    };
+                }
+            });
+        }
+    }
+};
+```
+:::
+
+Now, we have a member macro `debug!`, `info!`, and `error!`. If we do something [like this](https://compiler-explorer.com/z/5nM93ajvP), we'll see that `get()` is not even invoked, but the other macros do exist and we get our logs. All the format strings are still type checked:
+
+::: std
+```cpp
+auto get() -> int {
+    std::println("** called get **");
+    return 6;
+}
+
+int main(int, char**) {
+    auto log = Logger(LogLevel::info);
+    int x = 5;
+    log.debug!("x={} y={}", x, get());
+    log.info!("{:>3}|{}", "ab", 2.5);
+    log.error!("plain");
+}
+```
+:::
+
 # Summary
 
-We proposing a new fundamental kind in the language, `std::meta::token_sequence`. We think this actually merits being a distinct type from `std::meta::info` because basically all of the usage patterns are disjoint and making it its own type allows us to provide a suitable API shape for it — indexing, concatentation, iteration. We're proposing a single interpolator `\(e)` (see [syntax discussion](#choice-of-interpolator)). And then on top of that we're proposing expression/declaration macros which interact with the compiler by returning a token sequence that the input expression is replaced with.
+We are proposing a new fundamental kind in the language, `std::meta::token_sequence`. Unlike our suggestion in [@P3294R2], we think this merits being a distinct type (from `std::meta::info`) because we found that in practice the usage patterns are always disjoint, and a distinct type allows us to give it a suitable API shape — including indexing, concatenation, and iteration. We're proposing a single interpolator `\(e)` (see [syntax discussion](#choice-of-interpolator)). And then on top of that we're proposing expression/declaration macros which interact with the compiler by returning a token sequence that the input expression is replaced with.
 
 As with Reflection, it comes with a decently sized library surface to help facilitate all the desired behavior:
 
