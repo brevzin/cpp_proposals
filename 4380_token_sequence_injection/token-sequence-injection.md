@@ -1254,7 +1254,7 @@ inits += next_fn;
 ```
 :::
 
-And when we do that, we will see this:
+And when we do that, we will [see this](https://compiler-explorer.com/z/8Y993rsea):
 
 ::: std
 ```
