@@ -41,7 +41,7 @@ constexpr auto poem = ^^{
 ```
 :::
 
-The sole requirement on the contents of a token sequence are that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced. Token sequences operate after preprocessing, so token pasting a la `##` is not possible.
+The sole requirement on the contents of a token sequence is that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced. Token sequences operate after preprocessing, so token pasting a la `##` is not possible.
 
 A token sequence can be explicitly injected via `std::meta::queue_injection` or implicitly injected through a number of hooks that we will walk through.
 
@@ -69,7 +69,7 @@ That's probably enough to dive into the examples.
 
 Given a type, whose declaration only contains member functions that aren’t templates, it is possible to mechanically produce a type-erased version of that interface. That implementation (for a non-owning version) can look as follows. Note that there are ways to do this more directly, and we can always provide better library utilities, but we wanted to show that even with just the basics, we can achieve a lot, even if it's mildly tedious.
 
-This example can be viewed on [compiler explorer](https://compiler-explorer.com/z/cbfsK5e6d), which is basically an implementation of [@P4148R2]{.title}'s `protocol_view`. An owning version is easily supportable, just with some more boilerplate work. Note that the compiler explorer link contains two panes: the normal execution pane that shows that it works, and an AST printer. The AST printer is a useful way to see what code is actually injected. More on this shortly.
+This example can be viewed on [compiler explorer](https://compiler-explorer.com/z/nsPs5e6n9), which is basically an implementation of [@P4148R2]{.title}'s `protocol_view`. An owning version is easily supportable, just with some more boilerplate work. Note that the compiler explorer link contains two panes: the normal execution pane that shows that it works, and an AST printer. The AST printer is a useful way to see what code is actually injected. More on this shortly.
 
 We'll start with the usage side, and the obligatory `draw` example:
 
@@ -148,15 +148,22 @@ consteval auto param_tokens(std::vector<std::meta::info> params,
 }
 
 consteval auto inject_Vtable(std::meta::info interface) -> void {
+    /// Injects e.g.
+    /// ```
+    /// struct VTable {
+    ///   auto (*f0)(void const*, std::ostream&);
+    /// } const *vtable;
+    /// ```
+    ///
+    /// The function is named f0, not draw, in order to handle overloads
     auto vtable_members = std::meta::list_builder();
-    for (std::meta::info mem : interface_functions_of(interface)) {
+    for (int k = 0; std::meta::info mem : interface_functions_of(interface)) {
         std::meta::info  r = return_type_of(mem);
-        auto name = identifier_of(mem);
         auto params = std::meta::list_builder(^^{ , });
         params += is_const(type_of(mem)) ? ^^{ void const* } : ^^{ void* };
         params += param_tokens(parameters_of(mem));
         vtable_members += ^^{
-            \(r) (*\(id(name)))(\(params));
+            \(r) (*\(id("f", k++)))(\(params));
         };
     }
 
@@ -168,6 +175,16 @@ consteval auto inject_Vtable(std::meta::info interface) -> void {
 }
 
 consteval auto inject_vtable_for(std::meta::info interface) -> void {
+    /// Injects e.g.
+    /// ```
+    /// template <class T>
+    /// static inline constexpr VTable vtable_for = {
+    ///   +[](void const* obj, std::ostream& p0) {
+    ///     return static_cast<T const*>(obj)->draw(static_cast<std::ostream&>(p0));
+    ///   }
+    /// };
+    /// ```
+    /// The seemingly-unnecessary static_cast is to forward the parameters.
     auto inits = std::meta::list_builder(^^{ , });
     for (std::meta::info mem : interface_functions_of(interface)) {
         std::meta::info r = return_type_of(mem);
@@ -177,7 +194,8 @@ consteval auto inject_vtable_for(std::meta::info interface) -> void {
         params += param_tokens(parameters_of(mem), "p");
         std::meta::token_sequence cast_type = is_const(type_of(mem)) ? ^^{ T const* } : ^^{ T* };
         for (int k = 0; std::meta::info _ : parameters_of(mem)) {
-            args += ^^{ \(id("p", k++)) };
+            auto pN = id("p", k++);
+            args += ^^{ static_cast<decltype(\(pN))&&>(\(pN)) };
         }
 
         inits += ^^{
@@ -197,22 +215,30 @@ consteval auto inject_vtable_for(std::meta::info interface) -> void {
 
 
 consteval auto inject_interface(std::meta::info interface) -> void {
+    /// Injects e.g.
+    /// ```
+    /// auto draw(std::ostream& p0) const -> void {
+    ///     return vtable->f0(data, static_cast<std::ostream&>(p0));
+    /// }
+    /// ```
     auto forwarders = std::meta::list_builder();
-    for (std::meta::info mem : interface_functions_of(interface)) {
+    for (int idx = 0; std::meta::info mem : interface_functions_of(interface)) {
         std::meta::info r = return_type_of(mem);
         auto name = id(identifier_of(mem));
+        auto vtable_func = id("f", idx++);
         auto param_list = parameters_of(mem);
         std::meta::list_builder params(^^{ , }), args(^^{ , });
         params += param_tokens(param_list, "p");
         args += ^^{ data };
         for (int k = 0; k < param_list.size(); ++k) {
-            args += ^^{ \(id("p", k)) };
+            auto pN = id("p", k);
+            args += ^^{ static_cast<decltype(\(pN))&&>(\(pN)) };
         }
         auto suffix = is_const(type_of(mem)) ? ^^{ const } : ^^{ };
 
         forwarders += ^^{
             auto \(name)(\(params)) \(suffix) -> \(r) {
-                return vtable->\(name)(\(args));
+                return vtable->\(vtable_func)(\(args));
             }
         };
     }
@@ -220,10 +246,47 @@ consteval auto inject_interface(std::meta::info interface) -> void {
     queue_injection(forwarders);
 }
 
+consteval auto inject_satisfies_for(std::meta::info interface) -> void {
+    /// Injects e.g.
+    /// ```
+    /// template <class T>
+    /// static consteval auto satisfies_interface() -> bool {
+    ///     return requires {
+    ///         { std::declval<T const&>().draw(std::declval<std::ostream&>()) }
+    ///             -> std::convertible_to<void>;
+    ///     };
+    /// }
+    /// ```
+    auto constraints = std::meta::list_builder();
+    for (std::meta::info mem : interface_functions_of(interface)) {
+        auto obj_type = is_const(type_of(mem)) ? ^^{ T const } : ^^{ T };
+        auto args = std::meta::list_builder(^^{ , });
+        for (std::meta::info param : parameters_of(mem)) {
+            args += ^^{ std::declval<\(type_of(param))>() };
+        }
+        constraints += ^^{
+            { std::declval<\(obj_type)&>().\(id(identifier_of(mem)))(\(args)) }
+                -> std::convertible_to<\(return_type_of(mem))>;
+        };
+    }
+
+    queue_injection(^^{
+        template <class T>
+        static consteval auto satisfies_interface() -> bool {
+            return requires {
+                \(constraints)
+            };
+        }
+    });
+}
+
 consteval auto inject_erasing_ctor() -> void {
     queue_injection(^^{
-        template <class T> Dyn(T&& t)
-            : data(&t)
+        template <class T>
+            requires (!std::same_as<std::remove_cvref_t<T>, Dyn>)
+                 and (satisfies_interface<std::remove_reference_t<T>>())
+        Dyn(T&& t)
+            : data((void*)(&t))
             , vtable(&vtable_for<std::remove_cvref_t<T>>)
         {}
     });
@@ -234,6 +297,7 @@ template<class Iface> class Dyn {
     consteval {
         inject_Vtable(^^Iface);
         inject_vtable_for(^^Iface);
+        inject_satisfies_for(^^Iface);
     }
 
 public:
@@ -289,7 +353,7 @@ public:
 ```
 :::
 
-Now, the Clang AST printer for `Dyn<Interface>` prints this (starting on line 48,895):
+Now, the Clang AST printer for `Dyn<Interface>` prints this (starting on line 49,083):
 
 ::: std
 ```cpp
@@ -302,27 +366,35 @@ public:
 template<> class Dyn<Interface> {
     void *data;
     const struct VTable {
-        void (*draw)(const void *, std::ostream &);
+        void (*f0)(const void *, std::ostream &);
     } *vtable;
     template <class T> static constexpr VTable vtable_for = {+[](const void *obj, std::ostream &p0) -> void {
-        return static_cast<const T *>(obj)->draw(p0);
+        return static_cast<const T *>(obj)->draw(static_cast<std::ostream &>(p0));
     }};
+    template <class T> static consteval auto satisfies_interface() -> bool {
+        return requires { { std::declval<const T &>().draw(std::declval<std::ostream &>()) } -> std::convertible_to<void>; };
+    }
+    template<> static consteval auto satisfies_interface<Interface>() -> bool {
+        return requires { { std::declval<const Interface &>().draw(std::declval<std::ostream &>()) } -> std::convertible_to<void>; };
+    }
 public:
     auto draw(std::ostream &p0) const -> void {
-        return this->vtable->draw(this->data, p0);
+        return this->vtable->f0(this->data, static_cast<std::ostream &>(p0));
     }
-    template <class T> Dyn(T &&t) : data(&t), vtable(&vtable_for<std::remove_cvref_t<T>>) {
+    template <class T> requires (!std::same_as<std::remove_cvref_t<T>, Dyn<Interface>>) && (satisfies_interface<std::remove_reference_t<T>>()) Dyn(T &&t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<T>>) {
     }
-    template<> Dyn<Constant &>(Constant &t) : data(&t), vtable(&vtable_for<std::remove_cvref_t<Constant &>>) {
+    template<> Dyn<Constant &>(Constant &t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<Constant &>>) {
     }
-    template<> Dyn<Variable &>(Variable &t) : data(&t), vtable(&vtable_for<std::remove_cvref_t<Variable &>>) {
+    template<> Dyn<Variable &>(Variable &t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<Variable &>>) {
+    }
+    template<> Dyn<const Variable &>(const Variable &t) : data((void *)(&t)), vtable(&vtable_for<std::remove_cvref_t<const Variable &>>) {
     }
     template<> Dyn<Dyn<Interface>>(Dyn<Interface> &&t)    Dyn(Dyn<Interface> &) = default;
     Dyn(const Dyn<Interface> &) noexcept = default;    static constexpr VTable vtable_for = {+[](const void *obj, std::ostream &p0) -> void {
-        return static_cast<const Constant *>(obj)->draw(p0);
+        return static_cast<const Constant *>(obj)->draw(static_cast<std::ostream &>(p0));
     }};
     static constexpr VTable vtable_for = {+[](const void *obj, std::ostream &p0) -> void {
-        return static_cast<const Variable *>(obj)->draw(p0);
+        return static_cast<const Variable *>(obj)->draw(static_cast<std::ostream &>(p0));
     }};
 };
 ```
@@ -332,11 +404,13 @@ There is one particularly notable aspect to the implementation. Zooming in on th
 
 ::: std
 ```cpp
-
 consteval auto inject_erasing_ctor() -> void {
     queue_injection(^^{
-        template <class T> Dyn(T&& t)
-            : data(&t)
+        template <class T>
+            requires (!std::same_as<std::remove_cvref_t<T>, Dyn>)
+                 and (satisfies_interface<std::remove_reference_t<T>>())
+        Dyn(T&& t)
+            : data((void*)(&t))
             , vtable(&vtable_for<std::remove_cvref_t<T>>)
         {}
     });
@@ -346,13 +420,14 @@ template<class Iface> class Dyn {
     void *data;
     consteval {
         inject_Vtable(^^Iface);
-        inject_vtable_for(^^Iface); // <== vtable_for injected here
+        inject_vtable_for(^^Iface);     // <== vtable_for<T> injected here
+        inject_satisfies_for(^^Iface);  // <== satisfies_interface<T> injected here
     }
 
 public:
     consteval {
         inject_interface(^^Iface);
-        inject_erasing_ctor();     // <==  why do we do this
+        inject_erasing_ctor();          // <== why do we need this
     }
 
     Dyn(Dyn&) = default;
@@ -361,9 +436,9 @@ public:
 ```
 :::
 
-The tokens injected by `inject_erasing_ctor` are just fixed tokens — there is no interpolation here. Why can't we write that code directly? The problem is that name lookup for `vtable_for` during initial template parsing would fail, because `vtable_for` is only injected by `inject_vtable_for(^^Iface)`, which won't be run until instantiation. The compiler doesn't know that it's going to inject that name yet, so we need to _defer_ this lookup too. Hence, injecting pure, fixed tokens.
+The tokens injected by `inject_erasing_ctor` are just fixed tokens — there is no interpolation here. Why can't we write that code directly? The problem is that name lookup for `vtable_for` and `satisfies_interface` during initial template parsing would fail, because `vtable_for` is only injected by `inject_vtable_for(^^Iface)` and `satisfies_interface` is only injected by `inject_satisfies_for(^^Iface)`, neither of which will be run until instantiation. The compiler doesn't know that it's going to inject these names yet, so we need to _defer_ this lookup too. Hence, injecting pure, fixed tokens.
 
-There are two ways that we can avoid this issue:
+For `satisfies_interface`, we can work around this easily enough because we can just forward-declare the function and inject its definition later. But `vtable_for` is more difficult. There are two ways that we can avoid this issue:
 
 1. Somehow declare that the first `consteval` block is introducing the name `vtable_for` _and_ that that name represents a variable template. That would allow the parse of `vtable_for<` to properly both find the name and treat the `<` as the beginning of a template argument list.
 2. Allow us to forward-declare that variable template.
@@ -552,7 +627,7 @@ int main()
     {
         for( auto v: std::views::iota( 0, 5 ) | std::views::transform( splitmix64 ) )
         {
-            auto t1 = std::meta::tokenize( v, "__uwb" ); // "uwb"
+            auto t1 = std::meta::tokenize( v, "__uwb" ); // Standardized as "uwb", but implemented as "__uwb"
             auto q1 = ^^{ \(fn)(\(t1)) };
 
             auto t2 = std::meta::tokenize( v, "ull" );
@@ -567,7 +642,7 @@ int main()
 ```
 :::
 
-As you can see, that program fails:
+As you can see, that program fails as expected — `popcount<N>` deliberately uses 32-bit `__builtin_popcount` on 64-bit chunks and the generated tests catch it.
 
 ::: std
 ```
@@ -642,7 +717,7 @@ consteval auto iterator_interface(std::meta::info cls, IterConfig cfg) -> void {
             ts += ^^{ constexpr decltype(auto) operator*() const { return *this->\(cfg.adaptor); } };
         }
         if (base_pre_inc && !pre_inc) {
-            ts += ^^{ constexpr auto operator++() -> \(cls)& { ++base_reference(); return *this; } };
+            ts += ^^{ constexpr auto operator++() -> \(cls)& { ++this->\(cfg.adaptor); return *this; } };
         }
         if (base_pre_inc) {
             ts += ^^{ constexpr auto operator++(int) -> \(cls) { auto tmp = *this; ++*this; return tmp; } };
@@ -1413,6 +1488,42 @@ Note that `check` takes `T&&` and not `bool` both because we want to support exp
 
 Now, one important consequence of the macro model here interpolating expressions rather than raw tokens is that they are partially _hygienic_. Meaning that the above implementation, which introduces local variables `lhs`, `rhs`, and `expr` in the two branches, is perfectly fine — those will never conflict with names that might appear in the expression passed into `check!`.
 
+## Double Evaluation
+
+The canonical C preprocessor macro disaster is attempting to write `MIN(a++, b)` and erroneously implementing it in such a way that `a++` evaluates twice. Note that in the above example, when we decomposed the comparison, we wrote:
+
+::: std
+```cpp
+auto&& lhs = \(ops[0]);
+auto&& rhs = \(ops[1]);
+if (not (fwd!(lhs) \(operator_of(cond)) fwd!(rhs))) {
+    ::check_fail(\(text), \(sloc), lhs, \(op), rhs);
+}
+```
+:::
+
+We evaluated the operands and then used `lhs` and `rhs`, we didn't write `\(ops[0])` twice. Well... what would happen if we did? As in:
+
+::: std
+```cpp
+if (not (\(ops[0]) \(operator_of(cond)) \(ops[1]))) {
+    ::check_fail(\(text), \(sloc), \(ops[0]), \(op), \(ops[1]));
+}
+```
+:::
+
+That would actually [fail to compile](https://compiler-explorer.com/z/eqnjara95). We diagnose if an expression is evaluated multiple times:
+
+::: std
+```
+<source>:80:12: error: expansion of expression macro would evaluate this argument more than once
+   80 |     check!(f() == g());
+      |            ^
+```
+:::
+
+That's a big footgun, entirely avoided.
+
 ## Abbreviated Lambdas
 
 One of the things Barry has wanted for some time are abbreviated lambdas, which he attempted back in [@P0573R2]{.title}. As a proper macro that can actually look at its own input, this is actually very easy to implement: walk the provided token sequence looking for identifiers of the form `_X` and use that to determine the arity. Then simply paste the body in with the right number of parameters.
@@ -1626,7 +1737,7 @@ struct Bool {
     }
 
     __macro operator and(this Bool self, bool rhs) {
-        return ^^{ \(self).b or \(rhs) };
+        return ^^{ \(self).b and \(rhs) };
     }
 };
 ```
@@ -1674,6 +1785,7 @@ So it would be pretty nice if we could implement it with the [same linear sequen
 
 ::: std
 ```cpp
+namespace my {
 namespace impl {
     void begin() = delete;
 
@@ -1710,6 +1822,7 @@ inline constexpr struct begin_fn {
         return ^^{};  // unreachable: the error produces no expansion
     }
 } begin{};
+}
 ```
 :::
 
@@ -1755,7 +1868,7 @@ auto v = vec!{
 ```
 :::
 
-Note also that macro invocation can use any bracket: `()`, `[]`, or `{}`. In this case, `{}` seems most appropriate on the call site, so that's what we do.
+Note also that macro invocation can use any bracket: `()`, `[]`, or `{}`. In this case, `{}` seems most appropriate on the call site, so that's what we do. For macro invocations with braces (but not parentheses or square brackets), a trailing comma can be supplied (as in the above), as is typical with braced lists.
 
 ## Logging
 
@@ -1803,7 +1916,7 @@ struct Logger {
 ```
 :::
 
-In the above, we actually have nested token sequences. An interpolation in a token sequence is actually associated with the _innermost_ token sequence that it's found in. Thus, the `\(level)` interpolation above isn't trying to immediately interpolate (which would fail, as there is no `level` variable) but rather it will interpolate when the outer token sequence is injected — at which point there will be a `level` variable.
+In the above, we actually have nested token sequences. An interpolation in a token sequence is actually associated with the _innermost_ token sequence that it's found in. Thus, the `\(level)` interpolation above isn't trying to immediately interpolate (which would fail, as there is no `level` variable). The macro body is merely parsed, `\(level)` binds to the inner literal and inteprolates each time the injected macro is _invoked_, when the body executes and `level` is in scope.
 
 Now, we have a member macro `debug!`, `info!`, and `error!`. If we do something [like this](https://compiler-explorer.com/z/aPKhGz6sz), we'll see that `get()` is not even invoked, but the other macros do exist and we get our logs. All the format strings are still type checked:
 
@@ -1859,7 +1972,7 @@ namespace std::meta {
   enum class token_kind { identifier, keyword, literal, punctuator, annotation, unknown };
   consteval auto token_kind_of (token_sequence tok) -> token_kind;   // unknown: empty or >1 token
   consteval auto operator_of   (token_sequence tok) -> operators;    // a complete operator token
-  consteval auto identifier_of (token_sequence tok) -> string_view;  // a single identifier token,
+  consteval auto identifier_of (token_sequence tok) -> string_view;  // tok must be a single identifier token (else non-constant)
 
   // ── Injection ──────────────────────────────────────────────────────────
   consteval auto queue_injection(token_sequence) -> void;                  // into the current context
@@ -1915,7 +2028,7 @@ namespace std::meta {
 
 ## Choice of Interpolator
 
-One of the things that becomes clear when working through macro examples is that it does come up that we want to interpolate an argument into a function call, which ends up looking like `foo(\(arg))`. Those are two very different kinds of parentheses — the outer pair is a token in our output, while the inner pair is part of the interpolation operator. The stacking of parentheses makes the code a little challenging to parse. For a human that is, machines don't care .
+One of the things that becomes clear when working through macro examples is that it does come up that we want to interpolate an argument into a function call, which ends up looking like `foo(\(arg))`. Those are two very different kinds of parentheses — the outer pair is a token in our output, while the inner pair is part of the interpolation operator. The stacking of parentheses makes the code a little challenging to parse. For a human that is, machines don't care.
 
 However, there really aren't many options available to us for interpolation, since we _must_ support all C++ syntax. Other potential options here are:
 
