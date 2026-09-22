@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-09-21" />
+  <meta name="dcterms.date" content="2026-09-22" />
   <title>Token Sequence Injection</title>
   <style>
 
@@ -2070,7 +2070,7 @@ Injection</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-09-21</td>
+    <td>2026-09-22</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -2179,7 +2179,10 @@ token sequence</a>:</p>
 <p>The sole requirement on the contents of a token sequence are that the
 <code class="sourceCode cpp"><span class="op">{</span></code> and
 <code class="sourceCode cpp"><span class="op">}</span></code> pairs are
-balanced. Parentheses and square brackets may be unbalanced.</p>
+balanced. Parentheses and square brackets may be unbalanced. Token
+sequences operate after preprocessing, so token pasting a la
+<code class="sourceCode cpp"><span class="pp">#</span><span class="er">#</span></code>
+is not possible.</p>
 <p>A token sequence can be explicitly injected via
 <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>queue_injection</code>
 or implicitly injected through a number of hooks that we will walk
@@ -2227,6 +2230,14 @@ interpolates a token which is the type
 <code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>
 (note: it does not interpolate the 6 tokens that make up that
 type).</li>
+<li>Otherwise, if <code class="sourceCode cpp">e</code> is a
+<code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>operators</code>,
+then
+<code class="sourceCode cpp">\<span class="op">(</span>e<span class="op">)</span></code>
+interpolates into the operator token
+(e.g. <code class="sourceCode cpp">\<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>operators<span class="op">::</span>op_equals_equals<span class="op">)</span></code>
+yields the token
+<code class="sourceCode cpp"><span class="op">==</span></code>).</li>
 <li>Otherwise, a token is inserted whose meaning is the <em>value</em>
 of <code class="sourceCode cpp">e</code>.
 <code class="sourceCode cpp">\<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>size<span class="op">(</span>poem<span class="op">))</span></code>
@@ -2572,14 +2583,21 @@ parsing would fail, because
 <code class="sourceCode cpp">inject_vtable_for<span class="op">(^^</span>Iface<span class="op">)</span></code>,
 which won’t be run until instantiation. The compiler doesn’t know that
 it’s going to inject that name yet, so we need to <em>defer</em> this
-lookup too. Hence, injecting pure, fixed tokens. One way to avoid this
-would be able to somehow declare that the first
+lookup too. Hence, injecting pure, fixed tokens.</p>
+<p>There are two ways that we can avoid this issue:</p>
+<ol type="1">
+<li>Somehow declare that the first
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 block is introducing the name
 <code class="sourceCode cpp">vtable_for</code> <em>and</em> that that
-name represents a variable template. Another way would be to allow us to
-forward-declare that variable template. For now, we simply note this
-problem.</p>
+name represents a variable template. That would allow the parse of
+<code class="sourceCode cpp">vtable_for<span class="op">&lt;</span></code>
+to properly both find the name and treat the
+<code class="sourceCode cpp"><span class="op">&lt;</span></code> as the
+beginning of a template argument list.</li>
+<li>Allow us to forward-declare that variable template.</li>
+</ol>
+<p>For now, we simply note this problem.</p>
 <h2 data-number="2.2" id="push-based-customization-i-formatting"><span class="header-section-number">2.2</span> Push-Based Customization I
 (Formatting)<a href="#push-based-customization-i-formatting" class="self-link"></a></h2>
 <p>Using standard C++26 with annotations, it is possible to do
@@ -3204,7 +3222,7 @@ declaration cloning:</p>
 </div>
 <p>Starting there, that lets us implement
 <code class="sourceCode cpp">LoggingVector<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
-<a href="https://compiler-explorer.com/z/Mv4onhT94">like this</a>:</p>
+<a href="https://compiler-explorer.com/z/Mv4onhT94">like this</a>.</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>std<span class="op">::</span>vector<span class="op">&lt;</span>std<span class="op">::</span>string_view<span class="op">&gt;</span> calls<span class="op">;</span></span>
@@ -3245,6 +3263,10 @@ declaration cloning:</p>
 <span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
+<p>The <code class="sourceCode cpp">reflect_constant</code> check above
+is to skip the customization point from <span class="title"><span class="citation" data-cites="P4340R0"><a href="https://wg21.link/p4340r0">[P4340R0] (Extending constant template
+parameter support by customizing
+std::meta::reflect_constant)</a></span></span>.</p>
 <p>Which now, because we’re actually <em>cloning</em> the declaration,
 all the right call shapes work. We can pass braced-init-lists into
 functions on <code class="sourceCode cpp">LoggingVector</code> too:</p>
@@ -4201,13 +4223,13 @@ which is a public helper in libc++’s
 <code class="sourceCode cpp">std<span class="op">::</span>vector</code>
 implementation, because we know we have the capacity here, to avoid the
 extra checks. This macro finally supports what people have wanted for a
-while, and <a href="https://compiler-explorer.com/z/vWTno56s5">it
+while, and <a href="https://compiler-explorer.com/z/Kxr7aWEzq">it
 works</a>:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb51"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> v <span class="op">=</span> vec<span class="op">!{</span></span>
 <span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>make_unique<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">1</span><span class="op">),</span></span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>make_unique<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">2</span><span class="op">)</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>make_unique<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">2</span><span class="op">),</span></span>
 <span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
@@ -4265,11 +4287,20 @@ to have a loop that itself injects macros:</p>
 <span id="cb52-37"><a href="#cb52-37" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
+<p>In the above, we actually have nested token sequences. An
+interpolation in a token sequence is actually associated with the
+<em>innermost</em> token sequence that it’s found in. Thus, the
+<code class="sourceCode cpp">\<span class="op">(</span>level<span class="op">)</span></code>
+interpolation above isn’t trying to immediately interpolate (which would
+fail, as there is no <code class="sourceCode cpp">level</code> variable)
+but rather it will interpolate when the outer token sequence is injected
+— at which point there will be a
+<code class="sourceCode cpp">level</code> variable.</p>
 <p>Now, we have a member macro
 <code class="sourceCode cpp">debug<span class="op">!</span></code>,
 <code class="sourceCode cpp">info<span class="op">!</span></code>, and
 <code class="sourceCode cpp">error<span class="op">!</span></code>. If
-we do something <a href="https://compiler-explorer.com/z/5nM93ajvP">like
+we do something <a href="https://compiler-explorer.com/z/aPKhGz6sz">like
 this</a>, we’ll see that
 <code class="sourceCode cpp">get<span class="op">()</span></code> is not
 even invoked, but the other macros do exist and we get our logs. All the
@@ -4500,6 +4531,10 @@ Universal Template Parameters. <a href="https://wg21.link/p2989r2"><div class="c
 [P4148R2] Jonathan B. Coe, Hana Dusikova, Antony Peacock, Philip Craig,
 Neelofer Banglawala. 2026-06-11. protocol: Structural Subtyping for C++.
 <a href="https://wg21.link/p4148r2"><div class="csl-indent">https://wg21.link/p4148r2</div></a>
+</div>
+<div id="ref-P4340R0" class="csl-entry" role="listitem">
+[P4340R0] Barry Revzin. 2026-08-13. Extending constant template
+parameter support by customizing std::meta::reflect_constant. <a href="https://wg21.link/p4340r0"><div class="csl-indent">https://wg21.link/p4340r0</div></a>
 </div>
 </div>
 </div>

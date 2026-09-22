@@ -41,7 +41,7 @@ constexpr auto poem = ^^{
 ```
 :::
 
-The sole requirement on the contents of a token sequence are that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced.
+The sole requirement on the contents of a token sequence are that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced. Token sequences operate after preprocessing, so token pasting a la `##` is not possible.
 
 A token sequence can be explicitly injected via `std::meta::queue_injection` or implicitly injected through a number of hooks that we will walk through.
 
@@ -58,6 +58,7 @@ In order to add external content into a token sequence, interpolation is done vi
 
 * If `e` is (or is convertible to) `token_sequence`, the tokens of `e` are directly inserted in place.
 * Otherwise, if `e` is (or is convertible to) `info`, then a single artificial token is inserted whose meaning is what `e` represents. For instance, `\(^^int)` interpolates a token which is the type `int` (note: it is not the keyword `int`) and `\(^^std::vector<int>)` interpolates a token which is the type `std::vector<int>` (note: it does not interpolate the 6 tokens that make up that type).
+* Otherwise, if `e` is a `std::meta::operators`, then `\(e)` interpolates into the operator token (e.g. `\(std::meta::operators::op_equals_equals)` yields the token `==`).
 * Otherwise, a token is inserted whose meaning is the _value_ of `e`. `\(std::ranges::size(poem))` would be the value `16` (note: not an integer literal).
 
 Some tokens are very important to be able to add into a token sequence, but cannot actually be produced without help. The two most significant of these are identifiers and string literals. In order to do so, the library will provide the functions `std::meta::id` and `std::meta::str_lit`, respectively. We will see examples of these shortly.
@@ -360,7 +361,14 @@ public:
 ```
 :::
 
-The tokens injected by `inject_erasing_ctor` are just fixed tokens — there is no interpolation here. Why can't we write that code directly? The problem is that name lookup for `vtable_for` during initial template parsing would fail, because `vtable_for` is only injected by `inject_vtable_for(^^Iface)`, which won't be run until instantiation. The compiler doesn't know that it's going to inject that name yet, so we need to _defer_ this lookup too. Hence, injecting pure, fixed tokens. One way to avoid this would be able to somehow declare that the first `consteval` block is introducing the name `vtable_for` _and_ that that name represents a variable template. Another way would be to allow us to forward-declare that variable template. For now, we simply note this problem.
+The tokens injected by `inject_erasing_ctor` are just fixed tokens — there is no interpolation here. Why can't we write that code directly? The problem is that name lookup for `vtable_for` during initial template parsing would fail, because `vtable_for` is only injected by `inject_vtable_for(^^Iface)`, which won't be run until instantiation. The compiler doesn't know that it's going to inject that name yet, so we need to _defer_ this lookup too. Hence, injecting pure, fixed tokens.
+
+There are two ways that we can avoid this issue:
+
+1. Somehow declare that the first `consteval` block is introducing the name `vtable_for` _and_ that that name represents a variable template. That would allow the parse of `vtable_for<` to properly both find the name and treat the `<` as the beginning of a template argument list.
+2. Allow us to forward-declare that variable template.
+
+For now, we simply note this problem.
 
 ## Push-Based Customization I (Formatting)
 
@@ -905,7 +913,7 @@ consteval auto forwarding_call_for(info d, token_sequence receiver) -> token_seq
 ```
 :::
 
-Starting there, that lets us implement `LoggingVector<T>` [like this](https://compiler-explorer.com/z/Mv4onhT94):
+Starting there, that lets us implement `LoggingVector<T>` [like this](https://compiler-explorer.com/z/Mv4onhT94).
 
 ::: std
 ```cpp
@@ -947,6 +955,8 @@ public:
 };
 ```
 :::
+
+The `reflect_constant` check above is to skip the customization point from [@P4340R0]{.title}.
 
 Which now, because we're actually _cloning_ the declaration, all the right call shapes work. We can pass braced-init-lists into functions on `LoggingVector` too:
 
@@ -1734,13 +1744,13 @@ __macro vec(Args&&... args) {
 ```
 :::
 
-We're using `__emplace_back_assume_capacity()`, which is a public helper in libc++'s `std::vector` implementation, because we know we have the capacity here, to avoid the extra checks. This macro finally supports what people have wanted for a while, and [it works](https://compiler-explorer.com/z/vWTno56s5):
+We're using `__emplace_back_assume_capacity()`, which is a public helper in libc++'s `std::vector` implementation, because we know we have the capacity here, to avoid the extra checks. This macro finally supports what people have wanted for a while, and [it works](https://compiler-explorer.com/z/Kxr7aWEzq):
 
 ::: std
 ```cpp
 auto v = vec!{
     std::make_unique<int>(1),
-    std::make_unique<int>(2)
+    std::make_unique<int>(2),
 };
 ```
 :::
@@ -1793,7 +1803,9 @@ struct Logger {
 ```
 :::
 
-Now, we have a member macro `debug!`, `info!`, and `error!`. If we do something [like this](https://compiler-explorer.com/z/5nM93ajvP), we'll see that `get()` is not even invoked, but the other macros do exist and we get our logs. All the format strings are still type checked:
+In the above, we actually have nested token sequences. An interpolation in a token sequence is actually associated with the _innermost_ token sequence that it's found in. Thus, the `\(level)` interpolation above isn't trying to immediately interpolate (which would fail, as there is no `level` variable) but rather it will interpolate when the outer token sequence is injected — at which point there will be a `level` variable.
+
+Now, we have a member macro `debug!`, `info!`, and `error!`. If we do something [like this](https://compiler-explorer.com/z/aPKhGz6sz), we'll see that `get()` is not even invoked, but the other macros do exist and we get our logs. All the format strings are still type checked:
 
 ::: std
 ```cpp
