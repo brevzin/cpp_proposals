@@ -41,6 +41,8 @@ constexpr auto poem = ^^{
 ```
 :::
 
+The sole requirement on the contents of a token sequence are that the `{` and `}` pairs are balanced. Parentheses and square brackets may be unbalanced.
+
 A token sequence can be explicitly injected via `std::meta::queue_injection` or implicitly injected through a number of hooks that we will walk through.
 
 Two `token_sequence`s can be concatenated via `+` or `+=`. A `token_sequence` is a random access range of `token_sequence` and can be directly indexed. Two objects of type `token_sequence` can be compared for equality:
@@ -48,16 +50,14 @@ Two `token_sequence`s can be concatenated via `+` or `+=`. A `token_sequence` is
 ::: std
 ```cpp
 static_assert(poem[0] == ^^{ if });
-
-// whitespace doesn't count, but the comma does
-static_assert(std::ranges::size(poem) == 16);
+static_assert(std::ranges::size(poem) == 16); // 15 keywords and a comma
 ```
 :::
 
-In order to add external content into a token sequence, interpolation is done via the `\(e)` operator. The parentheses are mandatory (otherwise `\u` could begin a UCN, this way it's always unambiguous). The meaning of interpolation depends on the type of `e` (done to minimize interpolation kinds):
+In order to add external content into a token sequence, interpolation is done via the `\(e)` operator for some expression `e`. The parentheses are mandatory (otherwise `\u` could begin a UCN, this way it's always unambiguous). The meaning of interpolation depends on the type of `e` (done to minimize interpolation kinds):
 
 * If `e` is (or is convertible to) `token_sequence`, the tokens of `e` are directly inserted in place.
-* Otherwise, if `e` is (or is convertible to) `info`, then a single artificial token is inserted whose meaning is what `e` represents. For instance, `\(^^int)` interpolates a token which is the type `int` (note: it is not the keyword `int`).
+* Otherwise, if `e` is (or is convertible to) `info`, then a single artificial token is inserted whose meaning is what `e` represents. For instance, `\(^^int)` interpolates a token which is the type `int` (note: it is not the keyword `int`) and `\(^^std::vector<int>)` interpolates a token which is the type `std::vector<int>` (note: it does not interpolate the 6 tokens that make up that type).
 * Otherwise, a token is inserted whose meaning is the _value_ of `e`. `\(std::ranges::size(poem))` would be the value `16` (note: not an integer literal).
 
 Some tokens are very important to be able to add into a token sequence, but cannot actually be produced without help. The two most significant of these are identifiers and string literals. In order to do so, the library will provide the functions `std::meta::id` and `std::meta::str_lit`, respectively. We will see examples of these shortly.

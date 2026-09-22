@@ -2176,6 +2176,10 @@ token sequence</a>:</p>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
+<p>The sole requirement on the contents of a token sequence are that the
+<code class="sourceCode cpp"><span class="op">{</span></code> and
+<code class="sourceCode cpp"><span class="op">}</span></code> pairs are
+balanced. Parentheses and square brackets may be unbalanced.</p>
 <p>A token sequence can be explicitly injected via
 <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>queue_injection</code>
 or implicitly injected through a number of hooks that we will walk
@@ -2192,15 +2196,14 @@ equality:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>poem<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">==</span> <span class="op">^^{</span> <span class="cf">if</span> <span class="op">});</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// whitespace doesn&#39;t count, but the comma does</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>size<span class="op">(</span>poem<span class="op">)</span> <span class="op">==</span> <span class="dv">16</span><span class="op">);</span></span></code></pre></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>size<span class="op">(</span>poem<span class="op">)</span> <span class="op">==</span> <span class="dv">16</span><span class="op">);</span> <span class="co">// 15 keywords and a comma</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>In order to add external content into a token sequence, interpolation
 is done via the
 <code class="sourceCode cpp">\<span class="op">(</span>e<span class="op">)</span></code>
-operator. The parentheses are mandatory (otherwise
+operator for some expression <code class="sourceCode cpp">e</code>. The
+parentheses are mandatory (otherwise
 <code class="sourceCode cpp">\u</code> could begin a UCN, this way it’s
 always unambiguous). The meaning of interpolation depends on the type of
 <code class="sourceCode cpp">e</code> (done to minimize interpolation
@@ -2218,7 +2221,12 @@ artificial token is inserted whose meaning is what
 interpolates a token which is the type
 <code class="sourceCode cpp"><span class="dt">int</span></code> (note:
 it is not the keyword
-<code class="sourceCode cpp"><span class="dt">int</span></code>).</li>
+<code class="sourceCode cpp"><span class="dt">int</span></code>) and
+<code class="sourceCode cpp">\<span class="op">(^^</span>std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;)</span></code>
+interpolates a token which is the type
+<code class="sourceCode cpp">std<span class="op">::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span></code>
+(note: it does not interpolate the 6 tokens that make up that
+type).</li>
 <li>Otherwise, a token is inserted whose meaning is the <em>value</em>
 of <code class="sourceCode cpp">e</code>.
 <code class="sourceCode cpp">\<span class="op">(</span>std<span class="op">::</span>ranges<span class="op">::</span>size<span class="op">(</span>poem<span class="op">))</span></code>
