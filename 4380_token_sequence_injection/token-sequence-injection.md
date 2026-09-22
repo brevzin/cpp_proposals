@@ -1228,7 +1228,34 @@ The harder cases are going to be cases where the syntax is initially correct but
 ```
 :::
 
-The error still points to the correct location. It is that identifier that's incorrect. But why?
+The error still points to the correct location. It is that identifier that's incorrect. But why? Well, we can change our implementation to print (using [@P2758R5]) the tokens:
+
+::: std
+```cpp
+auto next_fn = ^^{
+    +[](\(params))-> \(r) {
+        return static_cast<\(cast_type)>(obj)->\(id(name))( \(args) );
+    }
+};
+
+std::constexpr_print_str(stringize(next_fn));
+
+inits += next_fn;
+```
+:::
+
+And when we do that, we will see this:
+
+::: std
+```
+../examples/debug.cxx:69:9: note: constexpr message: +[]( void const* obj , std::ostream & p0)-> void { return static_cast< T const*>(obj)->draw(
+      q0 ); }
+   69 |         std::constexpr_print_str(stringize(next_fn));
+      |         ^
+```
+:::
+
+There is probably a better way to present that token stream, but it's already a good starting point, and if we stare at it we can spot the issue: the param is named `p0` but the argument we're using is `q0`. We suspect between the direct errors, the indirect errors that require utilities like `constexpr_print_str`, and the more involved issues that compile but are still wrong that push us to look at the AST printer, the debuggability isn't bad at all. But of course, the current state is the floor — we can always come up with better methods.
 
 # Token Sequence Macros
 
