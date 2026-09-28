@@ -180,11 +180,6 @@ def add_header_include(doc, text):
         doc.metadata['header-includes'] = pf.MetaList(existing, include)
 
 def finalize(doc):
-    # Turn the static table of contents into a floating, scrollspy
-    # sidebar on wide viewports.
-    with open(f'{MD_DIR}/floating-toc.html') as f:
-        add_header_include(doc, f.read())
-
     if doc.has_mermaid:
         add_header_include(doc, """<style>
         .mermaid-diagram {
