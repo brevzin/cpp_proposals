@@ -23,7 +23,7 @@ Since [@P3549R0]: keeping the deduction rules equivalent for `do` expressions, f
 
 # Introduction
 
-One pattern that will occur with some regularity with pattern matching [@P2688R6]{.title} (and [@P2806R5]{.title}) is the desire to produce values for some patterns but not for all cases. Consider the following simplified example:
+One pattern that will occur with some regularity with pattern matching [@P2688R6]{.title} (and [@P2806R5]{.title}) is the desire to produce values for some patterns but not for all. Consider the following simplified example:
 
 <table>
 <tr><td>
@@ -68,7 +68,7 @@ void h(int i) {
 
 In all of these cases, the desire is that if `i == 0` then we initialize `j` to the value `0`, otherwise we `std::terminate()`. Given that `std::terminate` does in fact, as the name suggests, terminate, we don't actually have to worry about producing a value in that case. These examples are all equivalent — or at least, they should be. But C++ does not currently recognize them as such (with one exception that we'll get to later).
 
-The rule for pattern matching by default is that the type of the match expression is deduced from each arm and each arm has to have the same type. The same rule we have for `auto` deduction in functions and lambdas. In the above examples, the first arm always has type `int`. But for `f()` and `g()`, the second arm has type `void`. In order to type check, we have to wrap our call to `std::terminate` in an expression that actually has type `int`. The `do` expression in `h()` is one such way.
+The rule for pattern matching by default is that the type of the match expression is deduced from each arm and each arm has to have the same type. This is the same rule that we have for `auto` deduction in functions and lambdas. In the above examples, the first arm always has type `int`. But for `f()` and `g()`, the second arm has type `void`. In order to type check, we have to wrap our call to `std::terminate` in an expression that actually has type `int`. The `do` expression in `h()` is one such way.
 
 The extra `-> int` does solve the problem, but it's also misleading. We're not actually ever producing an `int` here, we're just writing a type annotation to hammer the compiler into submission. That's just not a great place to be.
 
