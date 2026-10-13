@@ -105,7 +105,7 @@ An expression is said to _diverge_ if it unconditionally escapes control flow. C
 * a `$throw-expression$`, and
 * a call to a `[[noreturn]]` function.
 
-The former explicitly diverges (control flow immediately escapes and doesn't return to keep evaluating in the original slot) while the latter implicitly diverges (technically a function marked `[[noreturn]]` can still return, we just state that doing so is undefined behavior in [dcl.attr.noreturn]{.sref}).
+The former explicitly diverges (control flow immediately escapes and doesn't return to keep evaluating in the original spot) while the latter implicitly diverges (technically a function marked `[[noreturn]]` can still return, we just state that doing so is undefined behavior in [dcl.attr.noreturn]{.sref}).
 
 As hinted at earlier, the language already recognizes that expressions can diverge in one spot: the conditional operator. Consider:
 
@@ -293,7 +293,7 @@ How do you have a callback that signals that it must not terminate? Well, you ca
 
 ### `std::expected<T, std::noreturn_t>`
 
-One is its use in sum types. Consider the type `std::expected<T, std::noreturn_t>`. What are its properties? Well, in general, a `std::expected<T, E>` is holding either a `T` in its valid state or an `E` in its error state, and so it's storage is something like a `bool` and a `union { T; E; }`. But if `E` is `std::noreturn_t`, then we know that there _cannot be_ an error state. You cannot form a value of type `std::noreturn_t`, so we don't even need to store it at all. The layout of `std::expected<T, std::noreturn_t>` can simply be `struct { T; }`. Likewise for `std::expected<std::noreturn_t, E>`, which can only ever be in the error state.
+Consider the type `std::expected<T, std::noreturn_t>`. What are its properties? Well, in general, a `std::expected<T, E>` is holding either a `T` in its valid state or an `E` in its error state, and so it's storage is something like a `bool` and a `union { T; E; }`. But if `E` is `std::noreturn_t`, then we know that there _cannot be_ an error state. You cannot form a value of type `std::noreturn_t`, so we don't even need to store it at all. The layout of `std::expected<T, std::noreturn_t>` can simply be `struct { T; }`. Likewise for `std::expected<std::noreturn_t, E>`, which can only ever be in the error state.
 
 This is a useful thing to be able to express in the type system, since you might have an API whose contract is that it returns some kind of `expected<T, E>` — but this particular implementation of that API might simply never fail (or always fail). So we can return an `expected<T, noreturn_t>` to conform to the expected shape of the return type while also having all the state checks trivially optimize away (since its `operator bool() const` is trivially just `return true;`). Moreover, a lot of code that expects a particular `E` will continue to work fine since `noreturn_t` is convertible to `E`.
 
@@ -338,7 +338,7 @@ The last case here is simple — we can special case escaping statements, and th
 
 The first four cases though also all unconditionally diverge. We know that from simply examining the code. But what is the specific language rule by which we could ensure that the pattern match expression can exclude these arms when deducing the type? In `@*pattern*~3~@`, we actually have a `do_return` statement, so the `do` expression there could straightforwardly be said to have type `noreturn_t` and thus diverge. But the other three have no `do_return` and thus would, by default, end up having type `void` — which we do not want. So what do we do?
 
-One option is to copy the logic from some other languages (like Rust) and also the initial GCC statement-expression model and have an implicit value from `do` expressions. That is, the other three patterns above implicitly take their values from `throw 2`, `std::terminate()`, and `continue` respectively — which all have type `noreturn_t`. So this would just work. But we've already decided to _not_ pursue implicit last value in `do` expressions (see [that paper's discussion](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p2806r5.html#implicit-last-value)).
+One option is to copy the logic from some other languages (like Rust) and also the model of GCC's  statement-expression model and have an implicit value from `do` expressions. That is, the other three patterns above implicitly take their values from `throw 2`, `std::terminate()`, and `continue` respectively — which all have type `noreturn_t`. So this would just work. But we've already decided to _not_ pursue implicit last value in `do` expressions (see [that paper's discussion](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p2806r5.html#implicit-last-value)).
 
 
 So if we don't want to use implicit last value, how else can we deduce divergence? We suggest the following rule, inspired by implicit last value:
@@ -358,7 +358,7 @@ So if we don't want to use implicit last value, how else can we deduce divergenc
 
 * [3.1]{.pnum} If there is a `$trailing-return-type$` that is not a placeholder, that type.
 * [3.2]{.pnum} Otherwise, if there are any non-discarded `do_return` statements within the body of the `$do-expression$`, let `T` be the type deduced from them. If the type deduced is not the same in each deduction, the program is ill-formed. Otherwise, the type is `T`.
-* [3.3]{.pnum} Otherwise, if the any `$statement$` is a diverging statement, then `noreturn_t`.
+* [3.3]{.pnum} Otherwise, if the last `$statement$` is a diverging statement, then `noreturn_t`.
 * [3.4]{.pnum} Otherwise, `void`.
 :::
 

@@ -1934,8 +1934,7 @@ Introduction<a href="#introduction" class="self-link"></a></h1>
 matching <span class="title"><span class="citation" data-cites="P2688R6"><a href="https://wg21.link/p2688r6">[P2688R6]
 (Pattern Matching with `match` and `case`)</a></span></span> (and <span class="title"><span class="citation" data-cites="P2806R5"><a href="https://wg21.link/p2806r5">[P2806R5] (do
 expressions)</a></span></span>) is the desire to produce values for some
-patterns but not for all cases. Consider the following simplified
-example:</p>
+patterns but not for all. Consider the following simplified example:</p>
 <table>
 <tr>
 <td>
@@ -1985,7 +1984,7 @@ equivalent — or at least, they should be. But C++ does not currently
 recognize them as such (with one exception that we’ll get to later).</p>
 <p>The rule for pattern matching by default is that the type of the
 match expression is deduced from each arm and each arm has to have the
-same type. The same rule we have for
+same type. This is the same rule that we have for
 <code class="sourceCode cpp"><span class="kw">auto</span></code>
 deduction in functions and lambdas. In the above examples, the first arm
 always has type
@@ -2055,7 +2054,7 @@ and</li>
 function.</li>
 </ul>
 <p>The former explicitly diverges (control flow immediately escapes and
-doesn’t return to keep evaluating in the original slot) while the latter
+doesn’t return to keep evaluating in the original spot) while the latter
 implicitly diverges (technically a function marked
 <code class="sourceCode cpp"><span class="op">[[</span><span class="at">noreturn</span><span class="op">]]</span></code>
 can still return, we just state that doing so is undefined behavior in
@@ -2348,7 +2347,7 @@ the type system today. But with a bottom type it can be, and the type
 becomes meaningful.</p>
 <h3 data-number="2.2.2" id="stdexpectedt-stdnoreturn_t"><span class="header-section-number">2.2.2</span>
 <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T<span class="op">,</span> std<span class="op">::</span>noreturn_t<span class="op">&gt;</span></code><a href="#stdexpectedt-stdnoreturn_t" class="self-link"></a></h3>
-<p>One is its use in sum types. Consider the type
+<p>Consider the type
 <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T<span class="op">,</span> std<span class="op">::</span>noreturn_t<span class="op">&gt;</span></code>.
 What are its properties? Well, in general, a
 <code class="sourceCode cpp">std<span class="op">::</span>expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span></code>
@@ -2506,8 +2505,8 @@ thus would, by default, end up having type
 <code class="sourceCode cpp"><span class="dt">void</span></code> — which
 we do not want. So what do we do?</p>
 <p>One option is to copy the logic from some other languages (like Rust)
-and also the initial GCC statement-expression model and have an implicit
-value from
+and also the model of GCC’s statement-expression model and have an
+implicit value from
 <code class="sourceCode cpp"><span class="cf">do</span></code>
 expressions. That is, the other three patterns above implicitly take
 their values from
@@ -2569,7 +2568,7 @@ within the body of the
 the type deduced is not the same in each deduction, the program is
 ill-formed. Otherwise, the type is
 <code class="sourceCode cpp">T</code>.</li>
-<li><span class="marginalizedparent"><a href="#pnum-11" id="pnum-11" class="marginalized">(3.3)</a></span> Otherwise, if the any
+<li><span class="marginalizedparent"><a href="#pnum-11" id="pnum-11" class="marginalized">(3.3)</a></span> Otherwise, if the last
 <code class="sourceCode cpp"><em>statement</em></code> is a diverging
 statement, then <code class="sourceCode cpp">noreturn_t</code>.</li>
 <li><span class="marginalizedparent"><a href="#pnum-12" id="pnum-12" class="marginalized">(3.4)</a></span> Otherwise,
