@@ -252,7 +252,7 @@ Let's imagine what it would look like if C++ also had such a type. We'll call it
 
 This makes sense from a type-theoretic perspective and makes a lot of other uses just work.
 
-We would then change the type of a `$throw-expression$` to be `noreturn_t` (instead of `void`). This change means we'd replace the special case of `$throw-expression$` in the conditional operator with a different special case of one side being a diverging expression.
+We would then change the type of a `$throw-expression$` to be `noreturn_t` (instead of `void`). This change means we'd replace the special case of `$throw-expression$` in the conditional operator with generic handling of diverging expressions.
 
 Consider:
 
