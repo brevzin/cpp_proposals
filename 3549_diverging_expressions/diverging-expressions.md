@@ -16,17 +16,22 @@ toc: true
 status: progress
 ---
 
+
+# Revision History {- .unlisted .collapsed}
+
+Since [@P3549R0]: keeping the deduction rules equivalent for `do` expressions, functions, and lambdas — each can now deduce `noreturn_t` if they diverge. Added [implementation experience](#implementation-experience) section.
+
 # Introduction
 
-One pattern that will occur with some regularity with pattern matching [@P2688R4]{.title} (and [@P2806R2]{.title}) is the desire to produce values for some patterns but not for all cases. Consider the following simplified example:
+One pattern that will occur with some regularity with pattern matching [@P2688R6]{.title} (and [@P2806R5]{.title}) is the desire to produce values for some patterns but not for all cases. Consider the following simplified example:
 
 <table>
 <tr><td>
 ```cpp
 void f(int i) {
-  int j = i match {
-    0 => 0;
-    _ => std::terminate();
+  int j = match (i) {
+    case 0 => 0;
+    case _ => std::terminate();
   };
   use(j);
 }
@@ -35,9 +40,9 @@ void f(int i) {
 <td>
 ```cpp
 void g(int i) {
-  int j = i match {
-    0 => 0;
-    _ => do {
+  int j = match (i) {
+    case 0 => 0;
+    case _ => do {
       std::terminate();
     };
   };
@@ -48,9 +53,9 @@ void g(int i) {
 <td>
 ```cpp
 void h(int i) {
-  int j = i match {
-    0 => 0;
-    _ => do -> int {
+  int j = match (i) {
+    case 0 => 0;
+    case _ => do -> int {
       std::terminate();
     };
   };
@@ -112,13 +117,18 @@ int x = $condition$ ? 42 : throw std::runtime_error("oops"); // OK
 
 The conditional operator has to merge two values into one. But if one of the operands is a `$throw-expression$`, then the value of the conditional operator is trivially the other operand — or there is just no value to speak of. The above is perfectly valid code, the conditional expression is a prvalue `int` (that sometimes throws).
 
-The pattern matching paper recognizes this as well, and explicitly recognizes pattern arms that are `$throw-expression$`s as not participating in deduction either:
+The pattern matching paper recognizes this as well, and explicitly recognizes pattern arms that are `$throw-expression$`s as not participating in deduction either, while also introducing syntax for a non-returning expression handler:
 
 ::: std
 ```cpp
-int x = v match { // OK
-  0 => 0;
-  _ => throw std::runtime_error("oops");
+int x = match (v) { // OK
+  case 0 => 0;
+  case _ => throw std::runtime_error("oops");
+};
+
+int y = match (v) { // OK
+  case 0 => 0;
+  case _ => not return std::terminate();
 };
 ```
 :::
@@ -143,16 +153,16 @@ Note that this _does_ work — we will terminate before we evaluate the `throw`.
 
 But there's not any difference between throwing an exception and invoking a non-returning function when we're talking about whether an expression produces a value. Neither produces a value, so neither needs to participate in any language rules that involve merging multiple expressions!
 
-We think it's important to recognize invocations of non-returning functions as diverging because we want people to be able to write the code on the left, and not have to write either of the two workarounds presented:
+We think it's important to recognize invocations of non-returning functions as diverging because we want people to be able to write the code on the left, and not have to write either of the two workarounds presented (or the bespoke `! return` syntax):
 
 <table>
 <tr><th>Desired</ht><th>Workaround with `throw`</th><th>Workaround with explicit type</th></tr>
 <tr><td>
 ```cpp
 void f(int i) {
-  int j = i match {
-    0 => 0;
-    _ => std::terminate();
+  int j = match (i) {
+    case 0 => 0;
+    case _ => std::terminate();
   };
   use(j);
 }
@@ -161,9 +171,9 @@ void f(int i) {
 <td>
 ```cpp
 void g(int i) {
-  int j = i match {
-    0 => 0;
-    _ => throw (std::terminate(), 0);
+  int j = match (i) {
+    case 0 => 0;
+    case _ => throw (std::terminate(), 0);
   };
   use(j);
 }
@@ -172,9 +182,9 @@ void g(int i) {
 <td>
 ```cpp
 void h(int i) {
-  int j = i match {
-    0 => 0;
-    _ => do -> int {
+  int j = match (i) {
+    case 0 => 0;
+    case _ => do -> int {
       std::terminate();
     };
   };
@@ -232,25 +242,28 @@ There is another approach though.
 
 ## A bottom type
 
-Several languages have a notion of a bottom type (`⊥`) for diverging expressions. This type is spelled `Nothing` in Scala, `never` in TypeScript, `Never` in Python, `noreturn` in D, `!` in Rust, `void` in Haskell (but notably not `void` in C++), etc. This type represents an expression that diverges.
+Several languages have a notion of a bottom type (`⊥`) for diverging expressions. This type is spelled `Nothing` in Scala/Kotlin, `never` in TypeScript/PHP, `Never` in Python, `noreturn` in D/Zig, `!` in Rust, `void` in Haskell (but notably not `void` in C++), `Base.Bottom` in Julia, etc. That list is non-exhaustive. This type represents an expression that diverges.
 
 Let's imagine what it would look like if C++ also had such a type. We'll call it `noreturn_t`. It would have some interesting properties:
 
 * You cannot produce an instance of such a type. It wouldn't be very divergent otherwise! In this case, it's not just that this type isn't constructible, but we would also have to eliminate all of C++'s other clever ways of producing a value (like `reinterpret_cast`, `std::bit_cast`, etc.).
 * On the other hand, `noreturn_t` is convertible to any other type (including reference types). This is currently impossible to emulate in C++ today, since you cannot make a type that is both convertible to `T` and `T&` for all `T`.
-* Function pointer conversions are more interesting. From a type theory perspective, `auto(*)(T) -> noreturn_t` is convertible to `auto(*)(T) -> U` for all `U`. For the same reason Haskell has the [`absurd` function](https://hackage.haskell.org/package/void-0.7/docs/Data-Void.html). But this doesn't quite work out in C++ because of calling convention reasons. Nevertheless, a function pointer that is a constant expression of type `auto(*)(Args...) -> noreturn_t` can be converted to an `auto(*)(Args...) -> U`. As if this conversion were `consteval`.
+* Function pointer conversions are more interesting. From a type theory perspective, `auto(*)(T) -> noreturn_t` is convertible to `auto(*)(T) -> U` for all `U`. For the same reason Haskell has the [`absurd` function](https://hackage.haskell.org/package/void-0.7/docs/Data-Void.html). But this doesn't quite work out in C++ because of calling convention reasons: the hidden return-pointer argument shifts the other arguments on multiple platforms. `void` doesn't have this problem, so `auto(*)(T) -> noreturn_t` can be simply converted to `auto(*)(T) -> void`. But for all other return types, `auto(*)(Args...) -> noreturn_t` can only be converted to an `auto(*)(Args...) -> U` if the source is constant (as if the conversion were `consteval`), via a thunk.
 
 This makes sense from a type-theoretic perspective and makes a lot of other uses just work.
 
-We would then change the type of a `$throw-expression$` to be `noreturn_t` (instead of `void`). This change, coupled with the conversion rule above, means we'd no longer need the special case in conditional expressions. Consider:
+We would then change the type of a `$throw-expression$` to be `noreturn_t` (instead of `void`). This change means we'd replace the special case of `$throw-expression$` in the conditional operator with a different special case of one side being a diverging expression.
+
+Consider:
 
 ::: std
 ```cpp
-$condition$ ? 42 : throw std::runtime_error("oops")
+$condition$ ? x : throw std::runtime_error("oops")
 ```
 :::
 
-The types of the second and third operand are `int` and `noreturn_t`, respectively. `noreturn_t` is convertible to `int` (because it is convertible to anything), but `int` is not convertible to `noreturn_t` (since nothing is), thus the result of the expression has type `int`, as desired.
+This evaluates as an lvalue referring to `x`, since the third operand diverges.
+
 
 We would also want to change the signatures of all of our never-returning functions to have this in their types:
 
@@ -283,6 +296,8 @@ How do you have a callback that signals that it must not terminate? Well, you ca
 One is its use in sum types. Consider the type `std::expected<T, std::noreturn_t>`. What are its properties? Well, in general, a `std::expected<T, E>` is holding either a `T` in its valid state or an `E` in its error state, and so it's storage is something like a `bool` and a `union { T; E; }`. But if `E` is `std::noreturn_t`, then we know that there _cannot be_ an error state. You cannot form a value of type `std::noreturn_t`, so we don't even need to store it at all. The layout of `std::expected<T, std::noreturn_t>` can simply be `struct { T; }`. Likewise for `std::expected<std::noreturn_t, E>`, which can only ever be in the error state.
 
 This is a useful thing to be able to express in the type system, since you might have an API whose contract is that it returns some kind of `expected<T, E>` — but this particular implementation of that API might simply never fail (or always fail). So we can return an `expected<T, noreturn_t>` to conform to the expected shape of the return type while also having all the state checks trivially optimize away (since its `operator bool() const` is trivially just `return true;`). Moreover, a lot of code that expects a particular `E` will continue to work fine since `noreturn_t` is convertible to `E`.
+
+Note that this will just work out of the box, but the standard library will probably want to actually provide a specialization for `std::expected<T, std::noreturn_t>` and `std::expected<std::noreturn_t, E>` so that rather than storing a `bool` and a `union { T t; E ; }` the specialization can just unconditionally store a `T` or an `E`.
 
 ### Valueless Ranges
 
@@ -323,74 +338,8 @@ The last case here is simple — we can special case escaping statements, and th
 
 The first four cases though also all unconditionally diverge. We know that from simply examining the code. But what is the specific language rule by which we could ensure that the pattern match expression can exclude these arms when deducing the type? In `@*pattern*~3~@`, we actually have a `do_return` statement, so the `do` expression there could straightforwardly be said to have type `noreturn_t` and thus diverge. But the other three have no `do_return` and thus would, by default, end up having type `void` — which we do not want. So what do we do?
 
-One option is to copy the logic from some other languages (like Rust) and also the initial GCC statement-expression model and have an implicit value from `do` expressions. That is, the other three patterns above implicitly take their values from `throw 2`, `std::terminate()`, and `continue` respectively — which all have type `noreturn_t`. So this just works. But the reason we didn't initially want to do this for `do` expressions was that we don't already have a way to turn `if` statements and `for`/`while` statements into expressions — which makes early returns challenging. From the gcc doc example:
+One option is to copy the logic from some other languages (like Rust) and also the initial GCC statement-expression model and have an implicit value from `do` expressions. That is, the other three patterns above implicitly take their values from `throw 2`, `std::terminate()`, and `continue` respectively — which all have type `noreturn_t`. So this would just work. But we've already decided to _not_ pursue implicit last value in `do` expressions (see [that paper's discussion](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p2806r5.html#implicit-last-value)).
 
-::: cmptable
-### gcc
-```cpp
-({
-    int y = foo();
-    int z;
-    if (y > 0) z = y;
-    else z = -y;
-    z;
-})
-```
-
-### Proposed
-```cpp
-do {
-    int y = foo();
-    if (y > 0) {
-        do_return y;
-    } else {
-        do_return -y;
-    }
-}
-```
-:::
-
-
-With implicit last value (or, furthermore, with an `if` expression which operates under implicit last value rules):
-
-::: cmptable
-### Explicit `do_return`
-```cpp
-do {
-    int y = foo();
-    if (y > 0) {
-        do_return y;
-    } else {
-        do_return -y;
-    }
-}
-```
-
-### Implicit last value
-```cpp
-do {
-    int y = foo();
-    if (y > 0) {
-        do_return y;
-    }
-    -y;
-}
-```
-
-### An `if` expression
-```cpp
-do {
-    int y = foo();
-    if (y > 0) {
-        y;
-    } else {
-        -y;
-    }
-}
-```
-:::
-
-But we're concerned that the mixing and matching of explicit and implicit yields would be confusing. It's easy to miss the implicit `do_return` in the presence of explicit ones. Likewise, attempting to turn `if` into an expression this late in C++'s lifetime might be too novel? We would also then have to find a way to turn loops into expressions (or resurface `do_return`, again running into the explicit/implicit issue).
 
 So if we don't want to use implicit last value, how else can we deduce divergence? We suggest the following rule, inspired by implicit last value:
 
@@ -400,7 +349,7 @@ So if we don't want to use implicit last value, how else can we deduce divergenc
 [2]{.pnum} A `$statement$` is a *diverging statement* if it is:
 
 * [2.1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
-* [2.2]{.pnum} an `$escape-statement$`, [See [@P2688R4]]{.drafnote}
+* [2.2]{.pnum} a `$jump-statement$`, [this is `break`, `continue`, `return`, `co_return`, or `goto`]{.draftnote}
 * [2.3]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
 * [2.4]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
 * [2.5]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
@@ -408,16 +357,16 @@ So if we don't want to use implicit last value, how else can we deduce divergenc
 [3]{.pnum} The type of a `$do-expression$` is determined as follows.
 
 * [3.1]{.pnum} If there is a `$trailing-return-type$` that is not a placeholder, that type.
-* [3.2]{.pnum} Otherwise, if there are any non-discard `do_return` statements within the body of the `$do-expression$`, let `T` be the type deduced from them. If the type deduced is not the same in each deduction, the program is ill-formed. Otherwise, the type is `T`.
-* [3.3]{.pnum} Otherwise, if the last `$statement$` is a diverging statement, then `noreturn_t`.
+* [3.2]{.pnum} Otherwise, if there are any non-discarded `do_return` statements within the body of the `$do-expression$`, let `T` be the type deduced from them. If the type deduced is not the same in each deduction, the program is ill-formed. Otherwise, the type is `T`.
+* [3.3]{.pnum} Otherwise, if the any `$statement$` is a diverging statement, then `noreturn_t`.
 * [3.4]{.pnum} Otherwise, `void`.
 :::
 
-If there are any `do_return` statements, then the `do` expression doesn't diverge. It might produce a value. Maybe that `do_return` statement is logically unreachable, but we can't in general determine that. But if there are no `do_return` statements, we need to see if we actually diverge. Which is non-trivial because we need to handle things like:
+If there are any `do_return` statements whose expression doesn't diverge, then the `do` expression doesn't diverge. It might produce a value. Maybe that `do_return` statement is logically unreachable, but we can't in general determine that. But if there are no `do_return` statements, we need to see if we actually diverge. Which is non-trivial because we need to handle things like:
 
 ::: std
 ```cpp
-// just an escaping-statement
+// just a jump-statement
 do { continue; }
 
 // a statement-expression that is a diverging expression
@@ -430,7 +379,7 @@ do { if ($condition$) { throw 1; } }
 // but this one DOES diverge (just differently in both branches)
 do { if ($condition$) { continue; } else { break; } }
 
-// this diverges if the condition is true
+// this diverges iff the condition is true
 do { if constexpr ($condition$) { std::terminate(); } }
 ```
 :::
@@ -447,6 +396,26 @@ This rule ensures that all of our initial pattern arms diverge, as desired:
 ```
 :::
 
+## Consistency with lambdas and functions
+
+If the expression `do { std::terminate(); }` changes from having type `void` to having type `noreturn_t`, this raises the question of whether we should do the same for functions and lambdas:
+
+::: std
+```cpp
+auto f() {
+  throw 1;
+}
+
+auto g = []{
+  std::terminate();
+};
+```
+:::
+
+Today the types of `f()` and `g()` are both `void`. We think it's important that the rules for lambdas, functions, and `do` expressions be consistent — so we do propose keeping one single, consistent deduction rule across all three kinds. That is, `f` and `g` would both now return `noreturn_t` because they both diverge.
+
+Note that this does break code, see [implementation experience](#implementation-experience).
+
 ## Alternative with `[[noreturn]]`
 
 The advantage of the approach described with `noreturn_t` is that diverging expressions can appear in the type system. This provides a better solution than `[[noreturn]]`, in a way that can further generalize to other scenarios (as we showed earlier). We can have a `std::function<std::noreturn_t()>`, we can have `std::expected<T, std::noreturn_t>`, valueless ranges, etc.
@@ -459,7 +428,7 @@ The rule we lay out above would instead become:
 [1]{.pnum} A `$statement$` is a *diverging statement* if it is:
 
 * [1.1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
-* [1.2]{.pnum} an `$escaping-statement$`,
+* [1.2]{.pnum} a `$jump-statement$`,
 * [1.3]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
 * [1.4]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
 * [1.5]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
@@ -475,14 +444,63 @@ This is a simpler change. It doesn't involve introducing a new language/library 
 
 Leaning on `[[noreturn]]` also means that we end up leaning on `void` even harder to mean two completely different things: `void f() { }` is a function that returns a value, while `[[noreturn]] void g() { std::exit(-1); }` is a function that doesn't.
 
+# Implementation Experience
+
+This proposal is implemented in Barry's fork of clang, the patch is [here](https://github.com/brevzin/llvm-project/commit/60366a0a52cd10aac1886f7a69b405a57a92ee52) and can be used on compiler explorer.
+
+That patch also includes the changes to function and lambda deduction described [earlier](#consistency-with-lambdas-and-functions), so we tried to compile a bunch of existing projects to see what fails. The breakage was pretty interesting.
+
+Most of the breakage occurs in library types that mimic existing function deduction rules, which we're changing in this proposal, so those libraries calculations have to adjust as well. An example is variant visitation:
+
+::: std
+```cpp
+auto f(std::variant<A, B)> var) -> void {
+    std::visit([&]<class T>(T x){
+      if constexpr (std::same_as<T, A>) {
+        std::cout << "Got an A\n";
+      } else {
+        throw 42;
+      }
+    }, var);
+}
+```
+:::
+
+In the C++26 status quo, that lambda is `void` in both instantiations. But with this proposal, that lambda has type `void` for `A` and `noreturn_t` for `B`. This is an easy library fix — adjust the rules for `std::visit` to line up with the proposed changes to the rules for functions. Which is to say, rather than all the return types having to be the same, only all the non-`noreturn_t` return types have to be the same. There were a bunch of breakages of this form, across several different `variant` implementations.
+
+Another breakage with is `libunifex`, in some tests which create the sender:
+
+::: std
+```cpp
+auto s = just_from([]() { throw 1; });
+```
+:::
+
+Which likewise used to be a sender producing no value and now is a sender producing a `noreturn_t`. There are tests which validate that this is a sender of `void` and also that an `any_sender<>` can be constructed from this. That can be easily fixed as well.
+
+Lastly, LLVM's own `ErrorHandlerTraits` special-cases `void` and would need to handle `noreturn_t` as well.
+
 # Proposal
 
 We propose to:
 
 * to introduce a new type `std::noreturn_t` which represents an expression with no value, that unconditionally diverges.
-  * `std::noreturn_t` is convertible to any type (include reference types)
-  * `std::noreturn_t` is not constructible, and you cannot `reinterpret_cast` into it, `std::bit_cast` into it, `static_cast` into it, etc.
+  * Defined as
+
+    ::: std
+    ```cpp
+    namespace std {
+      using noreturn_t = decltype(throw 0);
+    }
+    ```
+    :::
+  * `noreturn_t` is a complete object type, with constructors (other than copy and move).
+  * `noreturn_t` is trivially copyable.
+  * `std::noreturn_t` is convertible to any type (including reference types) with Exact Match semantics.
+  * `std::noreturn_t(*)(Args...)` is convertible to `void(*)(Args...)`
   * `std::noreturn_t(*)(Args...)` is convertible to `R(*)(Args...)` for all `R` (again, including reference types), but only if the source function pointer is a constant expression (i.e. this conversion behaves as if it is a `consteval` function).
-* change all the standard library functions that are currently `[[noreturn]] void f()` to instead be `std::noreturn_t f()`
-* change the type of `$throw-expression$` to `std::noreturn_t` and remove the current... uh... exception for exceptions in the conditional operator (it will be subsumed by the usual convertibility rule).
-* adopt the same rules for `do` expressions [@P2806R2].
+* change all the standard library functions owned by C++ that are currently `[[noreturn]] void f()` to instead be `std::noreturn_t f()`: `std::terminate`, `std::unreachable`, `std::rethrow_exception`, and `std::throw_with_nested`. The C library functions (e.g. `abort`, `longjmp`) keep `[[noreturn]]` until we can check to make sure that we can change the result to be ABI preserving.
+* change the type of `$throw-expression$` to `std::noreturn_t`
+* remove the current... uh... exception for exceptions in the conditional operator, and replace it with a rule that if either the 2nd or 3rd operand diverges, that the result is simply the other operand.
+* change the deduction rules for `do` expressions, functions, and lambdas to deduce `noreturn_t` as their return type if the `do` expression/function/lambda diverges. Similarly for pattern match expressions in [@P2688R6].
+* adjust the rules for variant visitation to ignore `noreturn_t` arms, similar to the rules for `do` expressions, functions, and lambdas.
