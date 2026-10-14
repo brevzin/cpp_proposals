@@ -349,7 +349,7 @@ So if we don't want to use implicit last value, how else can we deduce divergenc
 [2]{.pnum} A `$statement$` is a *diverging statement* if it is:
 
 * [2.1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
-* [2.2]{.pnum} a `$jump-statement$`, [this is `break`, `continue`, `return`, `co_return`, or `goto`]{.draftnote}
+* [2.2]{.pnum} a `$jump-statement$`, [this is `break`, `continue`, `return`, `co_return`, `goto`, or `do_return`]{.draftnote}
 * [2.3]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
 * [2.4]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
 * [2.5]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
