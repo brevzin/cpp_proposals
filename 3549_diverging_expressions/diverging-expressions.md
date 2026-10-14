@@ -343,23 +343,24 @@ One option is to copy the logic from some other languages (like Rust) and also t
 
 So if we don't want to use implicit last value, how else can we deduce divergence? We suggest the following rule, inspired by implicit last value:
 
-::: std
+::: {.std .wording}
 [1]{.pnum} An expression is a *diverging expression* if its type is `noreturn_t`.
 
 [2]{.pnum} A `$statement$` is a *diverging statement* if it is:
 
 * [2.1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
-* [2.2]{.pnum} a `$jump-statement$`, [this is `break`, `continue`, `return`, `co_return`, `goto`, or `do_return`]{.draftnote}
-* [2.3]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
-* [2.4]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
-* [2.5]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
+* [2.#]{.pnum} a `$jump-statement$`, [this is `break`, `continue`, `return`, `co_return`, `goto`, or `do_return`]{.draftnote}
+* [2.#]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
+* [2.#]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
+* [2.#]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
 
 [3]{.pnum} The type of a `$do-expression$` is determined as follows.
 
 * [3.1]{.pnum} If there is a `$trailing-return-type$` that is not a placeholder, that type.
-* [3.2]{.pnum} Otherwise, if there are any non-discarded `do_return` statements within the body of the `$do-expression$`, let `T` be the type deduced from them. If the type deduced is not the same in each deduction, the program is ill-formed. Otherwise, the type is `T`.
-* [3.3]{.pnum} Otherwise, if the last `$statement$` is a diverging statement, then `noreturn_t`.
-* [3.4]{.pnum} Otherwise, `void`.
+* [3.#]{.pnum} Otherwise, if there are any non-discarded `do_return` statements within the body of the `$do-expression$` whose `$expression$` does not diverge, let `T` be the type deduced from them. If the type deduced is not the same in each deduction, the program is ill-formed. Otherwise, the type is `T`.
+* [3.#]{.pnum} Otherwise, if all non-discarded `do_return` statements diverge, then `noreturn_t`.
+* [3.#]{.pnum} Otherwise, if the last `$statement$` is a diverging statement, then `noreturn_t`.
+* [3.#]{.pnum} Otherwise, `void`.
 :::
 
 If there are any `do_return` statements whose expression doesn't diverge, then the `do` expression doesn't diverge. It might produce a value. Maybe that `do_return` statement is logically unreachable, but we can't in general determine that. But if there are no `do_return` statements, we need to see if we actually diverge. Which is non-trivial because we need to handle things like:
