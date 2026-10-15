@@ -346,21 +346,24 @@ So if we don't want to use implicit last value, how else can we deduce divergenc
 ::: {.std .wording}
 [1]{.pnum} An expression is a *diverging expression* if its type is `noreturn_t`.
 
-[2]{.pnum} A `$statement$` is a *diverging statement* if it is:
+[2]{.pnum} A statement can *complete normally* unless it is one of the following:
 
-* [2.1]{.pnum} A `$compound-statement$` where the last statement is a diverging statement,
-* [2.#]{.pnum} a `$jump-statement$`, [this is `break`, `continue`, `return`, `co_return`, `goto`, or `do_return`]{.draftnote}
-* [2.#]{.pnum} a `$statement-expression$` whose `$expression$` is a diverging expression, or
-* [2.#]{.pnum} an `if` statement with an `else` branch, where both substatements are diverging statements.
-* [2.#]{.pnum} a constexpr `if` statement where the taken substatement is a diverging statement.
+* [2.1]{.pnum} a `$jump-statement$`; [this is `break`, `continue`, `return`, `co_return`, `goto`, or `do_return`]{.draftnote}
+* [2.#]{.pnum} an `$expression-statement$` whose $expression$ is a diverging expression;
+* [2.#]{.pnum} a `$compound-statement$` whose last statement cannot complete normally, or that contains a statement `S` that cannot complete normally such that no statement following `S` in the `$compound-statement$` is or encloses a `$labeled-statement$`;
+* [2.#]{.pnum} a `$labeled-statement$` whose `$statement$` cannot complete normally;
+* [2.#]{.pnum} an `if` statement other than a `constexpr if`, with an `else`, both of whose substatements cannot complete normally;
+* [2.#]{.pnum} a constexpr `if` statement whose non-discarded substatement exists and cannot complete normally; or
+* [2.#]{.pnum} a `$try-block$` whose `$compound-statement$` and the `$compound-statement$` of each of its $handler$s cannot complete normally.
 
-[3]{.pnum} The type of a `$do-expression$` is determined as follows.
+Such a statement cannot complete normally.
 
-* [3.1]{.pnum} If there is a `$trailing-return-type$` that is not a placeholder, that type.
-* [3.#]{.pnum} Otherwise, if there are any non-discarded `do_return` statements within the body of the `$do-expression$` whose `$expression$` does not diverge, let `T` be the type deduced from them. If the type deduced is not the same in each deduction, the program is ill-formed. Otherwise, the type is `T`.
-* [3.#]{.pnum} Otherwise, if all non-discarded `do_return` statements diverge, then `noreturn_t`.
-* [3.#]{.pnum} Otherwise, if the last `$statement$` is a diverging statement, then `noreturn_t`.
-* [3.#]{.pnum} Otherwise, `void`.
+[3]{.pnum} The returning statements of a `$do-expression$` `E` are the non-discarded `do_return` statements whose innermost enclosing `$do-expression$` is `E`. The type of `E` is determined as follows:
+
+* [3.1]{.pnum} If `E` has a `$trailing-return-type$` that is not a placeholder, that type.
+* [3.#]{.pnum} Otherwise, if any returning statement of `E` has no operand, or has an operand that is not a diverging expression, the type deduced from those returning statements, where a `do_return` statement with no operand deduces `void`. If the type deduced is not the same in each deduction, the program is ill-formed.
+* [3.#]{.pnum} Otherwise, if the `$compound-statement$` of `E` can complete normally, `void`.
+* [3.#]{.pnum} Otherwise, `noreturn_t`.
 :::
 
 If there are any `do_return` statements whose expression doesn't diverge, then the `do` expression doesn't diverge. It might produce a value. Maybe that `do_return` statement is logically unreachable, but we can't in general determine that. But if there are no `do_return` statements, we need to see if we actually diverge. Which is non-trivial because we need to handle things like:
