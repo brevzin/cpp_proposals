@@ -498,13 +498,13 @@ We propose to:
     }
     ```
     :::
-  * `noreturn_t` is a complete object type, with constructors (other than copy and move).
+  * `noreturn_t` is a complete object type, with no constructors (other than copy and move).
   * `noreturn_t` is trivially copyable.
   * `std::noreturn_t` is convertible to any type (including reference types) with Exact Match semantics.
   * `std::noreturn_t(*)(Args...)` is convertible to `void(*)(Args...)`
   * `std::noreturn_t(*)(Args...)` is convertible to `R(*)(Args...)` for all `R` (again, including reference types), but only if the source function pointer is a constant expression (i.e. this conversion behaves as if it is a `consteval` function).
 * change all the standard library functions owned by C++ that are currently `[[noreturn]] void f()` to instead be `std::noreturn_t f()`: `std::terminate`, `std::unreachable`, `std::rethrow_exception`, and `std::throw_with_nested`. The C library functions (e.g. `abort`, `longjmp`) keep `[[noreturn]]` until we can check to make sure that we can change the result to be ABI preserving.
 * change the type of `$throw-expression$` to `std::noreturn_t`
-* remove the current... uh... exception for exceptions in the conditional operator, and replace it with a rule that if either the 2nd or 3rd operand diverges, that the result is simply the other operand.
+* remove the current... uh... exception for exceptions in the conditional operator, and replace it with a rule that if either the 2nd or 3rd operand diverges, then the result is simply the other operand. If both the 2nd and 3rd operands diverge, the expression diverges.
 * change the deduction rules for `do` expressions, functions, and lambdas to deduce `noreturn_t` as their return type if the `do` expression/function/lambda diverges. Similarly for pattern match expressions in [@P2688R6].
 * adjust the rules for variant visitation to ignore `noreturn_t` arms, similar to the rules for `do` expressions, functions, and lambdas.
