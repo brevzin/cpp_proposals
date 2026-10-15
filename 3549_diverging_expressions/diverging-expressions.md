@@ -293,7 +293,7 @@ How do you have a callback that signals that it must not terminate? Well, you ca
 
 ### `std::expected<T, std::noreturn_t>`
 
-Consider the type `std::expected<T, std::noreturn_t>`. What are its properties? Well, in general, a `std::expected<T, E>` is holding either a `T` in its valid state or an `E` in its error state, and so it's storage is something like a `bool` and a `union { T; E; }`. But if `E` is `std::noreturn_t`, then we know that there _cannot be_ an error state. You cannot form a value of type `std::noreturn_t`, so we don't even need to store it at all. The layout of `std::expected<T, std::noreturn_t>` can simply be `struct { T; }`. Likewise for `std::expected<std::noreturn_t, E>`, which can only ever be in the error state.
+Consider the type `std::expected<T, std::noreturn_t>`. What are its properties? Well, in general, a `std::expected<T, E>` is holding either a `T` in its valid state or an `E` in its error state, and so its storage is something like a `bool` and a `union { T; E; }`. But if `E` is `std::noreturn_t`, then we know that there _cannot be_ an error state. You cannot form a value of type `std::noreturn_t`, so we don't even need to store it at all. The layout of `std::expected<T, std::noreturn_t>` can simply be `struct { T; }`. Likewise for `std::expected<std::noreturn_t, E>`, which can only ever be in the error state.
 
 This is a useful thing to be able to express in the type system, since you might have an API whose contract is that it returns some kind of `expected<T, E>` — but this particular implementation of that API might simply never fail (or always fail). So we can return an `expected<T, noreturn_t>` to conform to the expected shape of the return type while also having all the state checks trivially optimize away (since its `operator bool() const` is trivially just `return true;`). Moreover, a lot of code that expects a particular `E` will continue to work fine since `noreturn_t` is convertible to `E`.
 
@@ -317,7 +317,7 @@ In all of these cases, what we really want to be able to say is: there _is_ no `
 
 A bottom type solves this quite nicely. Adding `using value_type = std::noreturn_t;` meets the other requirements, as long as `std::noreturn_t&` is convertible to `reference`. We get a valid C++20 range and the compile errors we get are actual logic errors — using algorithms that try to actually form a `value_type`.
 
-This, in of itself, isn't a complete solution, since all the invocation concepts in Ranges ([indirectcallable]{.sref}]) still will attempt to invoke the provided callable with `value_type&` (or the projected `value_type&`), and we'd need to do something there too. But simply having a `std::noreturn_t` to use here does solve a lot of the problem.
+This, in of itself, isn't a complete solution, since all the invocation concepts in Ranges ([indirectcallable]{.sref}) still will attempt to invoke the provided callable with `value_type&` (or the projected `value_type&`), and we'd need to do something there too. But simply having a `std::noreturn_t` to use here does solve a lot of the problem.
 
 
 ## Doing Our Due Diligence to Deduce `do` Divergence
@@ -458,7 +458,7 @@ Most of the breakage occurs in library types that mimic existing function deduct
 
 ::: std
 ```cpp
-auto f(std::variant<A, B)> var) -> void {
+auto f(std::variant<A, B> var) -> void {
     std::visit([&]<class T>(T x){
       if constexpr (std::same_as<T, A>) {
         std::cout << "Got an A\n";
