@@ -1,7 +1,7 @@
 ---
 title: "Emitting messages at compile time"
 document: D2758R6
-date: today
+date: 2026-09-13
 audience: CWG, LWG
 author:
     - name: Barry Revzin
