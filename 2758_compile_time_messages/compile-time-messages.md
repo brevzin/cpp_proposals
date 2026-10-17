@@ -1,7 +1,7 @@
 ---
 title: "Emitting messages at compile time"
 document: D2758R6
-date: 2026-09-13
+date: today
 audience: CWG, LWG
 author:
     - name: Barry Revzin
@@ -770,54 +770,79 @@ This is acceptable behavior, both in terms of number of and ordering of messages
 
 We now have `constexpr std::format` in C++26 ([@P3391R2]), but the wording here will only add the low level `std::string_view`-taking functions. The higher level API will be provided by [@P4364R0]{.title}.
 
-Alter how static initialization works to ensure there's no fallback to runtime initialization in some cases, in [basic.start.static]{.sref}:
+Add a new source of required diagnostics to [intro.compliance.general]{.sref}/2.3:
 
 ::: {.std .wording}
-[2]{.pnum} *Constant initialization* is performed if a variable with static or thread storage duration is constant-initialized ([expr.const]). [If the full-expression of the initialization of the variable is a constexpr-erroneous expression ([expr.const]), the program is ill-formed. Otherwise, if]{.addu} [If]{.rm} constant initialization is not performed, a variable with static storage duration ([basic.stc.static]) or thread storage duration ([basic.stc.thread]) is zero-initialized ([dcl.init]).
+* [2.3]{.pnum} Otherwise, if a program contains
+  * a violation of any diagnosable rule,
+  * a preprocessing translation unit with a `#warning` preprocessing directive ([cpp.error]),
+  * an occurrence of a construct described in this document as "conditionally-supported" when the implementation does not support that construct, [or]{.rm}
+  * a contract assertion ([basic.contract.eval]) evaluated with a checking semantic in a manifestly constant-evaluated context ([expr.const.defns]) resulting in a contract violation, [or]{.addu}
+  * [a manifestly constant-evaluated expression or conversion whose evaluation is constexpr-erroneous ([expr.const.defns]),]{.addu}
+
+  a conforming implementation shall issue at least one diagnostic message.
 :::
 
-Say that a program is ill-formed if an expression is constexpr-erroneous in [expr.const.defns]{.sref}:
+Ensure that a constexpr-erroneous core constant expression is still a constant expression, so that it does not fall back to dynamic initialization, in [expr.const.const]{.sref}/4:
 
 ::: {.std .wording}
-[3]{.pnum} An object `a` is said to have constant destruction if [...]
+[4]{.pnum} A core constant expression is a _constant expression_ unless
+
+* [4.1]{.pnum} it is a prvalue whose result object ([basic.lval]) has a constituent value that is an invalid pointer value ([basic.compound]) or is indeterminate or erroneous ([basic.indet])[, and]{.addu}
+* [4.2]{.pnum} [its evaluation is not constexpr-erroneous ([expr.const.defns])]{.addu}.
+:::
+
+Define constexpr-erroneous in [expr.const.defns]{.sref}, after the definition of manifestly constant-evaluated:
+
+::: {.std .wording}
+[1]{.pnum} An expression or conversion is _manifestly constant-evaluated_ if it is [...]
 
 ::: addu
-[#]{.pnum} A program is ill-formed if a *constexpr-erroneous* expression is evaluated in a context that is manifestly constant-evaluated. [Such an expression is still a core constant expression.]{.note}
+[#]{.pnum} An evaluation is _constexpr-erroneous_ if it is specified to be constexpr-erroneous elsewhere in this document, or if it is an evaluation of an expression or conversion `$E$` that would evaluate a constexpr-erroneous evaluation. In the latter case, the evaluation of `$E$` ends upon completion of the first such evaluation, and no subsequent evaluations are performed as part of the evaluation of `$E$`.
+
+[#]{.pnum} If the evaluation of a manifestly constant-evaluated expression or conversion is constexpr-erroneous, the program is ill-formed.
+
+[Such an expression can still be a core constant expression ([expr.const.core]) and a constant expression ([expr.const.const]). In particular, a variable whose initialization is constexpr-erroneous can still be constant-initialized ([expr.const.init]), in which case its initializer is manifestly constant-evaluated and the program is ill-formed, rather than the variable being dynamically initialized ([basic.start.static]). Similarly, a constexpr-erroneous immediate invocation can still be a constant expression, in which case it is not immediate-escalating ([expr.const.imm]).]{.note}
 
 ::: example
 ```cpp
 constexpr int foo(int a) {
   if (a == 0) {
     std::constexpr_error_str("reject-zero", "can't call with a == 0");
+    std::constexpr_error_str("reject-zero", "second error"); // not evaluated during constant evaluation
   }
-
   return a;
 }
 
-int x = foo(2); // OK, constant-initialized
-int y = foo(0); // error: reject-zero, can't call with a == 0
+int g = 0;
+int x = foo(2);                   // OK, constant-initialized
+int y = foo(0);                   // error: initializer is manifestly constant-evaluated
+                                  // and its evaluation is constexpr-erroneous
+int z = foo(g);                   // OK, foo(g) is not a core constant expression; dynamic initialization
+
+void h() {
+  const int a = foo(0);           // error: initializer is manifestly constant-evaluated
+                                  // and its evaluation is constexpr-erroneous
+  int b = foo(0);                 // OK, initializer is not manifestly constant-evaluated
+}
+
+consteval int checked(int i) { return foo(i); }
+
+template <class T>
+constexpr int f(T t) {
+  return checked(t);              // OK, checked(t) is not a constant expression, so it is
+}                                 // immediate-escalating and f<int> is an immediate function
+
+template <class T>
+constexpr int k(T) {
+  return checked(0);              // error: checked(0) is a constant expression, so it is not
+}                                 // immediate-escalating, and its evaluation is constexpr-erroneous
+
+int q = f(1);                     // OK
+auto p = &k<int>;
 ```
 :::
-
 :::
-:::
-
-Make constexpr-erroneous immediate expressions hard errors, so they don't escalate, in [expr.const.imm]/2:
-
-::: {.std .wording}
-[2]{.pnum} A potentially evaluated expression or conversion is _immediate-escalating_ if it is neither initially in an immediate function context nor a subexpression of an immediate invocation, and [...]
-
-::: addu
-[*]{.pnum} An immediate-escalating expression shall not be constexpr-erroneous.
-:::
-
-[3]{.pnum} An _immediate-escalating_ function is:
-
-* [#.#]{.pnum} the call operator of a lambda that is not declared with the `consteval` specifier,
-* [#.#]{.pnum} a non-user-provided defaulted function that is not declared with the `consteval` specifier, or
-* [#.#]{.pnum} a function that is not a prospective destructor and that results from the instantiation of a templated entity defined with the constexpr specifier.
-
-An immediate-escalating expression shall appear only in an immediate-escalating function.
 :::
 
 Add to [debugging.syn]{.sref}:
@@ -882,7 +907,7 @@ dtor c2
 ```
 :::
 
-[#]{.pnum} A call to any of the functions defined in this subclause may produce a diagnostic message during constant evaluation. The text from a `string_view`, `$M$`, is formed by the sequence of `$M$.size()` code units, starting at `$M$.data()`, of the ordinary literal encoding ([lex.charset]).
+[#]{.pnum} The text from a `string_view`, `$M$`, is formed by the sequence of `$M$.size()` code units, starting at `$M$.data()`, of the ordinary literal encoding ([lex.charset]).
 
 [#]{.pnum} It is unspecified whether, or at what point, a diagnostic message is emitted by a call to one of these functions invoked during the destructor of a `constexpr` variable.
 
@@ -913,24 +938,28 @@ constexpr void constexpr_print_str(u8string_view msg) noexcept;
 constexpr void constexpr_print_str($tag-string$ tag, string_view msg) noexcept;
 constexpr void constexpr_print_str($tag-string$ tag, u8string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued. Otherwise, no effect.
+[#]{.pnum} *Effects*: None.
 
-[#]{.pnum} *Recommended practice*: The resulting diagnostic message should include the text of `$tag$.$str$`, if provided, and `msg`.
+[#]{.pnum} *Recommended practice*: When a call to one of these functions is evaluated during constant evaluation, implementations should issue a diagnostic message that includes the text of `$tag$.$str$`, if provided, and `msg`.
 
 ```
 constexpr void constexpr_warning_str($tag-string$ tag, string_view msg) noexcept;
 constexpr void constexpr_warning_str($tag-string$ tag, u8string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued. It is implemention-defined whether a manifestly constant-evaluated call to `constexpr_warning_str` is constexpr-erroneous ([expr.const]). Otherwise, no effect.
+[#]{.pnum} *Effects*: None.
 
-[#]{.pnum} *Recommended practice*: Implementations should issue a warning and provide a mechanism allowing users to either opt in or opt out of such warnings based on the value of `$tag$.$str$`. The resulting diagnostic message should include the text of `$tag$.$str$` and `msg`.
+[#]{.pnum} *Remarks*: It is implementation-defined whether the evaluation of a call to one of these functions during constant evaluation is constexpr-erroneous ([expr.const.defns]).
+
+[#]{.pnum} *Recommended practice*: If the evaluation of such a call is constexpr-erroneous, the diagnostic message issued for the resulting ill-formed program should include the text of `$tag$.$str$` and `msg`. Otherwise, when a call to one of these functions is evaluated during constant evaluation, implementations should issue a warning that includes the text of `$tag$.$str$` and `msg`. Implementations should provide a mechanism allowing users to select, based on the value of `$tag$.$str$`, whether such a call results in a warning, no diagnostic, or a constexpr-erroneous evaluation.
 ```
 constexpr void constexpr_error_str($tag-string$ tag, string_view msg) noexcept;
 constexpr void constexpr_error_str($tag-string$ tag, u8string_view msg) noexcept;
 ```
-[#]{.pnum} *Effects*: During constant evaluation, a diagnostic message is issued and evaluation of such a call is constexpr-erroneous ([expr.const]). Otherwise, no effect.
+[#]{.pnum} *Effects*: None.
 
-[#]{.pnum} *Recommended practice*: The resulting diagnostic message should include the text of `$tag$.$str$` and `msg`.
+[#]{.pnum} *Remarks*: The evaluation of a call to one of these functions during constant evaluation is constexpr-erroneous ([expr.const.defns]).
+
+[#]{.pnum} *Recommended practice*: The diagnostic message issued for the resulting ill-formed program should include the text of `$tag$.$str$` and `msg`.
 :::
 :::
 

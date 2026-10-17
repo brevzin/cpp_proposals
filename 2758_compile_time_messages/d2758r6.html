@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="mpark/wg21" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-09-13" />
+  <meta name="dcterms.date" content="2026-10-17" />
   <title>Emitting messages at compile time</title>
   <style>
 
@@ -1856,7 +1856,7 @@ time</h1>
   </tr>
   <tr>
     <td>Date:</td>
-    <td>2026-09-13</td>
+    <td>2026-10-17</td>
   </tr>
   <tr>
     <td style="vertical-align:top">Project:</td>
@@ -3101,82 +3101,116 @@ here will only add the low level
 functions. The higher level API will be provided by <span class="title"><span class="citation" data-cites="P4364R0"><a href="https://wg21.link/p4364r0">[P4364R0] (Emitting messages at compile
 time with
 <code class="sourceCode cpp">std<span class="op">::</span>format</code>)</a></span></span>.</p>
-<p>Alter how static initialization works to ensure there’s no fallback
-to runtime initialization in some cases, in <span>6.10.3.2 Static
-initialization <a href="https://eel.is/c++draft/basic.start.static" title="6.10.3.2 Static initialization">[basic.start.static]</a></span>:</p>
+<p>Add a new source of required diagnostics to <span>4.1.1 General <a href="https://eel.is/c++draft/intro.compliance.general#2.3" title="4.1.1 General, paragraph 2.3">[intro.compliance.general]/2.3</a></span>:</p>
 <div class="std wording">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-1" id="pnum-1" class="marginalized">2</a></span> <em>Constant initialization</em> is
-performed if a variable with static or thread storage duration is
-constant-initialized (<a href="https://eel.is/c++draft/expr.const" title="7.7 Constant evaluation">[expr.const]</a>). <span class="addu">If
-the full-expression of the initialization of the variable is a
-constexpr-erroneous expression (<a href="https://eel.is/c++draft/expr.const" title="7.7 Constant evaluation">[expr.const]</a>), the program is
-ill-formed. Otherwise, if</span> <span class="rm"><del>If</del></span>
-constant initialization is not performed, a variable with static storage
-duration (<a href="https://eel.is/c++draft/basic.stc.static" title="6.8.6.2 Static storage duration">[basic.stc.static]</a>) or
-thread storage duration (<a href="https://eel.is/c++draft/basic.stc.thread" title="6.8.6.3 Thread storage duration">[basic.stc.thread]</a>) is
-zero-initialized (<a href="https://eel.is/c++draft/dcl.init" title="9.5 Initializers">[dcl.init]</a>).</p>
+<ul>
+<li><span class="marginalizedparent"><a href="#pnum-1" id="pnum-1" class="marginalized">(2.3)</a></span> Otherwise, if a program contains
+<ul>
+<li>a violation of any diagnosable rule,</li>
+<li>a preprocessing translation unit with a
+<code class="sourceCode cpp"><span class="pp">#warning</span></code>
+preprocessing directive (<a href="https://eel.is/c++draft/cpp.error" title="15.9 Diagnostic directives">[cpp.error]</a>),</li>
+<li>an occurrence of a construct described in this document as
+“conditionally-supported” when the implementation does not support that
+construct, <span class="rm"><del>or</del></span></li>
+<li>a contract assertion (<a href="https://eel.is/c++draft/basic.contract.eval" title="6.11.2 Evaluation">[basic.contract.eval]</a>) evaluated with a
+checking semantic in a manifestly constant-evaluated context (<a href="https://eel.is/c++draft/expr.const.defns" title="7.7.7 Further definitions">[expr.const.defns]</a>) resulting in a
+contract violation, <span class="addu">or</span></li>
+<li><span class="addu">a manifestly constant-evaluated expression or
+conversion whose evaluation is constexpr-erroneous (<a href="https://eel.is/c++draft/expr.const.defns" title="7.7.7 Further definitions">[expr.const.defns]</a>),</span></li>
+</ul>
+a conforming implementation shall issue at least one diagnostic
+message.</li>
+</ul>
 </blockquote>
 </div>
-<p>Say that a program is ill-formed if an expression is
-constexpr-erroneous in <span>7.7.7 Further definitions <a href="https://eel.is/c++draft/expr.const.defns" title="7.7.7 Further definitions">[expr.const.defns]</a></span>:</p>
+<p>Ensure that a constexpr-erroneous core constant expression is still a
+constant expression, so that it does not fall back to dynamic
+initialization, in <span>7.7.3 Constant expressions <a href="https://eel.is/c++draft/expr.const.const#4" title="7.7.3 Constant expressions, paragraph 4">[expr.const.const]/4</a></span>:</p>
 <div class="std wording">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-2" id="pnum-2" class="marginalized">3</a></span> An object
-<code class="sourceCode cpp">a</code> is said to have constant
-destruction if […]</p>
+<p><span class="marginalizedparent"><a href="#pnum-2" id="pnum-2" class="marginalized">4</a></span> A core constant expression is a
+<em>constant expression</em> unless</p>
+<ul>
+<li><span class="marginalizedparent"><a href="#pnum-3" id="pnum-3" class="marginalized">(4.1)</a></span> it is a prvalue whose result
+object (<a href="https://eel.is/c++draft/basic.lval" title="7.2.1 Value category">[basic.lval]</a>) has a constituent value
+that is an invalid pointer value (<a href="https://eel.is/c++draft/basic.compound" title="6.9.5 Compound types">[basic.compound]</a>) or is indeterminate
+or erroneous (<a href="https://eel.is/c++draft/basic.indet" title="6.8.5 Indeterminate and erroneous values">[basic.indet]</a>)<span class="addu">, and</span></li>
+<li><span class="marginalizedparent"><a href="#pnum-4" id="pnum-4" class="marginalized">(4.2)</a></span> <span class="addu">its evaluation
+is not constexpr-erroneous (<a href="https://eel.is/c++draft/expr.const.defns" title="7.7.7 Further definitions">[expr.const.defns]</a>)</span>.</li>
+</ul>
+</blockquote>
+</div>
+<p>Define constexpr-erroneous in <span>7.7.7 Further definitions <a href="https://eel.is/c++draft/expr.const.defns" title="7.7.7 Further definitions">[expr.const.defns]</a></span>, after
+the definition of manifestly constant-evaluated:</p>
+<div class="std wording">
+<blockquote>
+<p><span class="marginalizedparent"><a href="#pnum-5" id="pnum-5" class="marginalized">1</a></span> An expression or conversion is
+<em>manifestly constant-evaluated</em> if it is […]</p>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-3" id="pnum-3" class="marginalized">4</a></span> A program is ill-formed if a
-<em>constexpr-erroneous</em> expression is evaluated in a context that
-is manifestly constant-evaluated. <span id="note-1" class="note" data-num="1"><span>[ <em>Note <a href="#note-1">1</a>:</em> </span>Such
-an expression is still a core constant expression.<span> — <em>end
+<p><span class="marginalizedparent"><a href="#pnum-6" id="pnum-6" class="marginalized">2</a></span> An evaluation is
+<em>constexpr-erroneous</em> if it is specified to be
+constexpr-erroneous elsewhere in this document, or if it is an
+evaluation of an expression or conversion
+<code class="sourceCode cpp"><em>E</em></code> that would evaluate a
+constexpr-erroneous evaluation. In the latter case, the evaluation of
+<code class="sourceCode cpp"><em>E</em></code> ends upon completion of
+the first such evaluation, and no subsequent evaluations are performed
+as part of the evaluation of
+<code class="sourceCode cpp"><em>E</em></code>.</p>
+<p><span class="marginalizedparent"><a href="#pnum-7" id="pnum-7" class="marginalized">3</a></span> If the evaluation of a manifestly
+constant-evaluated expression or conversion is constexpr-erroneous, the
+program is ill-formed.</p>
+<p><span id="note-1" class="note" data-num="1"><span>[ <em>Note <a href="#note-1">1</a>:</em> </span>Such an expression can still be a core
+constant expression (<a href="https://eel.is/c++draft/expr.const.core" title="7.7.2 Core constant expressions">[expr.const.core]</a>) and a
+constant expression (<a href="https://eel.is/c++draft/expr.const.const" title="7.7.3 Constant expressions">[expr.const.const]</a>). In
+particular, a variable whose initialization is constexpr-erroneous can
+still be constant-initialized (<a href="https://eel.is/c++draft/expr.const.init" title="7.7.4 Constant initialization">[expr.const.init]</a>), in which
+case its initializer is manifestly constant-evaluated and the program is
+ill-formed, rather than the variable being dynamically initialized (<a href="https://eel.is/c++draft/basic.start.static" title="6.10.3.2 Static initialization">[basic.start.static]</a>).
+Similarly, a constexpr-erroneous immediate invocation can still be a
+constant expression, in which case it is not immediate-escalating (<a href="https://eel.is/c++draft/expr.const.imm" title="7.7.5 Immediate functions">[expr.const.imm]</a>).<span> — <em>end
 note</em> ]</span></span></p>
 <div id="example-1" class="example" data-num="1">
 <span>[ <em>Example <a href="#example-1">1</a>:</em> </span>
 <div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> foo<span class="op">(</span><span class="dt">int</span> a<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>a <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;reject-zero&quot;</span><span class="op">,</span> <span class="st">&quot;can&#39;t call with a == 0&quot;</span><span class="op">);</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>constexpr_error_str<span class="op">(</span><span class="st">&quot;reject-zero&quot;</span><span class="op">,</span> <span class="st">&quot;second error&quot;</span><span class="op">);</span> <span class="co">// not evaluated during constant evaluation</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> a<span class="op">;</span></span>
 <span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> foo<span class="op">(</span><span class="dv">2</span><span class="op">);</span> <span class="co">// OK, constant-initialized</span></span>
-<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> y <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">);</span> <span class="co">// error: reject-zero, can&#39;t call with a == 0</span></span></code></pre></div>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> g <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> x <span class="op">=</span> foo<span class="op">(</span><span class="dv">2</span><span class="op">);</span>                   <span class="co">// OK, constant-initialized</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> y <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">);</span>                   <span class="co">// error: initializer is manifestly constant-evaluated</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>                                  <span class="co">// and its evaluation is constexpr-erroneous</span></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> z <span class="op">=</span> foo<span class="op">(</span>g<span class="op">);</span>                   <span class="co">// OK, foo(g) is not a core constant expression; dynamic initialization</span></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> h<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> <span class="dt">int</span> a <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">);</span>           <span class="co">// error: initializer is manifestly constant-evaluated</span></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>                                  <span class="co">// and its evaluation is constexpr-erroneous</span></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> b <span class="op">=</span> foo<span class="op">(</span><span class="dv">0</span><span class="op">);</span>                 <span class="co">// OK, initializer is not manifestly constant-evaluated</span></span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> <span class="dt">int</span> checked<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> foo<span class="op">(</span>i<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> f<span class="op">(</span>T t<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> checked<span class="op">(</span>t<span class="op">);</span>              <span class="co">// OK, checked(t) is not a constant expression, so it is</span></span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>                                 <span class="co">// immediate-escalating and f&lt;int&gt; is an immediate function</span></span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> k<span class="op">(</span>T<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> checked<span class="op">(</span><span class="dv">0</span><span class="op">);</span>              <span class="co">// error: checked(0) is a constant expression, so it is not</span></span>
+<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>                                 <span class="co">// immediate-escalating, and its evaluation is constexpr-erroneous</span></span>
+<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> q <span class="op">=</span> f<span class="op">(</span><span class="dv">1</span><span class="op">);</span>                     <span class="co">// OK</span></span>
+<span id="cb30-34"><a href="#cb30-34" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> p <span class="op">=</span> <span class="op">&amp;</span>k<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;;</span></span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
 </div>
-</blockquote>
-</div>
-<p>Make constexpr-erroneous immediate expressions hard errors, so they
-don’t escalate, in <a href="https://eel.is/c++draft/expr.const.imm#2" title="7.7.5 Immediate functions, paragraph 2">[expr.const.imm]/2</a>:</p>
-<div class="std wording">
-<blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-4" id="pnum-4" class="marginalized">2</a></span> A potentially evaluated expression or
-conversion is <em>immediate-escalating</em> if it is neither initially
-in an immediate function context nor a subexpression of an immediate
-invocation, and […]</p>
-<div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-5" id="pnum-5" class="marginalized">*</a></span> An immediate-escalating expression
-shall not be constexpr-erroneous.</p>
-</div>
-<p><span class="marginalizedparent"><a href="#pnum-6" id="pnum-6" class="marginalized">3</a></span> An <em>immediate-escalating</em>
-function is:</p>
-<ul>
-<li><span class="marginalizedparent"><a href="#pnum-7" id="pnum-7" class="marginalized">(3.1)</a></span> the call operator of a lambda that
-is not declared with the
-<code class="sourceCode cpp"><span class="kw">consteval</span></code>
-specifier,</li>
-<li><span class="marginalizedparent"><a href="#pnum-8" id="pnum-8" class="marginalized">(3.2)</a></span> a non-user-provided defaulted
-function that is not declared with the
-<code class="sourceCode cpp"><span class="kw">consteval</span></code>
-specifier, or</li>
-<li><span class="marginalizedparent"><a href="#pnum-9" id="pnum-9" class="marginalized">(3.3)</a></span> a function that is not a
-prospective destructor and that results from the instantiation of a
-templated entity defined with the constexpr specifier.</li>
-</ul>
-<p>An immediate-escalating expression shall appear only in an
-immediate-escalating function.</p>
 </blockquote>
 </div>
 <p>Add to <span>19.7.2 Header &lt;debugging&gt; synopsis <a href="https://eel.is/c++draft/debugging.syn" title="19.7.2 Header &lt;debugging&gt; synopsis">[debugging.syn]</a></span>:</p>
@@ -3208,7 +3242,7 @@ messages during program translation”:</p>
 <div class="std wording">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-10" id="pnum-10" class="marginalized">1</a></span> The facilities in this subclause are
+<p><span class="marginalizedparent"><a href="#pnum-8" id="pnum-8" class="marginalized">1</a></span> The facilities in this subclause are
 used to emit messages during program translation. The ordering and
 number of diagnostics emitted by the functions defined in this subclause
 are unspecified.</p>
@@ -3238,9 +3272,7 @@ are unspecified.</p>
 <span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>dtor c2</span></code></pre></div>
 <span> — <em>end example</em> ]</span>
 </div>
-<p><span class="marginalizedparent"><a href="#pnum-11" id="pnum-11" class="marginalized">2</a></span> A call to any of the functions defined
-in this subclause may produce a diagnostic message during constant
-evaluation. The text from a
+<p><span class="marginalizedparent"><a href="#pnum-9" id="pnum-9" class="marginalized">2</a></span> The text from a
 <code class="sourceCode cpp">string_view</code>,
 <code class="sourceCode cpp"><em>M</em></code>, is formed by the
 sequence of
@@ -3248,7 +3280,7 @@ sequence of
 code units, starting at
 <code class="sourceCode cpp"><em>M</em><span class="op">.</span>data<span class="op">()</span></code>,
 of the ordinary literal encoding (<a href="https://eel.is/c++draft/lex.charset" title="5.3.1 Character sets">[lex.charset]</a>).</p>
-<p><span class="marginalizedparent"><a href="#pnum-12" id="pnum-12" class="marginalized">3</a></span> It is unspecified whether, or at what
+<p><span class="marginalizedparent"><a href="#pnum-10" id="pnum-10" class="marginalized">3</a></span> It is unspecified whether, or at what
 point, a diagnostic message is emitted by a call to one of these
 functions invoked during the destructor of a
 <code class="sourceCode cpp"><span class="kw">constexpr</span></code>
@@ -3261,15 +3293,15 @@ variable.</p>
 <span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span>
 <span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>};</span></code></pre></div>
 <div class="sourceCode" id="cb35"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>template&lt;class T&gt; consteval <em>tag-string</em>(const T&amp; s);</span></code></pre></div>
-<p><span class="marginalizedparent"><a href="#pnum-13" id="pnum-13" class="marginalized">4</a></span> <em>Constraints</em>:
+<p><span class="marginalizedparent"><a href="#pnum-11" id="pnum-11" class="marginalized">4</a></span> <em>Constraints</em>:
 <code class="sourceCode cpp"><span class="kw">const</span> T<span class="op">&amp;</span></code>
 models
 <code class="sourceCode cpp">convertible_to<span class="op">&lt;</span>string_view<span class="op">&gt;</span></code>.</p>
-<p><span class="marginalizedparent"><a href="#pnum-14" id="pnum-14" class="marginalized">5</a></span> <em>Effects</em>:
+<p><span class="marginalizedparent"><a href="#pnum-12" id="pnum-12" class="marginalized">5</a></span> <em>Effects</em>:
 Direct-non-list-initializes
 <code class="sourceCode cpp"><em>str</em></code> with
 <code class="sourceCode cpp">s</code>.</p>
-<p><span class="marginalizedparent"><a href="#pnum-15" id="pnum-15" class="marginalized">6</a></span> <em>Constant When</em>: Every
+<p><span class="marginalizedparent"><a href="#pnum-13" id="pnum-13" class="marginalized">6</a></span> <em>Constant When</em>: Every
 character in <code class="sourceCode cpp"><em>str</em></code> is either
 a <code class="sourceCode cpp"><em>nondigit</em></code>, a
 <code class="sourceCode cpp"><em>digit</em></code>, a
@@ -3281,35 +3313,41 @@ EQUALS SIGN).</p>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(u8string_view msg) noexcept;</span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_print_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a href="#pnum-16" id="pnum-16" class="marginalized">7</a></span> <em>Effects</em>: During constant
-evaluation, a diagnostic message is issued. Otherwise, no effect.</p>
-<p><span class="marginalizedparent"><a href="#pnum-17" id="pnum-17" class="marginalized">8</a></span> <em>Recommended practice</em>: The
-resulting diagnostic message should include the text of
+<p><span class="marginalizedparent"><a href="#pnum-14" id="pnum-14" class="marginalized">7</a></span> <em>Effects</em>: None.</p>
+<p><span class="marginalizedparent"><a href="#pnum-15" id="pnum-15" class="marginalized">8</a></span> <em>Recommended practice</em>: When a
+call to one of these functions is evaluated during constant evaluation,
+implementations should issue a diagnostic message that includes the text
+of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>,
 if provided, and <code class="sourceCode cpp">msg</code>.</p>
 <div class="sourceCode" id="cb37"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_warning_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a href="#pnum-18" id="pnum-18" class="marginalized">9</a></span> <em>Effects</em>: During constant
-evaluation, a diagnostic message is issued. It is implemention-defined
-whether a manifestly constant-evaluated call to
-<code class="sourceCode cpp">constexpr_warning_str</code> is
-constexpr-erroneous (<a href="https://eel.is/c++draft/expr.const" title="7.7 Constant evaluation">[expr.const]</a>). Otherwise, no
-effect.</p>
-<p><span class="marginalizedparent"><a href="#pnum-19" id="pnum-19" class="marginalized">10</a></span> <em>Recommended practice</em>:
-Implementations should issue a warning and provide a mechanism allowing
-users to either opt in or opt out of such warnings based on the value of
-<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>.
-The resulting diagnostic message should include the text of
+<p><span class="marginalizedparent"><a href="#pnum-16" id="pnum-16" class="marginalized">9</a></span> <em>Effects</em>: None.</p>
+<p><span class="marginalizedparent"><a href="#pnum-17" id="pnum-17" class="marginalized">10</a></span> <em>Remarks</em>: It is
+implementation-defined whether the evaluation of a call to one of these
+functions during constant evaluation is constexpr-erroneous (<a href="https://eel.is/c++draft/expr.const.defns" title="7.7.7 Further definitions">[expr.const.defns]</a>).</p>
+<p><span class="marginalizedparent"><a href="#pnum-18" id="pnum-18" class="marginalized">11</a></span> <em>Recommended practice</em>: If the
+evaluation of such a call is constexpr-erroneous, the diagnostic message
+issued for the resulting ill-formed program should include the text of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>
-and <code class="sourceCode cpp">msg</code>.</p>
+and <code class="sourceCode cpp">msg</code>. Otherwise, when a call to
+one of these functions is evaluated during constant evaluation,
+implementations should issue a warning that includes the text of
+<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>
+and <code class="sourceCode cpp">msg</code>. Implementations should
+provide a mechanism allowing users to select, based on the value of
+<code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>,
+whether such a call results in a warning, no diagnostic, or a
+constexpr-erroneous evaluation.</p>
 <div class="sourceCode" id="cb38"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, string_view msg) noexcept;</span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>constexpr void constexpr_error_str(<em>tag-string</em> tag, u8string_view msg) noexcept;</span></code></pre></div>
-<p><span class="marginalizedparent"><a href="#pnum-20" id="pnum-20" class="marginalized">11</a></span> <em>Effects</em>: During constant
-evaluation, a diagnostic message is issued and evaluation of such a call
-is constexpr-erroneous (<a href="https://eel.is/c++draft/expr.const" title="7.7 Constant evaluation">[expr.const]</a>). Otherwise, no
-effect.</p>
-<p><span class="marginalizedparent"><a href="#pnum-21" id="pnum-21" class="marginalized">12</a></span> <em>Recommended practice</em>: The
-resulting diagnostic message should include the text of
+<p><span class="marginalizedparent"><a href="#pnum-19" id="pnum-19" class="marginalized">12</a></span> <em>Effects</em>: None.</p>
+<p><span class="marginalizedparent"><a href="#pnum-20" id="pnum-20" class="marginalized">13</a></span> <em>Remarks</em>: The evaluation of a
+call to one of these functions during constant evaluation is
+constexpr-erroneous (<a href="https://eel.is/c++draft/expr.const.defns" title="7.7.7 Further definitions">[expr.const.defns]</a>).</p>
+<p><span class="marginalizedparent"><a href="#pnum-21" id="pnum-21" class="marginalized">14</a></span> <em>Recommended practice</em>: The
+diagnostic message issued for the resulting ill-formed program should
+include the text of
 <code class="sourceCode cpp"><em>tag</em><span class="op">.</span><em>str</em></code>
 and <code class="sourceCode cpp">msg</code>.</p>
 </div>
