@@ -143,6 +143,27 @@ def mermaid(elem, doc):
             )
         return pf.RawBlock(picture, format='html')
 
+REPO_DIR = os.path.dirname(os.path.abspath(MD_DIR))
+CE_REDIRECT = 'https://brevzin.github.io/cpp_proposals/md/ce.html'
+
+def ce_link(elem, doc):
+    """
+    [Demo](ce:NAME) links to examples/NAME.cpp (relative to the paper's
+    directory, which is the cwd during the build) via the ce.html redirector,
+    which loads the file into Compiler Explorer.
+    """
+    if not isinstance(elem, pf.Link) or not elem.url.startswith('ce:'):
+        return None
+
+    name = elem.url[len('ce:'):]
+    path = os.path.join('examples', f'{name}.cpp')
+    if not os.path.isfile(path):
+        raise RuntimeError(f'ce:{name} refers to missing file {os.path.abspath(path)}')
+
+    paper = os.path.relpath(os.getcwd(), REPO_DIR)
+    elem.url = f'{CE_REDIRECT}?f={paper}/examples/{name}'
+    return elem
+
 def op(elem, doc):
     if isinstance(elem, pf.Code) and 'op' in elem.classes:
         return pf.RawInline(f'<code><span class="op">{elem.text}</span></code>')
@@ -204,4 +225,4 @@ def finalize(doc):
 
 
 if __name__ == '__main__':
-    pf.run_filters([h1hr, bq, std, mermaid, op], prepare=prepare, finalize=finalize)
+    pf.run_filters([h1hr, bq, std, mermaid, op, ce_link], prepare=prepare, finalize=finalize)
