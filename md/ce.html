@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Opening Compiler Explorer…</title>
+<!--
+  Usage: md/ce.html?f=PAPER_DIR/examples/NAME
+  loads PAPER_DIR/examples/NAME.cpp (relative to the repo root) into Compiler Explorer.
+  In a paper, write [Demo](ce:NAME) and md/pandoc.py expands it to this URL.
+
+  Optional directives anywhere in NAME.cpp (by convention, at the end), one per
+  compiler pane:
+      // ce-run: COMPILER_ID OPTIONS...    compile and execute
+      // ce: COMPILER_ID OPTIONS...        compile only
+  e.g.
+      // ce-run: clang_barry -std=c++29 -freflection -O2
+      // ce: clang_barry -std=c++29 -freflection -Xclang -ast-print
+  Directive lines (and trailing blank lines left behind) are stripped from the
+  source sent to Compiler Explorer, so line numbers match the file. With no
+  directives, a single DEFAULT pane that compiles and executes is used.
+  Executing panes get an output pane underneath them.
+-->
+<script type="module">
+const CE = "https://compiler-explorer.com";
+const DEFAULT = { id: "clang_barry", options: "-std=c++29 -freflection", execute: true };
+const DIRECTIVE = /^\/\/\s*ce(-run)?:\s*(\S+)[ \t]*(.*)$/;
+
+const status = msg => { document.getElementById("status").textContent = msg; };
+
+function parse(text) {
+  const specs = [];
+  const lines = text.split("\n").filter(line => {
+    const m = line.match(DIRECTIVE);
+    if (m) specs.push({ id: m[2], options: m[3].trim(), execute: !!m[1] });
+    return !m;
+  });
+  const source = lines.join("\n").replace(/\n+$/, "\n");
+  return { source, specs: specs.length ? specs : [DEFAULT] };
+}
+
+try {
+  const f = new URLSearchParams(location.search).get("f");
+  if (!f || !/^[\w-]+(\/[\w.-]+)*$/.test(f) || f.split("/").includes(".."))
+    throw new Error("missing or bad ?f=PATH");
+
+  const resp = await fetch(`../${f}.cpp`, { cache: "no-cache" });
+  if (!resp.ok) throw new Error(`could not load ${f}.cpp (${resp.status})`);
+  const { source, specs } = parse(await resp.text());
+
+  // Build a full GoldenLayout (not a ClientState, which can't place an output
+  // pane under its compiler): source on the left; on the right, one column per
+  // compiler with its assembly on top and, if it executes, its output below.
+  const component = (componentName, componentState) =>
+    ({ type: "component", componentName, componentState,
+       isClosable: true, reorderEnabled: true });
+  const stack = (item, size) => ({ type: "stack", ...size, content: [item] });
+
+  const panes = specs.map(({ id, options, execute }, i) => {
+    const width = 100 / specs.length;
+    const compiler = component("compiler", {
+      id: i + 1, source: 1, lang: "c++", compiler: id, options, libs: [],
+      filters: { commentOnly: true, demangle: true, directives: true,
+                 labels: true, intel: true, libraryCode: true, execute },
+    });
+    if (!execute) return stack(compiler, { width });
+    const output = component("output", { id: i + 1, editorid: 1, wrap: false });
+    return { type: "column", width,
+             content: [stack(compiler, { height: 50 }), stack(output, { height: 50 })] };
+  });
+  const right = panes.length === 1 ? { ...panes[0], width: 50 }
+                                   : { type: "row", width: 50, content: panes };
+  const editor = component("codeEditor", { id: 1, source, lang: "c++" });
+  const state = { content: [{ type: "row", content: [stack(editor, { width: 50 }), right] }] };
+
+  // The shortener is deterministic: identical state yields the identical /z/
+  // link, so calling it on every visit only creates a new link when the
+  // example actually changed.
+  const r = await fetch(`${CE}/api/shortener`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify(state),
+  });
+  if (!r.ok) throw new Error(`shortener failed (${r.status})`);
+  location.replace((await r.json()).url);
+} catch (e) {
+  status(`Error: ${e.message}`);
+}
+</script>
+</head>
+<body>
+<p id="status">Opening Compiler Explorer…</p>
+</body>
+</html>

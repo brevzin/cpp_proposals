@@ -1,6 +1,6 @@
 ---
 title: "Token Sequence Injection"
-document: P4380R0
+document: P4380R1
 date: today
 audience: EWG
 author:
@@ -70,7 +70,7 @@ That's probably enough to dive into the examples.
 
 Given a type, whose declaration only contains member functions that aren’t templates, it is possible to mechanically produce a type-erased version of that interface. That implementation (for a non-owning version) can look as follows. Note that there are ways to do this more directly, and we can always provide better library utilities, but we wanted to show that even with just the basics, we can achieve a lot, even if it's mildly tedious.
 
-This example can be viewed on [compiler explorer](https://compiler-explorer.com/z/xxbxMo7je), which is basically an implementation of [@P4148R2]{.title}'s `protocol_view`. An owning version is easily supportable, just with some more boilerplate work. Note that the compiler explorer link contains two panes: the normal execution pane that shows that it works, and an AST printer. The AST printer is a useful way to see what code is actually injected. More on this shortly.
+This example can be viewed on [compiler explorer](ce:type-erasure), which is basically an implementation of [@P4148R2]{.title}'s `protocol_view`. An owning version is easily supportable, just with some more boilerplate work. Note that the compiler explorer link contains two panes: the normal execution pane that shows that it works, and an AST printer. The AST printer is a useful way to see what code is actually injected. More on this shortly.
 
 We'll start with the usage side, and the obligatory `draw` example:
 
@@ -478,7 +478,7 @@ struct [[=derive_debug]] Config {
 
 And this is great! The problem, however, is that the specialization we're introducing is just another partial specialization. Which means it could easily be ambiguous with some other partial specialization if one exists. That inherently makes this an incomplete solution to the problem, and we'd like to do better.
 
-One way to do better is to give annotations a completion callback. In this case, when `Config` becomes complete, the annotation can have a hook that will inject an _explicit_ specialization of `formatter`. This now becomes a complete solution to the problem. On [compiler explorer](https://compiler-explorer.com/z/crbEqje1r):
+One way to do better is to give annotations a completion callback. In this case, when `Config` becomes complete, the annotation can have a hook that will inject an _explicit_ specialization of `formatter`. This now becomes a complete solution to the problem. On [compiler explorer](ce:formatting):
 
 ::: std
 ```cpp
@@ -577,7 +577,7 @@ consteval auto stringize(token_sequence) -> char const*;
 ```
 :::
 
-This allows for testing, e.g., suffix literals. [This example](https://compiler-explorer.com/z/Ke6nYP5b1) comes courtesy of Peter Dimov:
+This allows for testing, e.g., suffix literals. [This example](ce:literal-testing) comes courtesy of Peter Dimov:
 
 ::: std
 ```cpp
@@ -666,7 +666,7 @@ Zach Laine is the author of [Boost.STLInterfaces](https://www.boost.org/doc/libs
 
 We can much more easily approach this problem using code injection, because rather than have complicated and disjoint template specializations to handle all the different cases, we can just have `if` statements. In order to do this, we need to be able to extend `members_of` to observe the declared members of a class while it's still being defined. Note that we don't actually need any more than observation.
 
-[Demo](https://compiler-explorer.com/z/PTPTE158P):
+[Demo](ce:iterator-interface):
 
 ::: std
 ```cpp
@@ -783,7 +783,7 @@ This is definitely an incomplete implementation still, as we're not really branc
 
 That section [earlier](#push-based-customization-i-formatting) about how push-based customization was a complete solution? Well, that wasn't entirely accurate. It turns out that if we try out that approach to inject structured bindings specialization on class completion, it doesn't quite work. Because, for templates, the class template is not necessarily instantiated when we check for some properties. Barry has a [blog post](https://brevzin.github.io/c++/2026/09/14/push-vs-pull/) on this topic in more detail.
 
-In order to do this better, what we really need to do is inject a _partial_ class specialization at the point where the _template_ becomes complete. To do that, we need a different hook. We saw `on_complete()` earlier, now we have `on_template_defined()` as well. [Demo](https://compiler-explorer.com/z/T55Tbdjr9)
+In order to do this better, what we really need to do is inject a _partial_ class specialization at the point where the _template_ becomes complete. To do that, we need a different hook. We saw `on_complete()` earlier, now we have `on_template_defined()` as well. [Demo](ce:structured-bindings)
 
 ::: std
 ```cpp
@@ -858,7 +858,7 @@ However, another aspect of the above implementation that is a little unsatisfyin
 
 The first two callbacks are `void`, their job is to perform work outside of the class — either injecting code into some namespace or by validating properties. But the third returns a `token_sequence`, its job is to report what tokens to inject into the class represented by `r`.
 
-With that third hook, we get [this tighter implementation](https://compiler-explorer.com/z/qcsdrzqx6):
+With that third hook, we get [this tighter implementation](ce:structured-bindings-tighter):
 
 ::: std
 ```cpp
@@ -898,7 +898,7 @@ And then, once we can `inject_members()`, we can...
 
 One of the C++20 language features was the ability to default `operator==` — which does a memberwise equality comparison of the subobjects, or produces a deleted operator if any of the subobjects are not comparable. By the time a class becomes complete, its subobject types have to be complete as well, so we could do that checking ourselves. And then produce that same language feature in about 40 lines of library code.
 
-[Demo](https://compiler-explorer.com/z/zEeGW3scv):
+[Demo](ce:eq-metaclass):
 
 ::: std
 ```cpp
@@ -995,7 +995,7 @@ consteval auto forwarding_call_for(info d, token_sequence receiver) -> token_seq
 ```
 :::
 
-Starting there, that lets us implement `LoggingVector<T>` [like this](https://compiler-explorer.com/z/Mv4onhT94).
+Starting there, that lets us implement `LoggingVector<T>` [like this](ce:logging-vector).
 
 ::: std
 ```cpp
@@ -1102,7 +1102,7 @@ consteval auto make_noexcept(info d) -> info;
 ```
 :::
 
-Which gives us [this implementation](https://compiler-explorer.com/z/rrnfx5fKz):
+Which gives us [this implementation](ce:mocking):
 
 ::: std
 ```cpp
@@ -1235,7 +1235,7 @@ auto main() -> int {
 
 ## Push-Based Customization III
 
-Now that we've gone through the [logging](#logging-vector) and [mocking](#mocking) examples, we've basically built up the pieces to do push-based customization completely: by simply cloning the template head in a similar way that we cloned our functions. That implementation looks [like this](https://compiler-explorer.com/z/a1xqhz6Yj):
+Now that we've gone through the [logging](#logging-vector) and [mocking](#mocking) examples, we've basically built up the pieces to do push-based customization completely: by simply cloning the template head in a similar way that we cloned our functions. That implementation looks [like this](ce:push-based-customization):
 
 ::: std
 ```cpp
@@ -1297,7 +1297,7 @@ consteval auto inject_vtable_for(std::meta::info interface) -> void {
 ```
 :::
 
-The [compiler error](https://compiler-explorer.com/z/bnYr19ovj) is:
+The [compiler error](ce:debugging-syntax-error) is:
 
 ::: std
 ```
@@ -1310,7 +1310,7 @@ The [compiler error](https://compiler-explorer.com/z/bnYr19ovj) is:
 
 The same idea holds for any error that is a syntax error within a single token sequence. The compiler error points you to the right spot within that token sequence.
 
-The harder cases are going to be cases where the syntax is initially correct but is wrong for a more complicated reason. Sticking with the same `inject_for_vtable` function, let's say I got one of the identifiers wrong and wrote `"q"` instead of `"p"` on [line 77](https://compiler-explorer.com/z/hKE8fbnrr):
+The harder cases are going to be cases where the syntax is initially correct but is wrong for a more complicated reason. Sticking with the same `inject_for_vtable` function, let's say I got one of the identifiers wrong and wrote `"q"` instead of `"p"` on [line 77](ce:debugging-undeclared-identifier):
 
 ::: std
 ```
@@ -1336,7 +1336,7 @@ inits += next_fn;
 ```
 :::
 
-And when we do that, we will [see this](https://compiler-explorer.com/z/YG61Gda9x):
+And when we do that, we will [see this](ce:debugging-print):
 
 ::: std
 ```
@@ -1426,7 +1426,7 @@ with expansion:
 
 Catch2 can only decompose one layer of top-level comparison, and tries to catch misuses if users try to do more than that. But with better macros, we can produce exactly the same output while allowing much more flexibility. For now, this implementation just illustrates the same thing that Catch2 does, but hopefully illustrates what else is possible. Note that this implementation also relies on [@P2806R5]{.title}.
 
-[Demo](https://compiler-explorer.com/z/qj46xT3Yq):
+[Demo](ce:check):
 
 ::: std
 ```cpp
@@ -1521,7 +1521,7 @@ if (not (\(ops[0]) \(operator_of(cond)) \(ops[1]))) {
 ```
 :::
 
-That would actually [fail to compile](https://compiler-explorer.com/z/eqnjara95). We diagnose if an expression is evaluated multiple times:
+That would actually [fail to compile](ce:double-evaluation). We diagnose if an expression is evaluated multiple times:
 
 ::: std
 ```
@@ -1566,7 +1566,7 @@ __macro λ(std::meta::token_sequence body) {
 ```
 :::
 
-Coupled with some of our other utilities, that gives us the ability to write [this](https://compiler-explorer.com/z/PnGTPjr1d):
+Coupled with some of our other utilities, that gives us the ability to write [this](ce:abbreviated-lambdas):
 
 ::: std
 ```cpp
@@ -1630,7 +1630,7 @@ __macro try_(T&& e) {
 
 This uses the awkward init-hoist feature of `do` expressions rather than pattern matching, because that's what we have available. In any case, here we're using a new function `macro_expansion_context()` to get the top-level entry point into this macro. We need that to get the return type of the function we're in, which is the P2561 design.
 
-And that gives us the behavior [we want](https://compiler-explorer.com/z/8aqrvPzxe):
+And that gives us the behavior [we want](ce:try):
 
 ::: std
 ```cpp
@@ -1671,7 +1671,7 @@ static_assert(negate{}(1) == -1);
 
 Just a single macro defines all three forms: binary, prefix, and postfix. Note that none of those parameters are valid expressions in this context — the names aren't declared yet, neither are `x` nor `y`. So these are `token_sequence` parameters. We just allow you to provide more than one of them, automatically parsing at the comma.
 
-The implementation is [quite straightforward](https://compiler-explorer.com/z/T53xMj614):
+The implementation is [quite straightforward](ce:define-op):
 
 ::: std
 ```cpp
@@ -1710,7 +1710,7 @@ Note that in this case, the macro is invoked at declaration scope and returns a 
 
 ## Tuple Indexing and Short Circuiting
 
-`std::tuple` does not currently have an index operator, as in `elems[0]`. Of course, it couldn't have a _normal_ index operator, since the type of the result would depend on which index is being acccessed. This would call for `constexpr` function parameters, or something like it. However, we don't really need that — all we want is the ability to rewrite the call `elems[0]` into the call `std::get<0>(elems)`. That's just [a macro](https://compiler-explorer.com/z/x199rPPzW):
+`std::tuple` does not currently have an index operator, as in `elems[0]`. Of course, it couldn't have a _normal_ index operator, since the type of the result would depend on which index is being acccessed. This would call for `constexpr` function parameters, or something like it. However, we don't really need that — all we want is the ability to rewrite the call `elems[0]` into the call `std::get<0>(elems)`. That's just [a macro](ce:tuple-index):
 
 ::: std
 ```cpp
@@ -1752,7 +1752,7 @@ struct Bool {
 ```
 :::
 
-Which, as you can see, [does short circuit](https://compiler-explorer.com/z/YK16Pxs9Y):
+Which, as you can see, [does short circuit](ce:short-circuit):
 
 ::: std
 ```cpp
@@ -1790,7 +1790,7 @@ Then:
 * [#.#]{.pnum} Otherwise, `ranges​::​begin(E)` is ill-formed.
 :::
 
-So it would be pretty nice if we could implement it with the [same linear sequence](https://compiler-explorer.com/z/MWhneP666):
+So it would be pretty nice if we could implement it with the [same linear sequence](ce:ranges-begin):
 
 ::: std
 ```cpp
@@ -1835,7 +1835,7 @@ inline constexpr struct begin_fn {
 ```
 :::
 
-The above implementation relies on [@P2758R5]{.title} to have some of those paths fail, and [meets the requirements](https://compiler-explorer.com/z/MWhneP666).
+The above implementation relies on [@P2758R5]{.title} to have some of those paths fail, and [meets the requirements](ce:ranges-begin).
 
 ## `vec`
 
@@ -1866,7 +1866,7 @@ __macro vec(Args&&... args) {
 ```
 :::
 
-We're using `__emplace_back_assume_capacity()`, which is a public helper in libc++'s `std::vector` implementation, because we know we have the capacity here, to avoid the extra checks. This macro finally supports what people have wanted for a while, and [it works](https://compiler-explorer.com/z/Kxr7aWEzq):
+We're using `__emplace_back_assume_capacity()`, which is a public helper in libc++'s `std::vector` implementation, because we know we have the capacity here, to avoid the extra checks. This macro finally supports what people have wanted for a while, and [it works](ce:vec):
 
 ::: std
 ```cpp
@@ -1927,7 +1927,7 @@ struct Logger {
 
 In the above, we actually have nested token sequences. An interpolation in a token sequence is actually associated with the _innermost_ token sequence that it's found in. Thus, the `\(level)` interpolation above isn't trying to immediately interpolate (which would fail, as there is no `level` variable). The macro body is merely parsed, `\(level)` binds to the inner literal and inteprolates each time the injected macro is _invoked_, when the body executes and `level` is in scope.
 
-Now, we have a member macro `debug!`, `info!`, and `error!`. If we do something [like this](https://compiler-explorer.com/z/aPKhGz6sz), we'll see that `get()` is not even invoked, but the other macros do exist and we get our logs. All the format strings are still type checked:
+Now, we have a member macro `debug!`, `info!`, and `error!`. If we do something [like this](ce:logging), we'll see that `get()` is not even invoked, but the other macros do exist and we get our logs. All the format strings are still type checked:
 
 ::: std
 ```cpp
