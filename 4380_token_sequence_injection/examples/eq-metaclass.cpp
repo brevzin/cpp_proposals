@@ -17,16 +17,12 @@ struct Eq_t {
             return ^^{
                 friend constexpr bool operator==(\(r) const&, \(r) const&) = delete;
                 friend constexpr bool operator!=(\(r) const&, \(r) const&) = delete;
-            };        
+            };
         }
 
-        std::meta::list_builder cmp(^^{ && });
+        std::meta::token_sequence cmp = ^^{ true };
         for (std::meta::info s : subobjects) {
-            cmp += ^^{ (__lhs.\(s) == __rhs.\(s)) };
-        }
-
-        if (subobjects.empty()) {
-            cmp += ^^{ true };
+            cmp += ^^{ and (__lhs.\(s) == __rhs.\(s)) };
         }
 
         return ^^{

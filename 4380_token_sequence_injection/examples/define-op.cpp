@@ -8,7 +8,7 @@ __macro fwd(T&& t) {
 __macro define_op(std::meta::token_sequence name,
                   std::meta::token_sequence pattern) {
     // id op id
-    if (size(pattern) == 3) {
+    if (pattern.size() == 3) {
         return ^^{
             struct \(name) {
                 template <class L, class R>
@@ -18,7 +18,7 @@ __macro define_op(std::meta::token_sequence name,
             };
         };
     }
-  
+
     // id op or op id
     auto body = token_kind_of(pattern[0]) == std::meta::token_kind::identifier
         ? ^^{ fwd!(x) \(pattern[1]) }

@@ -22,7 +22,6 @@ public:
           or is_operator_function(m) or is_operator_function_template(m)
           or is_conversion_function(m) or is_conversion_function_template(m)
           or not has_identifier(m)
-          or identifier_of(m) == "reflect_constant"
           or (not is_function(m) and not is_function_template(m))) {
         continue;
       }

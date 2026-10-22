@@ -45,7 +45,7 @@ __macro check(T&& cond) {
                 auto&& rhs = \(ops[1]);
                 if (not (fwd!(lhs) \(operator_of(cond)) fwd!(rhs))) {
                     ::check_fail(\(text), \(sloc), lhs, \(op), rhs);
-                } 
+                }
             }
         };
     }
@@ -68,7 +68,7 @@ consteval auto placeholder_index(std::string_view id) -> std::optional<int> {
 
 __macro λ(std::meta::token_sequence body) {
     auto arity = std::optional<int>();
-    for (std::meta::token_sequence tok : body) {
+    for (std::meta::token tok : body) {
         if (token_kind_of(tok) == std::meta::token_kind::identifier) {
             arity = std::max(arity, placeholder_index(identifier_of(tok)));
         }

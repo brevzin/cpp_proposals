@@ -21,6 +21,10 @@ highlighting:
       - __macro
 ---
 
+# Revision History {- .unlisted .collapsed}
+
+Since [@P4380R0], changing the token sequence model so that `token_sequence` is a range of `token`. Changed all the `token`-specific APIs to take/return `token` instead of `token_sequence`.
+
 # Introduction
 
 This is a follow-up to [@P3294R2]{.title}. In that paper, we argued that the right model for code generation in C++ is through token sequences by comparing to other potential models. In short, we believe that code generation in C++ must be C++-shaped, must be able to generate all of C++, and must allow for the full use of C++ in that generation. Hence, token sequences.
@@ -46,12 +50,12 @@ The sole requirement on the contents of a token sequence is that the `{` and `}`
 
 A token sequence can be explicitly injected via `std::meta::queue_injection` or implicitly injected through a number of hooks that we will walk through.
 
-Two `token_sequence`s can be concatenated via `+` or `+=`. A `token_sequence` is a random access range of `token_sequence` and can be directly indexed. Two objects of type `token_sequence` can be compared for equality:
+Two `token_sequence`s can be concatenated via `+` or `+=`. A `token_sequence` is a random access range of `std::meta::token` (a new scalar type) and can be directly indexed. Two objects of type `token_sequence` can be compared for equality:
 
 ::: std
 ```cpp
-static_assert(poem[0] == ^^{ if });
-static_assert(std::ranges::size(poem) == 16); // 15 keywords and a comma
+static_assert(poem.subseq(0, 1) == ^^{ if });
+static_assert(poem.size() == 16); // 15 keywords and a comma
 ```
 :::
 
@@ -59,8 +63,8 @@ In order to add external content into a token sequence, interpolation is done vi
 
 * If `e` is (or is convertible to) `token_sequence`, the tokens of `e` are directly inserted in place.
 * Otherwise, if `e` is (or is convertible to) `info`, then a single artificial token is inserted whose meaning is what `e` represents. For instance, `\(^^int)` interpolates a token which is the type `int` (note: it is not the keyword `int`) and `\(^^std::vector<int>)` interpolates a token which is the type `std::vector<int>` (note: it does not interpolate the 6 tokens that make up that type).
-* Otherwise, if `e` is a `std::meta::operators`, then `\(e)` interpolates into the operator token (e.g. `\(std::meta::operators::op_equals_equals)` yields the token `==`).
-* Otherwise, a token is inserted whose meaning is the _value_ of `e`. `\(std::ranges::size(poem))` would be the value `16` (note: not an integer literal).
+* Otherwise, if `e` is a `std::meta::token`, `std::meta::operators`, or `std::meta::punctuator`, then `\(e)` interpolates into that token/operator/punctuator (e.g. `\(std::meta::operators::op_equals_equals)` yields the token `==`).
+* Otherwise, a token is inserted whose meaning is the _value_ of `e`. `\(poem.size())` would be the value `16` (note: not an integer literal).
 
 Some tokens are very important to be able to add into a token sequence, but cannot actually be produced without help. The two most significant of these are identifiers and string literals. In order to do so, the library will provide the functions `std::meta::id` and `std::meta::str_lit`, respectively. We will see examples of these shortly.
 
@@ -324,11 +328,11 @@ There are many uses of `std::meta::id()` in the above example to introduce an _i
 ::: std
 ```cpp
 template <class... Ts>
-consteval auto id(Ts const&...) -> token_sequence;
+consteval auto id(Ts const&...) -> token;
 ```
 :::
 
-It takes an arbitrary sequence of integers or strings, concatenates them, and returns a `token_sequence` consisting of a single identifier token. So `std::meta::id("p", 0)` is the token sequence `^^{ p0 }`. Since this sort of concatenation is very common, having `std::meta::id` be able to do it directly instead of forcing the user to build up a `string` is both more convenient and more efficient.
+It takes an arbitrary sequence of integers or strings, concatenates them, and returns a `token` that is an identifier (its `token_kind` is `identifier`) . So `std::meta::id("p", 0)` is the token `p0`. Since this sort of concatenation is very common, having `std::meta::id` be able to do it directly instead of forcing the user to build up a `string` is both more convenient and more efficient.
 
 The one not-completely manual aspect of this implementation is the use of `std::meta::list_builder`. It turns out we frequently need to be able to produce possibly-delimited sequences to inject. It's not a very complicated facility:
 
@@ -343,7 +347,7 @@ public:
     consteval explicit list_builder(token_sequence delim = ^^{ }) : delim(delim) { }
 
     consteval auto operator+=(token_sequence tok) -> void {
-        if (tok != ^^{ }) {
+        if (not tok.empty()) {
             if (not first) {
                 body += delim;
             }
@@ -539,7 +543,7 @@ We're also using `std::meta::str_lit` here to create a string literal. Similar t
 ::: std
 ```cpp
 template <class... Ts>
-consteval auto str_lit(Ts const&...) -> token_sequence;
+consteval auto str_lit(Ts const&...) -> token;
 ```
 :::
 
@@ -574,6 +578,7 @@ Similar to producing a string literal, we also have a way to convert from a `tok
 template <class... Ts>
   consteval auto tokenize(Ts const&...) -> token_sequence;
 consteval auto stringize(token_sequence) -> char const*;
+consteval auto stringize(token) -> char const*;
 ```
 :::
 
@@ -921,13 +926,9 @@ struct Eq_t {
             };
         }
 
-        std::meta::list_builder cmp(^^{ && });
+        std::meta::token_sequence cmp = ^^{ true };
         for (std::meta::info s : subobjects) {
-            cmp += ^^{ (__lhs.\(s) == __rhs.\(s)) };
-        }
-
-        if (subobjects.empty()) {
-            cmp += ^^{ true };
+            cmp += ^^{ and (__lhs.\(s) == __rhs.\(s)) };
         }
 
         return ^^{
@@ -1018,7 +1019,6 @@ public:
           or is_operator_function(m) or is_operator_function_template(m)
           or is_conversion_function(m) or is_conversion_function_template(m)
           or not has_identifier(m)
-          or identifier_of(m) == "reflect_constant"
           or (not is_function(m) and not is_function_template(m))) {
         continue;
       }
@@ -1037,8 +1037,6 @@ public:
 };
 ```
 :::
-
-The `reflect_constant` check above is to skip the customization point from [@P4340R0]{.title}.
 
 Which now, because we're actually _cloning_ the declaration, all the right call shapes work. We can pass braced-init-lists into functions on `LoggingVector` too:
 
@@ -1297,7 +1295,7 @@ consteval auto inject_vtable_for(std::meta::info interface) -> void {
 ```
 :::
 
-The [compiler error](ce:debugging-syntax-error) is:
+The [compiler error](ce:syntax-error.fail) is:
 
 ::: std
 ```
@@ -1310,7 +1308,7 @@ The [compiler error](ce:debugging-syntax-error) is:
 
 The same idea holds for any error that is a syntax error within a single token sequence. The compiler error points you to the right spot within that token sequence.
 
-The harder cases are going to be cases where the syntax is initially correct but is wrong for a more complicated reason. Sticking with the same `inject_for_vtable` function, let's say I got one of the identifiers wrong and wrote `"q"` instead of `"p"` on [line 77](ce:debugging-undeclared-identifier):
+The harder cases are going to be cases where the syntax is initially correct but is wrong for a more complicated reason. Sticking with the same `inject_for_vtable` function, let's say I got one of the identifiers wrong and wrote `"q"` instead of `"p"` on [line 77](ce:undeclared-identifier.fail):
 
 ::: std
 ```
@@ -1336,7 +1334,7 @@ inits += next_fn;
 ```
 :::
 
-And when we do that, we will [see this](ce:debugging-print):
+And when we do that, we will [see this](ce:print.fail):
 
 ::: std
 ```
