@@ -1951,8 +1951,9 @@ token sequence model so that
 <code class="sourceCode cpp">token</code>-specific APIs to take/return
 <code class="sourceCode cpp">token</code> instead of
 <code class="sourceCode cpp">token_sequence</code>. Added support for
-<code class="sourceCode cpp"><span class="op">$</span></code> as an <a href="#choice-of-interpolator">interpolator</a>. Add examples for <a href="#generating-bitmask-operators">bitmask operators</a>, <a href="#defer">defer</a>, and <a href="#using-declarations">using
-declarations</a>.</p>
+<code class="sourceCode cpp"><span class="op">$</span></code> as an <a href="#choice-of-interpolator">interpolator</a>. Add examples for <a href="#generating-bitmask-operators">bitmask operators</a>, <a href="#defer">defer</a>, <a href="#using-declarations">using
+declarations</a>, and <a href="#conditional-data-members">conditional
+data members</a>.</p>
 </details>
 <h1 data-number="1" style="border-bottom:1px solid #cccccc" id="introduction"><span class="header-section-number">1</span>
 Introduction<a href="#introduction" class="self-link"></a></h1>
@@ -2079,11 +2080,13 @@ not an integer literal).</li>
 <code class="sourceCode cpp">\<span class="op">(</span>e<span class="op">...)</span></code>
 behaves as interpolating every element of
 <code class="sourceCode cpp">e</code>, delimited by a comma. If a
-different delimiter is desired, it can be be provided as
+different delimiter is desired, it can be provided as
 <code class="sourceCode cpp">\<span class="op">(</span>e<span class="op">...;</span> sep<span class="op">)</span></code>
-where <code class="sourceCode cpp">sep</code> must be a token sequence.
-This is occasionally helpful as a more compile-time efficient way of
-doing concatenation.</p>
+where <code class="sourceCode cpp">sep</code> must be any interpolable
+value. This is occasionally helpful as a more compile-time efficient way
+of doing concatenation. Special syntax is necessary here because
+<code class="sourceCode cpp"><span class="op">...</span></code> outside
+of an interpolation is always a token, never a pack expansion.</p>
 <p>Some tokens are very important to be able to add into a token
 sequence, but cannot actually be produced without help. The two most
 significant of these are identifiers and string literals. In order to do
@@ -4704,11 +4707,12 @@ merits being a distinct type (from
 because we found that in practice the usage patterns are always
 disjoint, and a distinct type allows us to give it a suitable API shape
 — including indexing, concatenation, and iteration. We’re proposing a
-single interpolator
+single interpolator — either
 <code class="sourceCode cpp">\<span class="op">(</span>e<span class="op">)</span></code>
-(see <a href="#choice-of-interpolator">syntax discussion</a>). And then
-on top of that we’re proposing expression/declaration macros which
-interact with the compiler by returning a token sequence that the input
+or <code class="sourceCode cpp"><span class="op">$</span>e</code> (see
+<a href="#choice-of-interpolator">syntax discussion</a>). And then on
+top of that we’re proposing expression/declaration macros which interact
+with the compiler by returning a token sequence that the input
 expression is replaced with.</p>
 <p>As with Reflection, it comes with a decently sized library surface to
 help facilitate all the desired behavior:</p>
@@ -4727,8 +4731,8 @@ help facilitate all the desired behavior:</p>
 <span id="cb70-10"><a href="#cb70-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb70-11"><a href="#cb70-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> token_sequence<span class="op">();</span> <span class="co">// ^^ { }</span></span>
 <span id="cb70-12"><a href="#cb70-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> token_sequence<span class="op">(</span>initializer_list<span class="op">&lt;</span>token<span class="op">&gt;);</span></span>
-<span id="cb70-13"><a href="#cb70-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span></span>
-<span id="cb70-14"><a href="#cb70-14" aria-hidden="true" tabindex="-1"></a>      <span class="kw">consteval</span> <span class="kw">explicit</span> token_sequence<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">);</span> <span class="co">// from any range of token</span></span>
+<span id="cb70-13"><a href="#cb70-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">template</span> <span class="op">&lt;</span><span class="kw">class</span> R<span class="op">&gt;</span> <span class="kw">requires</span> <span class="co">/* R is a range of token */</span></span>
+<span id="cb70-14"><a href="#cb70-14" aria-hidden="true" tabindex="-1"></a>      <span class="kw">consteval</span> <span class="kw">explicit</span> token_sequence<span class="op">(</span>R<span class="op">&amp;&amp;</span> r<span class="op">);</span></span>
 <span id="cb70-15"><a href="#cb70-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb70-16"><a href="#cb70-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> data<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> token <span class="kw">const</span><span class="op">*;</span></span>
 <span id="cb70-17"><a href="#cb70-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">consteval</span> <span class="kw">auto</span> begin<span class="op">()</span> <span class="kw">const</span> <span class="op">-&gt;</span> token <span class="kw">const</span><span class="op">*;</span></span>

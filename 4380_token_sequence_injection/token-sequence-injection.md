@@ -23,7 +23,7 @@ highlighting:
 
 # Revision History {- .unlisted .collapsed}
 
-Since [@P4380R0], changing the token sequence model so that `token_sequence` is a range of `token`. Changed all the `token`-specific APIs to take/return `token` instead of `token_sequence`. Added support for `$` as an [interpolator](#choice-of-interpolator). Add examples for [bitmask operators](#generating-bitmask-operators), [defer](#defer), and [using declarations](#using-declarations).
+Since [@P4380R0], changing the token sequence model so that `token_sequence` is a range of `token`. Changed all the `token`-specific APIs to take/return `token` instead of `token_sequence`. Added support for `$` as an [interpolator](#choice-of-interpolator). Add examples for [bitmask operators](#generating-bitmask-operators), [defer](#defer), [using declarations](#using-declarations), and [conditional data members](#conditional-data-members).
 
 # Introduction
 
@@ -69,7 +69,7 @@ In order to add external content into a token sequence, interpolation is done vi
 * Otherwise, if `e` is a `std::meta::token`, `std::meta::operators`, or `std::meta::punctuator`, then `\(e)` interpolates into that token/operator/punctuator (e.g. `\(std::meta::operators::op_equals_equals)` yields the token `==`).
 * Otherwise, a token is inserted whose meaning is the _value_ of `e`. `\(poem.size())` would be the value `16` (note: not an integer literal).
 
-Pack expansion is also supported inside of interpolations: `\(e...)` behaves as interpolating every element of `e`, delimited by a comma. If a different delimiter is desired, it can be be provided as `\(e...; sep)` where `sep` must be a token sequence. This is occasionally helpful as a more compile-time efficient way of doing concatenation.
+Pack expansion is also supported inside of interpolations: `\(e...)` behaves as interpolating every element of `e`, delimited by a comma. If a different delimiter is desired, it can be provided as `\(e...; sep)` where `sep` must be any interpolable value. This is occasionally helpful as a more compile-time efficient way of doing concatenation. Special syntax is necessary here because `...` outside of an interpolation is always a token, never a pack expansion.
 
 Some tokens are very important to be able to add into a token sequence, but cannot actually be produced without help. The two most significant of these are identifiers and string literals. In order to do so, the library will provide the functions `std::meta::id` and `std::meta::str_lit`, respectively. We will see examples of these shortly.
 
@@ -2309,7 +2309,7 @@ __macro check(^^T&& cond) {
 
 # Summary
 
-We are proposing a new fundamental kind in the language, `std::meta::token`, and a class type `std::meta::token_sequence` that is a range of it. Unlike our suggestion in [@P3294R2], we think this merits being a distinct type (from `std::meta::info`) because we found that in practice the usage patterns are always disjoint, and a distinct type allows us to give it a suitable API shape — including indexing, concatenation, and iteration. We're proposing a single interpolator `\(e)` (see [syntax discussion](#choice-of-interpolator)). And then on top of that we're proposing expression/declaration macros which interact with the compiler by returning a token sequence that the input expression is replaced with.
+We are proposing a new fundamental kind in the language, `std::meta::token`, and a class type `std::meta::token_sequence` that is a range of it. Unlike our suggestion in [@P3294R2], we think this merits being a distinct type (from `std::meta::info`) because we found that in practice the usage patterns are always disjoint, and a distinct type allows us to give it a suitable API shape — including indexing, concatenation, and iteration. We're proposing a single interpolator — either `\(e)` or `$e` (see [syntax discussion](#choice-of-interpolator)). And then on top of that we're proposing expression/declaration macros which interact with the compiler by returning a token sequence that the input expression is replaced with.
 
 As with Reflection, it comes with a decently sized library surface to help facilitate all the desired behavior:
 
@@ -2329,8 +2329,8 @@ namespace std::meta {
 
     consteval token_sequence(); // ^^ { }
     consteval token_sequence(initializer_list<token>);
-    template <class R>
-      consteval explicit token_sequence(R&& r); // from any range of token
+    template <class R> requires /* R is a range of token */
+      consteval explicit token_sequence(R&& r);
 
     consteval auto data() const -> token const*;
     consteval auto begin() const -> token const*;
