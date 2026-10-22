@@ -34,3 +34,6 @@ auto main() -> int {
     std::println("*v[0] = {}", *v[0]);
     std::println("*v[1] = {}", *v[1]);
 }
+
+// ce-run: clang_barry -std=c++29 -freflection -DSIMPLE_LOOP
+// ce-run: clang_barry -std=c++29 -freflection -DPACK_EXPAND

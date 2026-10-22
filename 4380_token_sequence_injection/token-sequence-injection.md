@@ -26,7 +26,7 @@ highlighting:
 Since [@P4380R0], changing the token sequence model so that `token_sequence` is a range of `token`. Changed all the `token`-specific APIs to take/return `token` instead of `token_sequence`. Added support for `$` as an [interpolator](#choice-of-interpolator). Add examples for [bitmask operators](#generating-bitmask-operators), [defer](#defer), and [using declarations](#using-declarations).
 
 # Introduction
-
+#
 This is a follow-up to [@P3294R2]{.title}. In that paper, we argued that the right model for code generation in C++ is through token sequences by comparing to other potential models. In short, we believe that code generation in C++ must be C++-shaped, must be able to generate all of C++, and must allow for the full use of C++ in that generation. Hence, token sequences.
 
 In this paper, we will demonstrate the power of token sequence-based injection by showing a number of examples of what we can do with it. All have been implemented in [Clang](https://github.com/brevzin/llvm-project/tree/compiler-explorer/barry) and are available on Compiler Explorer with the "barry prototypes" compiler. There are two categories of examples here: [direct injection](#direct-injection-of-token-sequences) and [token sequence macros](#token-sequence-macros).
@@ -1991,6 +1991,33 @@ auto v = vec!{
 :::
 
 Note also that macro invocation can use any bracket: `()`, `[]`, or `{}`. In this case, `{}` seems most appropriate on the call site, so that's what we do. For macro invocations with braces (but not parentheses or square brackets), a trailing comma can be supplied (as in the above), as is typical with braced lists.
+
+Additionally, the above implementation uses a simple loop to emplace every element. It is also possible to do the same thing as a single pack expansion. Albeit in this case it is arguably a little cryptic. Both approaches can be seen in the above link:
+
+::: cmptable
+### Simple Loop
+```cpp
+auto emplace_back_loop = std::meta::token_sequence();
+for (std::meta::info expr : {args...}) {
+    emplace_back_loop += ^^{
+        res.__emplace_back_assume_capacity(\(expr));
+    };
+}
+```
+
+### Pack Expansion
+```cpp
+auto emplace_back_loop = ^^{
+    \(
+        ^^{
+            res.__emplace_back_assume_capacity(\(args));
+        }...;
+        ^^{ }
+    )
+};
+```
+:::
+
 
 ## Logging
 
