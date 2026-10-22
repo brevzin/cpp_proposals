@@ -26,7 +26,7 @@ highlighting:
 Since [@P4380R0], changing the token sequence model so that `token_sequence` is a range of `token`. Changed all the `token`-specific APIs to take/return `token` instead of `token_sequence`. Added support for `$` as an [interpolator](#choice-of-interpolator). Add examples for [bitmask operators](#generating-bitmask-operators), [defer](#defer), and [using declarations](#using-declarations).
 
 # Introduction
-#
+
 This is a follow-up to [@P3294R2]{.title}. In that paper, we argued that the right model for code generation in C++ is through token sequences by comparing to other potential models. In short, we believe that code generation in C++ must be C++-shaped, must be able to generate all of C++, and must allow for the full use of C++ in that generation. Hence, token sequences.
 
 In this paper, we will demonstrate the power of token sequence-based injection by showing a number of examples of what we can do with it. All have been implemented in [Clang](https://github.com/brevzin/llvm-project/tree/compiler-explorer/barry) and are available on Compiler Explorer with the "barry prototypes" compiler. There are two categories of examples here: [direct injection](#direct-injection-of-token-sequences) and [token sequence macros](#token-sequence-macros).
@@ -2226,6 +2226,83 @@ __macro using_(std::meta::token_sequence names) {
         using_detail::expand(item, ^^{}, out);
     }
     return out;
+}
+```
+:::
+
+## Conditional Data Members
+
+Today, having a conditional non-static data member is kind of pain, especially if the desire if to actually have no additional overhead in the case where the member is supposed to be absent.
+
+Conditionally injecting a non-static data member very straightforward with the most basic aspects of token injection, but also conditionally initializing it in a `$mem-initializer-list$` is where macros can really shine:
+
+::: std
+```cpp
+template <bool B>
+struct C {
+    int always;
+    maybe!(B, int sometimes);
+
+    constexpr C(int x, int y)
+        : always(x)
+        , init_if_member!(sometimes(y))
+    { }
+};
+```
+:::
+
+To do this we need to allow macro expansion in a `$mem-initializer-list$`, and we require that in this context an expansion itself is only allowed to ever produce a `$mem-initializer-list$`. No shenanigans like hijacking the constructor with an `{` allowed.
+
+Both of these macro implementations are fairly straightforward:
+
+::: std
+```cpp
+__macro maybe(bool cond, std::meta::token_sequence decl) {
+    return extract<bool>(constant_of(cond))
+        ? decl
+        : ^^{ };
+}
+
+__macro init_if_member(std::meta::token_sequence init) {
+    std::meta::info ctor = std::meta::macro_expansion_context();
+    if (not std::meta::is_constructor(ctor)) {
+        std::constexpr_error_str("init-if-member",
+                                 "init_if_member! must initialize a constructor");
+    }
+
+    std::string_view name = identifier_of(init[0]);
+    auto ctx = std::meta::access_context::unchecked();
+    for (std::meta::info m : nonstatic_data_members_of(parent_of(ctor), ctx)) {
+        if (has_identifier(m) && identifier_of(m) == name) {
+            return init;
+        }
+    }
+
+    return ^^{};
+}
+```
+:::
+
+One issue that this implementation reveals is that the model might not quite be right when it comes to passing constants. In this case, the `cond` argument to `maybe` in the body of the macro is still a `std::meta::info` representing an expression. This is important for several other macros we've presented, which actually do need the original expression — whether to examine or inject. But in this case, we really do just need the constant.
+
+An alternative syntax would be to annotate the parameters that we're capturing "by reflection", so that for instance this macro would look like:
+
+::: std
+```cpp
+__macro maybe(bool cond, std::meta::token_sequence decl) {
+    return cond ? decl : ^^{ };
+}
+```
+:::
+
+while the earlier [`check` macro](#check) would be declared like this:
+
+::: std
+```cpp
+template <class T>
+__macro check(^^T&& cond) {
+    // perhaps now it is more obvious that here cond has
+    // type std::meta::info, not T&&
 }
 ```
 :::
