@@ -7,12 +7,23 @@ template <class... Args>
 __macro vec(Args&&... args) {
     using T = std::remove_cvref_t<Args...[0]>;
 
+#ifdef SIMPLE_LOOP
     auto emplace_back_loop = std::meta::token_sequence();
     for (std::meta::info expr : {args...}) {
         emplace_back_loop += ^^{
             res.__emplace_back_assume_capacity(\(expr));
         };
     }
+#elifdef PACK_EXPAND
+    auto emplace_back_loop = ^^{
+        \(
+            ^^{
+                res.__emplace_back_assume_capacity(\(args));
+            }...;
+            ^^{ }
+        )
+    };
+#endif
 
     return ^^{
         do {
