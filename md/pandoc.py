@@ -168,6 +168,11 @@ def op(elem, doc):
     if isinstance(elem, pf.Code) and 'op' in elem.classes:
         return pf.RawInline(f'<code><span class="op">{elem.text}</span></code>')
 
+DOLLAR_ERROR = re.compile(r'<span class="er">(\$+)</span>')
+def dollar_op(elem, doc):
+    if isinstance(elem, (pf.RawInline, pf.RawBlock)) and elem.format == 'html':
+        elem.text = DOLLAR_ERROR.sub(r'<span class="op">\1</span>', elem.text)
+
 def std(elem, doc):
     # only applies to HackMD docs
     if not doc.get_metadata('hackmd', False):
@@ -225,4 +230,15 @@ def finalize(doc):
 
 
 if __name__ == '__main__':
-    pf.run_filters([h1hr, bq, std, mermaid, op, ce_link], prepare=prepare, finalize=finalize)
+    pf.run_filters([
+            h1hr,
+            bq,
+            std,
+            mermaid,
+            op,
+            ce_link,
+            dollar_op,
+        ],
+        prepare=prepare,
+        finalize=finalize
+    )

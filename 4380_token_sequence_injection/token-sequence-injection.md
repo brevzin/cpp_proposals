@@ -23,7 +23,7 @@ highlighting:
 
 # Revision History {- .unlisted .collapsed}
 
-Since [@P4380R0], changing the token sequence model so that `token_sequence` is a range of `token`. Changed all the `token`-specific APIs to take/return `token` instead of `token_sequence`.
+Since [@P4380R0], changing the token sequence model so that `token_sequence` is a range of `token`. Changed all the `token`-specific APIs to take/return `token` instead of `token_sequence`. Added support for `$` as an [interpolator](#choice-of-interpolator). Add examples for [bitmask operators](#generating-bitmask-operators), [defer](#defer), and [using declarations](#using-declarations).
 
 # Introduction
 
@@ -54,10 +54,13 @@ Two `token_sequence`s can be concatenated via `+` or `+=`. A `token_sequence` is
 
 ::: std
 ```cpp
+static_assert(poem[0] == ^^{ if });
 static_assert(poem.subseq(0, 1) == ^^{ if });
 static_assert(poem.size() == 16); // 15 keywords and a comma
 ```
 :::
+
+Copying a `token_sequence` is `O(1)` compile-time, `subseq` is `O(1)` and shares storage. `+=` concatenation is amortized constant time per token appended and each copy is distinct.
 
 In order to add external content into a token sequence, interpolation is done via the `\(e)` operator for some expression `e`. The parentheses are mandatory (otherwise `\u` could begin a UCN, this way it's always unambiguous). The meaning of interpolation depends on the type of `e` (done to minimize interpolation kinds):
 
@@ -65,6 +68,8 @@ In order to add external content into a token sequence, interpolation is done vi
 * Otherwise, if `e` is (or is convertible to) `info`, then a single artificial token is inserted whose meaning is what `e` represents. For instance, `\(^^int)` interpolates a token which is the type `int` (note: it is not the keyword `int`) and `\(^^std::vector<int>)` interpolates a token which is the type `std::vector<int>` (note: it does not interpolate the 6 tokens that make up that type).
 * Otherwise, if `e` is a `std::meta::token`, `std::meta::operators`, or `std::meta::punctuator`, then `\(e)` interpolates into that token/operator/punctuator (e.g. `\(std::meta::operators::op_equals_equals)` yields the token `==`).
 * Otherwise, a token is inserted whose meaning is the _value_ of `e`. `\(poem.size())` would be the value `16` (note: not an integer literal).
+
+Pack expansion is also supported inside of interpolations: `\(e...)` behaves as interpolating every element of `e`, delimited by a comma. If a different delimiter is desired, it can be be provided as `\(e...; sep)` where `sep` must be a token sequence. This is occasionally helpful as a more compile-time efficient way of doing concatenation.
 
 Some tokens are very important to be able to add into a token sequence, but cannot actually be produced without help. The two most significant of these are identifiers and string literals. In order to do so, the library will provide the functions `std::meta::id` and `std::meta::str_lit`, respectively. We will see examples of these shortly.
 
@@ -1274,6 +1279,70 @@ inline constexpr inject_bindings_t inject_bindings{};
 
 For `wide_result<T>`, `template_parameter_list_for(d)` will give us precisely `class T0` and `template_argument_list_for(d)` will give us `T0`. This now will work for all template shapes, even without having universal template parameters.
 
+## Generating bitmask operators
+
+Following the above theme, [@P4313R1]{.title} proposes a reflection-based solution for adding bitmask operators to an enum, but it doesn't quite work as a pull-based customization mechanism due to the way [operator lookup works](https://brevzin.github.io/c++/2026/10/14/push-vs-pull-ii).
+
+But an annotation that _pushes_ the operators out [can actually work](ce:bitmask-ops):
+
+::: std
+```{.cpp em=none}
+namespace std {
+    struct BitmaskType {
+        static consteval auto on_complete(std::meta::info ty) -> void {
+            queue_injection(^^{
+                constexpr auto operator+($ty e) {
+                    return std::to_underlying(e);
+                }
+
+                constexpr auto operator~($ty e) -> $ty {
+                    return $ty(~+e);
+                }
+            });
+
+
+            auto binary = [=](std::meta::operators op, std::meta::operators op_eq){
+                queue_injection(^^{
+                    constexpr auto operator $op($ty lhs, $ty rhs) -> $ty {
+                        return $ty(+lhs $op +rhs);
+                    }
+
+                    constexpr auto operator $op_eq(${ty}& lhs, $ty rhs) -> ${ty}& {
+                        lhs = lhs $op rhs;
+                        return lhs;
+                    }
+                });
+            };
+
+            using enum std::meta::operators;
+            binary(op_pipe,      op_pipe_equals);
+            binary(op_ampersand, op_ampersand_equals);
+            binary(op_caret,     op_caret_equals);
+        }
+    };
+
+    inline constexpr auto bitmask_type = BitmaskType();
+}
+```
+:::
+
+With usage like:
+
+::: std
+```cpp
+namespace N {
+    enum class [[=std::bitmask_type]] Permission {
+        None    = 0,
+        Read    = 1 << 0,
+        Write   = 1 << 1,
+        Execute = 1 << 2,
+    };
+
+}
+```
+:::
+
+
 ## Debugging
 
 One important question to ask is: how debuggable is token sequence injection for a person? It might initially seem to be a daunting task, since the token sequences we're defining in this paper do not have any checking performed at the point of use, only at the point of injection. But, perhaps surprisingly, it's not so bad — precisely because they're just token sequences, the compiler already points us to _the_ tokens that are problematic.
@@ -1519,7 +1588,7 @@ if (not (\(ops[0]) \(operator_of(cond)) \(ops[1]))) {
 ```
 :::
 
-That would actually [fail to compile](ce:double-evaluation). We diagnose if an expression is evaluated multiple times:
+That would actually [fail to compile](ce:double-evaluation.fail). We diagnose if an expression is evaluated multiple times:
 
 ::: std
 ```
@@ -1594,6 +1663,52 @@ with expansion:
 :::
 
 Note we used `_1`, `_2`, etc., as the placeholders here. But could just as easily be `$1`. Or, if you really like Swift, `$0`.
+
+Of course there are other ways to do abbreviated lambdas also. Reddit user `/u/borzykot` produces [this example](ce:abbreviated-lambdas-2), which allows syntax like `fun!(p => p.x)` or `fun!((l, r) => l.y < r.y)`. Adjusting their implementation for the R1 model, it looks like this. Here, we're using a different [interpolator](#choice-of-interpolator) to demonstrate what that might look like:
+
+::: std
+```cpp
+struct Fun {
+    std::meta::token_sequence args;
+    std::meta::token_sequence body;
+};
+
+__macro fun(std::meta::token_sequence tokens) {
+    auto [args, body] = do -> Fun {
+        auto args = std::meta::token_sequence();
+
+        for (size_t i = 0; i < tokens.size(); ++i) {
+            auto const tok = tokens[i];
+            if (token_kind_of(tok) == std::meta::token_kind::identifier) {
+                args += tok;
+            } else if (tok == ^^{ = }) {
+                if (tokens[i+1] != ^^{ > }) {
+                    throw "expected '=>' token";
+                }
+
+                do_return {
+                    .args = args,
+                    .body = tokens.subseq(i + 2),
+                };
+            }
+        }
+
+        throw "failed to parse fun";
+    };
+
+    auto args_list = std::meta::list_builder(^^{ , });
+    for (std::meta::token arg : args) {
+        args_list += ^^{ auto&& \(arg) };
+    }
+
+    return ^^{
+        [&]($args_list) -> decltype(auto) {
+            return $body;
+        }
+    };
+}
+```
+:::
 
 ## try_
 
@@ -1944,6 +2059,150 @@ int main(int, char**) {
 ```
 :::
 
+## `defer`
+
+Other macros here have been expressions, but macros can inject statements as well. In C++26, writing a scope guard is already pretty easy since `_` is always available as a name for it:
+
+::: std
+```cpp
+auto _ = scope_guard([&]{ $body$; });
+```
+:::
+
+But this is a doable as macro now [as well](ce:defer):
+
+::: std
+```cpp
+template <class F>
+struct scope_guard {
+    F f;
+    ~scope_guard() { f(); }
+};
+
+__macro defer(std::meta::token_sequence body) {
+    return ^^{
+        auto _ = scope_guard([&]{ $body; });
+    };
+}
+
+auto main() -> int {
+    std::println("A");
+    defer!{
+        std::println("deferred");
+    };
+    std::println("B");
+}
+```
+:::
+
+That prints `A`, then `deferred`, then `B`.
+
+## Using declarations
+
+[@P3485R0]{.title} proposed a convenient syntax for having multiple `$using-declaration$`s on the same line sharing a common prefix. That proposal was rejected, but macros allow the ability to write such ergonomic facilities as a library instead:
+
+::: std
+```cpp
+#include <chrono>
+using_!(std::chrono::{nanoseconds, time_point, system_clock});
+static_assert(time_point<system_clock, nanoseconds>(nanoseconds(100)).time_since_epoch().count() == 100);
+
+namespace lib {
+    constexpr int a = 1, b = 2;
+    namespace inner {
+        constexpr int c = 3, d = 4;
+    }
+    constexpr int e = 5;
+} // namespace lib
+
+using_!(lib::{a, b});
+using_!(::lib::{inner::{c, d}, e});
+static_assert(a + b + c + d + e == 15);
+```
+:::
+
+We can implement this macro simply by parsing those tokens in the same way that a compiler would, and injecting the same declarations. It can be implemented [like this](ce:using):
+
+::: std
+```cpp
+namespace using_detail {
+
+using namespace std::meta;
+
+consteval auto is(token t, punctuator p) -> bool {
+    return token_kind_of(t) == token_kind::punctuator
+        and punctuator_of(t) == p;
+}
+
+// Split at top-level commas.
+consteval auto split_commas(auto&& r) -> std::vector<token_sequence> {
+    auto out = std::vector<token_sequence>(1);
+    int depth = 0;
+    for (token t : r) {
+        if (token_kind_of(t) == token_kind::punctuator) {
+            switch (punctuator_of(t)) {
+            case punctuator::left_paren:
+            case punctuator::left_square:
+            case punctuator::left_brace:
+                ++depth;
+                break;
+            case punctuator::right_paren:
+            case punctuator::right_square:
+            case punctuator::right_brace:
+                --depth;
+                break;
+            case punctuator::comma:
+                if (depth == 0) {
+                    out.emplace_back();
+                    continue;
+                }
+                break;
+            default:
+                break;
+            }
+        }
+
+        out.back() += t;
+    }
+    return out;
+}
+
+consteval auto expand(token_sequence item,
+                      token_sequence prefix,
+                      token_sequence& out) -> void {
+    auto lb = std::ranges::find_if(item, [](token t) {
+        return is(t, punctuator::left_brace);
+    });
+    if (lb == item.end()) {
+        out += ^^{ using \(prefix) \(item); };
+        return;
+    }
+
+    if (lb == item.begin() or not is(lb[-1], punctuator::colon_colon)) {
+        std::constexpr_error_str("using_", "a group must follow '::'");
+    }
+    if (not is(item.back(), punctuator::right_brace)) {
+        std::constexpr_error_str("using_", "nothing may follow a group");
+    }
+
+    token_sequence head = prefix + token_sequence(std::ranges::subrange(item.begin(), lb));
+    for (token_sequence inner : split_commas(std::ranges::subrange(lb + 1, item.end() - 1))) {
+        expand(inner, head, out);
+    }
+}
+
+}  // namespace using_detail
+
+__macro using_(std::meta::token_sequence names) {
+    auto out = ^^{ };
+    for (auto item : using_detail::split_commas(names)) {
+        using_detail::expand(item, ^^{}, out);
+    }
+    return out;
+}
+```
+:::
+
 # Summary
 
 We are proposing a new fundamental kind in the language, `std::meta::token`, and a class type `std::meta::token_sequence` that is a range of it. Unlike our suggestion in [@P3294R2], we think this merits being a distinct type (from `std::meta::info`) because we found that in practice the usage patterns are always disjoint, and a distinct type allows us to give it a suitable API shape — including indexing, concatenation, and iteration. We're proposing a single interpolator `\(e)` (see [syntax discussion](#choice-of-interpolator)). And then on top of that we're proposing expression/declaration macros which interact with the compiler by returning a token sequence that the input expression is replaced with.
@@ -2011,7 +2270,7 @@ namespace std::meta {
   consteval auto token_kind_of (token tok) -> token_kind;
   consteval auto operator_of   (token tok) -> operators;    // must be an operator
   consteval auto identifier_of (token tok) -> string_view;  // must be an identifier
-  consteval auto punctuator_of (token tok) -> punctuator;   // must be a puncatutor
+  consteval auto punctuator_of (token tok) -> punctuator;   // must be a punctuator
   consteval auto symbol_of(punctuator ) -> string_view;
 
   // ── Injection ──────────────────────────────────────────────────────────
@@ -2075,7 +2334,7 @@ However, there really aren't many options available to us for interpolation, sin
 |Syntax|Notes|
 |-|----|
 |`\{e}`|Braces instead of Parentheses.  This would help for the expression case, but there are plenty of examples where we're building up things next to real braces, so not sure this moves the needle much.|
-|`${e}`|This would help a little because `$` is actually a frequent choice for interpolator in several other programming languages, so is somewhat familiar. Unlike `\(e)` which is only used by Swift. But `$` is a valid character to use in an identifier. So we would have to special case single `$` in the lexer when inside of a token sequence? That might also prevent `$e` without braces.|
+|`${e}`|This would help a little because `$` is actually a frequent choice for interpolator in several other programming languages, so is somewhat familiar. Unlike `\(e)` which is only used by Swift. But `$` is a valid character to use in an identifier — so we would have to special case single `$` in the lexer when inside of a token sequence. Another benefit would be that `$e` would be valid without braces when interpolating just an identifier expression.|
 |`@e` or `@{e}`|Unlike `$`, `@` isn't really a frequent choice for interpolator, but it does stand out. And single `@` is probably something we could take, although allowing `@e` without the braces runs the risk of clashing with Objective C.|
 
 Currently both `\(e)` and `${e}` are implemented and supported, where `$e` is also allowed in the case where you just want to interpolate an identifier (the typical case). If you specifically want an identifier which begins with a dollar sign, you can escape it like `\$e`.
