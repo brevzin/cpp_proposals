@@ -33,7 +33,7 @@ In this paper, we will demonstrate the power of token sequence-based injection b
 
 # Direct Injection of Token Sequences
 
-A token sequence literal is introduced via `^^{ ... }`. This has type `std::meta::token_sequence`. It, along with all other members mentioned in this paper, is intended to be declared in `<meta>`. The contents between the braces are lexed — no parsing happens until injection. This may not be valid C++, but it is a [valid token sequence](https://x.com/ridiculous_fish/status/1001681073917620224):
+A token sequence literal is introduced via `^^{ ... }`. This has type `std::meta::token_sequence`. It, along with all other members mentioned in this paper, is intended to be declared in `<meta>` (and `<meta>` must be included in order to declare any token sequence literal). The contents between the braces are lexed — no parsing happens until injection. This may not be valid C++, but it is a [valid token sequence](https://x.com/ridiculous_fish/status/1001681073917620224):
 
 ::: std
 ```cpp
@@ -1548,7 +1548,7 @@ consteval auto placeholder_index(std::string_view id) -> std::optional<int> {
 
 __macro λ(std::meta::token_sequence body) {
     auto arity = std::optional<int>();
-    for (std::meta::token_sequence tok : body) {
+    for (std::meta::token tok : body) {
         if (token_kind_of(tok) == std::meta::token_kind::identifier) {
             arity = std::max(arity, placeholder_index(identifier_of(tok)));
         }
@@ -1676,7 +1676,7 @@ The implementation is [quite straightforward](ce:define-op):
 __macro define_op(std::meta::token_sequence name,
                   std::meta::token_sequence pattern) {
     // id op id
-    if (size(pattern) == 3) {
+    if (pattern.size() == 3) {
         return ^^{
             struct \(name) {
                 template <class L, class R>
@@ -1946,7 +1946,7 @@ int main(int, char**) {
 
 # Summary
 
-We are proposing a new fundamental kind in the language, `std::meta::token_sequence`. Unlike our suggestion in [@P3294R2], we think this merits being a distinct type (from `std::meta::info`) because we found that in practice the usage patterns are always disjoint, and a distinct type allows us to give it a suitable API shape — including indexing, concatenation, and iteration. We're proposing a single interpolator `\(e)` (see [syntax discussion](#choice-of-interpolator)). And then on top of that we're proposing expression/declaration macros which interact with the compiler by returning a token sequence that the input expression is replaced with.
+We are proposing a new fundamental kind in the language, `std::meta::token`, and a class type `std::meta::token_sequence` that is a range of it. Unlike our suggestion in [@P3294R2], we think this merits being a distinct type (from `std::meta::info`) because we found that in practice the usage patterns are always disjoint, and a distinct type allows us to give it a suitable API shape — including indexing, concatenation, and iteration. We're proposing a single interpolator `\(e)` (see [syntax discussion](#choice-of-interpolator)). And then on top of that we're proposing expression/declaration macros which interact with the compiler by returning a token sequence that the input expression is replaced with.
 
 As with Reflection, it comes with a decently sized library surface to help facilitate all the desired behavior:
 
@@ -1957,29 +1957,62 @@ As with Reflection, it comes with a decently sized library surface to help facil
 namespace std::meta {
 
   // ── Token sequences ────────────────────────────────────────────────────
-  using token_sequence = decltype(^^{ });
-  struct token_iterator;
-  consteval auto begin(token_sequence) -> token_iterator;
-  consteval auto end  (token_sequence) -> token_iterator;
-  consteval auto size (token_sequence) -> size_t;
-  consteval auto empty(token_sequence) -> bool;
+  using token = /* unspecified scalar type */;
 
-  template <class... Ts> consteval auto id      (Ts const&...) -> token_sequence;  // one identifier token
-  template <class... Ts> consteval auto str_lit (Ts const&...) -> token_sequence;  // one string literal
+  class token_sequence {    // the type of ^^{ ... }; a value
+  public:
+    using value_type = token;
+    static constexpr size_t npos = size_t(-1);
+
+    consteval token_sequence(); // ^^ { }
+    consteval token_sequence(initializer_list<token>);
+    template <class R>
+      consteval explicit token_sequence(R&& r); // from any range of token
+
+    consteval auto data() const -> token const*;
+    consteval auto begin() const -> token const*;
+    consteval auto end() const -> token const*;
+    consteval auto size() const -> size_t;
+    consteval auto empty() const -> bool;
+
+    consteval auto operator[](size_t ) const -> token const&;
+    consteval auto front() const -> token const&;
+    consteval auto back() const -> token const&;
+    consteval auto subseq(size_t pos, size_t n = npos) const -> token_sequence;
+
+    // concatenation
+    consteval auto operator+=(token_sequence const&) -> token_sequence&;
+    consteval auto operator+=(token) -> token_sequence&;
+    consteval auto operator+(token_sequence const&) const -> token_sequence;
+    consteval auto operator+(token) const -> token_sequence;
+    friend consteval auto operator+(token, token_sequence) -> token_sequence;
+
+    consteval auto operator==(token_sequence const&) const -> bool;
+    consteval auto operator==(token) const -> bool;
+  };
+
+  template <class... Ts> consteval auto id      (Ts const&...) -> token;  // one identifier token
+  template <class... Ts> consteval auto str_lit (Ts const&...) -> token;  // one string literal
   template <class... Ts> consteval auto tokenize(Ts const&...) -> token_sequence;  // lex text
   consteval auto stringize(token_sequence) -> char const*;
+  consteval auto stringize(token) -> char const*;
 
   class list_builder {                               // delimited concatenation
+  public:
     consteval explicit list_builder(token_sequence delim = ^^{ });
     consteval auto operator+=(token_sequence) -> void;    // empty pieces are skipped
+    consteval auto operator+=(token) -> void;
     consteval operator token_sequence() const;
   };
 
   // ── Token classification ───────────────────────────────────────────────
   enum class token_kind { identifier, keyword, literal, punctuator, annotation, unknown };
-  consteval auto token_kind_of (token_sequence tok) -> token_kind;   // unknown: empty or >1 token
-  consteval auto operator_of   (token_sequence tok) -> operators;    // a complete operator token
-  consteval auto identifier_of (token_sequence tok) -> string_view;  // tok must be a single identifier token (else non-constant)
+  enum class punctuator { /* ... */ };
+  consteval auto token_kind_of (token tok) -> token_kind;
+  consteval auto operator_of   (token tok) -> operators;    // must be an operator
+  consteval auto identifier_of (token tok) -> string_view;  // must be an identifier
+  consteval auto punctuator_of (token tok) -> punctuator;   // must be a puncatutor
+  consteval auto symbol_of(punctuator ) -> string_view;
 
   // ── Injection ──────────────────────────────────────────────────────────
   consteval auto queue_injection(token_sequence) -> void;                  // into the current context
@@ -2044,6 +2077,8 @@ However, there really aren't many options available to us for interpolation, sin
 |`\{e}`|Braces instead of Parentheses.  This would help for the expression case, but there are plenty of examples where we're building up things next to real braces, so not sure this moves the needle much.|
 |`${e}`|This would help a little because `$` is actually a frequent choice for interpolator in several other programming languages, so is somewhat familiar. Unlike `\(e)` which is only used by Swift. But `$` is a valid character to use in an identifier. So we would have to special case single `$` in the lexer when inside of a token sequence? That might also prevent `$e` without braces.|
 |`@e` or `@{e}`|Unlike `$`, `@` isn't really a frequent choice for interpolator, but it does stand out. And single `@` is probably something we could take, although allowing `@e` without the braces runs the risk of clashing with Objective C.|
+
+Currently both `\(e)` and `${e}` are implemented and supported, where `$e` is also allowed in the case where you just want to interpolate an identifier (the typical case). If you specifically want an identifier which begins with a dollar sign, you can escape it like `\$e`.
 
 ## Comparison with P2826
 
