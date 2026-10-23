@@ -3933,14 +3933,14 @@ might look like:</p>
 <span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a><span class="kw">__macro</span> fun<span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>token_sequence tokens<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span>args<span class="op">,</span> body<span class="op">]</span> <span class="op">=</span> <span class="cf">do</span> <span class="op">-&gt;</span> Fun <span class="op">{</span></span>
-<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> args <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>token_sequence<span class="op">();</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> args <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>list_builder<span class="op">(^^{</span> <span class="op">,</span> <span class="op">});</span></span>
 <span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> tokens<span class="op">.</span>size<span class="op">();</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> <span class="kw">const</span> tok <span class="op">=</span> tokens<span class="op">[</span>i<span class="op">];</span></span>
 <span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>token_kind_of<span class="op">(</span>tok<span class="op">)</span> <span class="op">==</span> std<span class="op">::</span>meta<span class="op">::</span>token_kind<span class="op">::</span>identifier<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>                args <span class="op">+=</span> tok<span class="op">;</span></span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>                args <span class="op">+=</span> <span class="op">^^{</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> <span class="op">$</span>tok <span class="op">};</span></span>
 <span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>tok <span class="op">==</span> <span class="op">^^{</span> <span class="op">=</span> <span class="op">})</span> <span class="op">{</span></span>
-<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>tokens<span class="op">[</span>i<span class="op">+</span><span class="dv">1</span><span class="op">]</span> <span class="op">!=</span> <span class="op">^^{</span> <span class="op">&gt;</span> <span class="op">})</span> <span class="op">{</span></span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>tokens<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]</span> <span class="op">!=</span> <span class="op">^^{</span> <span class="op">&gt;</span> <span class="op">})</span> <span class="op">{</span></span>
 <span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">throw</span> <span class="st">&quot;expected &#39;=&gt;&#39; token&quot;</span><span class="op">;</span></span>
 <span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
 <span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a></span>
@@ -3954,17 +3954,12 @@ might look like:</p>
 <span id="cb47-26"><a href="#cb47-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> <span class="st">&quot;failed to parse fun&quot;</span><span class="op">;</span></span>
 <span id="cb47-27"><a href="#cb47-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
 <span id="cb47-28"><a href="#cb47-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-29"><a href="#cb47-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> args_list <span class="op">=</span> std<span class="op">::</span>meta<span class="op">::</span>list_builder<span class="op">(^^{</span> <span class="op">,</span> <span class="op">});</span></span>
-<span id="cb47-30"><a href="#cb47-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>std<span class="op">::</span>meta<span class="op">::</span>token arg <span class="op">:</span> args<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb47-31"><a href="#cb47-31" aria-hidden="true" tabindex="-1"></a>        args_list <span class="op">+=</span> <span class="op">^^{</span> <span class="kw">auto</span><span class="op">&amp;&amp;</span> \<span class="op">(</span>arg<span class="op">)</span> <span class="op">};</span></span>
-<span id="cb47-32"><a href="#cb47-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb47-33"><a href="#cb47-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-34"><a href="#cb47-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^^{</span></span>
-<span id="cb47-35"><a href="#cb47-35" aria-hidden="true" tabindex="-1"></a>        <span class="op">[&amp;](</span><span class="op">$</span>args_list<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb47-36"><a href="#cb47-36" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="op">$</span>body<span class="op">;</span></span>
-<span id="cb47-37"><a href="#cb47-37" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb47-38"><a href="#cb47-38" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
-<span id="cb47-39"><a href="#cb47-39" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<span id="cb47-29"><a href="#cb47-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">^^{</span></span>
+<span id="cb47-30"><a href="#cb47-30" aria-hidden="true" tabindex="-1"></a>        <span class="op">[&amp;](</span><span class="op">$</span>args<span class="op">)</span> <span class="op">-&gt;</span> <span class="kw">decltype</span><span class="op">(</span><span class="kw">auto</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb47-31"><a href="#cb47-31" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="op">$</span>body<span class="op">;</span></span>
+<span id="cb47-32"><a href="#cb47-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb47-33"><a href="#cb47-33" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb47-34"><a href="#cb47-34" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <h2 data-number="3.5" id="try_"><span class="header-section-number">3.5</span> try_<a href="#try_" class="self-link"></a></h2>

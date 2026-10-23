@@ -1675,14 +1675,14 @@ struct Fun {
 
 __macro fun(std::meta::token_sequence tokens) {
     auto [args, body] = do -> Fun {
-        auto args = std::meta::token_sequence();
+        auto args = std::meta::list_builder(^^{ , });
 
         for (size_t i = 0; i < tokens.size(); ++i) {
             auto const tok = tokens[i];
             if (token_kind_of(tok) == std::meta::token_kind::identifier) {
-                args += tok;
+                args += ^^{ auto&& $tok };
             } else if (tok == ^^{ = }) {
-                if (tokens[i+1] != ^^{ > }) {
+                if (tokens[i + 1] != ^^{ > }) {
                     throw "expected '=>' token";
                 }
 
@@ -1696,13 +1696,8 @@ __macro fun(std::meta::token_sequence tokens) {
         throw "failed to parse fun";
     };
 
-    auto args_list = std::meta::list_builder(^^{ , });
-    for (std::meta::token arg : args) {
-        args_list += ^^{ auto&& \(arg) };
-    }
-
     return ^^{
-        [&]($args_list) -> decltype(auto) {
+        [&]($args) -> decltype(auto) {
             return $body;
         }
     };

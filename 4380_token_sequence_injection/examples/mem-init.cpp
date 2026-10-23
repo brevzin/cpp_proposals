@@ -15,7 +15,8 @@ __macro init_if_member(std::meta::token_sequence init) {
     }
 
     std::string_view name = identifier_of(init[0]);
-    for (std::meta::info m : nonstatic_data_members_of(parent_of(ctor), std::meta::access_context::unchecked())) {
+    auto ctx = std::meta::access_context::unchecked();
+    for (std::meta::info m : nonstatic_data_members_of(parent_of(ctor), ctx)) {
         if (has_identifier(m) && identifier_of(m) == name) {
             return init;
         }
