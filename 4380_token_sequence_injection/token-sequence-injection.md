@@ -60,7 +60,7 @@ static_assert(poem.size() == 16); // 15 keywords and a comma
 ```
 :::
 
-Copying a `token_sequence` is `O(1)` compile-time, `subseq` is `O(1)` and shares storage. `+=` concatenation is amortized constant time per token appended and each copy is distinct.
+Because `token_sequence` is a type owned by the compiler, referring to compiler memory, operations like copying, `subeq()`, indexing, and concatenation are all very cheap. Importantly, `token_sequence` is still a value type — every copy is independent.
 
 In order to add external content into a token sequence, interpolation is done via the `\(e)` operator for some expression `e`. The parentheses are mandatory (otherwise `\u` could begin a UCN, this way it's always unambiguous). The meaning of interpolation depends on the type of `e` (done to minimize interpolation kinds):
 

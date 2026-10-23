@@ -2022,14 +2022,13 @@ equality:</p>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">static_assert</span><span class="op">(</span>poem<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> <span class="dv">16</span><span class="op">);</span> <span class="co">// 15 keywords and a comma</span></span></code></pre></div>
 </blockquote>
 </div>
-<p>Copying a <code class="sourceCode cpp">token_sequence</code> is
-<code class="sourceCode cpp">O<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>
-compile-time, <code class="sourceCode cpp">subseq</code> is
-<code class="sourceCode cpp">O<span class="op">(</span><span class="dv">1</span><span class="op">)</span></code>
-and shares storage.
-<code class="sourceCode cpp"><span class="op">+=</span></code>
-concatenation is amortized constant time per token appended and each
-copy is distinct.</p>
+<p>Because <code class="sourceCode cpp">token_sequence</code> is a type
+owned by the compiler, referring to compiler memory, operations like
+copying,
+<code class="sourceCode cpp">subeq<span class="op">()</span></code>,
+indexing, and concatenation are all very cheap. Importantly,
+<code class="sourceCode cpp">token_sequence</code> is still a value type
+— every copy is independent.</p>
 <p>In order to add external content into a token sequence, interpolation
 is done via the
 <code class="sourceCode cpp">\<span class="op">(</span>e<span class="op">)</span></code>
