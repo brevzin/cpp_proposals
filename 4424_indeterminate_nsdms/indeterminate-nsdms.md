@@ -12,9 +12,11 @@ status: progress
 
 # Introduction
 
-[@P2795R5]{.title} was adopted for C++26 and implemented in gcc 16. In practice, it ensures that automatic storage duration variables are initialized unless they are marked `[[indeterminate]]` — both [gcc](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-ftrivial-auto-var-init) and [clang](https://clang.llvm.org/docs/ClangCommandLineReference.html#cmdoption-clang-ftrivial-auto-var-init) implement the flag `-ftrivial-auto-var-init`, which specifies how automatic storage variables are initialized. GCC in C++26 mode defaults to `-ftrivial-auto-var-init=zero`, which meets the requirements of the feature. As also originally proposed in [@P2723R1]{.title}.
+[@P2795R5]{.title} was adopted for C++26 and implemented in gcc 16. In practice, it ensures that automatic storage duration variables are initialized unless they are marked `[[indeterminate]]` — both [gcc](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-ftrivial-auto-var-init) and [clang](https://clang.llvm.org/docs/ClangCommandLineReference.html#cmdoption-clang-ftrivial-auto-var-init) implement the flag `-ftrivial-auto-var-init`{.default}, which specifies how automatic storage variables are initialized. GCC in C++26 mode defaults to `-ftrivial-auto-var-init=zero`{.default}, which meets the requirements of the feature. As also originally proposed in [@P2723R1]{.title}.
 
 Now, the issue is that _only_ block storage variables can be marked `[[indeterminate]]`. And, for some reason, function parameters. But mainly local variables. That's straightforward enough when declaring a local `char buffer[1'024]` to read in some input. But what if you're using a type that, as an implementation detail, has a local buffer?
+
+## `fmt::memory_buffer`
 
 Consider the `{fmt}` library. One of its types, which is used both internally across every formatting path but is also intended to be used publicly, is `fmt::memory_buffer`. Its declaration [starts with](https://github.com/fmtlib/fmt/blob/0fc31633e7d53ac895ae0a688b83b7d44f0b0c1f/include/fmt/format.h#L946-L967):
 
@@ -132,13 +134,247 @@ That cost shows up in benchmarks — on my machine it was roughly a 10ns fixed 
 
 Now, within the `{fmt}` library this is solvable. `memory_buffer` is constructed in about a dozen places, it's easy enough to find them and mark them `FMT_INDETERMINATE`. But _outside_ of `{fmt}`, this is a public type. Users would have to know this is a type they have to annotate. That seems very unlikely to happen with regularity, so everyone will just pay this cost.
 
-There has to be a better way to handle this. Until then, I think we have to build our code with `-ftrivial-auto-var-init=uninitialized`.
+This is hardly the only example though, there are plenty of others.
 
-# Proposal
+## `std::string`
 
-Currently, `[[indeterminate]]` can only be applied to local variables and function parameters. This paper proposes that it also be able to be applied on non-static data members, with the obvious meaning. That allows types like `fmt::basic_memory_buffer` to annotate their uninitialized members (`store_` in the example), so that only one place needs to be annotated by only one person: the class author. Nobody has to pay cost for initializing memory that need not be initialized.
+`fmt::memory_buffer` isn't the only example that has unnecessary overhead. `std::string` does as well — it has a union with local storage in the small string case. So an example like this, with a temporary, must still [zero that buffer](https://compiler-explorer.com/z/Y117ob6W7):
 
-Note that this isn't even only useful for members that are intentionally uninitialized. Consider:
+::: std
+```cpp
+auto make_name() -> std::string;
+auto use(std::string const&) -> void;
+
+auto temp_from_call() -> void {
+    use(make_name());
+}
+```
+:::
+
+::: cmptable
+### C++23
+```asm
+"temp_from_call()":
+        sub     rsp, 40
+        mov     rdi, rsp
+        call    "make_name[abi:cxx11]()"
+        mov     rdi, rsp
+        call    "use(...)"
+        mov     rdi, QWORD PTR [rsp]
+        lea     rax, [rsp+16]
+        cmp     rdi, rax
+        je      .L1
+        mov     rax, QWORD PTR [rsp+16]
+        lea     rsi, [rax+1]
+        call    "operator delete(void*, unsigned long)"
+.L1:
+        add     rsp, 40
+        ret
+        mov     QWORD PTR [rsp+32], rbx
+        mov     rbx, rax
+        jmp     .L3
+```
+
+### C++26
+```asm
+"temp_from_call()":
+        sub     rsp, 40
+        pxor    xmm0, xmm0
+        mov     rdi, rsp
+        movaps  XMMWORD PTR [rsp], xmm0
+        movaps  XMMWORD PTR [rsp+16], xmm0
+        call    "make_name[abi:cxx11]()"
+        mov     rdi, rsp
+        call    "use(...)"
+        mov     rdi, QWORD PTR [rsp]
+        lea     rax, [rsp+16]
+        cmp     rdi, rax
+        je      .L1
+        mov     rax, QWORD PTR [rsp+16]
+        lea     rsi, [rax+1]
+        call    "operator delete(void*, unsigned long)"
+.L1:
+        add     rsp, 40
+        ret
+        mov     QWORD PTR [rsp+32], rbx
+        mov     rbx, rax
+        jmp     .L3
+```
+:::
+
+And the same is true with local variable that [uses a small string](https://compiler-explorer.com/z/8sdxf9Yhv), though gcc is smart enough to group the zeroing together a bit:
+
+::: std
+```cpp
+auto named_short() -> void {
+    std::string s = "hi";
+    use(s);
+}
+```
+:::
+
+::: cmptable
+### C++23
+```asm
+"named_short()":
+        sub     rsp, 56
+        mov     eax, 26984
+        mov     QWORD PTR [rsp+40], rbx
+        mov     rdi, rsp
+        lea     rbx, [rsp+16]
+        mov     QWORD PTR [rsp], rbx
+        mov     WORD PTR [rsp+16], ax
+        mov     BYTE PTR [rsp+18], 0
+        mov     QWORD PTR [rsp+8], 2
+        call    "use(...)"
+        mov     rdi, QWORD PTR [rsp]
+        cmp     rdi, rbx
+        je      .L1
+        mov     rax, QWORD PTR [rsp+16]
+        lea     rsi, [rax+1]
+        call    "operator delete(void*, unsigned long)"
+.L1:
+        mov     rbx, QWORD PTR [rsp+40]
+        add     rsp, 56
+        ret
+        mov     QWORD PTR [rsp+48], r14
+        mov     r14, rax
+        jmp     .L3
+```
+
+### C++26
+```asm
+"named_short()":
+        sub     rsp, 56
+        pxor    xmm0, xmm0
+        mov     eax, 26984
+        mov     QWORD PTR [rsp+40], rbx
+        mov     rdi, rsp
+        lea     rbx, [rsp+16]
+        movaps  XMMWORD PTR [rsp+16], xmm0
+        mov     QWORD PTR [rsp], rbx
+        mov     WORD PTR [rsp+16], ax
+        mov     QWORD PTR [rsp+8], 2
+        call    "use(...)"
+        mov     rdi, QWORD PTR [rsp]
+        cmp     rdi, rbx
+        je      .L1
+        mov     rax, QWORD PTR [rsp+16]
+        lea     rsi, [rax+1]
+        call    "operator delete(void*, unsigned long)"
+.L1:
+        mov     rbx, QWORD PTR [rsp+40]
+        add     rsp, 56
+        ret
+        mov     QWORD PTR [rsp+48], r14
+        mov     r14, rax
+        jmp     .L3
+```
+:::
+
+## `std::optional<double>`
+
+Similar behavior [can be seen](https://compiler-explorer.com/z/bEz8c6s9q) using `std::optional`, for the same reason:
+
+::: std
+```cpp
+auto use(std::optional<double> const&) -> void;
+auto lookup(int) -> std::optional<double>;
+
+auto from_call(int k) -> void {
+    auto o = lookup(k);
+    use(o);
+}
+```
+:::
+
+::: cmptable
+### C++23
+```asm
+"from_call(int)":
+        sub     rsp, 24
+        call    "lookup(int)"
+        mov     rdi, rsp
+        mov     QWORD PTR [rsp+8], rax
+        movsd   QWORD PTR [rsp], xmm0
+        call    "use(std::optional<double> const&)"
+        add     rsp, 24
+        ret
+```
+
+### C++26
+```asm
+"from_call(int)":
+        sub     rsp, 24
+        pxor    xmm0, xmm0
+        movaps  XMMWORD PTR [rsp], xmm0
+        call    "lookup(int)"
+        mov     rdi, rsp
+        mov     QWORD PTR [rsp+8], rax
+        movsd   QWORD PTR [rsp], xmm0
+        call    "use(std::optional<double> const&)"
+        add     rsp, 24
+        ret
+```
+:::
+
+## Temporaries and Subobjects
+
+Consider the difference between:
+
+::: std
+```cpp
+struct Msg {
+    int id;
+    char payload[256]; // filled in later, by design
+    explicit Msg(int i): id(i) { }
+};
+
+auto send(Msg const&) -> void;
+
+auto temporary() -> void {
+    send(Msg(42));
+}
+
+auto named() -> void {
+    [[indeterminate]] auto m = Msg(42);
+    send(m);
+}
+```
+:::
+
+There's nowhere in `temporary` to attach `[[indeterminate]]`, so if I want to avoid the `memset` before writing `id`, I have to implement this function as in `named()` (which compiles the same in C++23 and C++26) instead of `temporary()`.
+
+But now consider I put my message in an envelope:
+
+::: std
+```cpp
+struct Envelope {
+    uint64_t seq = 0;
+    Msg msg{7};
+};
+
+auto subobject() -> void {
+    Envelope e;
+    send(e.msg);
+}
+
+auto subobject_all() -> void {
+    [[indeterminate]] Envelope e;
+    send(e.msg);
+}
+```
+:::
+
+Indeterminacy is all-or-nothing. C++26 gives me an extra `memset` which I can remove to get back the C++23 code, but it also drops the guarantee for `e.seq` and for any later member. There's no way to say that _just_ `Msg::payload` is indeterminate.
+
+## User Experience
+
+While attempting to upgrade a large library to C++26, the release build had around 50,500 objects which were now being zero-initialized that were not before (note that this is already excluding those cases where an object is zero-initialized by the compiler optimizes out that extra initialization). Of those, 88% had class type yet only involve a mere 704 distinct class types. It's a lot of concentration. Over 25,000 of those extra zero-initializations are just between `std::string` and types in `{fmt}` (`value` and `iterator_buffer` being the most common)!
+
+74% of those overall are class types that are partly uninitialized by design, whether that's a union, a member left for later, an inline buffer, etc. And many of those are temporaries.
+
+A further 14% though are fully initialized, but by code that gcc could not see — because the initialization happens in an out-of-line constructor or function. For instance:
 
 ::: std
 ```cpp
@@ -146,12 +382,23 @@ class Container {
     char buffer[1'024];
 
 public:
-    Container();
+    Container(); // actually does zero buffer
+                 // but you don't know that
 };
 ```
 :::
 
-What does `Container()` do? Well, you don't know. It happens to actually initialize `buffer`, but that happens in `container.cxx`, not in `container.hh`, so when compiling some translation units that use `Container`, the compiler doesn't know that, and so it helpfully zeroes it out first, before invoking the constructor which _also_ happens to zero it. Marking `Container::buffer` as `[[indeterminate]]` here would avoid that extra initialization as well.
+Uses of such types just get double-initialized.
+
+There has to be a better way to handle this. Until then, I think we have to build our code with `-ftrivial-auto-var-init=uninitialized`{.default}.
+
+# Proposal
+
+Currently, `[[indeterminate]]` can only be applied to local variables and function parameters. This paper proposes that it also be able to be applied on non-static data members, with the obvious meaning. That allows types like `fmt::basic_memory_buffer` (and `fmt::value` and `std::string` and `std::optional` and ...) to annotate their uninitialized members, so that only one place needs to be annotated by only one person: the class author. Nobody has to pay cost for initializing memory that need not be initialized.
+
+This one change alone covers the vast majority of our extra-initialized objects. It also covers temporaries, which cannot be annotated today either. It seems like a straightforward omission.
+
+What it does not help are those cases that are initialized, but out-of-line, and become double-initialization. I'm not sure what to do about those.
 
 ## Wording
 
