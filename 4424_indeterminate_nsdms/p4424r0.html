@@ -1893,8 +1893,8 @@ for non-static data members</h1>
 <code class="sourceCode cpp">fmt<span class="op">::</span>memory_buffer</code></a></li>
 <li><a href="#stdstring" id="toc-stdstring"><span class="toc-section-number">1.2</span>
 <code class="sourceCode cpp">std<span class="op">::</span>string</code></a></li>
-<li><a href="#stdoptionaldouble" id="toc-stdoptionaldouble"><span class="toc-section-number">1.3</span>
-<code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span></code></a></li>
+<li><a href="#stdinplace_vectort-n" id="toc-stdinplace_vectort-n"><span class="toc-section-number">1.3</span>
+<code class="sourceCode cpp">std<span class="op">::</span>inplace_vector<span class="op">&lt;</span>T<span class="op">,</span> N<span class="op">&gt;</span></code></a></li>
 <li><a href="#temporaries-and-subobjects" id="toc-temporaries-and-subobjects"><span class="toc-section-number">1.4</span> Temporaries and
 Subobjects</a></li>
 <li><a href="#user-experience" id="toc-user-experience"><span class="toc-section-number">1.5</span> User Experience</a></li>
@@ -1923,11 +1923,10 @@ mode defaults to
 which meets the requirements of the feature. As also originally proposed
 in <span class="title"><span class="citation" data-cites="P2723R1"><a href="https://wg21.link/p2723r1">[P2723R1] (Zero-initialize objects of
 automatic storage duration)</a></span></span>.</p>
-<p>Now, the issue is that <em>only</em> block storage variables can be
-marked
-<code class="sourceCode cpp"><span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span></code>.
-And, for some reason, function parameters. But mainly local variables.
-That’s straightforward enough when declaring a local
+<p>Now, the issue is that <em>only</em> block variables can be marked
+<code class="sourceCode cpp"><span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span></code>
+((and also function parameters). That’s straightforward enough when
+declaring a local
 <code class="sourceCode cpp"><span class="dt">char</span> buffer<span class="op">[</span><span class="dv">1&#39;024</span><span class="op">]</span></code>
 to read in some input. But what if you’re using a type that, as an
 implementation detail, has a local buffer?</p>
@@ -1935,8 +1934,9 @@ implementation detail, has a local buffer?</p>
 <code class="sourceCode cpp">fmt<span class="op">::</span>memory_buffer</code><a href="#fmtmemory_buffer" class="self-link"></a></h2>
 <p>Consider the
 <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>
-library. One of its types, which is used both internally across every
-formatting path but is also intended to be used publicly, is
+library. One of its types, which is used both internally across many
+formatting paths (it’s what <code class="sourceCode cpp">vformat</code>
+uses) but is also intended to be used publicly, is
 <code class="sourceCode cpp">fmt<span class="op">::</span>memory_buffer</code>.
 Its declaration <a href="https://github.com/fmtlib/fmt/blob/0fc31633e7d53ac895ae0a688b83b7d44f0b0c1f/include/fmt/format.h#L946-L967">starts
 with</a>:</p>
@@ -2055,7 +2055,7 @@ the codegen (I abbreviated some function names here for clarity):</p>
 <span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movdqa</span>  <span class="kw">xmm0</span><span class="op">,</span> XMMWORD <span class="dt">PTR</span> <span class="op">.</span>LC0<span class="op">[</span>rip<span class="op">]</span></span>
 <span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
 <span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">],</span> <span class="kw">rbx</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">40</span><span class="op">],</span> OFFSET FLAT<span class="op">:</span>grow<span class="st">&quot;</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">40</span><span class="op">],</span> OFFSET FLAT<span class="op">:</span><span class="st">&quot;grow&quot;</span></span>
 <span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movups</span>  XMMWORD <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">24</span><span class="op">],</span> <span class="kw">xmm0</span></span>
 <span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;vformat_to&quot;</span></span>
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rsi</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">24</span><span class="op">]</span></span>
@@ -2064,7 +2064,14 @@ the codegen (I abbreviated some function names here for clarity):</p>
 <span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
 <span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rbx</span></span>
 <span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">je</span>      <span class="op">.</span>L7</span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;free&quot;</span></span></code></pre></div></td>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;free&quot;</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="fu">.L7:</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">568</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>        <span class="bu">pop</span>     <span class="kw">rbx</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>        <span class="bu">pop</span>     <span class="kw">rbp</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbp</span><span class="op">,</span> <span class="kw">rax</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">jmp</span>     <span class="op">.</span>L9</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -2078,8 +2085,9 @@ significant percentage of the total cost.</p>
 library this is solvable.
 <code class="sourceCode cpp">memory_buffer</code> is constructed in
 about a dozen places, it’s easy enough to find them and mark them
-<code class="sourceCode cpp">FMT_INDETERMINATE</code>. But
-<em>outside</em> of
+<code class="sourceCode cpp">FMT_INDETERMINATE</code> (a macro wrapping
+<code class="sourceCode cpp"><span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span></code>).
+But <em>outside</em> of
 <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>,
 this is a public type. Users would have to know this is a type they have
 to annotate. That seems very unlikely to happen with regularity, so
@@ -2096,12 +2104,11 @@ case. So an example like this, with a temporary, must still <a href="https://com
 buffer</a>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> make_name<span class="op">()</span> <span class="op">-&gt;</span> std<span class="op">::</span>string<span class="op">;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> use<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">void</span><span class="op">;</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> temp_from_call<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    use<span class="op">(</span>make_name<span class="op">());</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> use<span class="op">(</span>std<span class="op">::</span>string <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">void</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> temp_from_call<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    use<span class="op">(</span>std<span class="op">::</span>string<span class="op">(</span><span class="st">&quot;hi&quot;</span><span class="op">));</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <div class="table-wrapper">
@@ -2123,46 +2130,54 @@ buffer</a>:</p>
 <tbody>
 <tr>
 <td><div class="sourceCode" id="cb3"><pre class="sourceCode asm"><code class="sourceCode fasm"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>&quot;temp_from_call<span class="op">()</span><span class="st">&quot;:</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">40</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;make_name[abi:cxx11]()&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">56</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">eax</span><span class="op">,</span> <span class="dv">26984</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">40</span><span class="op">],</span> <span class="kw">rbx</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(...)&quot;</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">]</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rax</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">je</span>      <span class="op">.</span>L1</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rsi</span><span class="op">,</span> <span class="op">[</span><span class="kw">rax</span><span class="op">+</span><span class="dv">1</span><span class="op">]</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;operator delete(void*, unsigned long)&quot;</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">.L1:</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">40</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">32</span><span class="op">],</span> <span class="kw">rbx</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="kw">rax</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">jmp</span>     <span class="op">.</span>L3</span></code></pre></div></td>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">rbx</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">WORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">],</span> <span class="kw">ax</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">BYTE</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">18</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">8</span><span class="op">],</span> <span class="dv">2</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(...)&quot;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">]</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rbx</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">je</span>      <span class="op">.</span>L1</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rsi</span><span class="op">,</span> <span class="op">[</span><span class="kw">rax</span><span class="op">+</span><span class="dv">1</span><span class="op">]</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;operator delete(void*, unsigned long)&quot;</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="fu">.L1:</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">40</span><span class="op">]</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">56</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">48</span><span class="op">],</span> <span class="kw">r14</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">r14</span><span class="op">,</span> <span class="kw">rax</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">jmp</span>     <span class="op">.</span>L3</span></code></pre></div></td>
 <td><div class="sourceCode" id="cb4"><pre class="sourceCode asm"><code class="sourceCode fasm"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>&quot;temp_from_call<span class="op">()</span><span class="st">&quot;:</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">40</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">56</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">pxor</span>    <span class="kw">xmm0</span><span class="op">,</span> <span class="kw">xmm0</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movaps</span>  XMMWORD <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">xmm0</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movaps</span>  XMMWORD <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">],</span> <span class="kw">xmm0</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;make_name[abi:cxx11]()&quot;</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(...)&quot;</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">]</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rax</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">je</span>      <span class="op">.</span>L1</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rsi</span><span class="op">,</span> <span class="op">[</span><span class="kw">rax</span><span class="op">+</span><span class="dv">1</span><span class="op">]</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;operator delete(void*, unsigned long)&quot;</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="fu">.L1:</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">40</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">32</span><span class="op">],</span> <span class="kw">rbx</span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="kw">rax</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">jmp</span>     <span class="op">.</span>L3</span></code></pre></div></td>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">eax</span><span class="op">,</span> <span class="dv">26984</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">40</span><span class="op">],</span> <span class="kw">rbx</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movaps</span>  XMMWORD <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">],</span> <span class="kw">xmm0</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">rbx</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">WORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">],</span> <span class="kw">ax</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">8</span><span class="op">],</span> <span class="dv">2</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(...)&quot;</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">]</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rbx</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">je</span>      <span class="op">.</span>L1</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rsi</span><span class="op">,</span> <span class="op">[</span><span class="kw">rax</span><span class="op">+</span><span class="dv">1</span><span class="op">]</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;operator delete(void*, unsigned long)&quot;</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="fu">.L1:</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">40</span><span class="op">]</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">56</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">48</span><span class="op">],</span> <span class="kw">r14</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">r14</span><span class="op">,</span> <span class="kw">rax</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">jmp</span>     <span class="op">.</span>L3</span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -2249,20 +2264,15 @@ bit:</p>
 </tbody>
 </table>
 </div>
-<h2 data-number="1.3" id="stdoptionaldouble"><span class="header-section-number">1.3</span>
-<code class="sourceCode cpp">std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span></code><a href="#stdoptionaldouble" class="self-link"></a></h2>
-<p>Similar behavior <a href="https://compiler-explorer.com/z/bEz8c6s9q">can be seen</a> using
-<code class="sourceCode cpp">std<span class="op">::</span>optional</code>,
-for the same reason:</p>
+<p>And worse still <a href="https://compiler-explorer.com/z/n3a93aG14">with an array</a>:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> use<span class="op">(</span>std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">void</span><span class="op">;</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> lookup<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="op">-&gt;</span> std<span class="op">::</span>optional<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;;</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> from_call<span class="op">(</span><span class="dt">int</span> k<span class="op">)</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> o <span class="op">=</span> lookup<span class="op">(</span>k<span class="op">);</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    use<span class="op">(</span>o<span class="op">);</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> fill<span class="op">(</span>std<span class="op">::</span>string<span class="op">*)</span> <span class="op">-&gt;</span> <span class="dt">void</span><span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> parts<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>string parts<span class="op">[</span><span class="dv">4</span><span class="op">];</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    fill<span class="op">(</span>parts<span class="op">);</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <div class="table-wrapper">
@@ -2283,26 +2293,201 @@ for the same reason:</p>
 </thead>
 <tbody>
 <tr>
-<td><div class="sourceCode" id="cb7"><pre class="sourceCode asm"><code class="sourceCode fasm"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>&quot;from_call<span class="op">(</span>int<span class="op">)</span><span class="st">&quot;:</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">24</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;lookup(int)&quot;</span></span>
+<td><div class="sourceCode" id="cb7"><pre class="sourceCode asm"><code class="sourceCode fasm"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>&quot;parts<span class="op">()</span><span class="st">&quot;:</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">152</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">8</span><span class="op">],</span> <span class="kw">rax</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movsd</span>   <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">xmm0</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(std::optional&lt;double&gt; const&amp;)&quot;</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">24</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span></code></pre></div></td>
-<td><div class="sourceCode" id="cb8"><pre class="sourceCode asm"><code class="sourceCode fasm"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>&quot;from_call<span class="op">(</span>int<span class="op">)</span><span class="st">&quot;:</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">24</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">BYTE</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">48</span><span class="op">]</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">32</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">80</span><span class="op">]</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">64</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">112</span><span class="op">]</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">136</span><span class="op">],</span> <span class="kw">rbp</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbp</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">8</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">BYTE</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">48</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">40</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">BYTE</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">80</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">72</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">96</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">BYTE</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">112</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">104</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;fill(...)&quot;</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">128</span><span class="op">],</span> <span class="kw">rbx</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">128</span><span class="op">]</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="fu">.L2:</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="dv">32</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rbx</span><span class="op">]</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rbx</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rax</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">je</span>      <span class="op">.</span>L5</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rbx</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rsi</span><span class="op">,</span> <span class="op">[</span><span class="kw">rax</span><span class="op">+</span><span class="dv">1</span><span class="op">]</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;operator delete(void*, unsigned long)&quot;</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="fu">.L5:</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="kw">rbp</span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">jne</span>     <span class="op">.</span>L2</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">128</span><span class="op">]</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbp</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">136</span><span class="op">]</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">152</span></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">144</span><span class="op">],</span> <span class="kw">r14</span></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">r14</span><span class="op">,</span> <span class="kw">rax</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">128</span><span class="op">],</span> <span class="kw">rbx</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">jmp</span>     <span class="op">.</span>L3</span></code></pre></div></td>
+<td><div class="sourceCode" id="cb8"><pre class="sourceCode asm"><code class="sourceCode fasm"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>&quot;parts<span class="op">()</span><span class="st">&quot;:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">152</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">pxor</span>    <span class="kw">xmm0</span><span class="op">,</span> <span class="kw">xmm0</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movaps</span>  XMMWORD <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">xmm0</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;lookup(int)&quot;</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">8</span><span class="op">],</span> <span class="kw">rax</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movsd</span>   <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">xmm0</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(std::optional&lt;double&gt; const&amp;)&quot;</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">24</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span></code></pre></div></td>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">136</span><span class="op">],</span> <span class="kw">rbp</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbp</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">48</span><span class="op">]</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">32</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">80</span><span class="op">]</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">64</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">112</span><span class="op">]</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">8</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">40</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">72</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">96</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">104</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movaps</span>  XMMWORD <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">16</span><span class="op">],</span> <span class="kw">xmm0</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movaps</span>  XMMWORD <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">48</span><span class="op">],</span> <span class="kw">xmm0</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movaps</span>  XMMWORD <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">80</span><span class="op">],</span> <span class="kw">xmm0</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>        <span class="bu">movaps</span>  XMMWORD <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">112</span><span class="op">],</span> <span class="kw">xmm0</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;fill(...)&quot;</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">128</span><span class="op">],</span> <span class="kw">rbx</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">128</span><span class="op">]</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="fu">.L2:</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="dv">32</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rbx</span><span class="op">]</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rbx</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rax</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">je</span>      <span class="op">.</span>L5</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rbx</span><span class="op">+</span><span class="dv">16</span><span class="op">]</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>        <span class="bu">lea</span>     <span class="kw">rsi</span><span class="op">,</span> <span class="op">[</span><span class="kw">rax</span><span class="op">+</span><span class="dv">1</span><span class="op">]</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;operator delete(void*, unsigned long)&quot;</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a><span class="fu">.L5:</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="kw">rbp</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">jne</span>     <span class="op">.</span>L2</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbx</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">128</span><span class="op">]</span></span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rbp</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">136</span><span class="op">]</span></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">152</span></span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">144</span><span class="op">],</span> <span class="kw">r14</span></span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">r14</span><span class="op">,</span> <span class="kw">rax</span></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">128</span><span class="op">],</span> <span class="kw">rbx</span></span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>        <span class="cf">jmp</span>     <span class="op">.</span>L3</span></code></pre></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 data-number="1.3" id="stdinplace_vectort-n"><span class="header-section-number">1.3</span>
+<code class="sourceCode cpp">std<span class="op">::</span>inplace_vector<span class="op">&lt;</span>T<span class="op">,</span> N<span class="op">&gt;</span></code><a href="#stdinplace_vectort-n" class="self-link"></a></h2>
+<p>Similar behavior <a href="https://compiler-explorer.com/z/MT6vjaa94">can be seen</a> using
+<code class="sourceCode cpp">std<span class="op">::</span>inplace_vector</code>,
+which is a type explicitly designed around uninitialized inline storage.
+Now, this type didn’t exist in C++23 yet, so the “C++23” version is
+instead compiling with
+<code class="sourceCode default">-ftrivial-auto-var-init=uninitialized</code>
+to disable the feature. You can see two
+<code class="sourceCode cpp">memset</code>s in the C++26 version, one of
+which can be avoided with
+<code class="sourceCode cpp"><span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span></code>,
+but the other is a temporary so cannot be:</p>
+<div class="std">
+<blockquote>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> use<span class="op">(</span>std<span class="op">::</span>inplace_vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dv">64</span><span class="op">&gt;</span> <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">void</span><span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> one<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    std<span class="op">::</span>inplace_vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dv">64</span><span class="op">&gt;</span> v<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    v<span class="op">.</span>push_back<span class="op">(</span><span class="dv">1</span><span class="op">);</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    use<span class="op">(</span>v<span class="op">);</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> temp<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    use<span class="op">(</span>std<span class="op">::</span>inplace_vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">,</span> <span class="dv">64</span><span class="op">&gt;{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">});</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</blockquote>
+</div>
+<div class="table-wrapper">
+<table class="cmptable">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th><div style="text-align:center">
+<strong>C++23</strong>
+</div></th>
+<th><div style="text-align:center">
+<strong>C++26</strong>
+</div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><div class="sourceCode" id="cb9"><pre class="sourceCode asm"><code class="sourceCode fasm"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>&quot;one<span class="op">()</span><span class="st">&quot;:</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">280</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">256</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">eax</span><span class="op">,</span> <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">256</span><span class="op">]</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">eax</span><span class="op">,</span> <span class="dv">63</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ja</span>      <span class="op">.</span>L3</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="kw">rax</span><span class="op">*</span><span class="dv">4</span><span class="op">],</span> <span class="dv">1</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">256</span><span class="op">],</span> <span class="dv">1</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(std::inplace_vector&lt;int, 64ul&gt; const&amp;)&quot;</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">280</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>&quot;temp<span class="op">()</span><span class="st">&quot;:</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">280</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">256</span><span class="op">],</span> <span class="dv">0</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="st">&quot;C.2.0&quot;</span><span class="op">[</span>rip<span class="op">]</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">256</span><span class="op">],</span> <span class="dv">3</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">eax</span><span class="op">,</span> <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="st">&quot;C.2.0&quot;</span><span class="op">[</span>rip<span class="op">+</span><span class="dv">8</span><span class="op">]</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">8</span><span class="op">],</span> <span class="kw">eax</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(std::inplace_vector&lt;int, 64ul&gt; const&amp;)&quot;</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">280</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span></code></pre></div></td>
+<td><div class="sourceCode" id="cb10"><pre class="sourceCode asm"><code class="sourceCode fasm"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>&quot;one<span class="op">()</span><span class="st">&quot;:</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">280</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">edx</span><span class="op">,</span> <span class="dv">260</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">xor</span>     <span class="kw">esi</span><span class="op">,</span> <span class="kw">esi</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;memset&quot;</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">eax</span><span class="op">,</span> <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">256</span><span class="op">]</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">cmp</span>     <span class="kw">eax</span><span class="op">,</span> <span class="dv">63</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ja</span>      <span class="op">.</span>L3</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="kw">rax</span><span class="op">*</span><span class="dv">4</span><span class="op">],</span> <span class="dv">1</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">256</span><span class="op">],</span> <span class="dv">1</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(std::inplace_vector&lt;int, 64ul&gt; const&amp;)&quot;</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">280</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>&quot;temp<span class="op">()</span><span class="st">&quot;:</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">sub</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">280</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">edx</span><span class="op">,</span> <span class="dv">260</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">xor</span>     <span class="kw">esi</span><span class="op">,</span> <span class="kw">esi</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;memset&quot;</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rax</span><span class="op">,</span> <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="st">&quot;C.2.0&quot;</span><span class="op">[</span>rip<span class="op">]</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">rdi</span><span class="op">,</span> <span class="kw">rsp</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">256</span><span class="op">],</span> <span class="dv">3</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">QWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">],</span> <span class="kw">rax</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="kw">eax</span><span class="op">,</span> <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="st">&quot;C.2.0&quot;</span><span class="op">[</span>rip<span class="op">+</span><span class="dv">8</span><span class="op">]</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>        <span class="bu">mov</span>     <span class="dt">DWORD</span> <span class="dt">PTR</span> <span class="op">[</span><span class="kw">rsp</span><span class="op">+</span><span class="dv">8</span><span class="op">],</span> <span class="kw">eax</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">call</span>    <span class="st">&quot;use(std::inplace_vector&lt;int, 64ul&gt; const&amp;)&quot;</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>        <span class="bu">add</span>     <span class="kw">rsp</span><span class="op">,</span> <span class="dv">280</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span></code></pre></div></td>
 </tr>
 </tbody>
 </table>
@@ -2311,22 +2496,22 @@ for the same reason:</p>
 <p>Consider the difference between:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Msg <span class="op">{</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> id<span class="op">;</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> payload<span class="op">[</span><span class="dv">256</span><span class="op">];</span> <span class="co">// filled in later, by design</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">explicit</span> Msg<span class="op">(</span><span class="dt">int</span> i<span class="op">):</span> id<span class="op">(</span>i<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> send<span class="op">(</span>Msg <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">void</span><span class="op">;</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> temporary<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    send<span class="op">(</span>Msg<span class="op">(</span><span class="dv">42</span><span class="op">));</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> named<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span> <span class="kw">auto</span> m <span class="op">=</span> Msg<span class="op">(</span><span class="dv">42</span><span class="op">);</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    send<span class="op">(</span>m<span class="op">);</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Msg <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> id<span class="op">;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> payload<span class="op">[</span><span class="dv">256</span><span class="op">];</span> <span class="co">// filled in later, by design</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">explicit</span> Msg<span class="op">(</span><span class="dt">int</span> i<span class="op">):</span> id<span class="op">(</span>i<span class="op">)</span> <span class="op">{</span> <span class="op">}</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> send<span class="op">(</span>Msg <span class="kw">const</span><span class="op">&amp;)</span> <span class="op">-&gt;</span> <span class="dt">void</span><span class="op">;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> temporary<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    send<span class="op">(</span>Msg<span class="op">(</span><span class="dv">42</span><span class="op">));</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> named<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span> <span class="kw">auto</span> m <span class="op">=</span> Msg<span class="op">(</span><span class="dv">42</span><span class="op">);</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    send<span class="op">(</span>m<span class="op">);</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>There’s nowhere in <code class="sourceCode cpp">temporary</code> to
@@ -2341,20 +2526,20 @@ implement this function as in
 <p>But now consider I put my message in an envelope:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Envelope <span class="op">{</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint64_t</span> seq <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    Msg msg<span class="op">{</span><span class="dv">7</span><span class="op">};</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> subobject<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    Envelope e<span class="op">;</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    send<span class="op">(</span>e<span class="op">.</span>msg<span class="op">);</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> subobject_all<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span> Envelope e<span class="op">;</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    send<span class="op">(</span>e<span class="op">.</span>msg<span class="op">);</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Envelope <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint64_t</span> seq <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    Msg msg<span class="op">{</span><span class="dv">7</span><span class="op">};</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> subobject<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    Envelope e<span class="op">;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    send<span class="op">(</span>e<span class="op">.</span>msg<span class="op">);</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> subobject_all<span class="op">()</span> <span class="op">-&gt;</span> <span class="dt">void</span> <span class="op">{</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span> Envelope e<span class="op">;</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    send<span class="op">(</span>e<span class="op">.</span>msg<span class="op">);</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Indeterminacy is all-or-nothing. C++26 gives me an extra
@@ -2366,33 +2551,33 @@ for any later member. There’s no way to say that <em>just</em>
 is indeterminate.</p>
 <h2 data-number="1.5" id="user-experience"><span class="header-section-number">1.5</span> User Experience<a href="#user-experience" class="self-link"></a></h2>
 <p>While attempting to upgrade a large library to C++26, the release
-build had around 50,500 objects which were now being zero-initialized
-that were not before (note that this is already excluding those cases
-where an object is zero-initialized by the compiler optimizes out that
-extra initialization). Of those, 88% had class type yet only involve a
-mere 704 distinct class types. It’s a lot of concentration. Over 25,000
-of those extra zero-initializations are just between
+build had around 50,500 sites which were now being zero-initialized that
+were not before (note that this is already excluding those cases where
+an object is zero-initialized but the compiler optimizes out that extra
+initialization). Of those, 88% had class type yet only involve a mere
+704 distinct class types. It’s a lot of concentration. Over 25,000 of
+those extra zero-initializations are just between
 <code class="sourceCode cpp">std<span class="op">::</span>string</code>
 and types in
 <code class="sourceCode cpp"><span class="op">{</span>fmt<span class="op">}</span></code>
 (<code class="sourceCode cpp">value</code> and
 <code class="sourceCode cpp">iterator_buffer</code> being the most
 common)!</p>
-<p>74% of those overall are class types that are partly uninitialized by
-design, whether that’s a union, a member left for later, an inline
-buffer, etc. And many of those are temporaries.</p>
+<p>74% of those class type sites are partly uninitialized by design,
+whether that’s a union, a member left for later, an inline buffer, etc.
+And many of those are temporaries.</p>
 <p>A further 14% though are fully initialized, but by code that gcc
 could not see — because the initialization happens in an out-of-line
 constructor or function. For instance:</p>
 <div class="std">
 <blockquote>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Container <span class="op">{</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buffer<span class="op">[</span><span class="dv">1&#39;024</span><span class="op">];</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    Container<span class="op">();</span> <span class="co">// actually does zero buffer</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>                 <span class="co">// but you don&#39;t know that</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Container <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buffer<span class="op">[</span><span class="dv">1&#39;024</span><span class="op">];</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    Container<span class="op">();</span> <span class="co">// actually does zero buffer</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                 <span class="co">// but you don&#39;t know that</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
 </blockquote>
 </div>
 <p>Uses of such types just get double-initialized.</p>
@@ -2415,35 +2600,61 @@ and
 and …) to annotate their uninitialized members, so that only one place
 needs to be annotated by only one person: the class author. Nobody has
 to pay cost for initializing memory that need not be initialized.</p>
-<p>This one change alone covers the vast majority of our
-extra-initialized objects. It also covers temporaries, which cannot be
-annotated today either. It seems like a straightforward omission.</p>
+<p>This one change alone covers most of our extra-initialized objects.
+It also covers temporaries, which cannot be annotated today either. It
+seems like a straightforward omission.</p>
 <p>What it does not help are those cases that are initialized, but
 out-of-line, and become double-initialization. I’m not sure what to do
 about those.</p>
 <h2 data-number="2.1" id="wording"><span class="header-section-number">2.1</span> Wording<a href="#wording" class="self-link"></a></h2>
+<p>Change <span>6.8.5 Indeterminate and erroneous values <a href="https://eel.is/c++draft/basic.indet" title="6.8.5 Indeterminate and erroneous values">[basic.indet]</a></span>:</p>
+<div class="std wording">
+<blockquote>
+<p><span class="marginalizedparent"><a href="#pnum-1" id="pnum-1" class="marginalized">1</a></span> When storage for an object with
+automatic or dynamic storage duration is obtained, the bytes comprising
+the storage for the object have the following initial value:</p>
+<ul>
+<li><span class="marginalizedparent"><a href="#pnum-2" id="pnum-2" class="marginalized">(1.1)</a></span> If the object has dynamic storage
+duration, or is the object associated with a variable or function
+parameter whose first declaration is marked with the
+<code class="sourceCode cpp"><span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span></code>
+attribute (<a href="https://eel.is/c++draft/dcl.attr.indet" title="9.13.6 Indeterminate storage">[dcl.attr.indet]</a>), the bytes
+have indeterminate values;</li>
+<li><span class="marginalizedparent"><a href="#pnum-3" id="pnum-3" class="marginalized">(1.*)</a></span> <span class="addu">otherwise, each
+byte that is within the storage occupied, or that would be occupied, by
+a subobject of the object corresponding to a non-static data member
+declared with the
+<code class="sourceCode cpp"><span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span></code>
+attribute has an indeterminate validate;</span></li>
+<li><span class="marginalizedparent"><a href="#pnum-4" id="pnum-4" class="marginalized">(1.2)</a></span> otherwise, the bytes have
+<em>erroneous values</em>, where each value is determined by the
+implementation independently of the state of the program.</li>
+</ul>
+<p>If no initialization is performed for an object (including
+subobjects), such a byte retains its initial value until that value is
+replaced (<a href="https://eel.is/c++draft/dcl.init.general" title="9.5.1 General">[dcl.init.general]</a>, <a href="https://eel.is/c++draft/expr.assign" title="7.6.19 Assignment and compound assignment operators">[expr.assign]</a>).
+If any bit in the value representation has an indeterminate value, the
+object has an indeterminate value; otherwise, if any bit in the value
+representation has an erroneous value, the object has an erroneous
+value.</p>
+</blockquote>
+</div>
 <p>Change <span>9.13.6 Indeterminate storage <a href="https://eel.is/c++draft/dcl.attr.indet" title="9.13.6 Indeterminate storage">[dcl.attr.indet]</a></span>:</p>
 <div class="std wording">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-1" id="pnum-1" class="marginalized">1</a></span> The
+<p><span class="marginalizedparent"><a href="#pnum-5" id="pnum-5" class="marginalized">1</a></span> The
 <code class="sourceCode cpp"><em>attribute-token</em></code>
 <code class="sourceCode cpp">indeterminate</code> may be applied to the
-definition of a block variable with automatic storage duration<span class="rm"><del>or</del></span> <span class="addu">,</span> to a
+definition of a block variable with automatic storage duration <span class="rm"><del>or</del></span> <span class="addu">,</span> to a
 <code class="sourceCode cpp"><em>parameter-declaration</em></code> of a
-function declaration<span class="rm"><del>.</del></span> <span class="addu">, or to the declaration of a non-static data member</span>.
-No
+function declaration<span class="addu">, or to the declaration of a
+non-static data member</span>. No
 <code class="sourceCode cpp"><em>attribute-argument-clause</em></code>
-shall be present. <span class="rm"><del>The</del></span> <span class="addu">When applied to the definition of a variable or to a
-<code class="sourceCode cpp"><em>parameter-declaration</em></code>,
-the</span> attribute specifies that the storage of an object with
-automatic storage duration is initially indeterminate rather than
-erroneous (<a href="https://eel.is/c++draft/basic.indet" title="6.8.5 Indeterminate and erroneous values">[basic.indet]</a>).
-<span class="addu">When applied to the declaration of a non-static data
-member M of a class type C, the attribute specifies that for any
-automatic storage duration object or subobject of class type C, the
-storage associated with member M is initially indeterminate rather than
-erroneous.</span></p>
-<p><span class="marginalizedparent"><a href="#pnum-2" id="pnum-2" class="marginalized">2</a></span> If a function parameter is declared
+shall be present. The attribute specifies that <span class="rm"><del>the
+storage of an object with automatic storage duration is</del></span>
+<span class="addu">certain bytes of storage with automatic storage
+duration are</span> initially indeterminate rather than erroneous (<a href="https://eel.is/c++draft/basic.indet" title="6.8.5 Indeterminate and erroneous values">[basic.indet]</a>).</p>
+<p><span class="marginalizedparent"><a href="#pnum-6" id="pnum-6" class="marginalized">2</a></span> If a function parameter is declared
 with the <code class="sourceCode cpp">indeterminate</code> attribute, it
 shall be so declared in the first declaration of its function. If a
 function parameter is declared with the
@@ -2454,14 +2665,49 @@ function is declared without the
 parameter in its first declaration in another translation unit, the
 program is ill-formed, no diagnostic required
 ([ifndr:dcl.attr.indet.mismatched.declarations]).</p>
+<div id="note-1" class="note" data-num="1">
+<p><span>[ <em>Note <a href="#note-1">1</a>:</em> </span>Reading from an
+uninitialized variable that is marked
+<code class="sourceCode cpp"><span class="op">[[</span><span class="at">indeterminate</span><span class="op">]]</span></code>
+can cause undefined behavior.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>  void f(int);</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  void g() {</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    int x [[indeterminate]], y;</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    f(y);                 // erroneous behavior ([basic.indet])</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    f(x);                 // undefined behavior</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  struct T {</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    T() {}</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    int x;</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  int h(T t [[indeterminate]]) {</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    f(t.x);               // undefined behavior when called below</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    return 0;</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  int _ = h(T());</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="va">+ struct S {</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="va">+   S() {}</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="va">+   int a;</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="va">+   int buf [[indeterminate]] [16];</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="va">+ };</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a><span class="va">+ void k() {</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="va">+   S s;</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="va">+   f(s.a);        // erroneous behavior</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="va">+   f(s.buf[0]);   // undefined behavior</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="va">+   f(S().buf[0]); // undefined behvaior</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="va">+ }</span></span></code></pre></div>
+<span> — <em>end note</em> ]</span>
+</div>
 </blockquote>
 </div>
 <p>Bump the feature-test macro for the attribute in <span>15.2
 Conditional inclusion <a href="https://eel.is/c++draft/cpp.cond" title="15.2 Conditional inclusion">[cpp.cond]</a></span>:</p>
 <div class="std wording">
 <blockquote>
-<div class="sourceCode" id="cb8"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="st">- indeterminate 202403L</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ indeterminate 2026XXL</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="st">- indeterminate 202403L</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ indeterminate 2026XXL</span></span></code></pre></div>
 </blockquote>
 </div>
 <h1 data-number="3" style="border-bottom:1px solid #cccccc" id="bibliography"><span class="header-section-number">3</span>
