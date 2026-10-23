@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+  Thin wrapper around the "ISO C++" syntax from md/wg21/data/syntax/wg21.xml.
+
+  Named "C++" so that it replaces skylighting's built-in "C++" syntax, which is
+  what both ```cpp (by extension) and ```c++ (by name) code blocks resolve to.
+
+  ISO C++ highlights `$` as an Error (bright red). Here it's an operator.
+-->
+<language name="C++" section="Sources" version="1" kateversion="5.79"
+          extensions="*.cpp;*.c++;*.cxx;*.cc;*.hpp;*.hxx;*.hh;*.h++"
+          priority="10">
+  <highlighting>
+    <contexts>
+      <context name="Main" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Symbol" context="#stay" char="$" />
+        <IncludeRules context="##ISO C++" includeAttrib="true" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="Symbol"      defStyleNum="dsOperator" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" position="afterwhitespace" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>
