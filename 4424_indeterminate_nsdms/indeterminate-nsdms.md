@@ -12,7 +12,7 @@ status: progress
 
 # Introduction
 
-[@P2795R5]{.title} was adopted for C++26 and implemented in gcc 16. In practice, it ensures that automatic storage duration variables are initialized unless they are marked `[[indeterminate]]` — both [gcc](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-ftrivial-auto-var-init) and [clang](https://clang.llvm.org/docs/ClangCommandLineReference.html#cmdoption-clang-ftrivial-auto-var-init) implement the flag `-ftrivial-auto-var-init`, which specifies how automatic storage variables are initialized. GCC in C++26 mode defaults to `-ftrivial-auto-var-init=zero`, which means the requirements of the feature. As also originally proposed in [@P2723R1]{.title}.
+[@P2795R5]{.title} was adopted for C++26 and implemented in gcc 16. In practice, it ensures that automatic storage duration variables are initialized unless they are marked `[[indeterminate]]` — both [gcc](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-ftrivial-auto-var-init) and [clang](https://clang.llvm.org/docs/ClangCommandLineReference.html#cmdoption-clang-ftrivial-auto-var-init) implement the flag `-ftrivial-auto-var-init`, which specifies how automatic storage variables are initialized. GCC in C++26 mode defaults to `-ftrivial-auto-var-init=zero`, which meets the requirements of the feature. As also originally proposed in [@P2723R1]{.title}.
 
 Now, the issue is that _only_ block storage variables can be marked `[[indeterminate]]`. And, for some reason, function parameters. But mainly local variables. That's straightforward enough when declaring a local `char buffer[1'024]` to read in some input. But what if you're using a type that, as an implementation detail, has a local buffer?
 
@@ -136,7 +136,7 @@ There has to be a better way to handle this. Until then, I think we have to buil
 
 # Proposal
 
-Currently, `[[indeterminate]]` can only be applied to local variables and function parameters. This paper proposes that it also be able to be applied on non-static data members, with the obvious meaning. That allows types like `fmt::basic_memory_buffer` to annotate their uninitialized members (`store_`), so that only one place needs to be annotated by only one person: the class author. Nobody has to pay cost for initializing memory that need not be initialized.
+Currently, `[[indeterminate]]` can only be applied to local variables and function parameters. This paper proposes that it also be able to be applied on non-static data members, with the obvious meaning. That allows types like `fmt::basic_memory_buffer` to annotate their uninitialized members (`store_` in the example), so that only one place needs to be annotated by only one person: the class author. Nobody has to pay cost for initializing memory that need not be initialized.
 
 Note that this isn't even only useful for members that are intentionally uninitialized. Consider:
 
