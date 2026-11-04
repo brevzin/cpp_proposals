@@ -17,7 +17,7 @@ constexpr std::uint64_t splitmix64( std::uint64_t z )
 static int s_errors;
 
 template<class T1, class T2>
-void test( char const* q1, char const* q2, T1 const& t1, T2 const& t2 )
+void test( std::string_view q1, std::string_view q2, T1 const& t1, T2 const& t2 )
 {
     if( !(t1 == t2) )
     {

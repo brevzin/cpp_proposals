@@ -37,7 +37,7 @@ __macro check(T&& cond) {
 
     if (is_binary_operation(cond) and is_comparison(operator_of(cond))) {
         auto ops = operands_of(cond);
-        char const* op = stringize(^^{ \(operator_of(cond)) });
+        auto const op = std::meta::str_lit(symbol_of(operator_of(cond)));
 
         return ^^{
             do {

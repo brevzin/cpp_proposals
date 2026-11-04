@@ -21,14 +21,14 @@ struct IterConfig {
 // Which operators has the user declared SO FAR in the class being defined?
 // Caveat: We don't see friend declarations, that's still TBD for what the interface should be
 consteval auto declares_op(std::meta::info cls, std::meta::operators which) -> bool {
-    for (auto m : members_of(cls, std::meta::access_context::unchecked()))
+    for (auto m : interface_of(cls, std::meta::access_context::unchecked()))
         if (is_operator_function(m) && operator_of(m) == which)
             return true;
     return false;
 }
 
 consteval auto declares_fn(std::meta::info cls, std::string_view name) -> bool {
-    for (auto m : members_of(cls, std::meta::access_context::unchecked()))
+    for (auto m : interface_of(cls, std::meta::access_context::unchecked()))
         if (has_identifier(m) && identifier_of(m) == name)
             return true;
     return false;
@@ -112,7 +112,7 @@ class repeated_chars_iterator {
     std::ptrdiff_t size_;
     std::ptrdiff_t n_;
 
-public:    
+public:
     constexpr repeated_chars_iterator() : first_(nullptr), size_(0), n_(0) {}
     constexpr repeated_chars_iterator(char const* f, std::ptrdiff_t s, std::ptrdiff_t n)
         : first_(f), size_(s), n_(n) {}
