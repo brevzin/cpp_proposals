@@ -490,7 +490,7 @@ Now, in that original discussion, some people didn't like that `operator templat
 
 ## Implementation Experience
 
-This has been implemented in [my fork](https://github.com/brevzin/llvm-project/commit/750c1763c183d9fb1bc0e6bb1c6a4adde11c9094) of Clang (updated for R1 in [this commit](https://github.com/brevzin/llvm-project/commit/0301b9344c195c8e922631a38f50058a426f18dc)), and you can see it on [compiler explorer](https://compiler-explorer.com/z/WbYjs5EaK).
+This has been implemented in [my fork](https://github.com/brevzin/llvm-project/commit/750c1763c183d9fb1bc0e6bb1c6a4adde11c9094) of Clang (updated for R1 in [this commit](https://github.com/brevzin/llvm-project/commit/0301b9344c195c8e922631a38f50058a426f18dc)), and you can see it on [compiler explorer](ce:impl).
 
 # Wording
 
