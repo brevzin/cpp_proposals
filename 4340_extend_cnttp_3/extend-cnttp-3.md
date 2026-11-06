@@ -1,5 +1,7 @@
 ---
-title: "Extending constant template parameter support by customizing `std::meta::reflect_constant`"
+title: |-
+  Extending constant template parameter support\
+  via `operator template()`
 document: P4340R1
 date: today
 audience: EWG
@@ -13,7 +15,7 @@ tag: reflection
 
 # Revision History {- .unlisted .collapsed}
 
-Since [@P4340R0], added wording.
+Since [@P4340R0], reworked the customization point to `operator template` and added wording. `operator template` is now implicitly declared for all C++20 structural types, it cannot be named, and idempotence is diagnosed.
 
 # Introduction
 
@@ -53,24 +55,24 @@ class Widget {
 public:
     constexpr Widget(int d) : data_(d) { }
 
-    consteval auto reflect_constant() const -> std::meta::info;
+    consteval operator template() const;
 };
 
 template <int D> constexpr auto impl = Widget(D);
 
-consteval auto Widget::reflect_constant() const -> std::meta::info {
+consteval Widget::operator template() const {
     return substitute(^^impl, {std::meta::reflect_constant(data_)});
 }
 ```
 :::
 
-`Widget` is defining how to produce a template parameter object: `reflect_constant` returns a reflection representing a static storage duration object. It is up to `Widget` to figure out how to do that, but once it does so, we have already solved all the other problems in this space:
+`Widget` is defining how to produce a template parameter object: `operator template` returns a reflection representing a static storage duration object. It is up to `Widget` to figure out how to do that, but once it does so, we have already solved all the other problems in this space:
 
 * template-argument-equivalence is chosen by the `Widget` author based on how they define the object being returned (in this case, by comparing the `int`s).
-* the serialization/deserialization process is implicit here — we serialize in `Widget::reflect_constant` (each template argument is the next element we're serializing) and we deserialize in the initialization of that variable template (where likewise each template argument is the next element we're deserializing)
+* the serialization/deserialization process is implicit here — we serialize in `Widget::operator template` (each template argument is the next element we're serializing) and we deserialize in the initialization of that variable template (where likewise each template argument is the next element we're deserializing)
 * the potential ODR issues are avoided because we're defining _the_ template parameter object, so it will be _that_ object that gets used.
 
-`std::meta::reflect_constant(v)` will then be extended to first invoke `v.reflect_constant()` for class types that opt in before falling back to the normal C++20 structural rules.
+`std::meta::reflect_constant(v)` will then be extended to first invoke `v.operator template()` for class types that opt in before falling back to the normal C++20 structural rules. This function is otherwise not utterable by the user. More on this in the [naming](#naming) section.
 
 ## Normalizing
 
@@ -86,11 +88,11 @@ Let's start with `Fraction`. We need to make sure that we serialize it in lowest
 struct Frac {
     int numer;
     int denom;
-    consteval auto reflect_constant() const -> std::meta::info;
+    consteval operator template() const;
 };
 template <int N, int D> constexpr auto interned = Frac{N, D};
 
-consteval auto Frac::reflect_constant() const -> std::meta::info {
+consteval Frac::operator template() const {
     int g = std::gcd(numer, denom);
     return substitute(^^interned, {
         std::meta::reflect_constant(numer / g),
@@ -138,7 +140,7 @@ public:
     }
 
     constexpr auto push_back(char c) -> void {
-        assert(length_ < 31);
+        assert(length_ < 32);
         data_[length_] = c;
         ++length_;
     }
@@ -152,13 +154,13 @@ public:
       return data_[idx];
     }
 
-    consteval auto reflect_constant() const -> std::meta::info;
+    consteval operator template() const;
 };
 
 template <char... Cs>
 inline constexpr SmallString impl = {Cs...};
 
-consteval auto SmallString::reflect_constant() const -> std::meta::info {
+consteval SmallString::operator template() const {
     std::vector<std::meta::info> elems;
     for (size_t i = 0; i != length_; ++i) {
         elems.push_back(std::meta::reflect_constant(data_[i]));
@@ -193,7 +195,7 @@ static_assert(ref<g()>[1] == '\0');
 ```
 :::
 
-As a result, this example just isn't an ODR issue, because `bad<f()>` and `bad<g()>` both evaluate the same way — they return `1`.
+As a result, the example below just isn't an ODR issue, because `bad<f()>` and `bad<g()>` both evaluate the same way — they return `1`.
 
 ::: std
 ```cpp
@@ -208,13 +210,13 @@ constexpr auto bad() -> int {
 ```
 :::
 
-## Defaulting `reflect_constant`
+## Defaulting `operator template`
 
 While it's important to be able to support the kind of arbitrary selection of serialization and normalization that I've shown in the previous three examples, in practice, for a large number of types, this kind of genericity is unnecessary. In fact, a lot of time, all we want to do is have a simple member-wise (or really subobject-wise) template-argument-equivalence.
 
 That's the C++20 rule we have today, except that rule requires that all the subobjects be `public`. That's necessary, since we can't otherwise distinguish between `std::string_view` and `std::string`, and those would definitely want to have very different rules around equivalence (the former comparing pointers, the latter comparing contents). But what if I want to both have `private` members and also have member-wise equivalence?
 
-Take `string_view`. It's straightforward enough to implement `reflect_constant` in a way that does what we want:
+Take `string_view`. It's straightforward enough to implement `operator template` in a way that does what we want:
 
 ::: std
 ```cpp
@@ -228,7 +230,7 @@ class string_view {
 public:
     constexpr string_view(char const*, size_t);
 
-    consteval auto reflect_constant() const -> std::meta::info {
+    consteval operator template() const {
         return substitute(^^impl, {
             ^^string_view,
             std::meta::reflect_constant(ptr_),
@@ -250,16 +252,18 @@ class string_view {
 public:
     constexpr string_view(char const*, size_t);
 
-    consteval auto reflect_constant() const -> std::meta::info = default;
+    consteval operator template() const = default;
 };
 ```
 :::
 
-We'll want defaulting behavior for `reflect_constant` to be similar to defaulting behavior for other functions, like the copy constructor and the comparison operators: for dependent types, if one of the subobjects isn't usable as a constant template parameter (whether it's not C++20 structural or doesn't customize `reflect_constant`), the resulting customization is `delete`d rather than being ill-formed. That means that for a class template like `std::tuple`, we can simply `default` the implementation and not have to worry about providing suitable constraints.
+We'll want defaulting behavior for `operator template` to be similar to defaulting behavior for other functions, like the copy constructor and the comparison operators: for dependent types, if one of the subobjects isn't usable as a constant template parameter (whether it's not C++20 structural or doesn't customize `operator template`), the resulting customization is `delete`d rather than being ill-formed. That means that for a class template like `std::tuple`, we can simply `default` the implementation and not have to worry about providing suitable constraints.
 
-Note that a consequence of being able to `default` this function is that you should also be able to `delete` it, which means that a type could (if so desired) simply opt out of being usable as a constant template parameter.
+And, like the copy constructor, `operator template` is implicitly declared. If a class doesn't declare one, it gets one anyway: it is deleted if any subobject is not `public` or not structural, and defaulted otherwise. That lets the language define a structural class type simply as a literal type with no `mutable` subobjects whose `operator template` isn't deleted. The only difference between the implicit declaration and writing `= default` yourself is the access check. Writing `= default` is how a class with `private` members says that member-wise equivalence is correct for it.
 
-Also, the actual implementation details of defaulting `reflect_constant` would differ from those of explicitly providing it. If it is user-provided, the implementation will of course invoke and use that result as the template parameter object. But if it is defaulted, then effectively the implementation just tracks an extra bit on the type that tells it to ignore the usual access rule for C++20 class types as non-type template parameters. It wouldn't have to change the rules for template-argument-equivalence for that case.
+Note that a consequence of being able to `default` this function is that you should also be able to `delete` it, which means that a type could (if so desired) simply opt out of being usable as a constant template parameter (including types that would otherwise be usable by C++20 rules).
+
+Also, the actual implementation details of defaulting `operator template` would differ from those of explicitly providing it. If it is user-provided, the implementation will of course invoke and use that result as the template parameter object. But if it is defaulted, then effectively the implementation just tracks an extra bit on the type that tells it to ignore the usual access rule for C++20 class types as non-type template parameters. It wouldn't have to change the rules for template-argument-equivalence for that case.
 
 ## Concrete Details
 
@@ -274,22 +278,20 @@ Currently, the rule is that `f<x>` and `f<y>` are the same specialization when `
 * [2.12]{.pnum} they are of class type and their corresponding direct subobjects and reference members are template-argument-equivalent.
 :::
 
-This proposal does not change those bullets. Instead, for a class type `T` (including union type) that provides a non-default `reflect_constant` customization, `f<x>` and `f<y>` are the same specialization when `x.reflect_constant() == y.reflect_constant()` (i.e. they are reflections representing the same object). The template parameter object _is_ the object returned by `reflect_constant`, so template-argument-equivalence compares those objects, never `x` and `y` themselves. And because `reflect_constant` must be deterministic and idempotent (see below), two objects returned by it have template-argument-equivalent values only if they are the same object, so the existing rules suffice.
+This proposal does not change those bullets. Instead, for a class type `T` (including union type) that provides a non-default `operator template` customization, `f<x>` and `f<y>` are the same specialization when `x.operator template() == y.operator template()` (i.e. they are reflections representing the same object). The template parameter object _is_ the object returned by `operator template`, so template-argument-equivalence compares those objects, never `x` and `y` themselves. And because `operator template` must be deterministic and idempotent (see below), two objects returned by it have template-argument-equivalent values only if they are the same object, so the existing rules suffice.
 
-In order for that to be viable, we need to impose strict (albeit obvious) restrictions on the return type of `reflect_constant`. For a class type `T`, `T::reflect_constant` must return a reflection representing either an object or a variable. Letting: `O` be either that object or the object defined by that variable:
+In order for that to be viable, we need to impose strict (albeit obvious) restrictions on the return type of `operator template`. For a class type `T`, `T::operator template` must return a reflection representing either an object or a variable. Letting: `O` be either that object or the object defined by that variable:
 
 * `O` has static storage duration,
 * `O` is usable in constant expressions,
-* `O` has the same linkage as `T` (with internal linkage we would end up with a TU-local specialization),
 * `O` has type `T const` (this also guards against inheriting a customization — `Base`'s implementation would have to return a `Base const` object, which would be incompatible with the rules for a `Derived`).
 
-`reflect_constant` must also be deterministic (same value in, same object out) and idempotent (given a value `x`, `x.reflect_constant()` and `[: x.reflect_constant() :].reflect_constant()` must be the same object). Idempotence we can actually check as part of the implementation, in the same way that template variable construction does an extra copy right now.
+`operator template` must also be deterministic (same value in, same object out) and idempotent (given a value `x`, `x.operator template()` and `[: x.operator template() :].operator template()` must be the same object — although note that this function isn't directly invokable, I'm just presenting this as exposition). Idempotence we can actually check as part of the implementation (and is enforced in the wording), in the same way that template variable construction does an extra copy right now.
 
 We'll have the same rules for the shape of the customization point for defaulting reasons as we have for defaulting the comparison operators. That is, it must be:
 
 * `consteval`
 * non-static member function,
-* which returns `std::meta::info` or `auto`,
 * have no non-object parameter, and
 * the object parameter must have type either `T` or `T const&`.
 
@@ -297,7 +299,7 @@ Note that a type with `mutable` members is non-structural, regardless of any cus
 
 ## Standard Library Extensions
 
-There is one standard library type that I'm aware of that would actually provide a bespoke implementation of `reflect_constant` (see below), but there are quite a few for whom `default`ing is the correct behavior. For the class templates below, `default`ing will do the right thing by opting in those types whose subobjects are usable as constant template parameters and not opting in those types whose subobjects are not usable (note that `std::pair` and `std::array` are absent from this list, but that is only because they are already usable as constant template parameters):
+There is one standard library type that I'm aware of that would actually provide a bespoke implementation of `operator template` (see below), but there are quite a few for whom `default`ing is the correct behavior. For the class templates below, `default`ing will do the right thing by opting in those types whose subobjects are usable as constant template parameters and not opting in those types whose subobjects are not usable (note that `std::pair` and `std::array` are absent from this list, but that is only because they are already usable as constant template parameters):
 
 * `std::optional<T>`
 * `std::expected<T, E>`
@@ -306,6 +308,7 @@ There is one standard library type that I'm aware of that would actually provide
 * `std::basic_string_view<charT, Traits>` (all specializations)
 * `std::span<T, Extent>` (all specializations)
 * `std::reference_wrapper<T>` (all specializations)
+* `std::complex<T>` (all specializations)
 * A lot of `<chrono>` types:
   * `duration<Rep, Period>`
   * `time_point<Clock, Duration>`
@@ -331,13 +334,13 @@ For all of these types and class templates, adding the single line:
 
 ::: std
 ```cpp
-consteval auto reflect_constant() const -> std::meta::info = default;
+consteval operator template() const = default;
 ```
 :::
 
-Does the right thing and opts those types (or suitable specializations of those class templates) into being used as constant template parameters, with the correct semantics.
+Does the right thing and opts those types (or suitable specializations of those class templates) into being used as constant template parameters, with the correct semantics. Although this isn't how it's worded — the wording specifies the resulting semantics, not the spelling.
 
-`std::inplace_vector<T, N>` is different: only the elements in [`0`, `size()`) should matter, as with `SmallString` above. An implementation could get that behavior with a custom `reflect_constant` that looks the same as `std::vector`'s (defined below). It could also use a defaulted one, if the storage past `size()` consists of objects that are not within their lifetime. Which is better depends on how efficiently those holes can be mangled. What we specify is the behavior: only [`0`, `size()`) participates.
+`std::inplace_vector<T, N>` is different: only the elements in [`0`, `size()`) should matter, as with `SmallString` above. An implementation could get that behavior with a custom `operator template` that looks the same as `std::vector`'s (defined below). It could also use a defaulted one, if the storage past `size()` consists of objects that are not within their lifetime. Which is better depends on how efficiently those holes can be mangled, which I think is still an open issue in Itanium. But when it comes to specification, we shouldn't be concerned about how to implement it specifically — what we specify is the behavior: only [`0`, `size()`) participates.
 
 ## Future Extensions with Containers
 
@@ -353,7 +356,7 @@ inline constexpr auto impl = T(std::from_range, R);
 template <class T>
 class vector {
 public:
-    consteval auto reflect_constant() const -> std::meta::info
+    consteval operator template() const
         requires std::meta::is_structural_type(^^T)
     {
         return substitute(^^impl, {
@@ -453,7 +456,7 @@ int r = f<Stuff{.s="hello"sv, .x=1}>();
 `Stuff` has all-`public` members, all of whom are usable as constant template parameters, so this should just work without `Stuff` having to do anything. But in order for this to work:
 
 * the `char const*` that the `string_view` owns, because it's a string literal, needs to be transformed through the string literal process described above
-* then, the `string_view` needs to go through its (defaulted) `reflect_constant` opt-in
+* then, the `string_view` needs to go through its (defaulted) `operator template` opt-in
 
 This all needs to basically... just happen as part of the template parameter object construction process. Otherwise composition completely breaks down.
 
@@ -472,123 +475,208 @@ In the above initialization, `string_view("hello"sv)` would have two pointers in
 
 ## Naming
 
-The name I'm choosing for the customization point here is `reflect_constant`, since we're basically customizing `std::meta::reflect_constant`. There is precedent for using regular identifiers in language customization points already (`begin`, `end`, `get`, plus all the coroutine stuff). But with `= default`, it's possible that this might just be a bit too much — and we'll want to use a name that is decidedly not just an identifier.
+In [@P4340R0], the name I chose for the customization point was `reflect_constant`, since it was conceptually customizing `std::meta::reflect_constant`. There was precedent for using regular identifiers in language customization points already (`begin`, `end`, `get`, plus all the coroutine stuff), so this seemed alright. Although with `= default`, it's possible that this was a bit too much.
 
-The first paper in my constant template parameter trilogy, [@P2848R0]{.title}, used the name `operator template()`. Richard Smith also suggests the name `operator<>()`. Both are perfectly fine, and express what they do reasonably enough. Here are what those three (well, four, if I show `reflect_constant` both with and without an explicit return type) might look like in the wild in their typical usage (i.e. `default`ed):
+However, there are some real issues with attempting to use the name `reflect_constant` that would be improved by simply... not using a real identifier:
 
-::: std
-```cpp
-class string_view {
-  char const* ptr_;
-  size_t size_;
+* for custom definitions, the implementation frequently wants to use `std::meta::reflect_constant`. Using that unqualified (whether by relying on ADL, a using directive, or simply being in namespace `std::meta`) would now find the customization point we're implementing, not the real function. I did run into this bug.
+* we're not _really_ customizing `std::meta::reflect_constant` per se, so the premise wasn't quite right.
+* with reflection queries, you usually don't want to find this customization point, and I hit issues with reflection code accidentally finding it. This first led me to allow the customization point to be declared `private` (an earlier idea required public), but even better would be to call this a _special member function_. Since it really is _quite_ special, and I don't think we want to have a special member function called `reflect_constant`
+* there is no reason to allow its use outside of the declaration. With a regular name like `reflect_constant`, you have to deal with using `x.reflect_constant()` (not useful, since `std::meta::reflect_constant(x)` would do the same thing and work in more contexts) and `using Base::reflect_constant;` (which is wrong).
 
-public:
-  consteval auto reflect_constant() const -> std::meta::info = default;
-  consteval auto reflect_constant() const = default;
-  consteval operator template() const = default;
-  consteval operator<>() const = default;
-}
-```
-:::
+Instead, this revision changes the name of the customization point to `operator template()` — the name proposed in the original paper in the constant template parameter trilogy, [@P2848R0]{.title}. Richard Smith had also suggested `operator<>()`, but that seems more cryptic, and plus `operator< <>` is technically valid, so I don't think we need _more_ punctuation here. `operator template` is a pretty good name, since this is the operator that turns our value into a template arguemnt. It fits. The spelling also lets us avoid a return type, like conversion functions, so it's just less to type too.
 
-In the original paper, `operator template()` was not invokable, which was something that some people didn't like, since it meant that you had to contrive some other way to test the function directly if that's what you wanted to do. In this case, `operator template()` would still be a customization point for `std::meta::reflect_constant()`, so there would still be an easy way to test the implication directly.
-
-So those options exist as well, if preferred. I have a mild preference for sticking with `reflect_constant`, simply because it matches the reflection function name, but only mild, and would be quite happy with any name whatsoever as long as it means we get the feature.
+Now, in that original discussion, some people didn't like that `operator template()` wasn't directly invokable, but we now have a way of getting that result directly anyway via `std::meta::reflect_constant`. So we're not missing any functionality, and restricting the use of `operator template` just prevents misuses.
 
 ## Implementation Experience
 
-This has been implemented in [my fork](https://github.com/brevzin/llvm-project/commit/750c1763c183d9fb1bc0e6bb1c6a4adde11c9094) of Clang, and you can see it on [compiler explorer](https://compiler-explorer.com/z/WbYjs5EaK).
+This has been implemented in [my fork](https://github.com/brevzin/llvm-project/commit/750c1763c183d9fb1bc0e6bb1c6a4adde11c9094) of Clang (updated for R1 in [this commit](https://github.com/brevzin/llvm-project/commit/0301b9344c195c8e922631a38f50058a426f18dc)), and you can see it on [compiler explorer](https://compiler-explorer.com/z/WbYjs5EaK).
 
 # Wording
 
-The wording introduces a _reflect-constant function_, named after the customization point (if the name changes, so does the term). It is not a special member function, but it can be defaulted, like the comparison operators and the postfix increment and decrement operators ([over.inc.default]{.sref}).
-
-The changes are to:
-
-* specify the reflect-constant function: its shape, what defaulting it means, and the requirements on the object it returns (a new subclause [class.reflect.constant]),
-* the definitions of structural type and template parameter object ([temp.param]{.sref}),
-* how the value of a constant template parameter is determined, which is where string literals and subobjects with a custom `reflect_constant` are normalized ([temp.arg.nontype]{.sref}), and
-* the reflection library and the standard library types.
-
-Normalization happens when the value of a template parameter is determined, not in template-argument-equivalence. By the time two template arguments are compared, their values have already been normalized, and a custom `reflect_constant` is only ever invoked while a template parameter object is being determined. As a result, [temp.type]{.sref} does not change.
+The wording introduces a _template-argument function_: a special member function named `operator template`, specified in a new subclause [class.template.arg]. Like a copy constructor, it is declared implicitly if a class doesn't declare one, and its implicit declaration and defaulted definition encode the C++20 requirements on structural class types. A structural class type is then simply a literal class type with no mutable subobjects that has an eligible template-argument function. Normalization, both of string literals and of values whose type has a custom template-argument function, happens when the value of a constant template parameter is determined. Finally, the wording goes through all of the standard library types in [the list](#standard-library-extensions) and makes them suitably structural based on their semantics, not on any particular spelling of `operator template`.
 
 ## Language
 
-Change [dcl.fct.def.default]{.sref}/1:
+A template-argument function, like a conversion function, has no type in its `$decl-specifier-seq$`. Change [dcl.type.general]{.sref}/3:
 
 ::: std
-[1]{.pnum} A function definition whose `$function-body$` is of the form `= default ;` is called an *explicitly-defaulted* definition. A function that is explicitly defaulted shall
-
-* [1.1]{.pnum} be a special member function ([special]), comparison operator function ([over.binary], [class.compare.default]), [or]{.rm} postfix increment or decrement operator function ([over.inc.default]), [or reflect-constant function ([class.reflect.constant]),]{.addu} and
-* [1.2]{.pnum} not have default arguments ([dcl.fct.default]).
+[3]{.pnum} Except in a declaration of a constructor, destructor, [or]{.rm} conversion function[, or template-argument function ([class.template.arg])]{.addu}, at least one `$defining-type-specifier$` that is not a `$cv-qualifier$` shall appear in a complete `$type-specifier-seq$` or a complete `$decl-specifier-seq$`.
 :::
 
-Add a new subclause after [class.compare]{.sref}:
+Change [special]{.sref}/1, /3, and /5:
+
+::: std
+[1]{.pnum} Default constructors ([class.default.ctor]), copy constructors, move constructors ([class.copy.ctor]), copy assignment operators, move assignment operators ([class.copy.assign]), [and]{.rm} prospective destructors ([class.dtor])[, and template-argument functions ([class.template.arg])]{.addu} are *special member functions*. [...]
+
+[3]{.pnum} [The special member functions affect the way objects of class type are created, copied, moved, and destroyed, [and]{.rm} how values can be converted to values of other types[, and how values are used as constant template arguments]{.addu}. Often such special member functions are called implicitly.]{.note}
+
+[5]{.pnum} Two special member functions are of the same kind if
+
+* [5.1]{.pnum} they are both default constructors,
+* [5.2]{.pnum} they are both copy or move constructors with the same first parameter type, [or]{.rm}
+* [5.3]{.pnum} they are both copy or move assignment operators with the same first parameter type and the same `$cv-qualifier$`s and `$ref-qualifier$`, if any[.]{.rm}[, or]{.addu}
+* [5.4]{.pnum} [they are both template-argument functions.]{.addu}
+:::
+
+Change [dcl.fct.def.default]{.sref}/2 and /5:
+
+::: std
+[2]{.pnum} The program is ill-formed if an explicitly defaulted special member function `F@~1~@` of class `C` differs from the corresponding special member function `F@~2~@` that would have been implicitly declared other than as follows:
+
+* [2.1]{.pnum} if `F@~1~@` is an assignment operator, it may have the `&` `$ref-qualifier$`;
+* [2.2]{.pnum} [...]
+* [2.3]{.pnum} `F@~1~@` and `F@~2~@` may have differing exception specifications;
+* [2.4]{.pnum} [...]; [and]{.rm}
+* [2.5]{.pnum} if `F@~2~@` has a non-object parameter of type "lvalue reference to `C`", the corresponding non-object parameter of `F@~1~@` may be of type "lvalue reference to `const C`"; in this case only, `F@~1~@` is defined as deleted if it is explicitly defaulted on its first declaration and the program is ill-formed otherwise[.]{.rm}[; and]{.addu}
+* [2.6]{.pnum} [if `F@~2~@` is a template-argument function, `F@~1~@` may have an explicit object parameter of type `C` or of type "lvalue reference to `const C`", in which case the type of `F@~1~@` would differ from the type of `F@~2~@` in that the type of `F@~1~@` has an additional parameter.]{.addu}
+
+[3]{.pnum} [...]
+
+[4]{.pnum} [...]
+
+[5]{.pnum} Explicitly-defaulted functions and implicitly-declared functions are collectively called *defaulted* functions, and the implementation shall provide implicit definitions for them ([class.ctor], [class.dtor], [class.copy.ctor], [class.copy.assign]<!-- -->[, [class.template.arg]]{.addu}) as described below, including possibly defining them as deleted. [...]
+:::
+
+Add `template` to the grammar of `$operator$` in [over.oper.general]{.sref}/1, and add a paragraph after [over.oper.general]{.sref}/6:
+
+::: std
+[1]{.pnum} A declaration whose `$declarator-id$` is an `$operator-function-id$` shall declare a function or function template or an explicit instantiation or specialization of a function template. A function so declared is an *operator function*. [...]
+```
+$operator-function-id$:
+    operator $operator$
+
+$operator$: one of
+    new      delete   new[]    delete[] co_await ()       []       ->       ->*
+    ~        !        +        -        *        /        %        ^        &
+    |        =        +=       -=       *=       /=       %=       ^=       &=
+    |=       ==       !=       <        >        <=       >=       <=>      &&
+    ||       <<       >>       <<=      >>=      ++       --       ,        @[template]{.addu}@
+```
+
+[6]{.pnum} The `co_await` operator is described completely in [expr.await]. The attributes and restrictions found in the rest of [over.oper] do not apply to it unless explicitly stated in [expr.await].
+
+::: addu
+[6+]{.pnum} The template-argument function, `operator template`, is described completely in [class.template.arg]. The attributes and restrictions found in the rest of [over.oper] do not apply to it unless explicitly stated in [class.template.arg].
+:::
+:::
+
+Add a new subclause after [class.dtor]{.sref}:
 
 ::: std
 ::: addu
-**Reflect-constant functions   [class.reflect.constant]**
+**Template-argument functions   [class.template.arg]**
 
-[1]{.pnum} A *reflect-constant function* of a class `C` is a function named `reflect_constant` that is declared as a member of `C`. [A function introduced into `C` by a `$using-declarator$` or inherited from a base class of `C` is not a reflect-constant function of `C`.]{.note} A class shall not declare a member function template named `reflect_constant`. A reflect-constant function of `C` shall
+[1]{.pnum} A *template-argument function* of a class `C` is a non-static member function of `C` whose name is the `$operator-function-id$` `operator template` and whose object parameter has type `const C&` or `C`, other than a function template or a specialization of one. The declarator of a template-argument function shall consist only of its `$declarator-id$` followed by its `$parameters-and-qualifiers$`. The `$operator-function-id$` `operator template` shall be used only in the `$declarator-id$` of a declaration of a template-argument function. [For example, it cannot be used in an expression, as the operand of a `$reflect-expression$`, in a `$using-declarator$`, or in a `$template-id$`.]{.note}
 
-* [1.1]{.pnum} be a non-static member function declared `consteval`,
-* [1.2]{.pnum} have no non-object parameters,
-* [1.3]{.pnum} have an object parameter of type `const C&` or of type `C`, and
-* [1.4]{.pnum} have a declared return type of `std::meta::info` or `auto`.
+[2]{.pnum} The declared return type of a template-argument function is `std::meta::info`. No `$decl-specifier$` in its `$decl-specifier-seq$` shall be a `$defining-type-specifier$`. A user-declared template-argument function shall be declared `consteval` and shall have no non-object parameters.
 
-If the declared return type is `auto`, then the return type of a defaulted reflect-constant function is `std::meta::info`, and the deduced return type of any other reflect-constant function shall be `std::meta::info`.
+[3]{.pnum} A template-argument function shall not be named by an expression ([basic.def.odr]). [A template-argument function is invoked only as specified in this subclause, including by `std::meta::reflect_constant` ([meta.reflection.result]). It cannot be called or have its address taken, even by way of a `$splice-expression$`, but `std::meta::members_of` can represent it ([meta.reflection.member.queries]).]{.note}
 
-[2]{.pnum} A reflect-constant function is *eligible* if its associated constraints ([temp.constr]), if any, are satisfied and no other reflect-constant function of the same class whose associated constraints are satisfied is more constrained ([temp.constr.order]). A class shall not have more than one eligible reflect-constant function.
+[4]{.pnum} If the class is not an anonymous union and does not have a user-declared template-argument function, one is declared implicitly. If the class has a direct base class or a direct non-static data member that is not public, the implicitly-declared template-argument function is defined as deleted; otherwise, it is defaulted ([dcl.fct.def]). The implicitly-declared template-argument function for a class `C` is an inline public member of `C` and has the form
+```cpp
+consteval C::operator template() const
+```
 
-[3]{.pnum} A reflect-constant function that is defined as defaulted shall be defined as defaulted on its first declaration.
+[An explicitly-defaulted template-argument function differs from an implicitly-declared one in that access is not considered: it is not defined as deleted because of a non-public direct base class or non-static data member.]{.note}
 
-[4]{.pnum} A *custom reflect-constant function* is an eligible reflect-constant function that is neither deleted nor defaulted.
+[5]{.pnum} A class shall not have more than one eligible ([special]) template-argument function.
 
-[5]{.pnum} Let `C` be a class that has a custom reflect-constant function `F`. When the template parameter object for an object `x` of type `$cv$ C` is determined ([temp.arg.nontype]), `F` is invoked with `x` as its object argument, without regard to access control; let `$R$` be the result of that invocation. The program is ill-formed if that invocation is not a constant expression ([expr.const]). Otherwise, the program is ill-formed unless `$R$` represents either an object or a variable; let `$O$` be that object or the object declared by that variable. The program is ill-formed unless
+[6]{.pnum} A template-argument function that is defined as defaulted shall be defined as defaulted on its first declaration.
 
-* [5.1]{.pnum} `$O$` is a complete object with static storage duration,
-* [5.2]{.pnum} `$O$` is usable in constant expressions,
-* [5.3]{.pnum} the type of `$O$` is `const C`, and
-* [5.4]{.pnum} the invocation of `F` with `$O$` as its object argument is a constant expression whose result represents either `$O$` or a variable that declares `$O$`.
+[7]{.pnum} A *custom template-argument function* is an eligible template-argument function that is user-provided ([dcl.fct.def.default]).
+
+[8]{.pnum} Let `C` be a class that has a custom template-argument function `F`. When the template parameter object for an object `x` of type `$cv$ C` is determined ([temp.arg.nontype]), `F` is invoked with `x` as its object argument, without regard to access control; let `$R$` be the result of that invocation. If the template parameter object is determined as part of an evaluation `$X$` during the evaluation of an expression as a core constant expression (for example, by a call to `std::meta::reflect_constant`), the invocation is evaluated as part of `$X$`. Otherwise, the invocation is evaluated as a manifestly constant-evaluated expression that appears at the point at which the template argument from which the value of the constant template parameter is being determined ([temp.arg.nontype]) appears. [This determines the evaluation context ([expr.const.reflect]) of the invocation, and so the behavior of functions used for reflection ([meta.reflection]) during it.]{.note} The program is ill-formed if that invocation is not a constant expression ([expr.const]). Otherwise, the program is ill-formed unless `$R$` represents either an object or a variable; let `$O$` be that object or the object declared by that variable. The program is ill-formed unless
+
+* [8.1]{.pnum} `$O$` is a complete object with static storage duration,
+* [8.2]{.pnum} `$O$` is usable in constant expressions,
+* [8.3]{.pnum} the type of `$O$` is `const C`, and
+* [8.4]{.pnum} the invocation of `F` with `$O$` as its object argument is a constant expression whose result represents either `$O$` or a variable that declares `$O$`.
 
 `$O$` is the template parameter object ([temp.param]) for `x`.
 
-[6]{.pnum} For any two objects `x` and `y` of a class type `C` that has a custom reflect-constant function, if the corresponding direct subobjects and reference members of `x` and `y` are template-argument-equivalent ([temp.type]), the template parameter object for `x` shall be the same object as the template parameter object for `y`; no diagnostic required. [A custom reflect-constant function need not be injective: objects whose subobjects are not template-argument-equivalent can have the same template parameter object.]{.note}
+[9]{.pnum} For any two objects `x` and `y` of a class type `C` that has a custom template-argument function, if the corresponding direct subobjects and reference members of `x` and `y` are template-argument-equivalent ([temp.type]), the template parameter object for `x` shall be the same object as the template parameter object for `y`; no diagnostic required. [A custom template-argument function need not be injective: objects whose subobjects are not template-argument-equivalent can have the same template parameter object.]{.note}
 
-[7]{.pnum} A defaulted reflect-constant function of a class `C` is defined as deleted if any direct base class or non-static data member of `C` has a type that is neither a structural type ([temp.param]) nor a (possibly multidimensional) array of structural types.
+[10]{.pnum} A defaulted template-argument function of a class `C` is defined as deleted if any direct base class of `C`, any non-static data member of `C` other than an anonymous union member, or any variant member of `C` has a type that is neither a structural type ([temp.param]) nor a (possibly multidimensional) array of structural types.
 
-[8]{.pnum} A defaulted reflect-constant function of a class `C` that is not defined as deleted, when invoked with object argument `x`, returns a reflection representing the template parameter object ([temp.param]) of type `const C` that is template-argument-equivalent to the normalized value ([temp.arg.nontype]) of `x`. The invocation is not a constant expression if an lvalue designating `x` would not be a valid template argument for a constant template parameter of type `C` ([temp.arg.nontype]).
-
-[9]{.pnum}
+[11]{.pnum}
 
 ::: example
 ```cpp
-struct A {
-  consteval std::meta::info reflect_constant() const = default;  // OK
-private:
-  int i;                                       // OK, access is not considered
+struct A {                                     // A::operator template is implicitly declared
+  int i;                                       // and defaulted
 };
 
-class B { int i; };                            // not a structural type
-struct C {
-  consteval auto reflect_constant() const = default;  // defined as deleted: B is not structural
+class B {                                      // B::operator template is implicitly declared
+  int i;                                       // and defined as deleted: B::i is not public
+};
+
+class C {
+  int i;
+public:
+  consteval operator template() const = default;  // OK, access is not considered
+};
+
+struct D {
+  consteval operator template() const = default;  // defined as deleted: B is not a structural type
 private:
   B b;
 };
 
-struct D {
-  std::meta::info reflect_constant() const;    // error: not consteval
+struct E : C { };                              // E::operator template is implicitly declared
+                                               // and defaulted; C is a structural type
+
+struct F {                                     // F::operator template is implicitly declared
+  union { int i; float f; };                   // and defaulted; the anonymous union's members
+};                                             // are variant members of F
+
+struct Mod {                                   // custom: values are equivalent modulo 7
+  int v;
+  consteval operator template() const;
+};
+template<int V> constexpr Mod canonical = {V};
+consteval Mod::operator template() const {
+  return substitute(^^canonical, {std::meta::reflect_constant((v % 7 + 7) % 7)});
+}
+
+template<Mod m> struct X { };
+static_assert(std::is_same_v<X<Mod{3}>, X<Mod{10}>>);  // OK, the template parameter object
+                                                       // for both is canonical<3>
+
+struct Bad {
+  int v;
+  consteval operator template() const { return ^^canonical<0>; }
+};
+template<Bad b> struct Y { };
+Y<Bad{1}> y;                                   // error: canonical<0> has type const Mod,
+                                               // not const Bad
+
+struct G {
+  operator template() const;                   // error: not consteval
 };
 
-struct E {
-  consteval std::meta::info reflect_constant(); // error: object parameter has type E&
+struct H {
+  consteval operator template();               // error: object parameter has type H&
 };
 
-struct F {
-  consteval std::meta::info reflect_constant() const;
+struct I {
+  consteval std::meta::info operator template() const;  // error: return type specified
 };
-consteval std::meta::info F::reflect_constant() const = default; // error: not defaulted on
-                                                                 // first declaration
+
+struct J {
+  consteval operator template() const;
+};
+consteval J::operator template() const = default;  // error: not defaulted on first declaration
+
+struct K : A {
+  using A::operator template;                  // error: operator template named by a using-declarator
+};
+
+consteval std::meta::info f(A a) {
+  return a.operator template();                // error: operator template named in an expression
+}
+constexpr std::meta::info r = ^^A::operator template;  // error: operator template named in an expression
+constexpr std::meta::info s = std::meta::reflect_constant(A{1});  // OK
 ```
 :::
 :::
@@ -601,21 +689,16 @@ Change the definition of structural type in [temp.param]{.sref}/12:
 
 * [12.1]{.pnum} a scalar type, or
 * [12.2]{.pnum} an lvalue reference type, or
-* [12.3]{.pnum} a literal class type [with the following properties:]{.rm} [`C` that has no mutable subobjects and that either]{.addu}
-  * [12.3.1]{.pnum} [has an eligible reflect-constant function ([class.reflect.constant]) that is not deleted, or]{.addu}
-  * [12.3.2]{.pnum} [has no eligible reflect-constant function and for which]{.addu}
-    * [12.3.2.1]{.pnum} all base classes and non-static data members are public [and non-mutable]{.rm} and
-    * [12.3.2.2]{.pnum} the types of all base classes and non-static data members are structural types or (possibly multidimensional) arrays thereof.
+* [12.3]{.pnum} a literal class type [with the following properties:]{.rm} [that has no mutable subobjects and has an eligible template-argument function ([class.template.arg]).]{.addu}
+  * [12.3.1]{.pnum} [all base classes and non-static data members are public and non-mutable and]{.rm}
+  * [12.3.2]{.pnum} [the types of all base classes and non-static data members are structural types or (possibly multidimensional) arrays thereof.]{.rm}
 
-::: addu
-[A class with a deleted reflect-constant function is not a structural type. Neither is a class that has a subobject of such a class type, unless that class has a custom reflect-constant function ([class.reflect.constant]).]{.note}
-:::
 :::
 
-Change [temp.param]{.sref}/13. A template parameter object of a class type with a custom reflect-constant function can be the object declared by a variable, so not all template parameter objects are distinct from all other objects. Also, a template parameter object is template-argument-equivalent to the normalized template argument, not to the template argument as written:
+Change [temp.param]{.sref}/13. A template parameter object of a class type with a custom template-argument function can be the object declared by a variable, so not all template parameter objects are distinct from all other objects. Also, a template parameter object is template-argument-equivalent to the normalized template argument, not to the template argument as written:
 
 ::: std
-[13]{.pnum} Certain constructs refer to template parameter objects, which are [distinct]{.rm} objects with static storage duration and non-volatile const type. [A template parameter object of a class type that has a custom reflect-constant function is determined by that function ([class.reflect.constant]) and can be the object declared by a variable; other template parameter objects are distinct from all other objects.]{.addu} No two [such]{.rm} [template parameter]{.addu} objects have template-argument-equivalent values ([temp.type]). An `$id-expression$` naming a constant template parameter of class type `T` denotes the template parameter object of type `const T`, which is template-argument-equivalent to the corresponding template argument after it has been converted to the type of the template parameter [and normalized]{.addu} ([temp.arg.nontype]).
+[13]{.pnum} Certain constructs refer to template parameter objects, which are [distinct]{.rm} objects with static storage duration and non-volatile const type. [A template parameter object of a class type that has a custom template-argument function is determined by that function ([class.template.arg]) and can be the object declared by a variable; other template parameter objects are distinct from all other objects.]{.addu} No two [such]{.rm} [template parameter]{.addu} objects have template-argument-equivalent values ([temp.type]). An `$id-expression$` naming a constant template parameter of class type `T` denotes the template parameter object of type `const T`, which is template-argument-equivalent to the corresponding template argument after it has been converted to the type of the template parameter [and normalized]{.addu} ([temp.arg.nontype]).
 :::
 
 Change [temp.arg.nontype]{.sref}/2-5. Paragraphs 4 and 5 become bullets of the new paragraph that introduces `v`; their text is otherwise unchanged:
@@ -631,7 +714,7 @@ Change [temp.arg.nontype]{.sref}/2-5. Paragraphs 4 and 5 become bullets of the n
 is introduced. [The lifetime of `v` ends immediately after initializing it and any template parameter object (see below). For each such variable, the `$id-expression$` `v` is termed a *candidate initializer*.]{.rm}
 
 ::: addu
-[a]{.pnum} If `T` is a class type that has a custom reflect-constant function, `$P$` denotes the template parameter object ([class.reflect.constant]) for `u`. The lifetime of `u` ends immediately after that template parameter object is determined. [The template parameter object is not initialized from `u`.]{.note}
+[a]{.pnum} If `T` is a class type that has a custom template-argument function, `$P$` denotes the template parameter object ([class.template.arg]) for `u`. The lifetime of `u` ends immediately after that template parameter object is determined. [The template parameter object is not initialized from `u`.]{.note}
 
 [b]{.pnum} Otherwise, a temporary variable `v` of type `const T` is introduced whose value is the normalized value (see below) of `u`. The lifetimes of `u` and `v` end immediately after initializing `v` and any template parameter object (see below). For each such variable `v`, the `$id-expression$` `v` is termed a *candidate initializer*.
 :::
@@ -652,12 +735,12 @@ is introduced. [The lifetime of `v` ends immediately after initializing it and a
 * [d.1]{.pnum} If `T` is a pointer type and `x` points to or past the end of an object `$o$` that is a string literal object `$S$` or a subobject of `$S$`, the pointer value that points to or past the end of, respectively, the object that corresponds to `$o$` within `$P$@~_S_~@`.
 * [d.2]{.pnum} Otherwise, if `T` is a reference type and `x` refers to an object `$o$` that is a string literal object `$S$` or a subobject of `$S$`, a reference to the object that corresponds to `$o$` within `$P$@~_S_~@`.
 * [d.3]{.pnum} Otherwise, if `T` is an array type, the array value whose elements are the normalized values of the corresponding elements of `x`.
-* [d.4]{.pnum} Otherwise, if `T` is a class type that has a custom reflect-constant function ([class.reflect.constant]), the value of an object of type `T` copy-initialized from an lvalue designating the template parameter object for `x` ([class.reflect.constant]). The program is ill-formed if that copy-initialization would be ill-formed or if the full-expression of an invented `$init-declarator$` for it would not be a constant expression.
+* [d.4]{.pnum} Otherwise, if `T` is a class type that has a custom template-argument function ([class.template.arg]), the value of an object of type `T` copy-initialized from an lvalue designating the template parameter object for `x` ([class.template.arg]). The program is ill-formed if that copy-initialization would be ill-formed or if the full-expression of an invented `$init-declarator$` for it would not be a constant expression.
 * [d.5]{.pnum} Otherwise, if `T` is a union type, `x` if `x` has no active member; otherwise, the value that has the same active member as `x`, whose value is the normalized value of the active member of `x`.
 * [d.6]{.pnum} Otherwise, if `T` is a class type, the value whose direct subobjects and reference members have the normalized values of the corresponding direct subobjects and reference members of `x`.
 * [d.7]{.pnum} Otherwise, `x`.
 
-[Normalization replaces each pointer into, or reference to, a string literal object or subobject thereof with a pointer into, or reference to, an object whose identity is the same in every translation unit, and replaces each subobject of a class type that has a custom reflect-constant function with a copy of the template parameter object for that subobject.]{.note}
+[Normalization replaces each pointer into, or reference to, a string literal object or subobject thereof with a pointer into, or reference to, an object whose identity is the same in every translation unit, and replaces each subobject of a class type that has a custom template-argument function with a copy of the template parameter object for that subobject.]{.note}
 
 ::: example
 ```cpp
@@ -675,10 +758,10 @@ W<std::define_static_string("hello")[1]> w2;  // same type as w1
 
 struct Frac {
   int num, den;
-  consteval std::meta::info reflect_constant() const;
+  consteval operator template() const;
 };
 template<int N, int D> constexpr Frac interned = {N, D};
-consteval std::meta::info Frac::reflect_constant() const {
+consteval Frac::operator template() const {
   int g = std::gcd(num, den);
   return substitute(^^interned, {std::meta::reflect_constant(num / g),
                                  std::meta::reflect_constant(den / g)});
@@ -700,7 +783,7 @@ Z<Stuff{{1, 2}, std::define_static_string("hi")}> z2;   // same type as z1
 :::
 :::
 
-Remove [temp.arg.nontype]{.sref}/6.2. By the time this check applies, pointers into and references to string literal objects have been normalized. A template parameter object determined by a custom reflect-constant function is not normalized, but it is an ordinary variable, no different from any other object a reference template parameter can refer to:
+Remove [temp.arg.nontype]{.sref}/6.2. By the time this check applies, pointers into and references to string literal objects have been normalized. A template parameter object determined by a custom template-argument function is not normalized, but it is an ordinary variable, no different from any other object a reference template parameter can refer to:
 
 ::: std
 [6]{.pnum} For a constant template parameter of reference or pointer type, or for each non-static data member of reference or pointer type in a constant template parameter of class type or subobject thereof, the reference or pointer value shall not refer or point to (respectively):
@@ -746,11 +829,64 @@ A `$string-literal$` ([lex.string]) is [not]{.rm} an acceptable `$template-argum
 :::
 :::
 
-[temp.type]{.sref} needs no change. Every value compared there has already been normalized. For a class type with a custom reflect-constant function, determinism ([class.reflect.constant]/6) and idempotence ([class.reflect.constant]/5.4) mean that two template parameter objects have template-argument-equivalent values exactly when they are the same object.
+[[temp.type]{.sref} needs no change. Every value compared there has already been normalized. For a class type with a custom template-argument function, determinism ([class.template.arg]/9) and idempotence ([class.template.arg]/8.4) mean that two template parameter objects have template-argument-equivalent values exactly when they are the same object.]{.draftnote}
 
-[[basic.link]{.sref} needs no change. The template argument for a constant template parameter of class type with a custom reflect-constant function designates its template parameter object, which can be the object declared by a variable. In that case, an object associated with a TU-local variable is a TU-local value, so the specialization is TU-local. The design discussion says `$O$` must have the same linkage as `T`, and the implementation requires `$O$` to have linkage. This wording relies on the existing TU-local rules instead.]{.draftnote}
+[[basic.link]{.sref} needs no change. The template argument for a constant template parameter of class type with a custom template-argument function designates its template parameter object, which can be the object declared by a variable. In that case, an object associated with a TU-local variable is a TU-local value, so the specialization is TU-local. The design discussion says `$O$` must have the same linkage as `T`, and the implementation requires `$O$` to have linkage. This wording relies on the existing TU-local rules instead.]{.draftnote}
 
 ## Reflection library
+
+`is_special_member_function` ([meta.reflection.queries]{.sref}) is specified in terms of [special]{.sref}, so it returns `true` for a template-argument function without any change. The implicitly-declared template-argument function is returned by `members_of`, so update the counts in the example in [meta.reflection.member.queries]{.sref}:
+
+::: std
+```diff
+  class B {};
+
+  struct S : B {
+  private:
+    class I;
+  public:
+    int m;
+  };
+
+- static_assert(                                                  // 6 special members,
+-   members_of(^^S, access_context::current()).size() == 7);      // 1 public member,
++ static_assert(                                                  // 7 special members,
++   members_of(^^S, access_context::current()).size() == 8);      // 1 public member,
+                                                                  // does not include base
+
+  static_assert(                                                  // all of the above,
+-   members_of(^^S, access_context::unchecked()).size() == 8);    // as well as a reflection
++   members_of(^^S, access_context::unchecked()).size() == 9);    // as well as a reflection
+                                                                  // representing S::I
+```
+:::
+
+Add one row, for `op_template`, to the end of the table of the enumerators of `operators` (Table [tab:meta.reflection.operators]) in [meta.reflection.operators]{.sref}. The existing rows are unchanged:
+
+::: std
+|Constant|Corresponding `$operator-function-id$`|Operator symbol name|
+|-|-|-|
+|[...]|[...]|[...]|
+|`op_plus_plus`|`operator++`|`++`|
+|`op_minus_minus`|`operator--`|`--`|
+|`op_comma`|`operator,`|`,`|
+|[`op_template`]{.addu}|[`operator template`]{.addu}|[`template`]{.addu}|
+:::
+
+A template-argument function cannot be named by an expression ([class.template.arg]/3), so `extract` must not produce a pointer to one. Change [meta.reflection.extract]{.sref}/7:
+
+::: std
+```cpp
+template<class T>
+  consteval T $extract-member-or-function$(info r);       // exposition only
+```
+
+[7]{.pnum} *Throws*: `meta::exception` unless
+
+* [7.1]{.pnum} `r` represents a non-static data member with type `X`, that is not a bit-field, that is a direct member of class `C`, `T` and `X C::*` are similar types ([conv.qual]), and `is_convertible_v<X C::*, T>` is `true`;
+* [7.2]{.pnum} `r` represents an implicit object member function [that is not a template-argument function ([class.template.arg])]{.addu} with type `F` or `F noexcept` that is a direct member of a class `C`, and `T` is `F C::*`; or
+* [7.3]{.pnum} `r` represents a non-member function, static member function, or explicit object member function [that is not a template-argument function]{.addu} of function type `F` or `F noexcept`, and `T` is `F*`.
+:::
 
 Change the specification of `template_arguments_of` in [meta.reflection.queries]{.sref}:
 
@@ -769,7 +905,7 @@ consteval vector<info> template_arguments_of(info r);
   * [59.3.3]{.pnum} Otherwise, `$R$` is a reflection representing the value of [`$A$`]{.rm} [`$P$` as determined from `$A$` ([temp.arg.nontype])]{.addu}.
 :::
 
-`std::meta::reflect_constant` is specified in terms of `template_arguments_of(^^TCls<$V$>)[0]`, so it picks up both the custom reflect-constant function and normalization from the core wording. What remains is to update the example in [meta.reflection.result]{.sref}:
+`std::meta::reflect_constant` is specified in terms of `template_arguments_of(^^TCls<$V$>)[0]`, so it picks up both the custom template-argument function and normalization from the core wording. What remains is to update the example in [meta.reflection.result]{.sref}:
 
 ::: std
 ```cpp
@@ -819,10 +955,10 @@ template<T P> struct TCls;
 +
 + struct Frac {
 +   int num, den;
-+   consteval info reflect_constant() const;
++   consteval operator template() const;
 + };
 + template<int N, int D> constexpr Frac interned = {N, D};
-+ consteval info Frac::reflect_constant() const {
++ consteval Frac::operator template() const {
 +   int g = std::gcd(num, den);
 +   return substitute(^^interned, {std::meta::reflect_constant(num / g),
 +                                  std::meta::reflect_constant(den / g)});
@@ -838,9 +974,9 @@ template<T P> struct TCls;
 
 ## Standard library types
 
-[Whether a standard library class has a member named `reflect_constant` should probably be unspecified. Users get at this functionality through `std::meta::reflect_constant`, and implementations may need the member on internal helper types as well. This probably needs a sentence in [member.functions]{.sref}.]{.draftnote}
+[Every class now has a template-argument function. For a standard library class, whether that function is implicitly declared, explicitly defaulted, or user-provided should probably be unspecified, as should its exact signature. Users get at this functionality through `std::meta::reflect_constant`, and implementations may need to explicitly default the function on internal helper types as well. This probably needs a sentence in [member.functions]{.sref}.]{.draftnote}
 
-Following the existing wording for `pair` ([pairs.pair]{.sref}) and `array` ([array.overview]{.sref}), the library types are specified by stating when they are structural types and what template-argument-equivalence means for them, rather than by adding a defaulted `reflect_constant` to every synopsis. Defaulting only exempts the direct subobjects from the access requirement ([class.reflect.constant]/7), so implementations will also need to opt in their internal storage types, and this approach leaves them free to do so. `inplace_vector` is specified slightly differently (see below).
+Following the existing wording for `pair` ([pairs.pair]{.sref}) and `array` ([array.overview]{.sref}), the library types are specified by stating when they are structural types and what template-argument-equivalence means for them, rather than by adding a defaulted `operator template` to every synopsis. Explicitly defaulting only exempts the direct subobjects from the access requirement ([class.template.arg]/4, /10), so implementations will also need to opt in their internal storage types, and this approach leaves them free to do so. `inplace_vector` is specified slightly differently (see below).
 
 ### `optional`
 
@@ -952,8 +1088,8 @@ Add a paragraph to the end of [span.overview]{.sref}:
 
 For `inplace_vector`, only the elements in the range [`0`, `size()`) are part of its value. The elements past `size()` must not affect which template parameter object a template argument names. There are two ways an implementation can get that behavior:
 
-* a defaulted reflect-constant function, if the storage past `size()` consists of objects that are not within their lifetime, so that template-argument-equivalence ignores them, or
-* a custom reflect-constant function that only serializes [`0`, `size()`), like `SmallString` and `vector` in the design discussion.
+* a defaulted template-argument function, if the storage past `size()` consists of objects that are not within their lifetime, so that template-argument-equivalence ignores them, or
+* a custom template-argument function that only serializes [`0`, `size()`), like `SmallString` and `vector` in the design discussion.
 
 The choice depends on mangling. With a defaulted function, the mangled name of a specialization encodes the template parameter object's entire storage, including the holes past `size()`. Whether that's acceptable depends on how compactly those holes can be mangled. With a custom function, the mangled name refers to the returned object instead, and that object's own name encodes only the serialized elements. That is an implementation decision, so the wording specifies only the behavior. It doesn't state when two `inplace_vector` values are template-argument-equivalent, because with a custom function that relation compares the returned objects, so it isn't meaningful for arbitrary values. Instead, it says when two template arguments determine the same template parameter object, which holds for either implementation.
 
@@ -1131,3 +1267,7 @@ Add a new library feature-test macro to [version.syn]{.sref} for the library typ
 + #define __cpp_lib_constant_template_args 2026XXL // also in <optional>, <expected>, <variant>, <tuple>, <string_view>, <span>, <functional>, <complex>, <compare>, <bitset>, <inplace_vector>, <chrono>
 ```
 :::
+
+# Acknowledgements
+
+Thanks to Tim Song as usual for discussing all the design issues and for helping to make the paper better. Thanks to Dan Katz for an example that was deliberately left out of this paper, for everyone's safety.
