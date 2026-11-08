@@ -2,7 +2,7 @@
 title: "Emitting messages at compile time"
 document: D2758R6
 date: today
-audience: CWG, LWG
+audience: CWG, LEWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
@@ -13,7 +13,9 @@ status: progress
 
 # Revision History
 
-For [@P2758R5]: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request, rebased wording on working draft. Noted GCC [implementation](#implementation-experience), discussed the interesting question of [diagnostic ordering](#ordering-in-diagnostics), and moved the utilities into `<debugging>` (see [what header?](#what-header)).
+For R6: Noted GCC [implementation](#implementation-experience), discussed the interesting question of [diagnostic ordering](#ordering-in-diagnostics), and moved the utilities into `<debugging>` (see [what header?](#what-header)). Changed the error function to `consteval` to mark it `[[noreturn]]` (see [constexpr or consteval](#constexpr-or-consteval)).
+
+For [@P2758R5]: wording. Re-targeting towards LWG. Adding `u8string_view` overloads per SG16 request, rebased wording on working draft.
 
 For [@P2758R4]: wording. Re-targeting towards CWG and LEWG. Introduced concept of constexpr-erroneous both for proper wording and to handle an escalating issue.
 
@@ -164,13 +166,13 @@ Within in `static_assert`, I'm not sure that we can adopt a `std::format()`-base
 ```cpp
 namespace std {
   template<class... Args>
-    constexpr void constexpr_print(format_string<Args...> fmt, Args&&... args);
+    consteval void constexpr_print(format_string<Args...> fmt, Args&&... args);
   template<class... Args>
-    constexpr void constexpr_print($tag-string$, format_string<Args...> fmt, Args&&... args);
+    consteval void constexpr_print($tag-string$, format_string<Args...> fmt, Args&&... args);
   template<class... Args>
-    constexpr void constexpr_warn($tag-string$, format_string<Args...> fmt, Args&&... args);
+    consteval void constexpr_warn($tag-string$, format_string<Args...> fmt, Args&&... args);
   template<class... Args>
-    constexpr void constexpr_error($tag-string$, format_string<Args...> fmt, Args&&... args);
+    [[noreturn]] consteval void consteval_error($tag-string$, format_string<Args...> fmt, Args&&... args);
 }
 ```
 :::
@@ -180,10 +182,10 @@ But we'll probably still need a lower-level API as well. Something these facilit
 ::: std
 ```cpp
 namespace std {
-  constexpr void constexpr_print_str(string_view);
-  constexpr void constexpr_print_str($tag-string$, string_view);
-  constexpr void constexpr_warn_str($tag-string$, string_view);
-  constexpr void constexpr_error_str($tag-string$, string_view);
+  consteval void constexpr_print_str(string_view);
+  consteval void constexpr_print_str($tag-string$, string_view);
+  consteval void constexpr_warn_str($tag-string$, string_view);
+  [[noreturn]] consteval void consteval_error_str($tag-string$, string_view);
 }
 ```
 :::
@@ -281,7 +283,9 @@ Now, my guiding principle here is that if we take some code that currently works
 ::: std
 ```cpp
 constexpr auto f(int i) -> int {
-    std::constexpr_print("Called f({})\n", i);
+    if consteval {
+        std::constexpr_print("Called f({})\n", i);
+    }
     return i;
 }
 
@@ -289,7 +293,7 @@ int x = f(2);
 ```
 :::
 
-WIthout the `constepr_print`, this variable is constant-initialized. WIth it, it should be also. It would be easier to deal with the language if we didn't have all of these weird rules. For instance, if you want constant initialize, use `constinit`, if you don't, there's no tentative evaluation. But we can't change that, so this is the language we have.
+Without the `constexpr_print`, this variable is constant-initialized. WIth it, it should be also. It would be easier to deal with the language if we didn't have all of these weird rules. For instance, if you want constant initialize, use `constinit`, if you don't, there's no tentative evaluation. But we can't change that, so this is the language we have.
 
 I think buffer-then-commit is right approach. But also for the first example, that tentative evaluation in a manifestly constant evaluated context is _still_ manifestly constant evaluated. It's just unspecified whether the call happens. That is: in the first example, the call `f<void>(nullptr)` may or may not print `"in g()\n"`. It's unspecified. It may make constexpr output not completely portable, but I don't think any of the alternatives are palatable.
 
@@ -303,7 +307,9 @@ constexpr int data[3] = {1, 4, 9};
 
 constexpr auto f(int i) -> int {
     if (i < 0) {
-        std::constexpr_error_str("cannot invoke f with a negative number");
+        if consteval {
+            std::consteval_error_str("cannot invoke f with a negative number");
+        }
     }
     return data[i];
 }
@@ -313,7 +319,7 @@ int b = f(-1);
 ```
 :::
 
-Basically the question is: what are the actual semantics of `constexpr_error`?
+Basically the question is: what are the actual semantics of `consteval_error`?
 
 If we just say that evaluation (if manifestly constant-evaluated) causes the evaluation to not be a constant, then `a` is ill-formed but `b` would be (dynamically) initialized with `-1`.
 
@@ -325,7 +331,9 @@ We also have to consider the predictability question for error-handling. Here's 
 ```cpp
 template<typename> constexpr int g(int i) {
     if (i < 0) {
-        std::constexpr_error_str("can't call g with a negative number");
+        if consteval {
+            std::consteval_error_str("can't call g with a negative number");
+        }
     }
     return 42;
 }
@@ -336,13 +344,13 @@ int r = f<void>(nullptr);
 ```
 :::
 
-If `g<T>(-1)` is called, then it'll hit the `constexpr_error_str` call. But it might not be called. I think saying that if it's called, then the program is ill-formed, is probably fine. If necessary, we can further tighten the rules for substitution and actually specify one way or another (actually specify that `g` is _not_ invoked because by the time we lexically get there we know that this whole type is ill-formed, or specify that `g` _is_ invoked because we atomically substitute one type at a time), but it's probably not worth the effort.
+If `g<T>(-1)` is called, then it'll hit the `consteval_error_str` call. But it might not be called. I think saying that if it's called, then the program is ill-formed, is probably fine. If necessary, we can further tighten the rules for substitution and actually specify one way or another (actually specify that `g` is _not_ invoked because by the time we lexically get there we know that this whole type is ill-formed, or specify that `g` _is_ invoked because we atomically substitute one type at a time), but it's probably not worth the effort.
 
 Additionally, we could take a leaf out of the book of speculative evaluation. I think of the tentative evaluation of `g<T>(-1)` is this second example _quite_ differently from the tentative _constant_ evaluation of `f(-1)` in the first example. `f` is _always_ evaluated, it's just that we have this language hack that it ends up potentially being evaluated two different ways. `g` isn't _necessarily_ evaluated. So there is room to treat these different. If `g` is tentatively evaluated, then we buffer up our prints and errors - such that if it eventually _is_ evaluated (that overload is selected), we then emit all the prints and errors. Otherwise, there is no output. That is, we specify _no_ output if the function isn't selected. Because the evaluation model is different here - that `f` is always constant-evaluated initially - I don't think of these as inconsistent decisions.
 
 ## Error-Handling in General
 
-Basically, in all contexts, you probably wouldn't want to _just_ `std::constexpr_error`. Well, in a `consteval` function, that's all you'd have to do. But in a `constexpr` function that might be evaluated at runtime, you probably still want to fail.
+Basically, in all contexts, you probably wouldn't want to _just_ `std::consteval_error`. Well, in a `consteval` function, that's all you'd have to do. But in a `constexpr` function that might be evaluated at runtime, you probably still want to fail.
 
 But the question is, _how_ do you want to fail? There are so many different ways of failing
 
@@ -357,7 +365,7 @@ Which fallback depends entirely on the circumstance. For `formatter<T>::parse`, 
 ::: std
 ```cpp
 if consteval {
-    std::constexpr_error("Bad specifier {}", *it);
+    std::consteval_error("Bad specifier {}", *it);
 } else {
     throw std::format_error(std::format("Bad specifier {}", *it));
 }
@@ -371,7 +379,7 @@ Which can be easily handled in its own API:
 template <typename... Args>
 constexpr void format_parse_failure(format_string<Args...> fmt, Args&&... args) {
     if consteval {
-        constexpr_error(fmt, args...);
+        consteval_error(fmt, args...);
     } else {
         throw format_error(format(fmt, args...));
     }
@@ -381,7 +389,7 @@ constexpr void format_parse_failure(format_string<Args...> fmt, Args&&... args) 
 
 So we should probably provide that as well (under whichever name).
 
-But that's a format-specific solution. But a similar pattern works just fine for other error handling mechanisms, except for wanting to return an object (unless your return object happens to have a string part - since the two cases end up being very dfferent). I think that's okay though - at least we have the utility.
+But that's a format-specific solution. But a similar pattern works just fine for other error handling mechanisms, except for wanting to return an object (unless your return object happens to have a string part - since the two cases end up being very different). I think that's okay though - at least we have the utility.
 
 ## Ordering in Diagnostics
 
@@ -444,7 +452,9 @@ Let's take a look again at the example I showed [earlier](#predictability):
 ```cpp
 constexpr auto f(int i) -> int {
     if (i < 0) {
-        std::constexpr_error_str("cannot invoke f with a negative number");
+        if consteval {
+            std::consteval_error_str("cannot invoke f with a negative number");
+        }
     }
     return i;
 }
@@ -462,7 +472,7 @@ If substitution results in an invalid type or expression, the constraint is not 
 
 That is, `g<-1>()` is ill-formed, with our current rules. That would be the consistent choice.
 
-If we want an error to bubble up such that `g<-1>()` would be SFINAE-friendly, that seems like an entirely different construct than `std::constexpr_error_str`: that would be an exception - that the condition could catch and swallow.
+If we want an error to bubble up such that `g<-1>()` would be SFINAE-friendly, that seems like an entirely different construct than `std::consteval_error_str`: that would be an exception - that the condition could catch and swallow.
 
 ## Warnings and Tagging
 
@@ -511,9 +521,9 @@ My opening bid is that (and I am obviously not a text guy): a tag is only allowe
 
 ## Constexpr-Erroneous Values
 
-One of the things that came up during Core review is that we need a way to specify how exactly `std::constexpr_error_str` induces failure. The suggestion that Jason Merrill made was that a call to `std::constexpr_error_str` would produce a _constexpr-erroneous value_. Doing so makes the entire expression _constexpr-erroneous_.
+One of the things that came up during Core review is that we need a way to specify how exactly `std::consteval_error_str` induces failure. The suggestion that Jason Merrill made was that a call to `std::consteval_error_str` would produce a _constexpr-erroneous value_. Doing so makes the entire expression _constexpr-erroneous_.
 
-We can use that idea to address the example of static initialization [earlier](#predictability-of-errors). Right now, for static storage duration variables, we try to perform constant initialization. If that succeeds, great. If it doesn't, we fallback to performing dynamic initialization (at runtime). But not all constant initialization failures are the same. Some are simply because initialization could not be done (e.g. calling a non-`constexpr` function, attempting to read some non-`constexpr` variable, etc.) but some are actual bugs that were caught at compile time (e.g. a call to `std::constexpr_error_str`).
+We can use that idea to address the example of static initialization [earlier](#predictability-of-errors). Right now, for static storage duration variables, we try to perform constant initialization. If that succeeds, great. If it doesn't, we fallback to performing dynamic initialization (at runtime). But not all constant initialization failures are the same. Some are simply because initialization could not be done (e.g. calling a non-`constexpr` function, attempting to read some non-`constexpr` variable, etc.) but some are actual bugs that were caught at compile time (e.g. a call to `std::consteval_error_str`).
 
 We can say that if constant-initialization fails because the initialization was constexpr-erroneous, then the program is ill-formed. That would let us make sure that we can catch errors at compile-time instead of unintentionally turning them into runtime failures.
 
@@ -658,12 +668,81 @@ In [@P2758R4], the only overloads proposed took `string_view`s. It was suggested
 
 Thus starting in R5, this paper is also proposing an added set of overloads taking `u8string_view`. There was no consensus in SG16 to add further overloads (e.g. taking `wstring_view`, `u16string_view`, etc.).
 
+## Constexpr or Consteval?
+
+Every revision of this proposal up through R5 proposed that all of the functions be declared `constexpr`. I no longer believe that's the correct shape. Consider an expression like this:
+
+::: std
+```cpp
+int x = do {
+    if (can_parse) {
+        do_return 0;
+    }
+
+    throw "failed to parse";
+};
+```
+:::
+
+That's a valid expression, and in a constant evaluation constant, might fail to be constant. But if we change it to this:
+
+::: std
+```cpp
+int x = do {
+    if (can_parse) {
+        do_return 0;
+    }
+
+    std::constexpr_error_str("failed to parse");
+};
+```
+:::
+
+This is now ill-formed, because we're falling off the end of the `do` expression. Similar formulations in functions lead to warnings for the same thing. But we're _not_ falling off the end of the expression — we're failing. The way to address this is to make `constexpr_error_str`  a `[[noreturn]]` function. But it cannot be `[[noreturn]]` if it remains `constexpr`, because the non-constant-evaluation version does actually return — it can only be `[[noreturn]]` if it's `consteval`.
+
+Which, arguably, is the right shape anyway. 100% of my experience with this utility so far has been in `consteval` functions, so the question of "what should the runtime behavior actually be" just hasn't come up. But contexts where it _does_ come up are situations like the `format_parse_failure()` function [shown earlier](#error-handling-in-general). Where in general it sure seems like if at compile-time you want to fail, then either (1) you're in a `consteval` context anyway so that's the only case or (2) you probably want some sort of failure at runtime as well (whether that's an exception or an assertion or at least a log of some sort varies).
+
+To that end, making the error form `consteval` seems like a strict improvement: it allows it to be `[[noreturn]]` while also forcing consideration of runtime behavior.
+
+What about the other forms? Those definitely cannot be `[[noreturn]]`, but should `constexpr_print_str` be `constexpr` or `consteval`? If we make it `consteval` too, then `std::constexpr_print_str("hi")` is a constant expression, and that might just print on its own even when you don't want it to. You'd have to wrap it in `if consteval` — which there's not necessarily a runtime version of this that would be equivalent, since this is primarily a compile-time debugging utility. The same holds for `constexpr_warning_str`.
+
+As such, starting in R6, this paper proposes to change the original trio (just omitting the tag and `u8` overloads for simplicity):
+
+::: std
+```cpp
+namespace std {
+  constexpr void constexpr_print_str(string_view);
+  constexpr void constexpr_warn_str(string_view);
+  constexpr void constexpr_error_str(string_view);
+}
+```
+:::
+
+to this:
+
+::: std
+```cpp
+namespace std {
+  constexpr void constexpr_print_str(string_view);
+  constexpr void constexpr_warn_str(string_view);
+  [[noreturn]] consteval void consteval_error_str(string_view);
+}
+```
+:::
+
+There's a separate question at this point if `constexpr_error_str` should be renamed to `consteval_error_str`. That argument can go either way for me:
+
+* there's value in having the full set of functions have consistent names
+* these functions are actually different, and it's significant that `constexpr_error_str` is actually `consteval`, so perhaps its name should reflect that.
+
+For now, I'm changing the name.
+
 # Proposal
 
 This paper proposes the following:
 
 1. Introduce a new compile-time diagnostic API that only has effect if manifestly constant evaluated: `std::constexpr_print_str([tag,], msg)`.
-2. Introduce a new compile-time error APIs, that only has effect if manifestly constant evaluated: `std::constexpr_error_str(tag, msg)` will both cause the program to be ill-formed additionally cause the expression to not be a constant expression, emitting the message under the provided tag (which can be used in an implementation-defined way to control whether the diagnostic is emitted). EWG took a poll in February 2023 to encourage work on the ability to print multiple errors per constant evaluation but still result in a failed TU:
+2. Introduce a new `consteval` compile-time error API: `std::consteval_error_str(tag, msg)` will both cause the program to be ill-formed additionally cause the expression to [constexpr erroneous](#constexpr-erroneous-values), emitting the message under the provided tag (which can be used in an implementation-defined way to control whether the diagnostic is emitted). EWG took a poll in February 2023 to encourage work on the ability to print multiple errors per constant evaluation but still result in a failed TU:
 
     |SF|F|N|A|SA|
     |-|-|-|-|-|
@@ -687,7 +766,7 @@ namespace std {
   constexpr void constexpr_print_str(string_view);
   constexpr void constexpr_print_str($tag-string$, string_view);
   constexpr void constexpr_warn_str($tag-string$, string_view);
-  constexpr void constexpr_error_str($tag-string$, string_view);
+  constexpr void consteval_error_str($tag-string$, string_view);
 }
 ```
 :::
@@ -705,13 +784,15 @@ Instead, I'm proposing we put them into `<debugging>`. Which... isn't entirely w
 
 ## Implementation Experience
 
-This proposal is implemented in GCC 16. Or rather, GCC now provides builtins that can be used to implement the library façade of this paper. [This program](https://compiler-explorer.com/z/rrrq3GnGY) fails to compile as desired:
+This proposal is implemented in GCC 16. Or rather, GCC now provides builtins that can be used to implement the library façade of this paper. [This program](https://compiler-explorer.com/z/s4f91W97W) fails to compile as desired:
 
 ::: std
 ```cpp
 constexpr int foo(int a) {
-  if (a == 0) {
-    std::constexpr_error_str("can't call with a == 0");
+  if consteval {
+    if (a == 0) {
+        std::consteval_error_str("can't call with a == 0");
+    }
   }
 
   return a;
@@ -722,7 +803,7 @@ int b = foo(0); // error: constexpr message: 'can't call with a == 0'
 ```
 :::
 
-On the other hand, [this program](https://compiler-explorer.com/z/KobhGE6Wo) demonstrates the interesting [question of ordering](#ordering-in-diagnostics):
+On the other hand, [this program](https://compiler-explorer.com/z/dYfd9Yve9) demonstrates the interesting [question of ordering](#ordering-in-diagnostics):
 
 ::: std
 ```cpp
@@ -807,9 +888,11 @@ Define constexpr-erroneous in [expr.const.defns]{.sref}, after the definition of
 ::: example
 ```cpp
 constexpr int foo(int a) {
-  if (a == 0) {
-    std::constexpr_error_str("reject-zero", "can't call with a == 0");
-    std::constexpr_error_str("reject-zero", "second error"); // not evaluated during constant evaluation
+  if consteval {
+    if (a == 0) {
+      std::consteval_error_str("reject-zero", "can't call with a == 0");
+      std::consteval_error_str("reject-zero", "second error"); // not evaluated during constant evaluation
+    }
   }
   return a;
 }
@@ -865,8 +948,8 @@ namespace std {
 + constexpr void constexpr_print_str($tag-string$, u8string_view) noexcept;
 + constexpr void constexpr_warning_str($tag-string$, string_view) noexcept;
 + constexpr void constexpr_warning_str($tag-string$, u8string_view) noexcept;
-+ constexpr void constexpr_error_str($tag-string$, string_view) noexcept;
-+ constexpr void constexpr_error_str($tag-string$, u8string_view) noexcept;
++ [[noreturn]] consteval void consteval_error_str($tag-string$, string_view) noexcept;
++ [[noreturn]] consteval void consteval_error_str($tag-string$, u8string_view) noexcept;
 }
 ```
 :::
@@ -952,12 +1035,12 @@ constexpr void constexpr_warning_str($tag-string$ tag, u8string_view msg) noexce
 
 [#]{.pnum} *Recommended practice*: If the evaluation of such a call is constexpr-erroneous, the diagnostic message issued for the resulting ill-formed program should include the text of `$tag$.$str$` and `msg`. Otherwise, when a call to one of these functions is evaluated during constant evaluation, implementations should issue a warning that includes the text of `$tag$.$str$` and `msg`. Implementations should provide a mechanism allowing users to select, based on the value of `$tag$.$str$`, whether such a call results in a warning, no diagnostic, or a constexpr-erroneous evaluation.
 ```
-constexpr void constexpr_error_str($tag-string$ tag, string_view msg) noexcept;
-constexpr void constexpr_error_str($tag-string$ tag, u8string_view msg) noexcept;
+[[noreturn]] consteval void consteval_error_str($tag-string$ tag, string_view msg) noexcept;
+[[noreturn]] consteval void consteval_error_str($tag-string$ tag, u8string_view msg) noexcept;
 ```
 [#]{.pnum} *Effects*: None.
 
-[#]{.pnum} *Remarks*: The evaluation of a call to one of these functions during constant evaluation is constexpr-erroneous ([expr.const.defns]).
+[#]{.pnum} *Remarks*: The evaluation of a call to one of these functions is constexpr-erroneous ([expr.const.defns]).
 
 [#]{.pnum} *Recommended practice*: The diagnostic message issued for the resulting ill-formed program should include the text of `$tag$.$str$` and `msg`.
 :::
