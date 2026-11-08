@@ -494,7 +494,7 @@ This has been implemented in [my fork](https://github.com/brevzin/llvm-project/c
 
 # Wording
 
-The wording introduces a _template-argument function_: a special member function named `operator template`, specified in a new subclause [class.template.arg]. Like a copy constructor, it is declared implicitly if a class doesn't declare one, and its implicit declaration and defaulted definition encode the C++20 requirements on structural class types. A structural class type is then simply a literal class type with no mutable subobjects that has an eligible template-argument function. Normalization, both of string literals and of values whose type has a custom template-argument function, happens when the value of a constant template parameter is determined. Finally, the wording goes through all of the standard library types in [the list](#standard-library-extensions) and makes them suitably structural based on their semantics, not on any particular spelling of `operator template`.
+The wording introduces a _template-argument function_: a special member function named `operator template`, specified in a new subclause [class.template.arg]. Like a copy constructor, it is declared implicitly if a class doesn't declare one, and its implicit declaration and defaulted definition encode the C++20 requirements on structural class types. A structural class type is then simply a literal class type with no mutable subobjects that has an eligible template-argument function. Normalization, both of string literals and of values whose type has a user-provided  template-argument function, happens when the value of a constant template parameter is determined. Finally, the wording goes through all of the standard library types in [the list](#standard-library-extensions) and makes them suitably structural based on their semantics, not on any particular spelling of `operator template`.
 
 ## Language
 
@@ -563,43 +563,41 @@ $operator$: one of
 
 Add a new subclause after [class.dtor]{.sref}:
 
-::: std
+::: {.std .wording}
 ::: addu
 **Template-argument functions   [class.template.arg]**
 
 [1]{.pnum} A *template-argument function* of a class `C` is a non-static member function of `C` whose name is the `$operator-function-id$` `operator template` and whose object parameter has type `const C&` or `C`, other than a function template or a specialization of one. The declarator of a template-argument function shall consist only of its `$declarator-id$` followed by its `$parameters-and-qualifiers$`. The `$operator-function-id$` `operator template` shall be used only in the `$declarator-id$` of a declaration of a template-argument function. [For example, it cannot be used in an expression, as the operand of a `$reflect-expression$`, in a `$using-declarator$`, or in a `$template-id$`.]{.note}
 
-[2]{.pnum} The declared return type of a template-argument function is `std::meta::info`. No `$decl-specifier$` in its `$decl-specifier-seq$` shall be a `$defining-type-specifier$`. A user-declared template-argument function shall be declared `consteval` and shall have no non-object parameters.
+[#]{.pnum} The declared return type of a template-argument function is `std::meta::info`. No `$decl-specifier$` in its `$decl-specifier-seq$` shall be a `$defining-type-specifier$`. A user-declared template-argument function shall be declared `consteval` and shall have no non-object parameters.
 
-[3]{.pnum} A template-argument function shall not be named by an expression ([basic.def.odr]). [A template-argument function is invoked only as specified in this subclause, including by `std::meta::reflect_constant` ([meta.reflection.result]). It cannot be called or have its address taken, even by way of a `$splice-expression$`, but `std::meta::members_of` can represent it ([meta.reflection.member.queries]).]{.note}
+[#]{.pnum} A template-argument function shall not be named by an expression ([basic.def.odr]). [A template-argument function is invoked only as specified in this subclause, including by `std::meta::reflect_constant` ([meta.reflection.result]). It cannot be called or have its address taken, even by way of a `$splice-expression$`, but `std::meta::members_of` can represent it ([meta.reflection.member.queries]).]{.note}
 
-[4]{.pnum} If the class is not an anonymous union and does not have a user-declared template-argument function, one is declared implicitly. If the class has a direct base class or a direct non-static data member that is not public, the implicitly-declared template-argument function is defined as deleted; otherwise, it is defaulted ([dcl.fct.def]). The implicitly-declared template-argument function for a class `C` is an inline public member of `C` and has the form
+[#]{.pnum} If the class is not an anonymous union and does not have a user-declared template-argument function, one is declared implicitly. If the class has a direct base class or a direct non-static data member that is not public, the implicitly-declared template-argument function is defined as deleted; otherwise, it is defaulted ([dcl.fct.def]). The implicitly-declared template-argument function for a class `C` is an inline public member of `C` and has the form
 ```cpp
 consteval C::operator template() const
 ```
 
 [An explicitly-defaulted template-argument function differs from an implicitly-declared one in that access is not considered: it is not defined as deleted because of a non-public direct base class or non-static data member.]{.note}
 
-[5]{.pnum} A class shall not have more than one eligible ([special]) template-argument function.
+[#]{.pnum} A class shall not have more than one eligible ([special]) template-argument function.
 
-[6]{.pnum} A template-argument function that is defined as defaulted shall be defined as defaulted on its first declaration.
+[#]{.pnum} A template-argument function that is defined as defaulted shall be defined as defaulted on its first declaration.
 
-[7]{.pnum} A *custom template-argument function* is an eligible template-argument function that is user-provided ([dcl.fct.def.default]).
+[#]{.pnum} Let `C` be a class that has a user-provided template-argument function `F`. When the template parameter object for an object `x` of type `$cv$ C` is determined ([temp.arg.nontype]), `F` is invoked with `x` as its object argument, without regard to access control; let `$R$` be the result of that invocation. If the template parameter object is determined as part of an evaluation `$X$` during the evaluation of an expression as a core constant expression (for example, by a call to `std::meta::reflect_constant`), the invocation is evaluated as part of `$X$`. Otherwise, the invocation is evaluated as a manifestly constant-evaluated expression that appears at the point at which the template argument from which the value of the constant template parameter is being determined ([temp.arg.nontype]) appears. [This determines the evaluation context ([expr.const.reflect]) of the invocation, and so the behavior of functions used for reflection ([meta.reflection]) during it.]{.note} The program is ill-formed if that invocation is not a constant expression ([expr.const]). Otherwise, the program is ill-formed unless `$R$` represents either an object or a variable; let `$O$` be that object or the object declared by that variable. The program is ill-formed unless
 
-[8]{.pnum} Let `C` be a class that has a custom template-argument function `F`. When the template parameter object for an object `x` of type `$cv$ C` is determined ([temp.arg.nontype]), `F` is invoked with `x` as its object argument, without regard to access control; let `$R$` be the result of that invocation. If the template parameter object is determined as part of an evaluation `$X$` during the evaluation of an expression as a core constant expression (for example, by a call to `std::meta::reflect_constant`), the invocation is evaluated as part of `$X$`. Otherwise, the invocation is evaluated as a manifestly constant-evaluated expression that appears at the point at which the template argument from which the value of the constant template parameter is being determined ([temp.arg.nontype]) appears. [This determines the evaluation context ([expr.const.reflect]) of the invocation, and so the behavior of functions used for reflection ([meta.reflection]) during it.]{.note} The program is ill-formed if that invocation is not a constant expression ([expr.const]). Otherwise, the program is ill-formed unless `$R$` represents either an object or a variable; let `$O$` be that object or the object declared by that variable. The program is ill-formed unless
-
-* [8.1]{.pnum} `$O$` is a complete object with static storage duration,
-* [8.2]{.pnum} `$O$` is usable in constant expressions,
-* [8.3]{.pnum} the type of `$O$` is `const C`, and
-* [8.4]{.pnum} the invocation of `F` with `$O$` as its object argument is a constant expression whose result represents either `$O$` or a variable that declares `$O$`.
+* [#.#]{.pnum} `$O$` is a complete object with static storage duration,
+* [#.#]{.pnum} `$O$` is usable in constant expressions,
+* [#.#]{.pnum} the type of `$O$` is `const C`, and
+* [#.#]{.pnum} the invocation of `F` with `$O$` as its object argument is a constant expression whose result represents either `$O$` or a variable that declares `$O$`.
 
 `$O$` is the template parameter object ([temp.param]) for `x`.
 
-[9]{.pnum} For any two objects `x` and `y` of a class type `C` that has a custom template-argument function, if the corresponding direct subobjects and reference members of `x` and `y` are template-argument-equivalent ([temp.type]), the template parameter object for `x` shall be the same object as the template parameter object for `y`; no diagnostic required. [A custom template-argument function need not be injective: objects whose subobjects are not template-argument-equivalent can have the same template parameter object.]{.note}
+[#]{.pnum} For any two objects `x` and `y` of a class type `C` that has a user-provided template-argument function, if the corresponding direct subobjects and reference members of `x` and `y` are template-argument-equivalent ([temp.type]), the template parameter object for `x` shall be the same object as the template parameter object for `y`; no diagnostic required. [A user-provided template-argument function need not be injective: objects whose subobjects are not template-argument-equivalent can have the same template parameter object.]{.note}
 
-[10]{.pnum} A defaulted template-argument function of a class `C` is defined as deleted if any direct base class of `C`, any non-static data member of `C` other than an anonymous union member, or any variant member of `C` has a type that is neither a structural type ([temp.param]) nor a (possibly multidimensional) array of structural types.
+[#]{.pnum} A defaulted template-argument function of a class `C` is defined as deleted if any direct base class of `C`, any non-static data member of `C` other than an anonymous union member, or any variant member of `C` has a type that is neither a structural type ([temp.param]) nor a (possibly multidimensional) array of structural types.
 
-[11]{.pnum}
+[#]{.pnum}
 
 ::: example
 ```cpp
@@ -695,10 +693,10 @@ Change the definition of structural type in [temp.param]{.sref}/12:
 
 :::
 
-Change [temp.param]{.sref}/13. A template parameter object of a class type with a custom template-argument function can be the object declared by a variable, so not all template parameter objects are distinct from all other objects. Also, a template parameter object is template-argument-equivalent to the normalized template argument, not to the template argument as written:
+Change [temp.param]{.sref}/13. A template parameter object of a class type with a user-provided template-argument function can be the object declared by a variable, so not all template parameter objects are distinct from all other objects. Also, a template parameter object is template-argument-equivalent to the normalized template argument, not to the template argument as written:
 
 ::: std
-[13]{.pnum} Certain constructs refer to template parameter objects, which are [distinct]{.rm} objects with static storage duration and non-volatile const type. [A template parameter object of a class type that has a custom template-argument function is determined by that function ([class.template.arg]) and can be the object declared by a variable; other template parameter objects are distinct from all other objects.]{.addu} No two [such]{.rm} [template parameter]{.addu} objects have template-argument-equivalent values ([temp.type]). An `$id-expression$` naming a constant template parameter of class type `T` denotes the template parameter object of type `const T`, which is template-argument-equivalent to the corresponding template argument after it has been converted to the type of the template parameter [and normalized]{.addu} ([temp.arg.nontype]).
+[13]{.pnum} Certain constructs refer to template parameter objects, which are [distinct]{.rm} objects with static storage duration and non-volatile const type. [A template parameter object of a class type that has a user-provided template-argument function is determined by that function ([class.template.arg]) and can be the object declared by a variable; other template parameter objects are distinct from all other objects.]{.addu} No two [such]{.rm} [template parameter]{.addu} objects have template-argument-equivalent values ([temp.type]). An `$id-expression$` naming a constant template parameter of class type `T` denotes the template parameter object of type `const T`, which is template-argument-equivalent to the corresponding template argument after it has been converted to the type of the template parameter [and normalized]{.addu} ([temp.arg.nontype]).
 :::
 
 Change [temp.arg.nontype]{.sref}/2-5. Paragraphs 4 and 5 become bullets of the new paragraph that introduces `v`; their text is otherwise unchanged:
@@ -714,7 +712,7 @@ Change [temp.arg.nontype]{.sref}/2-5. Paragraphs 4 and 5 become bullets of the n
 is introduced. [The lifetime of `v` ends immediately after initializing it and any template parameter object (see below). For each such variable, the `$id-expression$` `v` is termed a *candidate initializer*.]{.rm}
 
 ::: addu
-[a]{.pnum} If `T` is a class type that has a custom template-argument function, `$P$` denotes the template parameter object ([class.template.arg]) for `u`. The lifetime of `u` ends immediately after that template parameter object is determined. [The template parameter object is not initialized from `u`.]{.note}
+[a]{.pnum} If `T` is a class type that has a user-provided template-argument function, `$P$` denotes the template parameter object ([class.template.arg]) for `u`. The lifetime of `u` ends immediately after that template parameter object is determined. [The template parameter object is not initialized from `u`.]{.note}
 
 [b]{.pnum} Otherwise, a temporary variable `v` of type `const T` is introduced whose value is the normalized value (see below) of `u`. The lifetimes of `u` and `v` end immediately after initializing `v` and any template parameter object (see below). For each such variable `v`, the `$id-expression$` `v` is termed a *candidate initializer*.
 :::
@@ -735,12 +733,12 @@ is introduced. [The lifetime of `v` ends immediately after initializing it and a
 * [d.1]{.pnum} If `T` is a pointer type and `x` points to or past the end of an object `$o$` that is a string literal object `$S$` or a subobject of `$S$`, the pointer value that points to or past the end of, respectively, the object that corresponds to `$o$` within `$P$@~_S_~@`.
 * [d.2]{.pnum} Otherwise, if `T` is a reference type and `x` refers to an object `$o$` that is a string literal object `$S$` or a subobject of `$S$`, a reference to the object that corresponds to `$o$` within `$P$@~_S_~@`.
 * [d.3]{.pnum} Otherwise, if `T` is an array type, the array value whose elements are the normalized values of the corresponding elements of `x`.
-* [d.4]{.pnum} Otherwise, if `T` is a class type that has a custom template-argument function ([class.template.arg]), the value of an object of type `T` copy-initialized from an lvalue designating the template parameter object for `x` ([class.template.arg]). The program is ill-formed if that copy-initialization would be ill-formed or if the full-expression of an invented `$init-declarator$` for it would not be a constant expression.
+* [d.4]{.pnum} Otherwise, if `T` is a class type that has a user-provided template-argument function ([class.template.arg]), the value of an object of type `T` copy-initialized from an lvalue designating the template parameter object for `x` ([class.template.arg]). The program is ill-formed if that copy-initialization would be ill-formed or if the full-expression of an invented `$init-declarator$` for it would not be a constant expression.
 * [d.5]{.pnum} Otherwise, if `T` is a union type, `x` if `x` has no active member; otherwise, the value that has the same active member as `x`, whose value is the normalized value of the active member of `x`.
 * [d.6]{.pnum} Otherwise, if `T` is a class type, the value whose direct subobjects and reference members have the normalized values of the corresponding direct subobjects and reference members of `x`.
 * [d.7]{.pnum} Otherwise, `x`.
 
-[Normalization replaces each pointer into, or reference to, a string literal object or subobject thereof with a pointer into, or reference to, an object whose identity is the same in every translation unit, and replaces each subobject of a class type that has a custom template-argument function with a copy of the template parameter object for that subobject.]{.note}
+[Normalization replaces each pointer into, or reference to, a string literal object or subobject thereof with a pointer into, or reference to, an object whose identity is the same in every translation unit, and replaces each subobject of a class type that has a user-provided template-argument function with a copy of the template parameter object for that subobject.]{.note}
 
 ::: example
 ```cpp
@@ -783,7 +781,7 @@ Z<Stuff{{1, 2}, std::define_static_string("hi")}> z2;   // same type as z1
 :::
 :::
 
-Remove [temp.arg.nontype]{.sref}/6.2. By the time this check applies, pointers into and references to string literal objects have been normalized. A template parameter object determined by a custom template-argument function is not normalized, but it is an ordinary variable, no different from any other object a reference template parameter can refer to:
+Remove [temp.arg.nontype]{.sref}/6.2. By the time this check applies, pointers into and references to string literal objects have been normalized. A template parameter object determined by a user-provided template-argument function is not normalized, but it is an ordinary variable, no different from any other object a reference template parameter can refer to:
 
 ::: std
 [6]{.pnum} For a constant template parameter of reference or pointer type, or for each non-static data member of reference or pointer type in a constant template parameter of class type or subobject thereof, the reference or pointer value shall not refer or point to (respectively):
@@ -829,9 +827,9 @@ A `$string-literal$` ([lex.string]) is [not]{.rm} an acceptable `$template-argum
 :::
 :::
 
-[[temp.type]{.sref} needs no change. Every value compared there has already been normalized. For a class type with a custom template-argument function, determinism ([class.template.arg]/9) and idempotence ([class.template.arg]/8.4) mean that two template parameter objects have template-argument-equivalent values exactly when they are the same object.]{.draftnote}
+[[temp.type]{.sref} needs no change. Every value compared there has already been normalized. For a class type with a user-provided template-argument function, determinism ([class.template.arg]/9) and idempotence ([class.template.arg]/8.4) mean that two template parameter objects have template-argument-equivalent values exactly when they are the same object.]{.draftnote}
 
-[[basic.link]{.sref} needs no change. The template argument for a constant template parameter of class type with a custom template-argument function designates its template parameter object, which can be the object declared by a variable. In that case, an object associated with a TU-local variable is a TU-local value, so the specialization is TU-local. The design discussion says `$O$` must have the same linkage as `T`, and the implementation requires `$O$` to have linkage. This wording relies on the existing TU-local rules instead.]{.draftnote}
+[[basic.link]{.sref} needs no change. The template argument for a constant template parameter of class type with a user-provided template-argument function designates its template parameter object, which can be the object declared by a variable. In that case, an object associated with a TU-local variable is a TU-local value, so the specialization is TU-local. The design discussion says `$O$` must have the same linkage as `T`, and the implementation requires `$O$` to have linkage. This wording relies on the existing TU-local rules instead.]{.draftnote}
 
 ## Reflection library
 
@@ -905,7 +903,7 @@ consteval vector<info> template_arguments_of(info r);
   * [59.3.3]{.pnum} Otherwise, `$R$` is a reflection representing the value of [`$A$`]{.rm} [`$P$` as determined from `$A$` ([temp.arg.nontype])]{.addu}.
 :::
 
-`std::meta::reflect_constant` is specified in terms of `template_arguments_of(^^TCls<$V$>)[0]`, so it picks up both the custom template-argument function and normalization from the core wording. What remains is to update the example in [meta.reflection.result]{.sref}:
+`std::meta::reflect_constant` is specified in terms of `template_arguments_of(^^TCls<$V$>)[0]`, so it picks up both the user-provided template-argument function and normalization from the core wording. What remains is to update the example in [meta.reflection.result]{.sref}:
 
 ::: std
 ```cpp
@@ -984,7 +982,7 @@ Add a paragraph to the end of [optional.optional.general]{.sref}:
 
 ::: std
 ::: addu
-[3]{.pnum} `optional<T>` is a structural type ([term.structural.type]) if `T` is a structural type. Two values `x` and `y` of type `optional<T>` are template-argument-equivalent ([temp.type]) if and only if either `x.has_value()` and `y.has_value()` are both `false`, or they are both `true` and `*x` and `*y` are template-argument-equivalent.
+[3]{.pnum} `optional<T>` is a structural type ([term.structural.type]) if `T` is a structural type. Two values `x` and `y` of type `optional<T>` are template-argument-equivalent ([temp.type]) if and only if either `x.has_value()` and `y.has_value()` are both `false`, or they are both `true` and `x.$val$` and `y.$val$` are template-argument-equivalent.
 :::
 :::
 
@@ -1002,7 +1000,7 @@ Add a paragraph to the end of [variant.variant.general]{.sref}:
 
 ::: std
 ::: addu
-[5]{.pnum} `variant<Types...>` is a structural type ([term.structural.type]) if each type in `Types` is a structural type. Two values `x` and `y` of type `variant<Types...>` are template-argument-equivalent ([temp.type]) if and only if `x.index() == y.index()` is `true` and either `x.valueless_by_exception()` is `true` or `get<$I$>(x)` and `get<$I$>(y)` are template-argument-equivalent, where `$I$` is `x.index()`.
+[5]{.pnum} `variant<Types...>` is a structural type ([term.structural.type]) if each type in `Types` is a structural type. Two values `x` and `y` of type `variant<Types...>` are template-argument-equivalent ([temp.type]) if and only if `x.index() == y.index()` is `true` and either `x.valueless_by_exception()` is `true` or the objects referred to by `get<$I$>(x)` and `get<$I$>(y)` are template-argument-equivalent, where `$I$` is `x.index()`.
 :::
 :::
 
@@ -1012,7 +1010,10 @@ Add a paragraph to the end of [tuple.tuple.general]{.sref}:
 
 ::: std
 ::: addu
-[2]{.pnum} `tuple<Types...>` is a structural type ([term.structural.type]) if each type in `Types` is a structural type. Two values `x` and `y` of type `tuple<Types...>` are template-argument-equivalent ([temp.type]) if and only if `get<$I$>(x)` and `get<$I$>(y)` are template-argument-equivalent for every `$I$` in the range [`0`, `sizeof...(Types)`).
+[2]{.pnum} `tuple<Types...>` is a structural type ([term.structural.type]) if each type in `Types` is a structural type. Two values `x` and `y` of type `tuple<Types...>` are template-argument-equivalent ([temp.type]) if and only if, for every `$I$` in the range [`0`, `sizeof...(Types)`):
+
+* [2.1]{.pnum} if `Types...[$I$]` is a reference type, then `get<$I$>(x)` and `get<$I$>(y)` refer to the same object;
+* [2.2]{.pnum} otherwise, the objects referenced by `get<$I$>(x)` and `get<$I$>(y)` are template-argument-equivalent.
 :::
 :::
 
@@ -1022,7 +1023,7 @@ Add a paragraph to the end of [expected.object.general]{.sref}:
 
 ::: std
 ::: addu
-[4]{.pnum} `expected<T, E>` is a structural type ([term.structural.type]) if `T` and `E` are both structural types. Two values `x` and `y` of type `expected<T, E>` are template-argument-equivalent ([temp.type]) if and only if either `x.has_value()` and `y.has_value()` are both `true` and `*x` and `*y` are template-argument-equivalent, or they are both `false` and `x.error()` and `y.error()` are template-argument-equivalent.
+[4]{.pnum} `expected<T, E>` is a structural type ([term.structural.type]) if `T` and `E` are both structural types. Two values `x` and `y` of type `expected<T, E>` are template-argument-equivalent ([temp.type]) if and only if either `x.has_value()` and `y.has_value()` are both `true` and `x.$val$` and `y.$val$` are template-argument-equivalent, or they are both `false` and `x.$unex$` and `y.$unex$` are template-argument-equivalent.
 :::
 :::
 
@@ -1030,7 +1031,7 @@ Add a paragraph to the end of [expected.void.general]{.sref}:
 
 ::: std
 ::: addu
-[4]{.pnum} `expected<T, E>` is a structural type ([term.structural.type]) if `E` is a structural type. Two values `x` and `y` of type `expected<T, E>` are template-argument-equivalent ([temp.type]) if and only if either `x.has_value()` and `y.has_value()` are both `true`, or they are both `false` and `x.error()` and `y.error()` are template-argument-equivalent.
+[4]{.pnum} `expected<T, E>` is a structural type ([term.structural.type]) if `E` is a structural type. Two values `x` and `y` of type `expected<T, E>` are template-argument-equivalent ([temp.type]) if and only if either `x.has_value()` and `y.has_value()` are both `true`, or they are both `false` and `x.$unex$` and `y.$unex$` are template-argument-equivalent.
 :::
 :::
 
@@ -1089,7 +1090,7 @@ Add a paragraph to the end of [span.overview]{.sref}:
 For `inplace_vector`, only the elements in the range [`0`, `size()`) are part of its value. The elements past `size()` must not affect which template parameter object a template argument names. There are two ways an implementation can get that behavior:
 
 * a defaulted template-argument function, if the storage past `size()` consists of objects that are not within their lifetime, so that template-argument-equivalence ignores them, or
-* a custom template-argument function that only serializes [`0`, `size()`), like `SmallString` and `vector` in the design discussion.
+* a user-provided template-argument function that only serializes [`0`, `size()`), like `SmallString` and `vector` in the design discussion.
 
 The choice depends on mangling. With a defaulted function, the mangled name of a specialization encodes the template parameter object's entire storage, including the holes past `size()`. Whether that's acceptable depends on how compactly those holes can be mangled. With a custom function, the mangled name refers to the returned object instead, and that object's own name encodes only the serialized elements. That is an implementation decision, so the wording specifies only the behavior. It doesn't state when two `inplace_vector` values are template-argument-equivalent, because with a custom function that relation compares the returned objects, so it isn't meaningful for arbitrary values. Instead, it says when two template arguments determine the same template parameter object, which holds for either implementation.
 
@@ -1097,7 +1098,7 @@ Add a paragraph to the end of [inplace.vector.overview]{.sref}:
 
 ::: std
 ::: addu
-[6]{.pnum} `inplace_vector<T, N>` is a structural type ([term.structural.type]) if `T` is a structural type. Two constant template arguments of type `inplace_vector<T, N>` whose values are `x` and `y` determine the same template parameter object ([temp.arg.nontype]) if and only if `x.size() == y.size()` is `true` and `x[i]` and `y[i]` are template-argument-equivalent for each `i` in the range [`0`, `x.size()`).
+[6]{.pnum} `inplace_vector<T, N>` is a structural type ([term.structural.type]) if `T` is a structural type. Two constant template arguments of type `inplace_vector<T, N>` whose values are `x` and `y` determine the same template parameter object ([temp.arg.nontype]) if and only if `x.size() == y.size()` is `true` and the objects referred to by `x[i]` and `y[i]` are template-argument-equivalent for each `i` in the range [`0`, `x.size()`).
 :::
 :::
 

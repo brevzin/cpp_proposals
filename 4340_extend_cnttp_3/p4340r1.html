@@ -2778,7 +2778,7 @@ and its implicit declaration and defaulted definition encode the C++20
 requirements on structural class types. A structural class type is then
 simply a literal class type with no mutable subobjects that has an
 eligible template-argument function. Normalization, both of string
-literals and of values whose type has a custom template-argument
+literals and of values whose type has a user-provided template-argument
 function, happens when the value of a constant template parameter is
 determined. Finally, the wording goes through all of the standard
 library types in <a href="#standard-library-extensions">the list</a> and
@@ -2926,7 +2926,7 @@ unless explicitly stated in [class.template.arg].</p>
 </blockquote>
 </div>
 <p>Add a new subclause after <span>11.4.7 Destructors <a href="https://eel.is/c++draft/class.dtor" title="11.4.7 Destructors">[class.dtor]</a></span>:</p>
-<div class="std">
+<div class="std wording">
 <blockquote>
 <div class="addu">
 <p><strong>Template-argument functions [class.template.arg]</strong></p>
@@ -2947,11 +2947,10 @@ The <code class="sourceCode cpp"><em>operator-function-id</em></code>
 <code class="sourceCode cpp"><span class="kw">operator</span> <span class="kw">template</span></code>
 shall be used only in the
 <code class="sourceCode cpp"><em>declarator-id</em></code> of a
-declaration of a template-argument function. <span class="note"><span>[
-<em>Note:</em> </span>For example, it cannot be used in an expression,
-as the operand of a
-<code class="sourceCode cpp"><em>reflect-expression</em></code>, in a
-<code class="sourceCode cpp"><em>using-declarator</em></code>, or in a
+declaration of a template-argument function. <span id="note-1" class="note" data-num="1"><span>[ <em>Note <a href="#note-1">1</a>:</em>
+</span>For example, it cannot be used in an expression, as the operand
+of a <code class="sourceCode cpp"><em>reflect-expression</em></code>, in
+a <code class="sourceCode cpp"><em>using-declarator</em></code>, or in a
 <code class="sourceCode cpp"><em>template-id</em></code>.<span> —
 <em>end note</em> ]</span></span></p>
 <p><span class="marginalizedparent"><a href="#pnum-28" id="pnum-28" class="marginalized">2</a></span> The declared return type of a
@@ -2964,8 +2963,9 @@ A user-declared template-argument function shall be declared
 <code class="sourceCode cpp"><span class="kw">consteval</span></code>
 and shall have no non-object parameters.</p>
 <p><span class="marginalizedparent"><a href="#pnum-29" id="pnum-29" class="marginalized">3</a></span> A template-argument function shall not
-be named by an expression (<a href="https://eel.is/c++draft/basic.def.odr" title="6.3 One-definition rule">[basic.def.odr]</a>). <span class="note"><span>[ <em>Note:</em> </span>A template-argument function
-is invoked only as specified in this subclause, including by
+be named by an expression (<a href="https://eel.is/c++draft/basic.def.odr" title="6.3 One-definition rule">[basic.def.odr]</a>). <span id="note-2" class="note" data-num="2"><span>[ <em>Note <a href="#note-2">2</a>:</em>
+</span>A template-argument function is invoked only as specified in this
+subclause, including by
 <code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_constant</code>
 (<a href="https://eel.is/c++draft/meta.reflection.result" title="21.4.16 Expression result reflection">[meta.reflection.result]</a>).
 It cannot be called or have its address taken, even by way of a
@@ -2983,25 +2983,22 @@ implicitly-declared template-argument function for a class
 <code class="sourceCode cpp">C</code> is an inline public member of
 <code class="sourceCode cpp">C</code> and has the form</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> C<span class="op">::</span><span class="kw">operator</span> <span class="kw">template</span><span class="op">()</span> <span class="kw">const</span></span></code></pre></div>
-<p><span class="note"><span>[ <em>Note:</em> </span>An
-explicitly-defaulted template-argument function differs from an
-implicitly-declared one in that access is not considered: it is not
-defined as deleted because of a non-public direct base class or
-non-static data member.<span> — <em>end note</em> ]</span></span></p>
+<p><span id="note-3" class="note" data-num="3"><span>[ <em>Note <a href="#note-3">3</a>:</em> </span>An explicitly-defaulted
+template-argument function differs from an implicitly-declared one in
+that access is not considered: it is not defined as deleted because of a
+non-public direct base class or non-static data member.<span> — <em>end
+note</em> ]</span></span></p>
 <p><span class="marginalizedparent"><a href="#pnum-31" id="pnum-31" class="marginalized">5</a></span> A class shall not have more than one
 eligible (<a href="https://eel.is/c++draft/special" title="11.4.4 Special member functions">[special]</a>) template-argument
 function.</p>
 <p><span class="marginalizedparent"><a href="#pnum-32" id="pnum-32" class="marginalized">6</a></span> A template-argument function that is
 defined as defaulted shall be defined as defaulted on its first
 declaration.</p>
-<p><span class="marginalizedparent"><a href="#pnum-33" id="pnum-33" class="marginalized">7</a></span> A <em>custom template-argument
-function</em> is an eligible template-argument function that is
-user-provided (<a href="https://eel.is/c++draft/dcl.fct.def.default" title="9.6.2 Explicitly-defaulted functions">[dcl.fct.def.default]</a>).</p>
-<p><span class="marginalizedparent"><a href="#pnum-34" id="pnum-34" class="marginalized">8</a></span> Let
-<code class="sourceCode cpp">C</code> be a class that has a custom
-template-argument function <code class="sourceCode cpp">F</code>. When
-the template parameter object for an object
-<code class="sourceCode cpp">x</code> of type
+<p><span class="marginalizedparent"><a href="#pnum-33" id="pnum-33" class="marginalized">7</a></span> Let
+<code class="sourceCode cpp">C</code> be a class that has a
+user-provided template-argument function
+<code class="sourceCode cpp">F</code>. When the template parameter
+object for an object <code class="sourceCode cpp">x</code> of type
 <code class="sourceCode cpp"><em>cv</em> C</code> is determined (<a href="https://eel.is/c++draft/temp.arg.nontype" title="13.4.3 Constant template arguments">[temp.arg.nontype]</a>),
 <code class="sourceCode cpp">F</code> is invoked with
 <code class="sourceCode cpp">x</code> as its object argument, without
@@ -3017,8 +3014,8 @@ the invocation is evaluated as part of
 invocation is evaluated as a manifestly constant-evaluated expression
 that appears at the point at which the template argument from which the
 value of the constant template parameter is being determined (<a href="https://eel.is/c++draft/temp.arg.nontype" title="13.4.3 Constant template arguments">[temp.arg.nontype]</a>)
-appears. <span class="note"><span>[ <em>Note:</em> </span>This
-determines the evaluation context (<a href="https://eel.is/c++draft/expr.const.reflect" title="7.7.6 Reflection">[expr.const.reflect]</a>) of the invocation,
+appears. <span id="note-4" class="note" data-num="4"><span>[ <em>Note <a href="#note-4">4</a>:</em> </span>This determines the evaluation context
+(<a href="https://eel.is/c++draft/expr.const.reflect" title="7.7.6 Reflection">[expr.const.reflect]</a>) of the invocation,
 and so the behavior of functions used for reflection (<a href="https://eel.is/c++draft/meta.reflection" title="21.4 Reflection">[meta.reflection]</a>) during it.<span> —
 <em>end note</em> ]</span></span> The program is ill-formed if that
 invocation is not a constant expression (<a href="https://eel.is/c++draft/expr.const" title="7.7 Constant evaluation">[expr.const]</a>). Otherwise, the
@@ -3028,17 +3025,17 @@ object or a variable; let <code class="sourceCode cpp"><em>O</em></code>
 be that object or the object declared by that variable. The program is
 ill-formed unless</p>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-35" id="pnum-35" class="marginalized">(8.1)</a></span>
+<li><span class="marginalizedparent"><a href="#pnum-34" id="pnum-34" class="marginalized">(7.1)</a></span>
 <code class="sourceCode cpp"><em>O</em></code> is a complete object with
 static storage duration,</li>
-<li><span class="marginalizedparent"><a href="#pnum-36" id="pnum-36" class="marginalized">(8.2)</a></span>
+<li><span class="marginalizedparent"><a href="#pnum-35" id="pnum-35" class="marginalized">(7.2)</a></span>
 <code class="sourceCode cpp"><em>O</em></code> is usable in constant
 expressions,</li>
-<li><span class="marginalizedparent"><a href="#pnum-37" id="pnum-37" class="marginalized">(8.3)</a></span> the type of
+<li><span class="marginalizedparent"><a href="#pnum-36" id="pnum-36" class="marginalized">(7.3)</a></span> the type of
 <code class="sourceCode cpp"><em>O</em></code> is
 <code class="sourceCode cpp"><span class="kw">const</span> C</code>,
 and</li>
-<li><span class="marginalizedparent"><a href="#pnum-38" id="pnum-38" class="marginalized">(8.4)</a></span> the invocation of
+<li><span class="marginalizedparent"><a href="#pnum-37" id="pnum-37" class="marginalized">(7.4)</a></span> the invocation of
 <code class="sourceCode cpp">F</code> with
 <code class="sourceCode cpp"><em>O</em></code> as its object argument is
 a constant expression whose result represents either
@@ -3048,31 +3045,31 @@ declares <code class="sourceCode cpp"><em>O</em></code>.</li>
 <p><code class="sourceCode cpp"><em>O</em></code> is the template
 parameter object (<a href="https://eel.is/c++draft/temp.param" title="13.2 Template parameters">[temp.param]</a>) for
 <code class="sourceCode cpp">x</code>.</p>
-<p><span class="marginalizedparent"><a href="#pnum-39" id="pnum-39" class="marginalized">9</a></span> For any two objects
+<p><span class="marginalizedparent"><a href="#pnum-38" id="pnum-38" class="marginalized">8</a></span> For any two objects
 <code class="sourceCode cpp">x</code> and
 <code class="sourceCode cpp">y</code> of a class type
-<code class="sourceCode cpp">C</code> that has a custom
+<code class="sourceCode cpp">C</code> that has a user-provided
 template-argument function, if the corresponding direct subobjects and
 reference members of <code class="sourceCode cpp">x</code> and
 <code class="sourceCode cpp">y</code> are template-argument-equivalent
 (<a href="https://eel.is/c++draft/temp.type" title="13.6 Type equivalence">[temp.type]</a>), the template parameter
 object for <code class="sourceCode cpp">x</code> shall be the same
 object as the template parameter object for
-<code class="sourceCode cpp">y</code>; no diagnostic required. <span class="note"><span>[ <em>Note:</em> </span>A custom template-argument
+<code class="sourceCode cpp">y</code>; no diagnostic required. <span id="note-5" class="note" data-num="5"><span>[ <em>Note <a href="#note-5">5</a>:</em> </span>A user-provided template-argument
 function need not be injective: objects whose subobjects are not
 template-argument-equivalent can have the same template parameter
 object.<span> — <em>end note</em> ]</span></span></p>
-<p><span class="marginalizedparent"><a href="#pnum-40" id="pnum-40" class="marginalized">10</a></span> A defaulted template-argument
-function of a class <code class="sourceCode cpp">C</code> is defined as
-deleted if any direct base class of
-<code class="sourceCode cpp">C</code>, any non-static data member of
-<code class="sourceCode cpp">C</code> other than an anonymous union
-member, or any variant member of <code class="sourceCode cpp">C</code>
-has a type that is neither a structural type (<a href="https://eel.is/c++draft/temp.param" title="13.2 Template parameters">[temp.param]</a>) nor a (possibly
+<p><span class="marginalizedparent"><a href="#pnum-39" id="pnum-39" class="marginalized">9</a></span> A defaulted template-argument function
+of a class <code class="sourceCode cpp">C</code> is defined as deleted
+if any direct base class of <code class="sourceCode cpp">C</code>, any
+non-static data member of <code class="sourceCode cpp">C</code> other
+than an anonymous union member, or any variant member of
+<code class="sourceCode cpp">C</code> has a type that is neither a
+structural type (<a href="https://eel.is/c++draft/temp.param" title="13.2 Template parameters">[temp.param]</a>) nor a (possibly
 multidimensional) array of structural types.</p>
-<p><span class="marginalizedparent"><a href="#pnum-41" id="pnum-41" class="marginalized">11</a></span></p>
-<div class="example">
-<span>[ <em>Example:</em> </span>
+<p><span class="marginalizedparent"><a href="#pnum-40" id="pnum-40" class="marginalized">10</a></span></p>
+<div id="example-1" class="example" data-num="1">
+<span>[ <em>Example <a href="#example-1">1</a>:</em> </span>
 <div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> A <span class="op">{</span>                                     <span class="co">// A::operator template is implicitly declared</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> i<span class="op">;</span>                                       <span class="co">// and defaulted</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
@@ -3156,18 +3153,18 @@ multidimensional) array of structural types.</p>
 parameters <a href="https://eel.is/c++draft/temp.param#12" title="13.2 Template parameters, paragraph 12">[temp.param]/12</a></span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-42" id="pnum-42" class="marginalized">12</a></span> A <em>structural type</em> is one of
+<p><span class="marginalizedparent"><a href="#pnum-41" id="pnum-41" class="marginalized">12</a></span> A <em>structural type</em> is one of
 the following:</p>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-43" id="pnum-43" class="marginalized">(12.1)</a></span> a scalar type, or</li>
-<li><span class="marginalizedparent"><a href="#pnum-44" id="pnum-44" class="marginalized">(12.2)</a></span> an lvalue reference type, or</li>
-<li><span class="marginalizedparent"><a href="#pnum-45" id="pnum-45" class="marginalized">(12.3)</a></span> a literal class type <span class="rm"><del>with the following properties:</del></span> <span class="addu">that has no mutable subobjects and has an eligible
+<li><span class="marginalizedparent"><a href="#pnum-42" id="pnum-42" class="marginalized">(12.1)</a></span> a scalar type, or</li>
+<li><span class="marginalizedparent"><a href="#pnum-43" id="pnum-43" class="marginalized">(12.2)</a></span> an lvalue reference type, or</li>
+<li><span class="marginalizedparent"><a href="#pnum-44" id="pnum-44" class="marginalized">(12.3)</a></span> a literal class type <span class="rm"><del>with the following properties:</del></span> <span class="addu">that has no mutable subobjects and has an eligible
 template-argument function ([class.template.arg]).</span>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-46" id="pnum-46" class="marginalized">(12.3.1)</a></span> <span class="rm"><del>all base
+<li><span class="marginalizedparent"><a href="#pnum-45" id="pnum-45" class="marginalized">(12.3.1)</a></span> <span class="rm"><del>all base
 classes and non-static data members are public and non-mutable
 and</del></span></li>
-<li><span class="marginalizedparent"><a href="#pnum-47" id="pnum-47" class="marginalized">(12.3.2)</a></span> <span class="rm"><del>the types
+<li><span class="marginalizedparent"><a href="#pnum-46" id="pnum-46" class="marginalized">(12.3.2)</a></span> <span class="rm"><del>the types
 of all base classes and non-static data members are structural types or
 (possibly multidimensional) arrays thereof.</del></span></li>
 </ul></li>
@@ -3175,7 +3172,7 @@ of all base classes and non-static data members are structural types or
 </blockquote>
 </div>
 <p>Change <span>13.2 Template parameters <a href="https://eel.is/c++draft/temp.param#13" title="13.2 Template parameters, paragraph 13">[temp.param]/13</a></span>.
-A template parameter object of a class type with a custom
+A template parameter object of a class type with a user-provided
 template-argument function can be the object declared by a variable, so
 not all template parameter objects are distinct from all other objects.
 Also, a template parameter object is template-argument-equivalent to the
@@ -3183,10 +3180,10 @@ normalized template argument, not to the template argument as
 written:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-48" id="pnum-48" class="marginalized">13</a></span> Certain constructs refer to template
+<p><span class="marginalizedparent"><a href="#pnum-47" id="pnum-47" class="marginalized">13</a></span> Certain constructs refer to template
 parameter objects, which are <span class="rm"><del>distinct</del></span>
 objects with static storage duration and non-volatile const type. <span class="addu">A template parameter object of a class type that has a
-custom template-argument function is determined by that function
+user-provided template-argument function is determined by that function
 ([class.template.arg]) and can be the object declared by a variable;
 other template parameter objects are distinct from all other
 objects.</span> No two <span class="rm"><del>such</del></span> <span class="addu">template parameter</span> objects have
@@ -3207,7 +3204,7 @@ Paragraphs 4 and 5 become bullets of the new paragraph that introduces
 unchanged:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-49" id="pnum-49" class="marginalized">2</a></span> The value of a constant template
+<p><span class="marginalizedparent"><a href="#pnum-48" id="pnum-48" class="marginalized">2</a></span> The value of a constant template
 parameter <code class="sourceCode cpp"><em>P</em></code> of (possibly
 deduced) type <code class="sourceCode cpp">T</code> is determined from
 its template argument <code class="sourceCode cpp"><em>A</em></code> as
@@ -3221,7 +3218,7 @@ constant expression (<a href="https://eel.is/c++draft/expr.const.const" title="7
 (as converted)</del></span> <span class="addu">the normalized value (see
 below) of <code class="sourceCode cpp"><em>A</em></code> (as
 converted)</span>.</p>
-<p><span class="marginalizedparent"><a href="#pnum-50" id="pnum-50" class="marginalized">3</a></span> Otherwise, a temporary variable</p>
+<p><span class="marginalizedparent"><a href="#pnum-49" id="pnum-49" class="marginalized">3</a></span> Otherwise, a temporary variable</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="st">- constexpr T v = <em>A</em>;</span></span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ constexpr T u = <em>A</em>;</span></span></code></pre></div>
 <p>is introduced. <span class="rm"><del>The lifetime of
@@ -3232,9 +3229,9 @@ such variable, the
 <code class="sourceCode default cpp">v</code> is termed a <em>candidate
 initializer</em>.</del></span></p>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-51" id="pnum-51" class="marginalized">a</a></span> If
-<code class="sourceCode cpp">T</code> is a class type that has a custom
-template-argument function,
+<p><span class="marginalizedparent"><a href="#pnum-50" id="pnum-50" class="marginalized">a</a></span> If
+<code class="sourceCode cpp">T</code> is a class type that has a
+user-provided template-argument function,
 <code class="sourceCode cpp"><em>P</em></code> denotes the template
 parameter object ([class.template.arg]) for
 <code class="sourceCode cpp">u</code>. The lifetime of
@@ -3243,7 +3240,7 @@ template parameter object is determined. <span class="note"><span>[
 <em>Note:</em> </span>The template parameter object is not initialized
 from <code class="sourceCode cpp">u</code>.<span> — <em>end note</em>
 ]</span></span></p>
-<p><span class="marginalizedparent"><a href="#pnum-52" id="pnum-52" class="marginalized">b</a></span> Otherwise, a temporary variable
+<p><span class="marginalizedparent"><a href="#pnum-51" id="pnum-51" class="marginalized">b</a></span> Otherwise, a temporary variable
 <code class="sourceCode cpp">v</code> of type
 <code class="sourceCode cpp"><span class="kw">const</span> T</code> is
 introduced whose value is the normalized value (see below) of
@@ -3258,7 +3255,7 @@ introduced whose value is the normalized value (see below) of
 initializer</em>.</p>
 </div>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-53" id="pnum-53" class="marginalized">(b.1)</a></span> If
+<li><span class="marginalizedparent"><a href="#pnum-52" id="pnum-52" class="marginalized">(b.1)</a></span> If
 <code class="sourceCode cpp">T</code> is a class type, a template
 parameter object (<a href="https://eel.is/c++draft/temp.param" title="13.2 Template parameters">[temp.param]</a>) exists that is
 constructed so as to be template-argument-equivalent to
@@ -3269,25 +3266,25 @@ copy-initialized from an unspecified candidate initializer that is
 template-argument-equivalent to <code class="sourceCode cpp">v</code>.
 If, for the initialization from any candidate initializer,
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-54" id="pnum-54" class="marginalized">(b.1.1)</a></span> the initialization would be
+<li><span class="marginalizedparent"><a href="#pnum-53" id="pnum-53" class="marginalized">(b.1.1)</a></span> the initialization would be
 ill-formed, or</li>
-<li><span class="marginalizedparent"><a href="#pnum-55" id="pnum-55" class="marginalized">(b.1.2)</a></span> the full-expression of an
+<li><span class="marginalizedparent"><a href="#pnum-54" id="pnum-54" class="marginalized">(b.1.2)</a></span> the full-expression of an
 invented <code class="sourceCode cpp"><em>init-declarator</em></code>
 for the initialization would not be a constant expression when
 interpreted as a
 <code class="sourceCode cpp"><em>constant-expression</em></code> (<a href="https://eel.is/c++draft/expr.const.const" title="7.7.3 Constant expressions">[expr.const.const]</a>), or</li>
-<li><span class="marginalizedparent"><a href="#pnum-56" id="pnum-56" class="marginalized">(b.1.3)</a></span> the initialization would cause
+<li><span class="marginalizedparent"><a href="#pnum-55" id="pnum-55" class="marginalized">(b.1.3)</a></span> the initialization would cause
 <code class="sourceCode cpp"><em>P</em></code> to not be
 template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title="13.6 Type equivalence">[temp.type]</a>) to
 <code class="sourceCode cpp">v</code>,</li>
 </ul>
 the program is ill-formed.</li>
-<li><span class="marginalizedparent"><a href="#pnum-57" id="pnum-57" class="marginalized">(b.2)</a></span> Otherwise, the value of
+<li><span class="marginalizedparent"><a href="#pnum-56" id="pnum-56" class="marginalized">(b.2)</a></span> Otherwise, the value of
 <code class="sourceCode cpp"><em>P</em></code> is that of
 <code class="sourceCode cpp">v</code>.</li>
 </ul>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-58" id="pnum-58" class="marginalized">c</a></span> For a string literal object
+<p><span class="marginalizedparent"><a href="#pnum-57" id="pnum-57" class="marginalized">c</a></span> For a string literal object
 <code class="sourceCode cpp"><em>S</em></code> (<a href="https://eel.is/c++draft/lex.string" title="5.13.5 String literals">[lex.string]</a>), let
 <code class="sourceCode cpp"><em>P</em><sub><em>S</em></sub></code> be
 the template parameter object of the same type as
@@ -3300,11 +3297,11 @@ is the object represented by
 (<a href="https://eel.is/c++draft/meta.define.static" title="21.4.3 Promoting to static storage">[meta.define.static]</a>). It
 is a potentially non-unique object (<a href="https://eel.is/c++draft/intro.object" title="6.8.2 Object model">[intro.object]</a>).<span> — <em>end
 note</em> ]</span></span></p>
-<p><span class="marginalizedparent"><a href="#pnum-59" id="pnum-59" class="marginalized">d</a></span> The <em>normalized value</em> of an
+<p><span class="marginalizedparent"><a href="#pnum-58" id="pnum-58" class="marginalized">d</a></span> The <em>normalized value</em> of an
 object, value, or reference <code class="sourceCode cpp">x</code> of
 type <code class="sourceCode cpp">T</code> is:</p>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-60" id="pnum-60" class="marginalized">(d.1)</a></span> If
+<li><span class="marginalizedparent"><a href="#pnum-59" id="pnum-59" class="marginalized">(d.1)</a></span> If
 <code class="sourceCode cpp">T</code> is a pointer type and
 <code class="sourceCode cpp">x</code> points to or past the end of an
 object <code class="sourceCode cpp"><em>o</em></code> that is a string
@@ -3313,7 +3310,7 @@ subobject of <code class="sourceCode cpp"><em>S</em></code>, the pointer
 value that points to or past the end of, respectively, the object that
 corresponds to <code class="sourceCode cpp"><em>o</em></code> within
 <code class="sourceCode cpp"><em>P</em><sub><em>S</em></sub></code>.</li>
-<li><span class="marginalizedparent"><a href="#pnum-61" id="pnum-61" class="marginalized">(d.2)</a></span> Otherwise, if
+<li><span class="marginalizedparent"><a href="#pnum-60" id="pnum-60" class="marginalized">(d.2)</a></span> Otherwise, if
 <code class="sourceCode cpp">T</code> is a reference type and
 <code class="sourceCode cpp">x</code> refers to an object
 <code class="sourceCode cpp"><em>o</em></code> that is a string literal
@@ -3322,21 +3319,21 @@ object <code class="sourceCode cpp"><em>S</em></code> or a subobject of
 object that corresponds to
 <code class="sourceCode cpp"><em>o</em></code> within
 <code class="sourceCode cpp"><em>P</em><sub><em>S</em></sub></code>.</li>
-<li><span class="marginalizedparent"><a href="#pnum-62" id="pnum-62" class="marginalized">(d.3)</a></span> Otherwise, if
+<li><span class="marginalizedparent"><a href="#pnum-61" id="pnum-61" class="marginalized">(d.3)</a></span> Otherwise, if
 <code class="sourceCode cpp">T</code> is an array type, the array value
 whose elements are the normalized values of the corresponding elements
 of <code class="sourceCode cpp">x</code>.</li>
-<li><span class="marginalizedparent"><a href="#pnum-63" id="pnum-63" class="marginalized">(d.4)</a></span> Otherwise, if
-<code class="sourceCode cpp">T</code> is a class type that has a custom
-template-argument function ([class.template.arg]), the value of an
-object of type <code class="sourceCode cpp">T</code> copy-initialized
-from an lvalue designating the template parameter object for
-<code class="sourceCode cpp">x</code> ([class.template.arg]). The
-program is ill-formed if that copy-initialization would be ill-formed or
-if the full-expression of an invented
+<li><span class="marginalizedparent"><a href="#pnum-62" id="pnum-62" class="marginalized">(d.4)</a></span> Otherwise, if
+<code class="sourceCode cpp">T</code> is a class type that has a
+user-provided template-argument function ([class.template.arg]), the
+value of an object of type <code class="sourceCode cpp">T</code>
+copy-initialized from an lvalue designating the template parameter
+object for <code class="sourceCode cpp">x</code> ([class.template.arg]).
+The program is ill-formed if that copy-initialization would be
+ill-formed or if the full-expression of an invented
 <code class="sourceCode cpp"><em>init-declarator</em></code> for it
 would not be a constant expression.</li>
-<li><span class="marginalizedparent"><a href="#pnum-64" id="pnum-64" class="marginalized">(d.5)</a></span> Otherwise, if
+<li><span class="marginalizedparent"><a href="#pnum-63" id="pnum-63" class="marginalized">(d.5)</a></span> Otherwise, if
 <code class="sourceCode cpp">T</code> is a union type,
 <code class="sourceCode cpp">x</code> if
 <code class="sourceCode cpp">x</code> has no active member; otherwise,
@@ -3344,21 +3341,21 @@ the value that has the same active member as
 <code class="sourceCode cpp">x</code>, whose value is the normalized
 value of the active member of
 <code class="sourceCode cpp">x</code>.</li>
-<li><span class="marginalizedparent"><a href="#pnum-65" id="pnum-65" class="marginalized">(d.6)</a></span> Otherwise, if
+<li><span class="marginalizedparent"><a href="#pnum-64" id="pnum-64" class="marginalized">(d.6)</a></span> Otherwise, if
 <code class="sourceCode cpp">T</code> is a class type, the value whose
 direct subobjects and reference members have the normalized values of
 the corresponding direct subobjects and reference members of
 <code class="sourceCode cpp">x</code>.</li>
-<li><span class="marginalizedparent"><a href="#pnum-66" id="pnum-66" class="marginalized">(d.7)</a></span> Otherwise,
+<li><span class="marginalizedparent"><a href="#pnum-65" id="pnum-65" class="marginalized">(d.7)</a></span> Otherwise,
 <code class="sourceCode cpp">x</code>.</li>
 </ul>
 <p><span class="note"><span>[ <em>Note:</em> </span>Normalization
 replaces each pointer into, or reference to, a string literal object or
 subobject thereof with a pointer into, or reference to, an object whose
 identity is the same in every translation unit, and replaces each
-subobject of a class type that has a custom template-argument function
-with a copy of the template parameter object for that subobject.<span> —
-<em>end note</em> ]</span></span></p>
+subobject of a class type that has a user-provided template-argument
+function with a copy of the template parameter object for that
+subobject.<span> — <em>end note</em> ]</span></span></p>
 <div class="example">
 <span>[ <em>Example:</em> </span>
 <div class="sourceCode" id="cb23"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">const</span> <span class="dt">char</span><span class="op">*</span> p<span class="op">&gt;</span> <span class="kw">struct</span> X <span class="op">{</span> <span class="op">};</span></span>
@@ -3403,34 +3400,34 @@ with a copy of the template parameter object for that subobject.<span> —
 <p>Remove <span>13.4.3 Constant template arguments <a href="https://eel.is/c++draft/temp.arg.nontype#6.2" title="13.4.3 Constant template arguments, paragraph 6.2">[temp.arg.nontype]/6.2</a></span>.
 By the time this check applies, pointers into and references to string
 literal objects have been normalized. A template parameter object
-determined by a custom template-argument function is not normalized, but
-it is an ordinary variable, no different from any other object a
-reference template parameter can refer to:</p>
+determined by a user-provided template-argument function is not
+normalized, but it is an ordinary variable, no different from any other
+object a reference template parameter can refer to:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-67" id="pnum-67" class="marginalized">6</a></span> For a constant template parameter of
+<p><span class="marginalizedparent"><a href="#pnum-66" id="pnum-66" class="marginalized">6</a></span> For a constant template parameter of
 reference or pointer type, or for each non-static data member of
 reference or pointer type in a constant template parameter of class type
 or subobject thereof, the reference or pointer value shall not refer or
 point to (respectively):</p>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-68" id="pnum-68" class="marginalized">(6.1)</a></span> a temporary object (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>),</li>
-<li><span class="marginalizedparent"><a href="#pnum-69" id="pnum-69" class="marginalized">(6.2)</a></span> <span class="rm"><del>a string
+<li><span class="marginalizedparent"><a href="#pnum-67" id="pnum-67" class="marginalized">(6.1)</a></span> a temporary object (<a href="https://eel.is/c++draft/class.temporary" title="6.8.7 Temporary objects">[class.temporary]</a>),</li>
+<li><span class="marginalizedparent"><a href="#pnum-68" id="pnum-68" class="marginalized">(6.2)</a></span> <span class="rm"><del>a string
 literal object (<a href="https://eel.is/c++draft/lex.string" title="5.13.5 String literals">[lex.string]</a>),</del></span></li>
-<li><span class="marginalizedparent"><a href="#pnum-70" id="pnum-70" class="marginalized">(6.3)</a></span> the result of a
+<li><span class="marginalizedparent"><a href="#pnum-69" id="pnum-69" class="marginalized">(6.3)</a></span> the result of a
 <code class="sourceCode cpp"><span class="kw">typeid</span></code>
 expression (<a href="https://eel.is/c++draft/expr.typeid" title="7.6.1.8 Type identification">[expr.typeid]</a>),</li>
-<li><span class="marginalizedparent"><a href="#pnum-71" id="pnum-71" class="marginalized">(6.4)</a></span> a predefined
+<li><span class="marginalizedparent"><a href="#pnum-70" id="pnum-70" class="marginalized">(6.4)</a></span> a predefined
 <code class="sourceCode cpp"><span class="ot">__func__</span></code>
 variable (<a href="https://eel.is/c++draft/dcl.fct.def.general" title="9.6.1 General">[dcl.fct.def.general]</a>), or</li>
-<li><span class="marginalizedparent"><a href="#pnum-72" id="pnum-72" class="marginalized">(6.5)</a></span> a subobject (<a href="https://eel.is/c++draft/intro.object" title="6.8.2 Object model">[intro.object]</a>) of one of the above.</li>
+<li><span class="marginalizedparent"><a href="#pnum-71" id="pnum-71" class="marginalized">(6.5)</a></span> a subobject (<a href="https://eel.is/c++draft/intro.object" title="6.8.2 Object model">[intro.object]</a>) of one of the above.</li>
 </ul>
 </blockquote>
 </div>
 <p>Change the note in <span>13.4.3 Constant template arguments <a href="https://eel.is/c++draft/temp.arg.nontype#9" title="13.4.3 Constant template arguments, paragraph 9">[temp.arg.nontype]/9</a></span>:</p>
 <div class="std">
 <blockquote>
-<p><span class="marginalizedparent"><a href="#pnum-73" id="pnum-73" class="marginalized">9</a></span></p>
+<p><span class="marginalizedparent"><a href="#pnum-72" id="pnum-72" class="marginalized">9</a></span></p>
 <div class="note">
 <p><span>[ <em>Note:</em> </span>A
 <code class="sourceCode cpp"><em>string-literal</em></code> (<a href="https://eel.is/c++draft/lex.string" title="5.13.5 String literals">[lex.string]</a>) is <span class="rm"><del>not</del></span> an acceptable
@@ -3468,14 +3465,14 @@ object</span>.</p>
 <p><span class="draftnote">[ Drafting note: <span>13.6 Type equivalence
 <a href="https://eel.is/c++draft/temp.type" title="13.6 Type equivalence">[temp.type]</a></span> needs no change.
 Every value compared there has already been normalized. For a class type
-with a custom template-argument function, determinism
+with a user-provided template-argument function, determinism
 ([class.template.arg]/9) and idempotence ([class.template.arg]/8.4) mean
 that two template parameter objects have template-argument-equivalent
 values exactly when they are the same object. ]</span></p>
 <p><span class="draftnote">[ Drafting note: <span>6.7 Program and
 linkage <a href="https://eel.is/c++draft/basic.link" title="6.7 Program and linkage">[basic.link]</a></span> needs no change.
 The template argument for a constant template parameter of class type
-with a custom template-argument function designates its template
+with a user-provided template-argument function designates its template
 parameter object, which can be the object declared by a variable. In
 that case, an object associated with a TU-local variable is a TU-local
 value, so the specialization is TU-local. The design discussion says
@@ -3584,11 +3581,11 @@ must not produce a pointer to one. Change <span>21.4.14 Value extraction
 <blockquote>
 <div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> T <em>extract-member-or-function</em><span class="op">(</span>info r<span class="op">);</span>       <span class="co">// exposition only</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a href="#pnum-74" id="pnum-74" class="marginalized">7</a></span> <em>Throws</em>:
+<p><span class="marginalizedparent"><a href="#pnum-73" id="pnum-73" class="marginalized">7</a></span> <em>Throws</em>:
 <code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
 unless</p>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-75" id="pnum-75" class="marginalized">(7.1)</a></span>
+<li><span class="marginalizedparent"><a href="#pnum-74" id="pnum-74" class="marginalized">(7.1)</a></span>
 <code class="sourceCode cpp">r</code> represents a non-static data
 member with type <code class="sourceCode cpp">X</code>, that is not a
 bit-field, that is a direct member of class
@@ -3599,7 +3596,7 @@ similar types (<a href="https://eel.is/c++draft/conv.qual" title="7.3.6 Qualific
 <code class="sourceCode cpp">is_convertible_v<span class="op">&lt;</span>X C<span class="op">::*,</span> T<span class="op">&gt;</span></code>
 is
 <code class="sourceCode cpp"><span class="kw">true</span></code>;</li>
-<li><span class="marginalizedparent"><a href="#pnum-76" id="pnum-76" class="marginalized">(7.2)</a></span>
+<li><span class="marginalizedparent"><a href="#pnum-75" id="pnum-75" class="marginalized">(7.2)</a></span>
 <code class="sourceCode cpp">r</code> represents an implicit object
 member function <span class="addu">that is not a template-argument
 function ([class.template.arg])</span> with type
@@ -3610,7 +3607,7 @@ that is a direct member of a class
 <code class="sourceCode cpp">T</code> is
 <code class="sourceCode cpp">F C<span class="op">::*</span></code>;
 or</li>
-<li><span class="marginalizedparent"><a href="#pnum-77" id="pnum-77" class="marginalized">(7.3)</a></span>
+<li><span class="marginalizedparent"><a href="#pnum-76" id="pnum-76" class="marginalized">(7.3)</a></span>
 <code class="sourceCode cpp">r</code> represents a non-member function,
 static member function, or explicit object member function <span class="addu">that is not a template-argument function</span> of function
 type <code class="sourceCode cpp">F</code> or
@@ -3626,7 +3623,7 @@ and <code class="sourceCode cpp">T</code> is
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">consteval</span> vector<span class="op">&lt;</span>info<span class="op">&gt;</span> template_arguments_of<span class="op">(</span>info r<span class="op">);</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a href="#pnum-78" id="pnum-78" class="marginalized">59</a></span> <em>Returns</em>: A
+<p><span class="marginalizedparent"><a href="#pnum-77" id="pnum-77" class="marginalized">59</a></span> <em>Returns</em>: A
 <code class="sourceCode cpp">vector</code> containing reflections of the
 template arguments of the template specialization represented by
 <code class="sourceCode cpp">r</code>, in the order in which they appear
@@ -3635,29 +3632,29 @@ argument <code class="sourceCode cpp"><em>A</em></code>, its
 corresponding reflection <code class="sourceCode cpp"><em>R</em></code>
 is determined as follows:</p>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-79" id="pnum-79" class="marginalized">(59.1)</a></span> If
+<li><span class="marginalizedparent"><a href="#pnum-78" id="pnum-78" class="marginalized">(59.1)</a></span> If
 <code class="sourceCode cpp"><em>A</em></code> denotes a type or type
 alias, […]</li>
-<li><span class="marginalizedparent"><a href="#pnum-80" id="pnum-80" class="marginalized">(59.2)</a></span> Otherwise, if
+<li><span class="marginalizedparent"><a href="#pnum-79" id="pnum-79" class="marginalized">(59.2)</a></span> Otherwise, if
 <code class="sourceCode cpp"><em>A</em></code> denotes a class template,
 variable template, concept, or alias template, […]</li>
-<li><span class="marginalizedparent"><a href="#pnum-81" id="pnum-81" class="marginalized">(59.3)</a></span> Otherwise,
+<li><span class="marginalizedparent"><a href="#pnum-80" id="pnum-80" class="marginalized">(59.3)</a></span> Otherwise,
 <code class="sourceCode cpp"><em>A</em></code> is a constant template
 argument (<a href="https://eel.is/c++draft/temp.arg.nontype" title="13.4.3 Constant template arguments">[temp.arg.nontype]</a>). Let
 <code class="sourceCode cpp"><em>P</em></code> be the corresponding
 template parameter.
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-82" id="pnum-82" class="marginalized">(59.3.1)</a></span> If
+<li><span class="marginalizedparent"><a href="#pnum-81" id="pnum-81" class="marginalized">(59.3.1)</a></span> If
 <code class="sourceCode cpp"><em>P</em></code> has reference type, then
 <code class="sourceCode cpp"><em>R</em></code> is a reflection
 representing the object or function referred to by <span class="rm"><del><code class="sourceCode default cpp"><em>A</em></code></del></span>
 <span class="addu"><code class="sourceCode cpp"><em>P</em></code> as
 determined from <code class="sourceCode cpp"><em>A</em></code> (<a href="https://eel.is/c++draft/temp.arg.nontype" title="13.4.3 Constant template arguments">[temp.arg.nontype]</a>)</span>.</li>
-<li><span class="marginalizedparent"><a href="#pnum-83" id="pnum-83" class="marginalized">(59.3.2)</a></span> Otherwise, if
+<li><span class="marginalizedparent"><a href="#pnum-82" id="pnum-82" class="marginalized">(59.3.2)</a></span> Otherwise, if
 <code class="sourceCode cpp"><em>P</em></code> has class type, then
 <code class="sourceCode cpp"><em>R</em></code> represents the
 corresponding template parameter object.</li>
-<li><span class="marginalizedparent"><a href="#pnum-84" id="pnum-84" class="marginalized">(59.3.3)</a></span> Otherwise,
+<li><span class="marginalizedparent"><a href="#pnum-83" id="pnum-83" class="marginalized">(59.3.3)</a></span> Otherwise,
 <code class="sourceCode cpp"><em>R</em></code> is a reflection
 representing the value of <span class="rm"><del><code class="sourceCode default cpp"><em>A</em></code></del></span>
 <span class="addu"><code class="sourceCode cpp"><em>P</em></code> as
@@ -3669,43 +3666,43 @@ determined from <code class="sourceCode cpp"><em>A</em></code> (<a href="https:/
 <p><code class="sourceCode cpp">std<span class="op">::</span>meta<span class="op">::</span>reflect_constant</code>
 is specified in terms of
 <code class="sourceCode cpp">template_arguments_of<span class="op">(^^</span>TCls<span class="op">&lt;</span><em>V</em><span class="op">&gt;)[</span><span class="dv">0</span><span class="op">]</span></code>,
-so it picks up both the custom template-argument function and
+so it picks up both the user-provided template-argument function and
 normalization from the core wording. What remains is to update the
 example in <span>21.4.16 Expression result reflection <a href="https://eel.is/c++draft/meta.reflection.result" title="21.4.16 Expression result reflection">[meta.reflection.result]</a></span>:</p>
 <div class="std">
 <blockquote>
 <div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">consteval</span> info reflect_constant<span class="op">(</span>T expr<span class="op">);</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a href="#pnum-85" id="pnum-85" class="marginalized">1</a></span> <em>Mandates</em>:
+<p><span class="marginalizedparent"><a href="#pnum-84" id="pnum-84" class="marginalized">1</a></span> <em>Mandates</em>:
 <code class="sourceCode cpp">is_copy_constructible_v<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> and
 <code class="sourceCode cpp">T</code> is a cv-unqualified structural
 type (<a href="https://eel.is/c++draft/temp.param" title="13.2 Template parameters">[temp.param]</a>) that is not a
 reference type.</p>
-<p><span class="marginalizedparent"><a href="#pnum-86" id="pnum-86" class="marginalized">2</a></span> Let
+<p><span class="marginalizedparent"><a href="#pnum-85" id="pnum-85" class="marginalized">2</a></span> Let
 <code class="sourceCode cpp"><em>V</em></code> be:</p>
 <ul>
-<li><span class="marginalizedparent"><a href="#pnum-87" id="pnum-87" class="marginalized">(2.1)</a></span> if
+<li><span class="marginalizedparent"><a href="#pnum-86" id="pnum-86" class="marginalized">(2.1)</a></span> if
 <code class="sourceCode cpp">T</code> is a class type, then an object
 that is template-argument-equivalent to the value of
 <code class="sourceCode cpp">expr</code>;</li>
-<li><span class="marginalizedparent"><a href="#pnum-88" id="pnum-88" class="marginalized">(2.2)</a></span> otherwise, the value of
+<li><span class="marginalizedparent"><a href="#pnum-87" id="pnum-87" class="marginalized">(2.2)</a></span> otherwise, the value of
 <code class="sourceCode cpp">expr</code>.</li>
 </ul>
-<p><span class="marginalizedparent"><a href="#pnum-89" id="pnum-89" class="marginalized">3</a></span> Let
+<p><span class="marginalizedparent"><a href="#pnum-88" id="pnum-88" class="marginalized">3</a></span> Let
 <code class="sourceCode cpp">TCls</code> be the invented template:</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span>T P<span class="op">&gt;</span> <span class="kw">struct</span> TCls<span class="op">;</span></span></code></pre></div>
-<p><span class="marginalizedparent"><a href="#pnum-90" id="pnum-90" class="marginalized">4</a></span> <em>Returns</em>:
+<p><span class="marginalizedparent"><a href="#pnum-89" id="pnum-89" class="marginalized">4</a></span> <em>Returns</em>:
 <code class="sourceCode cpp">template_arguments_of<span class="op">(^^</span>TCls<span class="op">&lt;</span><em>V</em><span class="op">&gt;)[</span><span class="dv">0</span><span class="op">]</span></code>.
 <span class="note"><span>[ <em>Note:</em> </span>This is a reflection of
 an object for class types, and a reflection of a value otherwise.<span>
 — <em>end note</em> ]</span></span></p>
-<p><span class="marginalizedparent"><a href="#pnum-91" id="pnum-91" class="marginalized">5</a></span> <em>Throws</em>:
+<p><span class="marginalizedparent"><a href="#pnum-90" id="pnum-90" class="marginalized">5</a></span> <em>Throws</em>:
 <code class="sourceCode cpp">meta<span class="op">::</span>exception</code>
 unless the <code class="sourceCode cpp"><em>template-id</em></code>
 <code class="sourceCode cpp">TCls<span class="op">&lt;</span><em>V</em><span class="op">&gt;</span></code>
 would be valid.</p>
-<p><span class="marginalizedparent"><a href="#pnum-92" id="pnum-92" class="marginalized">6</a></span></p>
+<p><span class="marginalizedparent"><a href="#pnum-91" id="pnum-91" class="marginalized">6</a></span></p>
 <div class="example">
 <span>[ <em>Example:</em> </span>
 <div class="sourceCode" id="cb30"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>  template&lt;auto D&gt;</span>
@@ -3778,7 +3775,7 @@ differently (see below).</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-93" id="pnum-93" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-92" id="pnum-92" class="marginalized">3</a></span>
 <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]) if
 <code class="sourceCode cpp">T</code> is a structural type. Two values
@@ -3793,9 +3790,10 @@ are both
 <code class="sourceCode cpp"><span class="kw">false</span></code>, or
 they are both
 <code class="sourceCode cpp"><span class="kw">true</span></code> and
-<code class="sourceCode cpp"><span class="op">*</span>x</code> and
-<code class="sourceCode cpp"><span class="op">*</span>y</code> are
-template-argument-equivalent.</p>
+<code class="sourceCode cpp">x<span class="op">.</span><em>val</em></code>
+and
+<code class="sourceCode cpp">y<span class="op">.</span><em>val</em></code>
+are template-argument-equivalent.</p>
 </div>
 </blockquote>
 </div>
@@ -3803,7 +3801,7 @@ template-argument-equivalent.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-94" id="pnum-94" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-93" id="pnum-93" class="marginalized">3</a></span>
 <code class="sourceCode cpp">optional<span class="op">&lt;</span>T<span class="op">&amp;&gt;</span></code>
 is a structural type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -3829,7 +3827,7 @@ the same object.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-95" id="pnum-95" class="marginalized">5</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-94" id="pnum-94" class="marginalized">5</a></span>
 <code class="sourceCode cpp">variant<span class="op">&lt;</span>Types<span class="op">...&gt;</span></code>
 is a structural type ([term.structural.type]) if each type in
 <code class="sourceCode cpp">Types</code> is a structural type. Two
@@ -3842,6 +3840,7 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code> and
 either
 <code class="sourceCode cpp">x<span class="op">.</span>valueless_by_exception<span class="op">()</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> or
+the objects referred to by
 <code class="sourceCode cpp">get<span class="op">&lt;</span><em>I</em><span class="op">&gt;(</span>x<span class="op">)</span></code>
 and
 <code class="sourceCode cpp">get<span class="op">&lt;</span><em>I</em><span class="op">&gt;(</span>y<span class="op">)</span></code>
@@ -3857,21 +3856,32 @@ are template-argument-equivalent, where
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-96" id="pnum-96" class="marginalized">2</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-95" id="pnum-95" class="marginalized">2</a></span>
 <code class="sourceCode cpp">tuple<span class="op">&lt;</span>Types<span class="op">...&gt;</span></code>
 is a structural type ([term.structural.type]) if each type in
 <code class="sourceCode cpp">Types</code> is a structural type. Two
 values <code class="sourceCode cpp">x</code> and
 <code class="sourceCode cpp">y</code> of type
 <code class="sourceCode cpp">tuple<span class="op">&lt;</span>Types<span class="op">...&gt;</span></code>
-are template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title="13.6 Type equivalence">[temp.type]</a>) if and only if
+are template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title="13.6 Type equivalence">[temp.type]</a>) if and only if, for every
+<code class="sourceCode cpp"><em>I</em></code> in the range
+[<code class="sourceCode cpp"><span class="dv">0</span></code>,
+<code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>Types<span class="op">)</span></code>):</p>
+<ul>
+<li><span class="marginalizedparent"><a href="#pnum-96" id="pnum-96" class="marginalized">(2.1)</a></span> if
+<code class="sourceCode cpp">Types<span class="op">...[</span><em>I</em><span class="op">]</span></code>
+is a reference type, then
 <code class="sourceCode cpp">get<span class="op">&lt;</span><em>I</em><span class="op">&gt;(</span>x<span class="op">)</span></code>
 and
 <code class="sourceCode cpp">get<span class="op">&lt;</span><em>I</em><span class="op">&gt;(</span>y<span class="op">)</span></code>
-are template-argument-equivalent for every
-<code class="sourceCode cpp"><em>I</em></code> in the range
-[<code class="sourceCode cpp"><span class="dv">0</span></code>,
-<code class="sourceCode cpp"><span class="kw">sizeof</span><span class="op">...(</span>Types<span class="op">)</span></code>).</p>
+refer to the same object;</li>
+<li><span class="marginalizedparent"><a href="#pnum-97" id="pnum-97" class="marginalized">(2.2)</a></span> otherwise, the objects referenced
+by
+<code class="sourceCode cpp">get<span class="op">&lt;</span><em>I</em><span class="op">&gt;(</span>x<span class="op">)</span></code>
+and
+<code class="sourceCode cpp">get<span class="op">&lt;</span><em>I</em><span class="op">&gt;(</span>y<span class="op">)</span></code>
+are template-argument-equivalent.</li>
+</ul>
 </div>
 </blockquote>
 </div>
@@ -3881,7 +3891,7 @@ are template-argument-equivalent for every
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-97" id="pnum-97" class="marginalized">4</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-98" id="pnum-98" class="marginalized">4</a></span>
 <code class="sourceCode cpp">expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]) if
 <code class="sourceCode cpp">T</code> and
@@ -3895,13 +3905,14 @@ and
 <code class="sourceCode cpp">y<span class="op">.</span>has_value<span class="op">()</span></code>
 are both
 <code class="sourceCode cpp"><span class="kw">true</span></code> and
-<code class="sourceCode cpp"><span class="op">*</span>x</code> and
-<code class="sourceCode cpp"><span class="op">*</span>y</code> are
-template-argument-equivalent, or they are both
-<code class="sourceCode cpp"><span class="kw">false</span></code> and
-<code class="sourceCode cpp">x<span class="op">.</span>error<span class="op">()</span></code>
+<code class="sourceCode cpp">x<span class="op">.</span><em>val</em></code>
 and
-<code class="sourceCode cpp">y<span class="op">.</span>error<span class="op">()</span></code>
+<code class="sourceCode cpp">y<span class="op">.</span><em>val</em></code>
+are template-argument-equivalent, or they are both
+<code class="sourceCode cpp"><span class="kw">false</span></code> and
+<code class="sourceCode cpp">x<span class="op">.</span><em>unex</em></code>
+and
+<code class="sourceCode cpp">y<span class="op">.</span><em>unex</em></code>
 are template-argument-equivalent.</p>
 </div>
 </blockquote>
@@ -3910,7 +3921,7 @@ are template-argument-equivalent.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-98" id="pnum-98" class="marginalized">4</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-99" id="pnum-99" class="marginalized">4</a></span>
 <code class="sourceCode cpp">expected<span class="op">&lt;</span>T<span class="op">,</span> E<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]) if
 <code class="sourceCode cpp">E</code> is a structural type. Two values
@@ -3925,9 +3936,9 @@ are both
 <code class="sourceCode cpp"><span class="kw">true</span></code>, or
 they are both
 <code class="sourceCode cpp"><span class="kw">false</span></code> and
-<code class="sourceCode cpp">x<span class="op">.</span>error<span class="op">()</span></code>
+<code class="sourceCode cpp">x<span class="op">.</span><em>unex</em></code>
 and
-<code class="sourceCode cpp">y<span class="op">.</span>error<span class="op">()</span></code>
+<code class="sourceCode cpp">y<span class="op">.</span><em>unex</em></code>
 are template-argument-equivalent.</p>
 </div>
 </blockquote>
@@ -3938,7 +3949,7 @@ are template-argument-equivalent.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-99" id="pnum-99" class="marginalized">4</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-100" id="pnum-100" class="marginalized">4</a></span>
 <code class="sourceCode cpp">reference_wrapper<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -3957,7 +3968,7 @@ refer to the same object or function.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-100" id="pnum-100" class="marginalized">5</a></span> The types
+<p><span class="marginalizedparent"><a href="#pnum-101" id="pnum-101" class="marginalized">5</a></span> The types
 <code class="sourceCode cpp">partial_ordering</code>,
 <code class="sourceCode cpp">weak_ordering</code>, and
 <code class="sourceCode cpp">strong_ordering</code> are structural types
@@ -3976,7 +3987,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-101" id="pnum-101" class="marginalized">14</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-102" id="pnum-102" class="marginalized">14</a></span>
 <code class="sourceCode cpp">bitset<span class="op">&lt;</span>N<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -3994,7 +4005,7 @@ are template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" ti
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-102" id="pnum-102" class="marginalized">5</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-103" id="pnum-103" class="marginalized">5</a></span>
 <code class="sourceCode cpp">basic_string_view<span class="op">&lt;</span>charT<span class="op">,</span> traits<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4016,7 +4027,7 @@ is <code class="sourceCode cpp"><span class="kw">true</span></code>.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-103" id="pnum-103" class="marginalized">6</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-104" id="pnum-104" class="marginalized">6</a></span>
 <code class="sourceCode cpp">span<span class="op">&lt;</span>ElementType<span class="op">,</span> Extent<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4047,7 +4058,7 @@ There are two ways an implementation can get that behavior:</p>
 <code class="sourceCode cpp">size<span class="op">()</span></code>
 consists of objects that are not within their lifetime, so that
 template-argument-equivalence ignores them, or</li>
-<li>a custom template-argument function that only serializes
+<li>a user-provided template-argument function that only serializes
 [<code class="sourceCode cpp"><span class="dv">0</span></code>,
 <code class="sourceCode cpp">size<span class="op">()</span></code>),
 like <code class="sourceCode cpp">SmallString</code> and
@@ -4073,7 +4084,7 @@ implementation.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-104" id="pnum-104" class="marginalized">6</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-105" id="pnum-105" class="marginalized">6</a></span>
 <code class="sourceCode cpp">inplace_vector<span class="op">&lt;</span>T<span class="op">,</span> N<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]) if
 <code class="sourceCode cpp">T</code> is a structural type. Two constant
@@ -4085,6 +4096,7 @@ parameter object (<a href="https://eel.is/c++draft/temp.arg.nontype" title="13.4
 and only if
 <code class="sourceCode cpp">x<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> y<span class="op">.</span>size<span class="op">()</span></code>
 is <code class="sourceCode cpp"><span class="kw">true</span></code> and
+the objects referred to by
 <code class="sourceCode cpp">x<span class="op">[</span>i<span class="op">]</span></code>
 and
 <code class="sourceCode cpp">y<span class="op">[</span>i<span class="op">]</span></code>
@@ -4101,7 +4113,7 @@ are template-argument-equivalent for each
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-105" id="pnum-105" class="marginalized">2</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-106" id="pnum-106" class="marginalized">2</a></span>
 <code class="sourceCode cpp">complex<span class="op">&lt;</span>T<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4125,7 +4137,7 @@ are template-argument-equivalent.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-106" id="pnum-106" class="marginalized">7</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-107" id="pnum-107" class="marginalized">7</a></span>
 <code class="sourceCode cpp">duration<span class="op">&lt;</span>Rep<span class="op">,</span> Period<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]) if
 <code class="sourceCode cpp">Rep</code> is a structural type. Two values
@@ -4144,7 +4156,7 @@ are template-argument-equivalent.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-107" id="pnum-107" class="marginalized">2</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-108" id="pnum-108" class="marginalized">2</a></span>
 <code class="sourceCode cpp">time_point<span class="op">&lt;</span>Clock<span class="op">,</span> Duration<span class="op">&gt;</span></code>
 is a structural type ([term.structural.type]) if
 <code class="sourceCode cpp">Duration</code> is a structural type. Two
@@ -4163,7 +4175,7 @@ are template-argument-equivalent.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-108" id="pnum-108" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-109" id="pnum-109" class="marginalized">3</a></span>
 <code class="sourceCode cpp">day</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4179,7 +4191,7 @@ are template-argument-equivalent.</p>
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-109" id="pnum-109" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-110" id="pnum-110" class="marginalized">3</a></span>
 <code class="sourceCode cpp">month</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4195,7 +4207,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-110" id="pnum-110" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-111" id="pnum-111" class="marginalized">3</a></span>
 <code class="sourceCode cpp">year</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4211,7 +4223,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-111" id="pnum-111" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-112" id="pnum-112" class="marginalized">3</a></span>
 <code class="sourceCode cpp">weekday</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4227,7 +4239,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-112" id="pnum-112" class="marginalized">4</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-113" id="pnum-113" class="marginalized">4</a></span>
 <code class="sourceCode cpp">weekday_indexed</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4243,7 +4255,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-113" id="pnum-113" class="marginalized">4</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-114" id="pnum-114" class="marginalized">4</a></span>
 <code class="sourceCode cpp">weekday_last</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4259,7 +4271,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-114" id="pnum-114" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-115" id="pnum-115" class="marginalized">3</a></span>
 <code class="sourceCode cpp">month_day</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4276,7 +4288,7 @@ month_day_last <a href="https://eel.is/c++draft/time.cal.mdlast" title="30.8.10 
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-115" id="pnum-115" class="marginalized">a</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-116" id="pnum-116" class="marginalized">a</a></span>
 <code class="sourceCode cpp">month_day_last</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4292,7 +4304,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-116" id="pnum-116" class="marginalized">4</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-117" id="pnum-117" class="marginalized">4</a></span>
 <code class="sourceCode cpp">month_weekday</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4308,7 +4320,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-117" id="pnum-117" class="marginalized">4</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-118" id="pnum-118" class="marginalized">4</a></span>
 <code class="sourceCode cpp">month_weekday_last</code> is a structural
 type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4324,7 +4336,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-118" id="pnum-118" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-119" id="pnum-119" class="marginalized">3</a></span>
 <code class="sourceCode cpp">year_month</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4340,7 +4352,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-119" id="pnum-119" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-120" id="pnum-120" class="marginalized">3</a></span>
 <code class="sourceCode cpp">year_month_day</code> is a structural type
 ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4356,7 +4368,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-120" id="pnum-120" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-121" id="pnum-121" class="marginalized">3</a></span>
 <code class="sourceCode cpp">year_month_day_last</code> is a structural
 type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4372,7 +4384,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-121" id="pnum-121" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-122" id="pnum-122" class="marginalized">3</a></span>
 <code class="sourceCode cpp">year_month_weekday</code> is a structural
 type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
@@ -4388,7 +4400,7 @@ template-argument-equivalent (<a href="https://eel.is/c++draft/temp.type" title=
 <div class="std">
 <blockquote>
 <div class="addu">
-<p><span class="marginalizedparent"><a href="#pnum-122" id="pnum-122" class="marginalized">3</a></span>
+<p><span class="marginalizedparent"><a href="#pnum-123" id="pnum-123" class="marginalized">3</a></span>
 <code class="sourceCode cpp">year_month_weekday_last</code> is a
 structural type ([term.structural.type]). Two values
 <code class="sourceCode cpp">x</code> and
