@@ -584,16 +584,17 @@ consteval C::operator template() const
 
 [#]{.pnum} A template-argument function that is defined as defaulted shall be defined as defaulted on its first declaration.
 
-[#]{.pnum} Let `C` be a class that has a user-provided template-argument function `F`. When the template parameter object for an object `x` of type `$cv$ C` is determined ([temp.arg.nontype]), `F` is invoked with `x` as its object argument, without regard to access control; let `$R$` be the result of that invocation. If the template parameter object is determined as part of an evaluation `$X$` during the evaluation of an expression as a core constant expression (for example, by a call to `std::meta::reflect_constant`), the invocation is evaluated as part of `$X$`. Otherwise, the invocation is evaluated as a manifestly constant-evaluated expression that appears at the point at which the template argument from which the value of the constant template parameter is being determined ([temp.arg.nontype]) appears. [This determines the evaluation context ([expr.const.reflect]) of the invocation, and so the behavior of functions used for reflection ([meta.reflection]) during it.]{.note} The program is ill-formed if that invocation is not a constant expression ([expr.const]). Otherwise, the program is ill-formed unless `$R$` represents either an object or a variable; let `$O$` be that object or the object declared by that variable. The program is ill-formed unless
+[#]{.pnum} Let `C` be a class whose eligible template-argument function `F` is user-provided. When the template parameter object for an object `x` of type `$cv$ C` is determined ([temp.arg.nontype]), `F` is invoked with `x` as its object argument, without regard to access control; let `$R$` be the result of that invocation. If the template parameter object is determined as part of an evaluation `$X$` during the evaluation of an expression as a core constant expression (for example, by a call to `std::meta::reflect_constant`), the invocation is evaluated as part of `$X$`. Otherwise, the invocation is evaluated as a manifestly constant-evaluated expression that appears at the point at which the template argument from which the value of the constant template parameter is being determined ([temp.arg.nontype]) appears. [This determines the evaluation context ([expr.const.reflect]) of the invocation, and so the behavior of functions used for reflection ([meta.reflection]) during it.]{.note} The program is ill-formed if that invocation is not a constant expression ([expr.const]). Otherwise, the program is ill-formed unless `$R$` represents either an object or a variable; let `$O$` be that object or the object declared by that variable. The program is ill-formed unless
 
-* [#.#]{.pnum} `$O$` is a complete object with static storage duration,
+* [#.#]{.pnum} `$O$` is the object declared by a variable with static storage duration, or a subobject of such an object,
 * [#.#]{.pnum} `$O$` is usable in constant expressions,
-* [#.#]{.pnum} the type of `$O$` is `const C`, and
+* [#.#]{.pnum} `$O$` is a const object ([basic.type.qualifier]) of type `C` or `const C`,
+* [#.#]{.pnum} the complete object of `$O$` ([intro.object]) is not TU-local ([basic.link]) unless `x` is TU-local, and
 * [#.#]{.pnum} the invocation of `F` with `$O$` as its object argument is a constant expression whose result represents either `$O$` or a variable that declares `$O$`.
 
 `$O$` is the template parameter object ([temp.param]) for `x`.
 
-[#]{.pnum} For any two objects `x` and `y` of a class type `C` that has a user-provided template-argument function, if the corresponding direct subobjects and reference members of `x` and `y` are template-argument-equivalent ([temp.type]), the template parameter object for `x` shall be the same object as the template parameter object for `y`; no diagnostic required. [A user-provided template-argument function need not be injective: objects whose subobjects are not template-argument-equivalent can have the same template parameter object.]{.note}
+[#]{.pnum} For any two objects `x` and `y` of a class type `C` whose eligible template-argument function is user-provided, if the corresponding direct subobjects and reference members of `x` and `y` are template-argument-equivalent ([temp.type]), the template parameter object for `x` shall be the same object as the template parameter object for `y`; no diagnostic required. [A user-provided template-argument function need not be injective: objects whose subobjects are not template-argument-equivalent can have the same template parameter object.]{.note}
 
 [#]{.pnum} A defaulted template-argument function of a class `C` is defined as deleted if any direct base class of `C`, any non-static data member of `C` other than an anonymous union member, or any variant member of `C` has a type that is neither a structural type ([temp.param]) nor a (possibly multidimensional) array of structural types.
 
@@ -628,7 +629,7 @@ struct F {                                     // F::operator template is implic
   union { int i; float f; };                   // and defaulted; the anonymous union's members
 };                                             // are variant members of F
 
-struct Mod {                                   // custom: values are equivalent modulo 7
+struct Mod {                                   // values are equivalent modulo 7
   int v;
   consteval operator template() const;
 };
@@ -648,6 +649,19 @@ struct Bad {
 template<Bad b> struct Y { };
 Y<Bad{1}> y;                                   // error: canonical<0> has type const Mod,
                                                // not const Bad
+
+struct Year {                                  // the template parameter object is a subobject
+  int y;                                       // of the variable jan1<y>
+  consteval operator template() const;
+};
+struct Date { Year year; int month, day; };
+template<int N> constexpr Date jan1 = {{N}, 1, 1};
+consteval Year::operator template() const {
+  auto r = substitute(^^jan1, {std::meta::reflect_constant(y)});
+  return std::meta::reflect_object(std::meta::extract<const Date&>(r).year);
+}
+template<Year y> constexpr const Year* addr = &y;
+static_assert(addr<Year{2024}> == &jan1<2024>.year);
 
 struct G {
   operator template() const;                   // error: not consteval
@@ -693,10 +707,10 @@ Change the definition of structural type in [temp.param]{.sref}/12:
 
 :::
 
-Change [temp.param]{.sref}/13. A template parameter object of a class type with a user-provided template-argument function can be the object declared by a variable, so not all template parameter objects are distinct from all other objects. Also, a template parameter object is template-argument-equivalent to the normalized template argument, not to the template argument as written:
+Change [temp.param]{.sref}/13. A template parameter object of a class type whose eligible template-argument function is user-provided can be the object declared by a variable, or a subobject of such an object, so not all template parameter objects are distinct from all other objects. Also, a template parameter object is template-argument-equivalent to the normalized template argument, not to the template argument as written:
 
 ::: std
-[13]{.pnum} Certain constructs refer to template parameter objects, which are [distinct]{.rm} objects with static storage duration and non-volatile const type. [A template parameter object of a class type that has a user-provided template-argument function is determined by that function ([class.template.arg]) and can be the object declared by a variable; other template parameter objects are distinct from all other objects.]{.addu} No two [such]{.rm} [template parameter]{.addu} objects have template-argument-equivalent values ([temp.type]). An `$id-expression$` naming a constant template parameter of class type `T` denotes the template parameter object of type `const T`, which is template-argument-equivalent to the corresponding template argument after it has been converted to the type of the template parameter [and normalized]{.addu} ([temp.arg.nontype]).
+[13]{.pnum} Certain constructs refer to template parameter objects, which are [distinct]{.rm} objects with static storage duration and non-volatile const type. [A template parameter object of a class type whose eligible template-argument function is user-provided is determined by that function ([class.template.arg]) and can be the object declared by a variable or a subobject of such an object; other template parameter objects are distinct from all other objects.]{.addu} No two [such]{.rm} [template parameter]{.addu} objects have template-argument-equivalent values ([temp.type]). An `$id-expression$` naming a constant template parameter of class type `T` denotes the template parameter object of type `const T`, which is template-argument-equivalent to the corresponding template argument after it has been converted to the type of the template parameter [and normalized]{.addu} ([temp.arg.nontype]).
 :::
 
 Change [temp.arg.nontype]{.sref}/2-5. Paragraphs 4 and 5 become bullets of the new paragraph that introduces `v`; their text is otherwise unchanged:
@@ -712,7 +726,7 @@ Change [temp.arg.nontype]{.sref}/2-5. Paragraphs 4 and 5 become bullets of the n
 is introduced. [The lifetime of `v` ends immediately after initializing it and any template parameter object (see below). For each such variable, the `$id-expression$` `v` is termed a *candidate initializer*.]{.rm}
 
 ::: addu
-[a]{.pnum} If `T` is a class type that has a user-provided template-argument function, `$P$` denotes the template parameter object ([class.template.arg]) for `u`. The lifetime of `u` ends immediately after that template parameter object is determined. [The template parameter object is not initialized from `u`.]{.note}
+[a]{.pnum} If `T` is a class type whose eligible template-argument function is user-provided, `$P$` denotes the template parameter object ([class.template.arg]) for `u`. The lifetime of `u` ends immediately after that template parameter object is determined. [The template parameter object is not initialized from `u`.]{.note}
 
 [b]{.pnum} Otherwise, a temporary variable `v` of type `const T` is introduced whose value is the normalized value (see below) of `u`. The lifetimes of `u` and `v` end immediately after initializing `v` and any template parameter object (see below). For each such variable `v`, the `$id-expression$` `v` is termed a *candidate initializer*.
 :::
@@ -733,12 +747,12 @@ is introduced. [The lifetime of `v` ends immediately after initializing it and a
 * [d.1]{.pnum} If `T` is a pointer type and `x` points to or past the end of an object `$o$` that is a string literal object `$S$` or a subobject of `$S$`, the pointer value that points to or past the end of, respectively, the object that corresponds to `$o$` within `$P$@~_S_~@`.
 * [d.2]{.pnum} Otherwise, if `T` is a reference type and `x` refers to an object `$o$` that is a string literal object `$S$` or a subobject of `$S$`, a reference to the object that corresponds to `$o$` within `$P$@~_S_~@`.
 * [d.3]{.pnum} Otherwise, if `T` is an array type, the array value whose elements are the normalized values of the corresponding elements of `x`.
-* [d.4]{.pnum} Otherwise, if `T` is a class type that has a user-provided template-argument function ([class.template.arg]), the value of an object of type `T` copy-initialized from an lvalue designating the template parameter object for `x` ([class.template.arg]). The program is ill-formed if that copy-initialization would be ill-formed or if the full-expression of an invented `$init-declarator$` for it would not be a constant expression.
+* [d.4]{.pnum} Otherwise, if `T` is a class type whose eligible template-argument function ([class.template.arg]) is user-provided, the value of an object of type `T` copy-initialized from an lvalue designating the template parameter object for `x` ([class.template.arg]). The program is ill-formed if that copy-initialization would be ill-formed or if the full-expression of an invented `$init-declarator$` for it would not be a constant expression.
 * [d.5]{.pnum} Otherwise, if `T` is a union type, `x` if `x` has no active member; otherwise, the value that has the same active member as `x`, whose value is the normalized value of the active member of `x`.
 * [d.6]{.pnum} Otherwise, if `T` is a class type, the value whose direct subobjects and reference members have the normalized values of the corresponding direct subobjects and reference members of `x`.
 * [d.7]{.pnum} Otherwise, `x`.
 
-[Normalization replaces each pointer into, or reference to, a string literal object or subobject thereof with a pointer into, or reference to, an object whose identity is the same in every translation unit, and replaces each subobject of a class type that has a user-provided template-argument function with a copy of the template parameter object for that subobject.]{.note}
+[Normalization replaces each pointer into, or reference to, a string literal object or subobject thereof with a pointer into, or reference to, an object whose identity is the same in every translation unit, and replaces each subobject of a class type whose eligible template-argument function is user-provided with a copy of the template parameter object for that subobject.]{.note}
 
 ::: example
 ```cpp
@@ -827,9 +841,9 @@ A `$string-literal$` ([lex.string]) is [not]{.rm} an acceptable `$template-argum
 :::
 :::
 
-[[temp.type]{.sref} needs no change. Every value compared there has already been normalized. For a class type with a user-provided template-argument function, determinism ([class.template.arg]/9) and idempotence ([class.template.arg]/8.4) mean that two template parameter objects have template-argument-equivalent values exactly when they are the same object.]{.draftnote}
+[[temp.type]{.sref} needs no change. Every value compared there has already been normalized. For a class type whose eligible template-argument function is user-provided, determinism ([class.template.arg]/8) and idempotence ([class.template.arg]/7.5) mean that two template parameter objects have template-argument-equivalent values exactly when they are the same object.]{.draftnote}
 
-[[basic.link]{.sref} needs no change. The template argument for a constant template parameter of class type with a user-provided template-argument function designates its template parameter object, which can be the object declared by a variable. In that case, an object associated with a TU-local variable is a TU-local value, so the specialization is TU-local. The design discussion says `$O$` must have the same linkage as `T`, and the implementation requires `$O$` to have linkage. This wording relies on the existing TU-local rules instead.]{.draftnote}
+[[basic.link]{.sref} needs no change. The template argument for a constant template parameter of class type whose eligible template-argument function is user-provided designates its template parameter object, which can be the object declared by a variable or a subobject of such an object. [class.template.arg]/7.4 ensures that the complete object is TU-local only when the template argument already was.]{.draftnote}
 
 ## Reflection library
 
@@ -974,7 +988,7 @@ template<T P> struct TCls;
 
 [Every class now has a template-argument function. For a standard library class, whether that function is implicitly declared, explicitly defaulted, or user-provided should probably be unspecified, as should its exact signature. Users get at this functionality through `std::meta::reflect_constant`, and implementations may need to explicitly default the function on internal helper types as well. This probably needs a sentence in [member.functions]{.sref}.]{.draftnote}
 
-Following the existing wording for `pair` ([pairs.pair]{.sref}) and `array` ([array.overview]{.sref}), the library types are specified by stating when they are structural types and what template-argument-equivalence means for them, rather than by adding a defaulted `operator template` to every synopsis. Explicitly defaulting only exempts the direct subobjects from the access requirement ([class.template.arg]/4, /10), so implementations will also need to opt in their internal storage types, and this approach leaves them free to do so. `inplace_vector` is specified slightly differently (see below).
+Following the existing wording for `pair` ([pairs.pair]{.sref}) and `array` ([array.overview]{.sref}), the library types are specified by stating when they are structural types and what template-argument-equivalence means for them, rather than by adding a defaulted `operator template` to every synopsis. Explicitly defaulting only exempts the direct subobjects from the access requirement ([class.template.arg]/4, /9), so implementations will also need to opt in their internal storage types, and this approach leaves them free to do so. `inplace_vector` is specified slightly differently (see below).
 
 ### `optional`
 
@@ -1092,7 +1106,7 @@ For `inplace_vector`, only the elements in the range [`0`, `size()`) are part of
 * a defaulted template-argument function, if the storage past `size()` consists of objects that are not within their lifetime, so that template-argument-equivalence ignores them, or
 * a user-provided template-argument function that only serializes [`0`, `size()`), like `SmallString` and `vector` in the design discussion.
 
-The choice depends on mangling. With a defaulted function, the mangled name of a specialization encodes the template parameter object's entire storage, including the holes past `size()`. Whether that's acceptable depends on how compactly those holes can be mangled. With a custom function, the mangled name refers to the returned object instead, and that object's own name encodes only the serialized elements. That is an implementation decision, so the wording specifies only the behavior. It doesn't state when two `inplace_vector` values are template-argument-equivalent, because with a custom function that relation compares the returned objects, so it isn't meaningful for arbitrary values. Instead, it says when two template arguments determine the same template parameter object, which holds for either implementation.
+The choice depends on mangling. With a defaulted function, the mangled name of a specialization encodes the template parameter object's entire storage, including the holes past `size()`. Whether that's acceptable depends on how compactly those holes can be mangled. With a user-provided function, the mangled name refers to the returned object instead, and that object's own name encodes only the serialized elements. That is an implementation decision, so the wording specifies only the behavior. It doesn't state when two `inplace_vector` values are template-argument-equivalent, because with a user-provided function that relation compares the returned objects, so it isn't meaningful for arbitrary values. Instead, it says when two template arguments determine the same template parameter object, which holds for either implementation.
 
 Add a paragraph to the end of [inplace.vector.overview]{.sref}:
 
