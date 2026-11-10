@@ -1285,4 +1285,4 @@ Add a new library feature-test macro to [version.syn]{.sref} for the library typ
 
 # Acknowledgements
 
-Thanks to Tim Song as usual for discussing all the design issues and for helping to make the paper better. Thanks to Dan Katz for an example that was deliberately left out of this paper, for everyone's safety.
+Thanks to Tim Song as usual for discussing all the design issues and for helping to make the paper better. Thanks to Dan Katz for an example that was deliberately left out of this paper, for everyone's safety. Thanks to Tomasz Kamiński for help with the wording and discussions of non-uniquness and allowing a template parameter object to be a subobject.
