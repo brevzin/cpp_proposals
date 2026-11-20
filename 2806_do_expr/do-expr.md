@@ -21,7 +21,9 @@ highlighting:
       - do_return
 ---
 
-# Revision History
+# Revision History {- .unlisted .collapsed}
+
+Since [@P2806R5], changed `do_return` back to `do return`.
 
 Since [@P2806R4], rewrote prose, and removed the implicit last value option introduced in the previous revision.
 
@@ -976,7 +978,7 @@ $init-hoist$:
 ::: example
 ```cpp
 constexpr int f() {
-    return do [x = 1, y = 2] { x + y };
+    return do [x = 1, y = 2] { do_return x + y; };
 }
 static_assert(f() == 3); // OK
 
@@ -984,7 +986,7 @@ constexpr int const& id(int const& r) { return r; }
 constexpr int const* ptr(int const& r) { return &r; }
 
 constexpr int h() {
-    return do [p = ptr(id(42))] { *p };
+    return do [p = ptr(id(42))] { do_return *p; };
 }
 static_assert(h() == 42); // OK, no dangling
 ```
