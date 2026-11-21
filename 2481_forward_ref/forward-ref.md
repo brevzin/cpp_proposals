@@ -1,16 +1,22 @@
 ---
 title: "Forwarding reference to specific type/template"
-document: P2481R2
+document: P2481R3
 date: today
 audience: EWG
 author:
     - name: Barry Revzin
       email: <barry.revzin@gmail.com>
+    - name: Daveed Vandevoorde
+      email: <daveed@edg.com>
+    - name: Corentin Jabot
+      email: <corentin.jabot@gmail.com>
 toc: true
 status: progress
 ---
 
-# Revision History
+# Revision History {- .unlisted .collapsed}
+
+Since [@P2481R2], added Corentin and Daveed to the authors. We finally found good syntax during the Búzios meeting in November 2026! And implemented it.
 
 When [@P2481R1] was discussed in Issaquah, three polls were taken. There was weak consensus to solve the problem as a whole, but there was clear preference to see "a new forwarding reference syntax":
 
@@ -38,7 +44,7 @@ It may help if I provide a few examples.
 
 `std::tuple<T...>` is constructible from `std::tuple<U...> $cv$ $ref$` when `T...` and `U...` are the same size and each `T` is constructible from `U $cv$ $ref$` (plus another constraint to avoid clashing with other constructors that I'm just going to ignore for the purposes of this paper). The way this would be written today is:
 
-::: bq
+::: std
 ```cpp
 template <typename... Ts>
 struct tuple {
@@ -67,7 +73,7 @@ struct tuple {
 
 This is pretty tedious to say the least. But it also has a subtle problem: these constructors are all _overloads_ - which means that if the one you'd think would be called is valid, it is still possible for a different one to be invoked. For instance:
 
-::: bq
+::: std
 ```cpp
 void f(tuple<int&>);
 auto g() -> tuple<int&&>;
@@ -100,7 +106,7 @@ How do we write the rest of the constraint? We don't really have a good way of d
 
 We run into the same thing for non-member functions, where we want to have `std::get<I>` be invocable on every kind of tuple. Which today likewise has to be written:
 
-::: bq
+::: std
 ```cpp
 template <size_t I, typename... Ts>
 auto get(tuple<Ts...>&) -> tuple_element_t<I, tuple<Ts...>>&;
@@ -124,7 +130,7 @@ The previous two examples want to deduce to some specialization of a class templ
 
 In C++20, we'd write it as:
 
-::: bq
+::: std
 ```cpp
 template <typename T>
 struct optional {
@@ -138,7 +144,7 @@ struct optional {
 
 complete with quadruplicating the body. But with deducing this, we might consider writing it as:
 
-::: bq
+::: std
 ```cpp
 template <typename T>
 struct optional {
@@ -157,7 +163,7 @@ FWIW, we’re no longer using explicit object member functions for `std::expecte
 
 Similar to the above, but even more specific, are the members for `view_interface` (see [view.interface]{.sref}). Currently, we have a bunch of pairs of member functions:
 
-::: bq
+::: std
 ```cpp
 template <typename D>
 class view_interface {
@@ -183,7 +189,7 @@ To be more concrete, the goal here is to be able to specify a particular type or
 
 Put differently, and focused more on the desired solution criteria, the goal is to be able to define this (to be clear, the syntax `$some-kind-of$` is just a placeholder):
 
-::: bq
+::: std
 ```cpp
 template <class T> struct Base { };
 template <class T> struct Derived : Base<T> { };
@@ -219,266 +225,217 @@ Two important things to keep in mind here:
 * `f` and `g` are both function templates
 * The types of the parameters `x` and `y` are always some kind of `Base`, even if we pass in a `Derived`.
 
-# The Ideas
+## Previous Ideas
 
-There were several ideas suggested in the previous revision that fit the EWG-preferred criteria of "a new forwarding reference syntax". Let's quickly run through them and see how they stack up.
+In previous revisions of this paper, several syntaxes were proposed and rejected:
 
-## `T auto&&`
+* `string auto&& x`
+* `string&&& x`
+* `forward string x`
+* `T&& x : string`
+* `Q<string>` (deducing a qualifier alias template)
 
-The principle here is that in the same say that `range auto&& `is some kind of `range`, that `int auto&&` is some kind of `int`. It kind of makes sense, kind of doesn't. Depends on how you think about it.
-
-<table>
-<tr><th>`tuple`</th><td>
-```cpp
-template <typename... Ts>
-struct tuple {
-  template <typename... Us>
-  tuple(tuple<Us...> auto&& rhs)
-    requires sizeof...(Us) == sizeof...(Ts)
-          && (constructible_from<
-                Ts,
-                copy_cvref_t<decltype(rhs), Us>
-              > && ...);
-};
-```
-</td></tr>
-<tr><th>`optional`</th><td>
-```cpp
-template <typename T>
-struct optional {
-    template <typename F>
-    auto transform(this optional auto&& self, F&& f) {
-        using U = remove_cv_t<invoke_result_t<F,
-            decltype(FWD(self).value())>;
-
-        if (self) {
-          return optional<U>(invoke(FWD(f), FWD(self).value()));
-        } else {
-          return optional<U>();
-        }
-    }
-};
-```
-</td></tr>
-<tr><th>`view_interface`</th><td>
-```cpp
-template <typename D>
-struct view_interface {
-    constexpr bool empty(this D auto& self)
-        requires forward_range<decltype(self)>
-    {
-        return ranges::begin(self) == ranges::end(self);
-    }
-};
-```
-</td></tr>
-</table>
-
-The advantage of this syntax is that it's concise and lets you do what you need to do.
-
-The disadvantage of this syntax is that the only way you can get the type is by writing `decltype(param)` - and the only way to can pass through the `const`-ness and qualifiers is by grabbing them off of `decltype(param)`. That's fine if the type itself is all that is necessary (as it the case for `view_interface`) but not so much when you actually need to apply them (as is the case for `tuple`). This also means that the only place you can put the `requires` clause is after the parameters. Another disadvantage is that the derived-to-base conversion aspect of this makes it inconsistent with what `Concept auto` actually means - which is not actually doing any conversion.
-
-## `T&&&`
-
-Rather than writing `tuple<U...> auto&& rhs` we can instead introduce a new kind of reference and spell it `tuple<U...>&&& rhs`. This syntactically looks nearly the same as the `T auto&&` version, so I'm not going to copy it.
-
-If we went this route, we would naturally have to also allow:
-
-::: bq
-```cpp
-template <typename T> void f(T&&);  // regular forwarding reference
-template <typename T> void g(T&&&); // also regular forwarding reference
-```
-:::
-
-The advantage here is that it's less arguably broken than the previous version, since it's more reasonable that the `tuple<U...>&&&` syntax would allow derived-to-base conversion.
-
-But the problem with this syntax is what it would mean in the case where we wanted a forwarding reference to a specific type:
-
-::: bq
-```cpp
-// this is a function taking an rvalue reference to string
-void f(string&& x);
-
-// this is a function template taking a forwarding reference to string
-void g(string&&& x);
-```
-:::
-
-That visually-negligible difference makes this a complete non-starter. Yes, it's technically _distinct_ in the same way that `Concept auto` is visually distinct from `Type` and a compiler would have no trouble doing the correct thing in this situation, but the `auto` there really helps readability a lot and having a third `&` be the distinguishing marker is just far too subtle in a language that has a lot of `&`s already.
-
-## `forward T`
-
-This is not a syntax that has previously appeared in the paper, but the idea is:
-
-::: bq
-```cpp
-// this is a function template taking a forwarding reference to string
-void f(forward string x);
-
-// these declarations are equivalent in what they accept
-template <typename T> void g(forward T x);
-template <typename U> void h(U&& y);
-```
-:::
-
-Otherwise usage is similar to the `T auto&&` syntax [above](#t-auto):
-
-<table>
-<tr><th>`tuple`</th><td>
-```cpp
-template <typename... Ts>
-struct tuple {
-  template <typename... Us>
-  tuple(forward tuple<Us...> rhs)
-    requires sizeof...(Us) == sizeof...(Ts)
-          && (constructible_from<
-                Ts,
-                copy_cvref_t<decltype(rhs), Us>
-              > && ...);
-};
-```
-</td></tr>
-<tr><th>`optional`</th><td>
-```cpp
-template <typename T>
-struct optional {
-    template <typename F>
-    auto transform(this forward optional self, F&& f) {
-        using U = remove_cv_t<invoke_result_t<F,
-            decltype(FWD(self).value())>;
-
-        if (self) {
-          return optional<U>(invoke(FWD(f), FWD(self).value()));
-        } else {
-          return optional<U>();
-        }
-    }
-};
-```
-</td></tr>
-<tr><th>`view_interface`</th><td>
-```cpp
-template <typename D>
-struct view_interface {
-    constexpr bool empty(this forward D& self)
-        requires forward_range<decltype(self)>
-    {
-        return ranges::begin(self) == ranges::end(self);
-    }
-};
-```
-</td></tr>
-</table>
-
-Both `forward T x` and `T auto&& x` have the issue that there's no way to name the actual type of the parameter `x` other than `decltype(x)`. The advantage of `forward T x` is that, as a novel syntax, the fact that it behaves differently from `Concept auto` is... fine - it's a different syntax, so it is unsurprising that it would behave differently.
-
-The disadvantage of `forward T x` is that it's a novel syntax - would require a contextually sensitive keyword `forward`:
-
-::: bq
-```cpp
-struct forward { };
-struct string { };
-
-// function taking a parameter of type forward named string
-void f(forward string);
-
-// function taking a forwarding reference of type string named _
-void g(forward string _);
-```
-:::
-
-But this probably isn't a huge problem - since
-
-a. `forward` isn't a terribly common name for a type
-b. the actual type would have to be a valid identifier in its own right (so no qualified names or template specializations), and
-c. you're never going to write such a function template without actually wanting to use the parameter, so you're not going to forget to name it.
-
-So while the novelty is certainly a disadvantage, the potential misuse/clash with existing syntax does not strike me as a big concern.
-
-Note that Herb Sutter's [CppFront](https://github.com/hsutter/cppfront) has parameter labels, one of which is `forward`. You can declare a CppFront function template as:
-
-::: cmptable
-### CppFront
-```cpp
-decorate: (forward s: std::string) = {
-    s = "[" + s + "]";
-}
-```
-
-### C++
-```cpp
-auto decorate(auto&& s) -> void
-requires (std::is_same_v<CPP2_TYPEOF(s), std::string>) {
-    s = "[" + CPP2_FORWARD(s) + "]";
-}
-```
-:::
-
-The CppFront code on the left compiles into the C++ code on the right. This seems equivalent, but there are two important differences between the CppFront feature and what's suggested here:
-
-1. CppFront's declaration requires the argument to be exactly some kind of `std::string`, not any derived type. But this proposal needs `forward std::string s` to accept any type derived from `std::string` and also coerce it to be a `std::string` such that the parameter is always some kind of `std::string`.
-2. CppFront's `forward` parameters forward on definite last use.
-
-(2) is actually a pretty useful aspect in its own right, since it allows you to annotate a `forward` parameter and not have to annotate the body - although it doesn't actually save you many characters. But (1) is the important difference - accepting derived types and coercing to base is the key aspect to this proposal.
-
-## Non-forward reference syntaxes
-
-For completeness, the previous revision had ideas for [deducing `const`](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2481r1.html#constbool), a new kind of [qualifier deduction](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2481r1.html#qualifiers-q), and Circle's approach of a new kind of [parameter annotation](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2481r1.html#circles-approach).
+None of these felt viable. But we finally came up with something better in Búzios.
 
 # Proposal
 
-There are only really two viable syntaxes I've come up with for how to solve this problem that are some kind of "new forwarding reference syntax":
+We propose a new way to annotate the template parameter to drive deduction, as in:
 
-::: cmptable
-### `T auto&& x`
+::: std
 ```cpp
-void f(std::string auto&& a);
+template <typename T : std::string>
+void f(T&& s);
 
-template <typename... Ts>
-void g(std::tuple<Ts...> auto&& b);
+struct Derived : std::string { };
 
-template <typename T>
-void h(T auto&& c);
+auto check() -> void {
+    std::string s = "msg";
 
-template <typename T>
-void i(T auto& d);
-```
-
-### `forward T x`
-```cpp
-void f(forward std::string a);
-
-template <typename... Ts>
-void g(forward std::tuple<Ts...> b);
-
-template <typename T>
-void h(forward T c);
-
-template <typename T>
-void i(forward T& d);
+    f("hello"s);  // #1: calls f<std::string>
+    f(msg);       // #2: calls f<std::string&>
+    f("msg");     // #3: calls f<std::string>
+    f(Derived{}); // #4: calls f<std::string>
+}
 ```
 :::
 
-These are all function template declarations:
+The way this works is that we perform deduction and then coerce the result down to the target type. Here, we have a forwarding reference to `std::string` — `s` is always some kind of `string`. For the simple calls, `#1` and `#2`, this behaves just like a regular forwarding reference. But for `#3` and `#4`, conversions are allowed to happen too. The source template parameter is not observable — `f` never sees `char const[4]` or `Derived`.
 
-* `f` takes a forwarding reference to `std::string` (`a` is always some kind of `std::string $cv$ $ref$`). Types derived from `std::string` undergo derived-to-base conversion first.
-* `g` takes a forwarding reference to some kind of `std::tuple<Ts...>`, deducing `Ts...`.
-* `h` takes a forwarding to any type. Here, if I pass an lvalue of type `int`, while `decltype(c)` will be `int&`, `T` will deduce as `int`.
-* `i` takes a forwarding reference to any type, but only accepts lvalues. Passing an rvalue is rejected (maybe passing a const rvalue should still succeed for consistency?)
+That is the most basic example — but once we establish this kind of type coercion effect during the deduction process, it gives us a way to provide very clean solutions to all of our earlier examples.
 
-All of these declarations insert an extra trailing template parameter, in the same way that `auto` function parameters do today. So `f("hello")` would fail (`"hello"` is not a `std::string` or something derived from it), but `f<std::string>("hello")` would work (as the implicit next template parameter that denotes the type of `a`).
+Note that this is similar to the feature in Circle, except we're annotating the template parameter instead of the function parameter.
 
-Of these two, my preference is for **the latter**: `forward T param`. It's a new kind of deduction so having distinct syntax, the additionally makes clear the intended use of these parameters, is an advantage.
+## `transform` for `std::optional`
+
+::: std
+```cpp
+template <typename T>
+struct optional {
+    template <typename Self : optional, typename F>
+    constexpr auto transform(this Self&&, F&&);
+};
+```
+:::
+
+The issue with using deducing this for implementing things like `optional<T>::transform` (and the many similar overload sets in `optional` and `expected`) is that we deduce too much, including potentially derived types. This problem was discussed in [@P0847R7] [here](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0847r7.html#the-shadowing-mitigation-private-inheritance-problem), and can these days be mitigated by doing a base-class splice with reflection to avoid having to do the prior C-style cast mitigation.
+
+But even there, we just wrote a bunch of ugly syntax to solve a problem introduced by unnecessarily deducing derived types. The above formulation simply never deduces `Self` as anything other than `optional` (possibly `const`, possibly lvalue reference). Using the concrete example from the original paper:
+
+::: cmptable
+### Original (Broken)
+```cpp
+class B {
+    int i;
+public:
+    template <typename Self>
+    auto&& get(this Self&& self) {
+        // we need to mitigate against shadowing
+        return forward<Self>(self).B::i;
+    }
+};
+
+class D : private B {
+    double i;
+public:
+    using B::get;
+};
+
+D().get(); // error
+```
+
+### Proposed (Fixed)
+```cpp
+class B {
+    int i;
+public:
+    template <typename Self : B>
+    auto&& get(this Self&& self) {
+        // no shadowing avoidance is necessary
+        return forward<Self>(self).i;
+    }
+};
+
+class D : private B {
+    double i;
+public:
+    using B::get;
+};
+
+D().get(); // ok
+```
+:::
+
+## `std::get` for `std::tuple`
+
+::: cmptable
+### Stauts Quo
+```cpp
+template <size_t I, typename... Ts>
+auto get(tuple<Ts...>&)
+    -> tuple_element_t<I, tuple<Ts...>>&;
+
+template <size_t I, typename... Ts>
+auto get(tuple<Ts...> const&)
+    -> tuple_element_t<I, tuple<Ts...>> const&;
+
+template <size_t I, typename... Ts>
+auto get(tuple<Ts...>&&)
+    -> tuple_element_t<I, tuple<Ts...>>&&;
+
+template <size_t I, typename... Ts>
+auto get(tuple<Ts...> const&&)
+    -> tuple_element_t<I, tuple<Ts...>> const&&;
+```
+
+### Proposed
+```cpp
+template <size_t I,
+          typename... Ts,
+          typename Tuple : tuple<Ts...>>
+auto get(Tuple&& )
+    -> copy_cvref_t<Tuple&&, tuple_element_t<I, tuple<Ts...>>>;
+```
+:::
+
+This is a more interesting example, since instead of coercing to a concrete type, we're coercing to a deduced template. We're at the same time deducing our `Ts...` and also deducing the cv-ref-qualifiers. Now, in the same way that the status quo implementation allows derived-to-base conversions in this form, the proposal also being called with an argument that inherits from, say, `std::tuple<int, double>`, but _not_ one that has a conversion function to `std::tuple<int, double>`. That follows from the form of the coercion target.
+
+## `std::tuple` converting constructor
+
+::: cmptable
+### Status Quo
+```cpp
+template <typename... Ts>
+struct tuple {
+    template <typename... Us>
+        requires sizeof...(Ts) == sizeof...(Us)
+              && (is_constructible_v<Ts, Us&> && ...)
+    tuple(tuple<Us...>&);
+
+    template <typename... Us>
+        requires sizeof...(Ts) == sizeof...(Us)
+              && (is_constructible_v<Ts, Us const&> && ...)
+    tuple(tuple<Us...> const&);
+
+    template <typename... Us>
+        requires sizeof...(Ts) == sizeof...(Us)
+              && (is_constructible_v<Ts, Us&&> && ...)
+    tuple(tuple<Us...>&&);
+
+    template <typename... Us>
+        requires sizeof...(Ts) == sizeof...(Us)
+              && (is_constructible_v<Ts, Us const&&> && ...)
+    tuple(tuple<Us...> const&&);
+};
+```
+
+### Proposed
+```cpp
+template <typename... Ts>
+struct tuple {
+    template <typename... Us,
+              typename OtherTuple : tuple<Us...>>
+        requires sizeof...(Ts) == sizeof...(Us)
+            and (is_constructible_v<
+                    Ts,
+                    copy_cvref_t<OtherTuple&&, Us&>
+                > and ...)
+    tuple(OtherTuple&& );
+};
+```
+:::
+
+This is quite similar to `std::get`, and works the same way.
+
+## Homogeneous Packs
+
+[@P1219R3]{.title} proposes syntax for homogeneous packs, both deduced and fixed. Interestingly enough, the type coercion we're proposing in this paper is sufficient to cover that problem as well:
+
+::: cmptable
+### P1219
+```cpp
+template <class T>
+void f(T... v);
+```
+
+### This Paper
+```cpp
+template <class T, class... Ts : T>
+void f(Ts... v);
+```
 
 ---
-references:
-    - id: P0798R8
-      citation-label: P0798R8
-      title: "Monadic operations for std::optional"
-      author:
-        - family: Sy Brand
-      issued:
-        year: 2021
-      URL: https://wiki.edg.com/pub/Wg21virtual2021-10/StrawPolls/p0798r8.html
----
+```cpp
+void f(int... v);
+```
+
+```cpp
+template <class... Ts : int>
+void f(Ts... v);
+```
+:::
+
+We could still introduce the syntax in the bottom-left as short-hand for the bottom-right.
+
+## Implementation Experience
+
+This is implemented in Barry's clang fork and is available on compiler explorer.
